@@ -1,0 +1,82 @@
+- id: hospital_patient_records
+  name: Hospital Patient Records Dataset
+  category: hospital
+  kaggle_dataset: blueblushed/hospital-dataset-for-practice
+  source_url: https://www.kaggle.com/datasets/blueblushed/hospital-dataset-for-practice
+  raw_dir: data/raw/hospital_patient_records
+  processed_dir: data/processed/hospital_patient_records
+  license: to-verify
+- id: hospital_admissions
+  name: Hospital Admissions Data
+  category: hospital
+  kaggle_dataset: ashishsahani/hospital-admissions-data
+  source_url: https://www.kaggle.com/datasets/ashishsahani/hospital-admissions-data
+  raw_dir: data/raw/hospital_admissions
+  processed_dir: data/processed/hospital_admissions
+  license: to-verify
+- id: hospital_general_information
+  name: Hospital General Information
+  category: hospital
+  kaggle_dataset: cms/hospital-general-information
+  source_url: https://www.kaggle.com/datasets/cms/hospital-general-information
+  raw_dir: data/raw/hospital_general_information
+  processed_dir: data/processed/hospital_general_information
+  license: to-verify
+- id: hospital_inpatient_discharges
+  name: Hospital Inpatient Discharges Dataset
+  category: hospital
+  kaggle_dataset: thedevastator/2010-new-york-state-hospital-inpatient-discharge
+  source_url: https://www.kaggle.com/datasets/thedevastator/2010-new-york-state-hospital-inpatient-discharge
+  raw_dir: data/raw/hospital_inpatient_discharges
+  processed_dir: data/processed/hospital_inpatient_discharges
+  license: to-verify
+- id: hospital_length_of_stay
+  name: Hospital Length of Stay Dataset (Microsoft)
+  category: hospital
+  kaggle_dataset: aayushchou/hospital-length-of-stay-dataset-microsoft
+  source_url: https://www.kaggle.com/datasets/aayushchou/hospital-length-of-stay-dataset-microsoft
+  raw_dir: data/raw/hospital_length_of_stay
+  processed_dir: data/processed/hospital_length_of_stay
+  license: to-verify
+- id: hospital_emergency
+  name: Hospital Emergency Dataset
+  category: hospital
+  kaggle_dataset: xavierberge/hospital-emergency-dataset
+  source_url: https://www.kaggle.com/datasets/xavierberge/hospital-emergency-dataset
+  raw_dir: data/raw/hospital_emergency
+  processed_dir: data/processed/hospital_emergency
+  license: to-verify
+- id: hospital_management
+  name: Hospital Management Dataset
+  category: hospital
+  kaggle_dataset: kanakbaghel/hospital-management-dataset
+  source_url: https://www.kaggle.com/datasets/kanakbaghel/hospital-management-dataset
+  raw_dir: data/raw/hospital_management
+  processed_dir: data/processed/hospital_management
+  license: to-verify
+- id: genomics_gdsc
+  name: Genomics of Drug Sensitivity in Cancer (GDSC)
+  category: genetics
+  kaggle_dataset: samiraalipour/genomics-of-drug-sensitivity-in-cancer-gdsc
+  source_url: https://www.kaggle.com/datasets/samiraalipour/genomics-of-drug-sensitivity-in-cancer-gdsc
+  raw_dir: data/raw/genomics_gdsc
+  processed_dir: data/processed/genomics_gdsc
+  license: to-verify
+- id: genetic_disorders
+  name: Predict the Genetic Disorders Dataset of Genomes
+  category: genetics
+  kaggle_dataset: aibuzz/predict-the-genetic-disorders-datasetof-genomes
+  source_url: https://www.kaggle.com/datasets/aibuzz/predict-the-genetic-disorders-datasetof-genomes
+  raw_dir: data/raw/genetic_disorders
+  processed_dir: data/processed/genetic_disorders
+  license: to-verify
+- id: human_genome_features
+  name: Human Complete Genome Sequence Features
+  category: genetics
+  kaggle_dataset: aliabedimadiseh/human-genome-dataset
+  source_url: https://www.kaggle.com/datasets/aliabedimadiseh/human-genome-dataset
+  raw_dir: data/raw/human_genome_features
+  processed_dir: data/processed/human_genome_features
+  license: to-verify
+
+

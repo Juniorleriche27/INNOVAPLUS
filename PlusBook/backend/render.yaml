@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: plusbooks-api
+    env: python
+    plan: starter
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_MINUTES
+        value: "60"

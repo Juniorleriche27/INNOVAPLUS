@@ -1,0 +1,6 @@
+# Ignore bulky datasets from version control
+data/raw/
+data/processed/
+
+# Keep folder structure if needed
+!data/.gitkeep

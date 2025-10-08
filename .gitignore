@@ -8,3 +8,11 @@ INNOVA_PLUS_SANTE/data/processed/
 **/.env.*
 secrets.toml
 **/secrets.toml
+# secrets
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+secrets.toml
+**/secrets.toml

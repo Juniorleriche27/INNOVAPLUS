@@ -1,0 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# === Backend API (léger + embeddings) ===
+fastapi
+uvicorn
+qdrant-client
+python-dotenv
+requests
+httpx
+sentence-transformers

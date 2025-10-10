@@ -49,10 +49,9 @@ export default function NewProjectPage() {
         return;
       }
 
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      if (!base) throw new Error("NEXT_PUBLIC_API_URL manquant.");
-
-      const res = await fetch(`${base}/projects/`, {
+      const base = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "");
+      const url = base ? `${base}/projects/` : `/api/projects/`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

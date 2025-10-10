@@ -1,5 +1,7 @@
 // src/app/projects/page.tsx
 import Link from "next/link";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type Project = {
   id: string;
@@ -15,9 +17,9 @@ type Project = {
 };
 
 async function getProjects(): Promise<Project[]> {
-  const base = process.env.NEXT_PUBLIC_API_URL;
-  if (!base) throw new Error("NEXT_PUBLIC_API_URL manquant.");
-  const res = await fetch(`${base}/projects`, {
+  const base = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "");
+  const url = base ? `${base}/projects` : `/api/projects`;
+  const res = await fetch(url, {
     // évite cache build
     cache: "no-store",
     headers: { "Content-Type": "application/json" },

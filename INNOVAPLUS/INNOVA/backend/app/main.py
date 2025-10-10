@@ -18,29 +18,48 @@ from app.routers.innova import router as innova_router
 from app.routers.pieagency import router as pieagency_router
 from app.routers.farmlink import router as farmlink_router
 from app.routers.sante import router as sante_router
+from app.routers.rag import router as rag_router
+from app.routers.innova_core import router as innova_core_router
+from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
 
 
 app = FastAPI(title=settings.APP_NAME)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "*").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"],)
 
 
 @app.on_event("startup")
 async def on_startup():
     await connect_to_mongo()
+    # Verify embedding dimension dynamically and adjust if needed
+    try:
+        actual = detect_embed_dim()
+        if actual != settings.EMBED_DIM:
+            import logging
+            logging.getLogger(__name__).warning(
+                "EMBED_DIM mismatch: env=%s detected=%s -> using detected",
+                settings.EMBED_DIM,
+                actual,
+            )
+            settings.EMBED_DIM = actual
+    except Exception:
+        pass
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
     await close_mongo_connection()
+
+
+START_TIME = __import__("time").time()
+
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": settings.APP_NAME, "docs": "/docs"}
 
 
 @app.get("/health")
@@ -51,7 +70,8 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
         ok = True
     except Exception:
         ok = False
-    return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": ok}
+    uptime = int(__import__("time").time() - START_TIME)
+    return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": "ok" if ok else "fail", "uptime_s": uptime}
 
 
 # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
@@ -59,6 +79,16 @@ app.include_router(innova_router)
 app.include_router(pieagency_router)
 app.include_router(farmlink_router)
 app.include_router(sante_router)
+app.include_router(rag_router)
+
+# Mount module-prefixed routes
+innova_api = APIRouter(prefix="/innova/api")
+innova_api.include_router(innova_core_router)
+app.include_router(innova_api)
+
+innova_rag = APIRouter(prefix="/innova")
+innova_rag.include_router(rag_router)
+app.include_router(innova_rag)
 
 # Serve public storage similar to Laravel's /storage symlink
 app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")

@@ -34,6 +34,20 @@ class Settings(BaseSettings):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "insecure-dev-secret-change-me")
     JWT_ALG: str = "HS256"
     JWT_EXPIRES_MINUTES: int = int(os.getenv("JWT_EXPIRES_MINUTES", "60"))
+    # CORS
+    ALLOWED_ORIGINS: str | None = os.getenv("ALLOWED_ORIGINS")
+    # RAG / AI
+    EMBED_MODEL: str | None = os.getenv("EMBED_MODEL")
+    EMBED_DIM: int = int(os.getenv("EMBED_DIM", "384"))
+    LLM_PROVIDER: str | None = os.getenv("LLM_PROVIDER")
+    LLM_MODEL: str | None = os.getenv("LLM_MODEL")
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
+    COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")
+    VECTOR_INDEX_NAME: str = os.getenv("VECTOR_INDEX_NAME", "vector_index")
+    RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))
+    RAG_MAX_CONTEXT_TOKENS: int = int(os.getenv("RAG_MAX_CONTEXT_TOKENS", "1200"))
+    UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "20"))
+    ALLOWED_UPLOAD_MIME: str | None = os.getenv("ALLOWED_UPLOAD_MIME")
     # Multi-DB names (modules)
     DB_PLUSBOOK: str | None = None
     DB_INNOVA: str | None = None

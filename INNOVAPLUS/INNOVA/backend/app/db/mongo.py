@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import AsyncGenerator
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo.errors import PyMongoError
 
 from app.core.config import settings
 
@@ -17,11 +18,45 @@ async def connect_to_mongo() -> None:
         _client = AsyncIOMotorClient(settings.MONGO_URI)
         _db = _client[settings.DB_NAME]
         # Ensure indexes (idempotent)
-        await _db["users"].create_index("email", unique=True)
-        await _db["messages"].create_index([("sender_id", 1), ("recipient_id", 1)])
-        await _db["messages"].create_index([("recipient_id", 1), ("read_at", 1)])
-        await _db["posts"].create_index("group_id")
-        await _db["group_members"].create_index([("group_id", 1), ("user_id", 1)], unique=True)
+        try:
+            await _db["users"].create_index("email", unique=True)
+            await _db["messages"].create_index([("sender_id", 1), ("recipient_id", 1)])
+            await _db["messages"].create_index([("recipient_id", 1), ("read_at", 1)])
+            await _db["posts"].create_index("group_id")
+            await _db["group_members"].create_index([("group_id", 1), ("user_id", 1)], unique=True)
+
+            # INNOVA core collections
+            await _db["conversations"].create_index([("user_id", 1), ("last_activity_at", -1)])
+            await _db["messages_innova"].create_index([("conversation_id", 1), ("created_at", 1)])
+            await _db["feedback"].create_index([("message_id", 1), ("created_at", 1)])
+            await _db["documents"].create_index([("doc_id", 1)], unique=True)
+            await _db["vectors"].create_index([("doc_id", 1), ("chunk_id", 1)])
+
+            # Try to create Atlas Vector Search index if supported
+            try:
+                await _db.command({
+                    "createSearchIndexes": "vectors",
+                    "indexes": [
+                        {
+                            "name": "vector_index",
+                            "definition": {
+                                "fields": {
+                                    "embedding": {
+                                        "type": "vector",
+                                        "numDimensions": settings.EMBED_DIM,
+                                        "similarity": "cosine",
+                                    }
+                                }
+                            },
+                        }
+                    ],
+                })
+            except PyMongoError:
+                # Ignore if not supported or already exists
+                pass
+        except PyMongoError:
+            # Avoid crashing startup; health endpoint will reflect status
+            pass
 
 
 async def close_mongo_connection() -> None:

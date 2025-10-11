@@ -26,7 +26,7 @@ export default function RootLayout(props: { children: ReactNode }) {
 
           <div className="flex-1 bg-transparent">
             <div className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 sm:px-6 lg:flex-row lg:px-8">
-              <div className="hidden shrink-0 lg:block lg:sticky lg:top-24 lg:self-start">
+              <div className="hidden shrink-0 lg:block lg:self-start">
                 <Sidebar />
               </div>
 

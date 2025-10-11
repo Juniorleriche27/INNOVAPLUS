@@ -5,6 +5,36 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+function IconTarget(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2M12 22a10 10 0 110-20 10 10 0 010 20z" />
+    </svg>
+  );
+}
+function IconLayers(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 4-8 4-8-4 8-4zm0 8l8 4-8 4-8-4 8-4z" />
+    </svg>
+  );
+}
+function IconUsers(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m14-10a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+function IconChip(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <rect x="3" y="7" width="18" height="10" rx="2" />
+      <path d="M7 7V3m10 4V3M7 21v-4m10 4v-4M3 12h18" />
+    </svg>
+  );
+}
+
 const WORKSPACE_LINKS = [
   { href: "/opportunities", label: "Opportunités", description: "Pipeline et statut" },
   { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique" },
@@ -62,7 +92,13 @@ export default function Sidebar({ className }: { className?: string }) {
                   collapsed && "px-2 text-center"
                 )}
               >
-                <p className={clsx("text-sm font-semibold", collapsed && "text-[0.75rem]")}>{link.label}</p>
+                <div className={clsx("flex items-center gap-2", collapsed && "justify-center")}> 
+                  {link.href === "/opportunities" && <IconTarget className="h-4 w-4" />}
+                  {link.href === "/skills" && <IconLayers className="h-4 w-4" />}
+                  {link.href === "/talents" && <IconUsers className="h-4 w-4" />}
+                  {link.href === "/engine" && <IconChip className="h-4 w-4" />}
+                  <p className={clsx("text-sm font-semibold", collapsed && "text-[0.75rem]")}>{link.label}</p>
+                </div>
                 {!collapsed && <p className="text-xs text-slate-500">{link.description}</p>}
               </Link>
             );

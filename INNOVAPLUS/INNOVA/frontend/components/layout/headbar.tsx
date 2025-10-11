@@ -8,7 +8,6 @@ import { usePathname } from "next/navigation";
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/opportunities", label: "Opportunités" },
-  { href: "/chat-laya", label: "Chat-LAYA" },
   { href: "/resources", label: "Ressources" },
   { href: "/about", label: "À propos" }
 ];
@@ -48,12 +47,45 @@ export default function Headbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState<number>(0);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Keyboard shortcut: '/' opens search (except when typing in inputs)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      const editable = (e.target as HTMLElement)?.isContentEditable;
+      if (e.key === "/" && !editable && tag !== "input" && tag !== "textarea") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setAccountOpen(false);
+        setDrawerOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Try to fetch notifications count if backend exposes it
+  useEffect(() => {
+    const base = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "");
+    if (!base) return;
+    fetch(`${base}/notifications`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const n = Array.isArray(data) ? data.length : (data?.count as number) || 0;
+        if (Number.isFinite(n)) setNotifCount(n as number);
+      })
+      .catch(() => void 0);
   }, []);
 
   return (
@@ -63,9 +95,9 @@ export default function Headbar() {
         scrolled ? "border-b border-slate-200 bg-white/95 backdrop-blur shadow-sm" : "bg-transparent"
       )}
     >
-      <div className="container-shell grid grid-cols-3 items-center gap-3 py-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 py-4">
         {/* Left: Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-3">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-semibold uppercase tracking-[0.3em] text-white">
               IN
@@ -77,8 +109,8 @@ export default function Headbar() {
           </Link>
         </div>
 
-        {/* Center: Nav */}
-        <nav className="hidden justify-center gap-4 lg:flex">
+        {/* Center: Nav (aligné à gauche, pas centré) */}
+        <nav className="hidden lg:flex items-center gap-4 flex-1 ml-6">
           {NAV_LINKS.map((link) => {
             const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
@@ -113,7 +145,7 @@ export default function Headbar() {
             className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
           >
             <IconBell className="h-4 w-4" />
-            <span className="absolute right-1 top-1 inline-block h-2 w-2 rounded-full bg-sky-500" />
+            {notifCount > 0 && <span className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white">{Math.min(notifCount, 9)}</span>}
           </button>
           {/* Account */}
           <div className="relative">
@@ -138,7 +170,7 @@ export default function Headbar() {
             Créer une opportunité
           </Link>
           <Link href="/chat-laya" className="btn-secondary hidden lg:inline-flex">
-            Essayer Chat-LAYA
+            CHATLAYA
           </Link>
           {/* Burger */}
           <button
@@ -202,7 +234,7 @@ export default function Headbar() {
                 Créer une opportunité
               </Link>
               <Link href="/chat-laya" onClick={() => setDrawerOpen(false)} className="btn-secondary">
-                Essayer Chat-LAYA
+                CHATLAYA
               </Link>
             </div>
           </div>

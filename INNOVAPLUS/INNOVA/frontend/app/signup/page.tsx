@@ -45,7 +45,7 @@ export default function SignupPage() {
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
         <h1 className="text-2xl font-semibold text-slate-900">Creer un compte</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Rejoins INNOVA+ pour acceder aux projets, a la communaute et au copilote Chat-LAYA.
+          Rejoins INNOVA+ pour acceder aux projets, a la communaute et au copilote CHATLAYA.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">

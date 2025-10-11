@@ -27,7 +27,7 @@ const PILLARS: Pillar[] = [
   {
     title: "Connaissance et RAG",
     description:
-      "Centraliser capital documentaire, rendre les retours accessibles via Chat-LAYA et industrialiser le suivi des projets.",
+      "Centraliser capital documentaire, rendre les retours accessibles via CHATLAYA et industrialiser le suivi des projets.",
     cta: { label: "Tester CHATLAYA", href: "/chatlaya" },
   },
   {
@@ -60,7 +60,7 @@ const VALUES: ValueCard[] = [
 const MILESTONES: Milestone[] = [
   {
     label: "MVP 1",
-    description: "Profils talents, job board projets, copilote Chat-LAYA, analytics d usage basiques.",
+    description: "Profils talents, job board projets, copilote CHATLAYA, analytics d usage basiques.",
   },
   {
     label: "MVP 2",

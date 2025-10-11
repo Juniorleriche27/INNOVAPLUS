@@ -273,7 +273,7 @@ export default function ChatLayaPage() {
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-sky-600">
               Innova+
             </span>
-            <h1 className="text-3xl font-semibold text-slate-900">Chat-LAYA</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">CHATLAYA</h1>
             <p className="max-w-xl text-sm text-slate-600 sm:text-base">
               RAG et copilote conversationnel sur vos documents. Uploadez vos sources, explorez-les en recherche
               plein texte ou conversez avec un assistant qui cite ses rfrences.

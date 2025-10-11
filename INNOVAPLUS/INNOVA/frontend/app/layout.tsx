@@ -17,6 +17,9 @@ export default function RootLayout(props: { children: ReactNode }) {
 
   return (
     <html lang="fr">
+      <head>
+        <meta charSet="utf-8" />
+      </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
         <div className="relative flex min-h-screen flex-col">
           <Headbar />

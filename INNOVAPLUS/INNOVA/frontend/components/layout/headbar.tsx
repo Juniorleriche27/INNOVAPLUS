@@ -2,36 +2,83 @@
 
 import clsx from "clsx";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/opportunities", label: "Opportunités" },
-  { href: "/chat-laya", label: "CHATLAYA" },
+  { href: "/chat-laya", label: "Chat-LAYA" },
   { href: "/resources", label: "Ressources" },
-  { href: "/about", label: "À propos" },
-  { href: "/account", label: "Compte" }
+  { href: "/about", label: "À propos" }
 ];
+
+function IconSearch(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0013.05 13.05z" />
+    </svg>
+  );
+}
+function IconBell(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.172V11a6 6 0 10-12 0v3.172a2 2 0 01-.6 1.428L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  );
+}
+function IconMenu(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+function IconClose(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+}
 
 export default function Headbar() {
   const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="container-shell flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-semibold uppercase tracking-[0.3em] text-white">
-            IN
-          </span>
-          <div className="leading-tight">
-            <p className="text-lg font-semibold text-slate-900">INNOVA+</p>
-            <p className="text-xs text-slate-500">
-              Moteur IA d’opportunités · Transparence · Équité · Impact
-            </p>
-          </div>
-        </Link>
+    <header
+      className={clsx(
+        "sticky top-0 z-40 transition-colors",
+        scrolled ? "border-b border-slate-200 bg-white/95 backdrop-blur shadow-sm" : "bg-transparent"
+      )}
+    >
+      <div className="container-shell grid grid-cols-3 items-center gap-3 py-4">
+        {/* Left: Brand */}
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-semibold uppercase tracking-[0.3em] text-white">
+              IN
+            </span>
+            <div className="leading-tight hidden sm:block">
+              <p className="text-lg font-semibold text-slate-900">INNOVA+</p>
+              <p className="text-xs text-slate-500">Moteur IA d’opportunités · Transparence · Équité · Impact</p>
+            </div>
+          </Link>
+        </div>
 
-        <nav className="flex flex-wrap items-center gap-2">
+        {/* Center: Nav */}
+        <nav className="hidden justify-center gap-4 lg:flex">
           {NAV_LINKS.map((link) => {
             const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
@@ -39,10 +86,9 @@ export default function Headbar() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "rounded-full px-4 py-2 text-sm font-medium transition-all",
-                  active
-                    ? "bg-sky-100 text-sky-700 shadow-sm shadow-sky-200"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  "px-3 py-2 text-sm font-medium text-slate-600 transition",
+                  "hover:text-slate-900",
+                  active && "text-sky-700 underline decoration-2 underline-offset-8"
                 )}
               >
                 {link.label}
@@ -51,16 +97,117 @@ export default function Headbar() {
           })}
         </nav>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/opportunities/create" className="btn-primary">
+        {/* Right: Actions */}
+        <div className="flex items-center justify-end gap-2">
+          {/* Search icon */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            aria-label="Recherche"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+          >
+            <IconSearch className="h-4 w-4" />
+          </button>
+          {/* Notifications */}
+          <button
+            aria-label="Notifications"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+          >
+            <IconBell className="h-4 w-4" />
+            <span className="absolute right-1 top-1 inline-block h-2 w-2 rounded-full bg-sky-500" />
+          </button>
+          {/* Account */}
+          <div className="relative">
+            <button
+              onClick={() => setAccountOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white"
+            >
+              ME
+            </button>
+            {accountOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-sm shadow-lg shadow-slate-900/10">
+                <Link className="block rounded-xl px-3 py-2 hover:bg-slate-50" href="/account">Profil</Link>
+                <Link className="block rounded-xl px-3 py-2 hover:bg-slate-50" href="/opportunities">Mes opportunités</Link>
+                <button className="block w-full rounded-xl px-3 py-2 text-left text-red-600 hover:bg-red-50">Déconnexion</button>
+              </div>
+            )}
+          </div>
+          {/* CTA */}
+          <Link href="/opportunities/create" className="btn-primary hidden sm:inline-flex">
             Créer une opportunité
           </Link>
-          <Link href="/chat-laya" className="btn-secondary">
-            CHATLAYA
+          <Link href="/chat-laya" className="btn-secondary hidden lg:inline-flex">
+            Essayer Chat-LAYA
           </Link>
+          {/* Burger */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Ouvrir le menu"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50 lg:hidden"
+          >
+            <IconMenu className="h-5 w-5" />
+          </button>
         </div>
       </div>
+
+      {/* Search overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 p-4" onClick={() => setSearchOpen(false)}>
+          <div
+            className="container-shell mx-auto max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+              <div className="flex items-center gap-2">
+                <IconSearch className="h-5 w-5 text-slate-400" />
+                <input
+                  autoFocus
+                  type="search"
+                  placeholder="Besoin, compétence, pays…"
+                  className="h-10 w-full rounded-md border-none text-base text-slate-700 outline-none placeholder:text-slate-400"
+                />
+                <button onClick={() => setSearchOpen(false)} aria-label="Fermer" className="rounded-md p-1 hover:bg-slate-100">
+                  <IconClose className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drawer mobile */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" aria-modal="true" role="dialog">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-[10px] font-semibold tracking-[0.3em] text-white">IN</span>
+                <span className="text-base font-semibold">INNOVA+</span>
+              </Link>
+              <button aria-label="Fermer" onClick={() => setDrawerOpen(false)} className="rounded-full p-2 hover:bg-slate-100">
+                <IconClose className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {NAV_LINKS.map((link) => (
+                <Link key={link.href} href={link.href} onClick={() => setDrawerOpen(false)} className="rounded-xl px-3 py-2 text-slate-700 hover:bg-slate-50">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-4 flex flex-col gap-2">
+              <Link href="/opportunities/create" onClick={() => setDrawerOpen(false)} className="btn-primary">
+                Créer une opportunité
+              </Link>
+              <Link href="/chat-laya" onClick={() => setDrawerOpen(false)} className="btn-secondary">
+                Essayer Chat-LAYA
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
-

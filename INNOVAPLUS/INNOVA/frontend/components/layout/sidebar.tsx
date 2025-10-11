@@ -77,7 +77,7 @@ export default function Sidebar({ className }: { className?: string }) {
     <aside
       className={clsx(
         "sticky top-28 hidden shrink-0 rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-900/5 backdrop-blur lg:flex",
-        "max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain",
+        "max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain sidebar-scroll",
         collapsed ? "w-16" : "w-72",
         className
       )}

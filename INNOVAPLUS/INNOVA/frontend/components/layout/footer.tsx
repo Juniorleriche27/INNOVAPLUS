@@ -14,23 +14,23 @@ export default function Footer() {
           <div className="leading-tight">
             <p className="font-semibold text-slate-800">INNOVA+</p>
             <p className="text-xs text-slate-500">
-              INNOVA+ \u2014 Moteur IA d\u2019opportunit\u00E9s. Transparence \u00B7 \u00C9quit\u00E9 \u00B7 Impact.
+              INNOVA+ — Moteur IA d’opportunités. Transparence · Équité · Impact.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 sm:text-sm">
           <Link href="/privacy" className="transition hover:text-sky-600">
-            Confidentialit\u00E9
+            Confidentialité
           </Link>
           <Link href="/terms" className="transition hover:text-sky-600">
-            Mentions l\u00E9gales
+            Mentions légales
           </Link>
           <span className="text-slate-400">v1.0.0</span>
         </div>
 
         <p className="text-xs text-slate-400 sm:text-sm">
-          Copyright {year} INNOVA+. Tous droits r\u00E9serv\u00E9s.
+          Copyright {year} INNOVA+. Tous droits réservés.
         </p>
       </div>
     </footer>

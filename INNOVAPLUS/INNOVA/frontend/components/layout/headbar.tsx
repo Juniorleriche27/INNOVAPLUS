@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
-  { href: "/opportunities", label: "Opportunit\u00E9s" },
+  { href: "/opportunities", label: "Opportunités" },
   { href: "/chat-laya", label: "Chat-LAYA" },
   { href: "/resources", label: "Ressources" },
-  { href: "/about", label: "\u00C0 propos" },
+  { href: "/about", label: "À propos" },
   { href: "/account", label: "Compte" }
 ];
 
@@ -26,7 +26,7 @@ export default function Headbar() {
           <div className="leading-tight">
             <p className="text-lg font-semibold text-slate-900">INNOVA+</p>
             <p className="text-xs text-slate-500">
-              Moteur IA d\u2019opportunit\u00E9s \u00B7 Transparence \u00B7 \u00C9quit\u00E9 \u00B7 Impact
+              Moteur IA d’opportunités · Transparence · Équité · Impact
             </p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export default function Headbar() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/opportunities/create" className="btn-primary">
-            Cr\u00E9er une opportunit\u00E9
+            Créer une opportunité
           </Link>
           <Link href="/chat-laya" className="btn-secondary">
             Essayer Chat-LAYA

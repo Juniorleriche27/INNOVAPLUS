@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const WORKSPACE_LINKS = [
-  { href: "/opportunities", label: "Opportunit\u00E9s", description: "Pipeline et statut" },
-  { href: "/skills", label: "Comp\u00E9tences & secteurs", description: "Cartographie dynamique" },
-  { href: "/talents", label: "Talents", description: "Profils et disponibilit\u00E9" },
-  { href: "/engine", label: "Moteur IA", description: "R\u00E8gles RAG & \u00E9quit\u00E9" }
+  { href: "/opportunities", label: "Opportunités", description: "Pipeline et statut" },
+  { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique" },
+  { href: "/talents", label: "Talents", description: "Profils et disponibilité" },
+  { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité" }
 ];
 
 export default function Sidebar({ className }: { className?: string }) {
@@ -23,9 +23,9 @@ export default function Sidebar({ className }: { className?: string }) {
     >
       <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 p-5 text-white shadow-md shadow-sky-500/30">
         <p className="text-xs uppercase tracking-[0.3em] text-sky-100">Workspace AI</p>
-        <h3 className="mt-2 text-lg font-semibold">Gouvernez vos opportunit\u00E9s</h3>
+        <h3 className="mt-2 text-lg font-semibold">Gouvernez vos opportunités</h3>
         <p className="mt-2 text-sm text-sky-50">
-          Suivez le matching, les quotas pays et l\u2019impact en temps r\u00E9el.
+          Suivez le matching, les quotas pays et l’impact en temps réel.
         </p>
       </div>
 

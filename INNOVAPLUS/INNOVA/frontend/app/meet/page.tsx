@@ -1,29 +1,18 @@
 // app/meet/page.tsx
 import Link from "next/link";
-import { track } from "@/lib/telemetry";
-import { Suspense } from "react";
-
-function ClientPing() {
-  // small client ping to record view
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  require("react").useEffect(() => { track("view_meet"); }, []);
-  return null;
-}
+import TelemetryPing from "@/components/util/TelemetryPing";
 
 export default function MeetPage() {
   return (
     <main className="mx-auto w-full max-w-5xl p-6">
-      <Suspense>
-        {/* @ts-expect-error Server/Client mix for ping */}
-        <ClientPing />
-      </Suspense>
+      <TelemetryPing name="view_meet" />
       <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">INNOVA-MEET</h1>
           <p className="text-sm text-slate-500">Réseau social intégré — besoins, solutions, succès.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/meet/new" className="btn-primary" onClick={() => track("post_create", { intent: true })}>Créer un post</Link>
+          <Link href="/meet/new" className="btn-primary">Créer un post</Link>
         </div>
       </header>
 
@@ -78,4 +67,3 @@ export default function MeetPage() {
     </main>
   );
 }
-

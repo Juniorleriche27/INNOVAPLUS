@@ -1,28 +1,18 @@
 // app/marketplace/page.tsx
 import Link from "next/link";
-import { track } from "@/lib/telemetry";
-import { Suspense } from "react";
-
-function ClientPing() {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  require("react").useEffect(() => { track("view_marketplace"); }, []);
-  return null;
-}
+import TelemetryPing from "@/components/util/TelemetryPing";
 
 export default function MarketplacePage() {
   return (
     <main className="mx-auto w-full max-w-5xl p-6">
-      <Suspense>
-        {/* @ts-expect-error Server/Client mix for ping */}
-        <ClientPing />
-      </Suspense>
+      <TelemetryPing name="view_marketplace" />
       <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Marketplace</h1>
           <p className="text-sm text-slate-500">Talents, services et offres packagées.</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/marketplace/new" className="btn-primary" onClick={() => track("offer_publish", { intent: true })}>Publier une offre</Link>
+          <Link href="/marketplace/new" className="btn-primary">Publier une offre</Link>
         </div>
       </header>
 
@@ -77,4 +67,3 @@ export default function MarketplacePage() {
     </main>
   );
 }
-

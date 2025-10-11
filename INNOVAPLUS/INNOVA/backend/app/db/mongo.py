@@ -32,6 +32,17 @@ async def connect_to_mongo() -> None:
             await _db["documents"].create_index([("doc_id", 1)], unique=True)
             await _db["vectors"].create_index([("doc_id", 1), ("chunk_id", 1)])
 
+            # Matching/Fairness collections
+            await _db["profiles"].create_index("user_id")
+            await _db["profiles"].create_index("country")
+            await _db["profiles"].create_index("last_active_at")
+            await _db["opportunities"].create_index("status")
+            await _db["opportunities"].create_index("created_at")
+            await _db["assignments"].create_index("opportunity_id")
+            await _db["assignments"].create_index("user_id")
+            await _db["fairness_windows"].create_index("period_start")
+            await _db["decisions_audit"].create_index("created_at")
+
             # Try to create Atlas Vector Search index if supported
             try:
                 await _db.command({

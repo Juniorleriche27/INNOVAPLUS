@@ -20,6 +20,7 @@ from app.routers.farmlink import router as farmlink_router
 from app.routers.sante import router as sante_router
 from app.routers.rag import router as rag_router
 from app.routers.innova_core import router as innova_core_router
+from app.routers.opportunities import router as opportunities_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
@@ -84,6 +85,7 @@ app.include_router(rag_router)
 # Mount module-prefixed routes
 innova_api = APIRouter(prefix="/innova/api")
 innova_api.include_router(innova_core_router)
+innova_api.include_router(opportunities_router)
 app.include_router(innova_api)
 
 innova_rag = APIRouter(prefix="/innova")

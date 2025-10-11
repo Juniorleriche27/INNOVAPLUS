@@ -48,6 +48,16 @@ class Settings(BaseSettings):
     RAG_MAX_CONTEXT_TOKENS: int = int(os.getenv("RAG_MAX_CONTEXT_TOKENS", "1200"))
     UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "20"))
     ALLOWED_UPLOAD_MIME: str | None = os.getenv("ALLOWED_UPLOAD_MIME")
+    # Matching / Fairness (INNOVA)
+    MATCH_ALPHA: float = float(os.getenv("MATCH_ALPHA", "0.5"))
+    MATCH_BETA: float = float(os.getenv("MATCH_BETA", "0.3"))
+    MATCH_GAMMA: float = float(os.getenv("MATCH_GAMMA", "0.15"))
+    MATCH_DELTA: float = float(os.getenv("MATCH_DELTA", "0.15"))
+    MATCH_TOP_K: int = int(os.getenv("MATCH_TOP_K", "10"))
+    FAIRNESS_WINDOW_DAYS: int = int(os.getenv("FAIRNESS_WINDOW_DAYS", "7"))
+    FAIRNESS_NEED_INDEX_JSON: str | None = os.getenv("FAIRNESS_NEED_INDEX_JSON")
+    FAIRNESS_MIN_QUOTA: float = float(os.getenv("FAIRNESS_MIN_QUOTA", "0.05"))
+    FAIRNESS_MAX_QUOTA: float = float(os.getenv("FAIRNESS_MAX_QUOTA", "0.5"))
     # Multi-DB names (modules)
     DB_PLUSBOOK: str | None = None
     DB_INNOVA: str | None = None

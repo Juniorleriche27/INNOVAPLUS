@@ -26,7 +26,9 @@ export default function RootLayout(props: { children: ReactNode }) {
 
           {/* Fixed sidebar on large screens aligned to container left */}
           <div className="hidden lg:block">
+            {/* Fixed sidebar: keep visible while body scrolls */}
             <Sidebar
+              className="z-20"
               style={{ position: "fixed", left: "calc((100vw - 1160px)/2 + 24px)", top: "7rem" }}
             />
           </div>

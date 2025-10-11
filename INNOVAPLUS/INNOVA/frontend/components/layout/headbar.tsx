@@ -4,6 +4,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { apiNotifications } from "@/lib/api";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
@@ -49,6 +50,7 @@ export default function Headbar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifCount, setNotifCount] = useState<number>(0);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: any; created_at: string; read_at?: string }>>([]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -78,13 +80,12 @@ export default function Headbar() {
 
   // Try to fetch notifications count if backend exposes it
   useEffect(() => {
-    const base = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "");
-    if (!base) return;
-    fetch(`${base}/notifications`, { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        const n = Array.isArray(data) ? data.length : (data?.count as number) || 0;
-        if (Number.isFinite(n)) setNotifCount(n as number);
+    const userId = "demo-user";
+    apiNotifications
+      .list(userId, true)
+      .then((items) => {
+        setNotifs(items);
+        setNotifCount(items.length);
       })
       .catch(() => void 0);
   }, []);
@@ -153,7 +154,18 @@ export default function Headbar() {
             {notifOpen && (
               <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-2 text-sm shadow-lg">
                 <p className="px-2 py-1 text-xs text-slate-500">Notifications</p>
-                <p className="px-2 py-2 text-xs text-slate-400">Connexion requise pour voir les alertes.</p>
+                {notifs.length === 0 ? (
+                  <p className="px-2 py-2 text-xs text-slate-400">Aucune notification.</p>
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto">
+                    {notifs.map((n) => (
+                      <li key={n.id} className="rounded-xl px-2 py-2 hover:bg-slate-50">
+                        <p className="text-xs font-semibold text-slate-700">{n.type}</p>
+                        <p className="text-xs text-slate-500">{n.payload?.title || n.payload?.message || "—"}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>

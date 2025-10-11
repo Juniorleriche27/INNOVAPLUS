@@ -1,5 +1,7 @@
 // innova-frontend/app/page.tsx
 import Link from "next/link";
+export const dynamic = "force-dynamic";
+import { apiProjects, apiContributors, apiTechnologies, type Project, type Contributor, type Technology } from "@/lib/api";
 
 const PROOFS = [
   {
@@ -97,7 +99,30 @@ const RAG_LOW_BADGE = `${BADGE_BASE} border border-amber-200 bg-amber-50 text-am
 const ACTION_PILL =
   "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:text-sky-600";
 
-export default function HomePage() {
+export default async function HomePage() {
+  let projects: Project[] = [];
+  let contributors: Contributor[] = [];
+  let technologies: Technology[] = [];
+  try {
+    [projects, contributors, technologies] = await Promise.all([
+      apiProjects.list().catch(() => []),
+      apiContributors.list().catch(() => []),
+      apiTechnologies.list().catch(() => []),
+    ]);
+  } catch {}
+
+  const publishedOrOpen = projects.filter((p) => (p.status || "").toLowerCase().includes("publish") || (p.status || "").toLowerCase().includes("open"));
+  const KPIS_DYNAMIC = [
+    { label: "Opportunités ouvertes", value: String(publishedOrOpen.length || projects.length || 0) },
+    { label: "Assignations cette semaine", value: "—" },
+    { label: "Taux d’acceptation", value: "—" },
+    { label: "Répartition par pays (équité)", value: "NeedIndex 0,41" },
+    { label: "Temps médian de matching", value: "—" },
+  ];
+
+  const firstProject = projects[0];
+  const SAMPLE_CHIPS = (technologies.slice(0, 3).map((t) => t.name).filter(Boolean) as string[]);
+
   return (
     <div className="space-y-16 pb-12">
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-sky-900/10">
@@ -225,7 +250,7 @@ export default function HomePage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
         <h2 className={SECTION_TITLE}>Indicateurs temps r\u00E9el</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          {KPI_METRICS.map((kpi) => (
+          {KPIS_DYNAMIC.map((kpi) => (
             <div key={kpi.label} className={KPI_CARD}>
               <p className="text-sm text-slate-500">{kpi.label}</p>
               <p className={`${KPI_VALUE} mt-2`}>{kpi.value}</p>
@@ -250,29 +275,27 @@ export default function HomePage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-slate-900">{SAMPLE_OPPORTUNITY.title}</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{firstProject?.title || firstProject?.name || SAMPLE_OPPORTUNITY.title}</h3>
               <span className={EQUITY_BADGE}>
                 \u00C9quit\u00E9 active <span className="text-xs text-slate-500">NeedIndex {SAMPLE_OPPORTUNITY.needIndex}</span>
               </span>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {SAMPLE_OPPORTUNITY.skills.map((skill) => (
-                <span key={skill} className={CHIP_CLASS}>
-                  {skill}
-                </span>
+              {(SAMPLE_CHIPS.length ? SAMPLE_CHIPS : SAMPLE_OPPORTUNITY.skills).map((skill) => (
+                <span key={skill} className={CHIP_CLASS}>{skill}</span>
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-600">
               <span>Pays : {SAMPLE_OPPORTUNITY.country}</span>
-              <span>Statut : {SAMPLE_OPPORTUNITY.status}</span>
+              <span>Statut : {(firstProject?.status as string) || SAMPLE_OPPORTUNITY.status}</span>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/opportunities/1" className="btn-secondary">
-                Voir le contexte
-              </Link>
-              <Link href="/opportunities/1" className="btn-primary">
-                Postuler
-              </Link>
+              <Link href={`/projects/${firstProject?.id || 1}`} className="btn-secondary">
+                 Voir le contexte
+               </Link>
+              <Link href={`/projects/${firstProject?.id || 1}`} className="btn-primary">
+                 Postuler
+               </Link>
             </div>
           </div>
 

@@ -84,3 +84,35 @@ export const apiProjects = {
   },
 };
 
+// Onboarding / profile
+export const apiMe = {
+  async upsertProfile(payload: { user_id: string; country?: string; skills?: string[]; goal?: string }) {
+    const res = await fetch(`${API_BASE}/me/profile`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    return json<{ ok: boolean }>(res);
+  },
+  async recommendations(user_id: string) {
+    const res = await fetch(`${API_BASE}/me/recommendations?user_id=${encodeURIComponent(user_id)}`, { cache: "no-store" });
+    return json<Array<{ id: string; title: string; country?: string; score: number; reasons: string[] }>>(res);
+  },
+};
+
+// Notifications
+export const apiNotifications = {
+  async list(user_id: string, unread_only = false) {
+    const url = `${API_BASE}/notifications?user_id=${encodeURIComponent(user_id)}${unread_only ? "&unread_only=1" : ""}`;
+    const res = await fetch(url, { cache: "no-store" });
+    return json<Array<{ id: string; type: string; payload: any; created_at: string; read_at?: string }>>(res);
+  },
+  async markRead(user_id: string, ids: string[]) {
+    const res = await fetch(`${API_BASE}/notifications/read?user_id=${encodeURIComponent(user_id)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ids) });
+    return json<{ ok: boolean }>(res);
+  },
+};
+
+// Metrics
+export const apiMetrics = {
+  async event(name: string, payload?: Record<string, unknown>, user_id?: string) {
+    const res = await fetch(`${API_BASE}/metrics/event`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, payload, user_id }) });
+    return json<{ ok: boolean }>(res);
+  },
+};

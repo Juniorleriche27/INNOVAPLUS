@@ -20,6 +20,11 @@ from app.routers.farmlink import router as farmlink_router
 from app.routers.sante import router as sante_router
 from app.routers.rag import router as rag_router
 from app.routers.innova_core import router as innova_core_router
+from app.routers.me import router as me_router
+from app.routers.notifications import router as notifications_router
+from app.routers.metrics import router as metrics_router
+from app.routers.emailer import router as email_router
+from app.routers.invite import router as invite_router
 from app.routers.opportunities import router as opportunities_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -86,6 +91,11 @@ app.include_router(rag_router)
 innova_api = APIRouter(prefix="/innova/api")
 innova_api.include_router(innova_core_router)
 innova_api.include_router(opportunities_router)
+innova_api.include_router(me_router)
+innova_api.include_router(notifications_router)
+innova_api.include_router(metrics_router)
+innova_api.include_router(email_router)
+innova_api.include_router(invite_router)
 app.include_router(innova_api)
 
 innova_rag = APIRouter(prefix="/innova")

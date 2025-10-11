@@ -48,6 +48,7 @@ export default function Headbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifCount, setNotifCount] = useState<number>(0);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -140,13 +141,22 @@ export default function Headbar() {
             <IconSearch className="h-4 w-4" />
           </button>
           {/* Notifications */}
-          <button
-            aria-label="Notifications"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
-          >
-            <IconBell className="h-4 w-4" />
-            {notifCount > 0 && <span className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white">{Math.min(notifCount, 9)}</span>}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setNotifOpen((v) => !v)}
+              aria-label="Notifications"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              <IconBell className="h-4 w-4" />
+              {notifCount > 0 && <span className="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white">{Math.min(notifCount, 9)}</span>}
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-2 text-sm shadow-lg">
+                <p className="px-2 py-1 text-xs text-slate-500">Notifications</p>
+                <p className="px-2 py-2 text-xs text-slate-400">Connexion requise pour voir les alertes.</p>
+              </div>
+            )}
+          </div>
           {/* Account */}
           <div className="relative">
             <button

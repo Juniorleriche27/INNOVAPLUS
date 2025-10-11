@@ -34,12 +34,28 @@ function IconChip(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconChat(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+function IconStore(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l1.5-3h15L21 7M5 7h14v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" />
+    </svg>
+  );
+}
 
 const WORKSPACE_LINKS = [
   { href: "/opportunities", label: "Opportunités", description: "Pipeline et statut" },
   { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique" },
   { href: "/talents", label: "Talents", description: "Profils et disponibilité" },
-  { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité" }
+  { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité" },
+  { href: "/meet", label: "INNOVA-MEET", description: "Réseau social intégré" },
+  { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles" },
 ];
 
 export default function Sidebar({ className }: { className?: string }) {
@@ -97,6 +113,8 @@ export default function Sidebar({ className }: { className?: string }) {
                   {link.href === "/skills" && <IconLayers className="h-4 w-4" />}
                   {link.href === "/talents" && <IconUsers className="h-4 w-4" />}
                   {link.href === "/engine" && <IconChip className="h-4 w-4" />}
+                  {link.href === "/meet" && <IconChat className="h-4 w-4" />}
+                  {link.href === "/marketplace" && <IconStore className="h-4 w-4" />}
                   <p className={clsx("text-sm font-semibold", collapsed && "text-[0.75rem]")}>{link.label}</p>
                 </div>
                 {!collapsed && <p className="text-xs text-slate-500">{link.description}</p>}

@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/opportunities", label: "Opportunités" },
-  { href: "/chat-laya", label: "Chat-LAYA" },
+  { href: "/chat-laya", label: "CHATLAYA" },
   { href: "/resources", label: "Ressources" },
   { href: "/about", label: "À propos" },
   { href: "/account", label: "Compte" }
@@ -19,7 +19,7 @@ export default function Headbar() {
   return (
     <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="container-shell flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-xs font-semibold uppercase tracking-[0.3em] text-white">
             IN
           </span>
@@ -29,7 +29,7 @@ export default function Headbar() {
               Moteur IA d’opportunités · Transparence · Équité · Impact
             </p>
           </div>
-        </div>
+        </Link>
 
         <nav className="flex flex-wrap items-center gap-2">
           {NAV_LINKS.map((link) => {
@@ -56,7 +56,7 @@ export default function Headbar() {
             Créer une opportunité
           </Link>
           <Link href="/chat-laya" className="btn-secondary">
-            Essayer Chat-LAYA
+            CHATLAYA
           </Link>
         </div>
       </div>

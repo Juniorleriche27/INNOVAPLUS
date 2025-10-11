@@ -270,7 +270,7 @@ export default function HomePage() {
               <Link href="/opportunities/1" className="btn-secondary">
                 Voir le contexte
               </Link>
-              <Link href="/opportunities/1/apply" className="btn-primary">
+              <Link href="/opportunities/1" className="btn-primary">
                 Postuler
               </Link>
             </div>

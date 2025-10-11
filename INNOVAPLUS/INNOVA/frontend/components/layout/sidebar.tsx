@@ -58,7 +58,7 @@ const WORKSPACE_LINKS = [
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles" },
 ];
 
-export default function Sidebar({ className }: { className?: string }) {
+export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -81,6 +81,7 @@ export default function Sidebar({ className }: { className?: string }) {
         collapsed ? "w-16" : "w-72",
         className
       )}
+      style={style}
     >
       <div className={clsx("flex w-full flex-col gap-3", collapsed && "items-center")}> 
         <div className={clsx("rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 p-5 text-white shadow-md shadow-sky-500/30", collapsed && "p-3 text-center")}> 

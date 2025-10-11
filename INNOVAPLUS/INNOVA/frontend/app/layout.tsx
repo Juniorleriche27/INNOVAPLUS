@@ -24,11 +24,17 @@ export default function RootLayout(props: { children: ReactNode }) {
         <div className="relative flex min-h-screen flex-col">
           <Headbar />
 
+          {/* Fixed sidebar on large screens aligned to container left */}
+          <div className="hidden lg:block">
+            <Sidebar
+              style={{ position: "fixed", left: "calc((100vw - 1160px)/2 + 24px)", top: "7rem" }}
+            />
+          </div>
+
           <div className="flex-1 bg-transparent">
             <div className="mx-auto flex h-full w-full max-w-7xl flex-col gap-6 px-4 pb-10 pt-6 sm:px-6 lg:flex-row lg:px-8">
-              <div className="hidden shrink-0 lg:block lg:self-start">
-                <Sidebar />
-              </div>
+              {/* Spacer to reserve horizontal space for fixed sidebar */}
+              <div className="hidden w-72 shrink-0 lg:block" />
 
               <div className="flex-1">
                 <main className="min-w-0 pb-10 lg:pb-0">{children}</main>

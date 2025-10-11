@@ -18,6 +18,13 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const access = request.cookies.get("innova_access");
 
+  // Redirect legacy /chat-laya to /chatlaya (permanent)
+  if (pathname === "/chat-laya" || pathname.startsWith("/chat-laya/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace("/chat-laya", "/chatlaya");
+    return NextResponse.redirect(url, 308);
+  }
+
   if (isProtectedPath(pathname) && !access) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
@@ -40,6 +47,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/chat-laya/:path*",
     "/projects/:path*",
     "/domains/:path*",
     "/contributors/:path*",

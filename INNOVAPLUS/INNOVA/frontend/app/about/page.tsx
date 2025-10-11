@@ -28,7 +28,7 @@ const PILLARS: Pillar[] = [
     title: "Connaissance et RAG",
     description:
       "Centraliser capital documentaire, rendre les retours accessibles via Chat-LAYA et industrialiser le suivi des projets.",
-    cta: { label: "Tester Chat-LAYA", href: "/chat-laya" },
+    cta: { label: "Tester CHATLAYA", href: "/chatlaya" },
   },
   {
     title: "Impact economique",

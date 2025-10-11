@@ -7,7 +7,7 @@ const PROTECTED_PATHS = [
   "/contributors",
   "/technologies",
   "/analytics",
-  "/chat-laya",
+  "/chatlaya",
 ];
 
 function isProtectedPath(pathname: string) {
@@ -45,7 +45,7 @@ export const config = {
     "/contributors/:path*",
     "/technologies/:path*",
     "/analytics/:path*",
-    "/chat-laya",
+    "/chatlaya",
     "/login",
     "/signup",
   ],

@@ -169,7 +169,7 @@ export default function Headbar() {
           <Link href="/opportunities/create" className="btn-primary hidden sm:inline-flex">
             Créer une opportunité
           </Link>
-          <Link href="/chat-laya" className="btn-secondary hidden lg:inline-flex">
+          <Link href="/chatlaya" className="btn-secondary hidden lg:inline-flex">
             CHATLAYA
           </Link>
           {/* Burger */}
@@ -233,7 +233,7 @@ export default function Headbar() {
               <Link href="/opportunities/create" onClick={() => setDrawerOpen(false)} className="btn-primary">
                 Créer une opportunité
               </Link>
-              <Link href="/chat-laya" onClick={() => setDrawerOpen(false)} className="btn-secondary">
+              <Link href="/chatlaya" onClick={() => setDrawerOpen(false)} className="btn-secondary">
                 CHATLAYA
               </Link>
             </div>

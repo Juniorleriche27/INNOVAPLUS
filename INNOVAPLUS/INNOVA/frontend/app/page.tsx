@@ -5,39 +5,39 @@ import { apiProjects, apiContributors, apiTechnologies, type Project, type Contr
 
 const PROOFS = [
   {
-    title: "D\u00E9tection des besoins (RAG)",
+    title: "Détection des besoins (RAG)",
     description:
-      "Ingestion automatique des signaux terrains et documents pour r\u00E9v\u00E9ler les besoins socio-\u00E9conomiques latents."
+      "Ingestion automatique des signaux terrains et documents pour révéler les besoins socio-économiques latents."
   },
   {
-    title: "Matching IA + \u00E9quit\u00E9 pays",
+    title: "Matching IA + équité pays",
     description:
-      "Algorithmes de recommandation \u00E9quilibr\u00E9s par quotas NeedIndex pour garantir une distribution juste."
+      "Algorithmes de recommandation équilibrés par quotas NeedIndex pour garantir une distribution juste."
   },
   {
-    title: "Impact mesurable en temps r\u00E9el",
+    title: "Impact mesurable en temps réel",
     description:
-      "Tableaux de bord continus sur les opportunit\u00E9s cr\u00E9\u00E9es, assign\u00E9es et l'impact sur l'emploi inclusif."
+      "Tableaux de bord continus sur les opportunités créées, assignées et l'impact sur l'emploi inclusif."
   }
 ];
 
 const HOW_IT_WORKS = [
-  { step: "01", title: "D\u00E9posez un besoin ou un document" },
-  { step: "02", title: "L\u2019IA g\u00E9n\u00E8re une opportunit\u00E9 structur\u00E9e" },
+  { step: "01", title: "Déposez un besoin ou un document" },
+  { step: "02", title: "L’IA génère une opportunité structurée" },
   { step: "03", title: "Matching des talents + quotas pays (NeedIndex)" },
-  { step: "04", title: "Attribution, suivi et am\u00E9lioration continue" }
+  { step: "04", title: "Attribution, suivi et amélioration continue" }
 ];
 
 const KPI_METRICS = [
-  { label: "Opportunit\u00E9s ouvertes", value: "128" },
+  { label: "Opportunités ouvertes", value: "128" },
   { label: "Assignations cette semaine", value: "42" },
-  { label: "Taux d\u2019acceptation", value: "87\u202F%" },
-  { label: "R\u00E9partition par pays (\u00E9quit\u00E9)", value: "NeedIndex 0,41" },
-  { label: "Temps m\u00E9dian de matching", value: "36 h" }
+  { label: "Taux d’acceptation", value: "87 %" },
+  { label: "Répartition par pays (équité)", value: "NeedIndex 0,41" },
+  { label: "Temps médian de matching", value: "36 h" }
 ];
 
 const SAMPLE_OPPORTUNITY = {
-  title: "D\u00E9ploiement data pour coop\u00E9ratives agricoles",
+  title: "Déploiement data pour coopératives agricoles",
   skills: ["Data engineering", "AgriTech", "Python"],
   country: "CI",
   status: "open",
@@ -46,22 +46,22 @@ const SAMPLE_OPPORTUNITY = {
 
 const OPPORTUNITY_DETAILS = {
   context:
-    "Analyse des ventes locales et recommandations de pricing pour 120 coop\u00E9ratives ivoiriennes. Donn\u00E9es issues du RAG terrain + rapports FAO.",
-  skills: ["Analyse de donn\u00E9es", "Pricing dynamique", "Agriculture durable"],
-  country: "C\u00F4te d\u2019Ivoire",
-  equity: "Quota pays actif (min 15\u202F% / max 35\u202F%)"
+    "Analyse des ventes locales et recommandations de pricing pour 120 coopératives ivoiriennes. Données issues du RAG terrain + rapports FAO.",
+  skills: ["Analyse de données", "Pricing dynamique", "Agriculture durable"],
+  country: "Côte d’Ivoire",
+  equity: "Quota pays actif (min 15 % / max 35 %)"
 };
 
 const TALENT_SAMPLE = {
   name: "Mariam Koffi",
   country: "CI",
-  skills: ["Data analyst", "Power BI", "SQL avanc\u00E9"],
+  skills: ["Data analyst", "Power BI", "SQL avancé"],
   reputation: "0,92",
   availability: "Disponible 3 j / semaine"
 };
 
 const GLOBAL_ACTIONS = [
-  "Cr\u00E9er une opportunit\u00E9",
+  "Créer une opportunité",
   "Trouver une mission",
   "Voir le contexte",
   "Postuler",
@@ -71,18 +71,18 @@ const GLOBAL_ACTIONS = [
   "Terminer"
 ];
 
-const FILTERS = ["Pays", "Comp\u00E9tence", "Statut", "R\u00E9cents"];
+const FILTERS = ["Pays", "Compétence", "Statut", "Récents"];
 
 const TOASTS = [
-  "Opportunit\u00E9 cr\u00E9\u00E9e avec succ\u00E8s",
-  "Candidature envoy\u00E9e",
-  "Attribution r\u00E9alis\u00E9e",
-  "Contexte insuffisant (ajoutez un document ou pr\u00E9cisez le besoin)"
+  "Opportunité créée avec succès",
+  "Candidature envoyée",
+  "Attribution réalisée",
+  "Contexte insuffisant (ajoutez un document ou précisez le besoin)"
 ];
 
 const EMPTY_STATES = [
-  "Aucune opportunit\u00E9 pour ces filtres. Essayez un autre pays ou une autre comp\u00E9tence.",
-  "Aucun talent correspondant. Ajustez les comp\u00E9tences requises."
+  "Aucune opportunité pour ces filtres. Essayez un autre pays ou une autre compétence.",
+  "Aucun talent correspondant. Ajustez les compétences requises."
 ];
 
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
@@ -135,19 +135,19 @@ export default async function HomePage() {
             </span>
             <div className="space-y-4">
               <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
-                INNOVA+ : l\u2019IA qui transforme les besoins en emplois
+                INNOVA+ : l’IA qui transforme les besoins en emplois
               </h1>
               <p className="text-lg leading-relaxed text-slate-600">
-                Notre moteur d\u2019IA d\u00E9tecte les besoins r\u00E9els, fait le matching des talents et r\u00E9partit \u00E9quitablement les
-                opportunit\u00E9s par pays.
+                Notre moteur d’IA détecte les besoins réels, fait le matching des talents et répartit équitablement les
+                opportunités par pays.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/opportunities/create" className="btn-primary">
-                Cr\u00E9er une opportunit\u00E9
+                Créer une opportunité
               </Link>
-              <Link href="/chat-laya" className="btn-secondary">
-                Essayer Chat-LAYA
+              <Link href="/chatlaya" className="btn-secondary">
+                CHATLAYA
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -169,23 +169,23 @@ export default async function HomePage() {
               <div className="flex items-baseline justify-between">
                 <p className="text-6xl font-black text-sky-600">0,82</p>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm shadow-sky-200">
-                  \u00C9quit\u00E9 globale
+                  Équité globale
                 </span>
               </div>
               <p className="text-sm text-slate-600">
-                R\u00E9partition \u00E9quitable active sur 24 pays. Mise \u00E0 jour chaque fois qu\u2019une opportunit\u00E9 est attribu\u00E9e.
+                Répartition équitable active sur 24 pays. Mise à jour chaque fois qu’une opportunité est attribuée.
               </p>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>CI \u00B7 C\u00F4te d\u2019Ivoire</span>
+                  <span>CI · Côte d’Ivoire</span>
                   <span className="text-sky-600">+2 blocs</span>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>SN \u00B7 S\u00E9n\u00E9gal</span>
+                  <span>SN · Sénégal</span>
                   <span className="text-sky-600">+1 bloc</span>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>FR \u00B7 France</span>
+                  <span>FR · France</span>
                   <span className="text-slate-400">quota max atteint</span>
                 </div>
               </div>
@@ -197,9 +197,9 @@ export default async function HomePage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className={SECTION_TITLE}>Comment \u00E7a marche</h2>
+            <h2 className={SECTION_TITLE}>Comment ça marche</h2>
             <p className={SECTION_SUBTITLE}>
-              Le cycle complet du besoin \u00E0 l\u2019impact, monitor\u00E9 par l\u2019IA et auditable \u00E0 chaque \u00E9tape.
+              Le cycle complet du besoin à l’impact, monitoré par l’IA et auditable à chaque étape.
             </p>
           </div>
             <Link href="/resources" className="btn-secondary">
@@ -213,7 +213,7 @@ export default async function HomePage() {
               key={item.step}
               className="rounded-3xl border border-slate-200 bg-white px-6 py-8 shadow shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">\u00C9tape {item.step}</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-600">Étape {item.step}</span>
               <p className="mt-4 text-base font-semibold text-slate-900">{item.title}</p>
             </div>
           ))}
@@ -222,33 +222,33 @@ export default async function HomePage() {
 
       <section className="grid gap-10 rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:grid-cols-[1.3fr_1fr] sm:p-12">
         <div className="space-y-4">
-          <h2 className={SECTION_TITLE}>Emploi infini par l\u2019IA, juste et mesurable</h2>
+          <h2 className={SECTION_TITLE}>Emploi infini par l’IA, juste et mesurable</h2>
           <p className="text-lg text-slate-600">
-            INNOVA+ convertit en continu les probl\u00E8mes locaux et les comp\u00E9tences disponibles en opportunit\u00E9s \u00E9conomiques,
-            avec une r\u00E9partition \u00E9quitable entre pays.
+            INNOVA+ convertit en continu les problèmes locaux et les compétences disponibles en opportunités économiques,
+            avec une répartition équitable entre pays.
           </p>
           <div className="rounded-2xl border border-sky-100 bg-sky-50/60 px-6 py-4 text-sky-700 shadow-inner shadow-sky-200/40">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">\u00C9quation</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Équation</p>
             <p className="mt-2 text-lg font-semibold text-sky-700">O = f(P, C, I, J)</p>
             <p className="mt-1 text-sm text-sky-600">
-              Opportunit\u00E9s = f(Probl\u00E8mes, Comp\u00E9tences, Intelligence, Justice)
+              Opportunités = f(Problèmes, Compétences, Intelligence, Justice)
             </p>
           </div>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-inner shadow-slate-200">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Transparence & \u00E9quit\u00E9</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Transparence & équité</h3>
           <p className="mt-4 text-sm leading-relaxed text-slate-600">
-            Chaque attribution d\u2019opportunit\u00E9 est audit\u00E9e par le moteur NeedIndex. Les quotas pays sont param\u00E9trables et
+            Chaque attribution d’opportunité est auditée par le moteur NeedIndex. Les quotas pays sont paramétrables et
             visibles par chaque membre du collectif.
           </p>
           <Link href="/equity" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-600">
-            Voir comment l\u2019IA d\u00E9cide \u2192
+            Voir comment l’IA décide →
           </Link>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
-        <h2 className={SECTION_TITLE}>Indicateurs temps r\u00E9el</h2>
+        <h2 className={SECTION_TITLE}>Indicateurs temps réel</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {KPIS_DYNAMIC.map((kpi) => (
             <div key={kpi.label} className={KPI_CARD}>
@@ -263,13 +263,13 @@ export default async function HomePage() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className={SECTION_TITLE}>Opportunit\u00E9s</h2>
+              <h2 className={SECTION_TITLE}>Opportunités</h2>
               <p className={SECTION_SUBTITLE}>
-                Gestion des opportunit\u00E9s ouvertes, assign\u00E9es et conclues par statut NeedIndex.
+                Gestion des opportunités ouvertes, assignées et conclues par statut NeedIndex.
               </p>
             </div>
             <Link href="/opportunities" className="btn-secondary">
-              Explorer les opportunit\u00E9s
+              Explorer les opportunités
             </Link>
           </div>
 
@@ -277,7 +277,7 @@ export default async function HomePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-lg font-semibold text-slate-900">{firstProject?.title || firstProject?.name || SAMPLE_OPPORTUNITY.title}</h3>
               <span className={EQUITY_BADGE}>
-                \u00C9quit\u00E9 active <span className="text-xs text-slate-500">NeedIndex {SAMPLE_OPPORTUNITY.needIndex}</span>
+                Équité active <span className="text-xs text-slate-500">NeedIndex {SAMPLE_OPPORTUNITY.needIndex}</span>
               </span>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -304,7 +304,7 @@ export default async function HomePage() {
             <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center">
               <input
                 type="search"
-                placeholder="Cherchez un besoin, une comp\u00E9tence ou un pays\u2026"
+                placeholder="Cherchez un besoin, une compétence ou un pays…"
                 className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm text-slate-600 shadow-sm focus:border-sky-400 focus:outline-none"
               />
               <div className="flex flex-wrap gap-2">
@@ -321,7 +321,7 @@ export default async function HomePage() {
         <div className="space-y-6">
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow shadow-slate-900/5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-              D\u00E9tail opportunit\u00E9
+              Détail opportunité
             </h3>
             <dl className="mt-4 space-y-4 text-sm text-slate-600">
               <div>
@@ -329,15 +329,15 @@ export default async function HomePage() {
                 <dd className="mt-1">{OPPORTUNITY_DETAILS.context}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-slate-800">Comp\u00E9tences requises</dt>
-                <dd className="mt-1">{OPPORTUNITY_DETAILS.skills.join(" \u00B7 ")}</dd>
+                <dt className="font-semibold text-slate-800">Compétences requises</dt>
+                <dd className="mt-1">{OPPORTUNITY_DETAILS.skills.join(" · ")}</dd>
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <dt className="font-semibold text-slate-800">Pays cible</dt>
                   <dd className="mt-1">{OPPORTUNITY_DETAILS.country}</dd>
                 </div>
-                <div className="text-xs font-semibold text-slate-500">R\u00E8gles d\u2019\u00E9quit\u00E9</div>
+                <div className="text-xs font-semibold text-slate-500">Règles d’équité</div>
               </div>
               <div>
                 <dd className="rounded-2xl bg-sky-50 px-4 py-3 text-xs font-semibold text-sky-700">
@@ -356,7 +356,7 @@ export default async function HomePage() {
                 type="button"
                 className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-300"
               >
-                Signaler un probl\u00E8me
+                Signaler un problème
               </button>
             </div>
           </div>
@@ -368,9 +368,9 @@ export default async function HomePage() {
             <div className="mt-4 space-y-3 text-sm text-slate-600">
               <p className="text-base font-semibold text-slate-900">{TALENT_SAMPLE.name}</p>
               <p>Pays : {TALENT_SAMPLE.country}</p>
-              <p>Comp\u00E9tences : {TALENT_SAMPLE.skills.join(", ")}</p>
-              <p>R\u00E9putation : {TALENT_SAMPLE.reputation}</p>
-              <p>Disponibilit\u00E9 : {TALENT_SAMPLE.availability}</p>
+              <p>Compétences : {TALENT_SAMPLE.skills.join(", ")}</p>
+              <p>Réputation : {TALENT_SAMPLE.reputation}</p>
+              <p>Disponibilité : {TALENT_SAMPLE.availability}</p>
             </div>
             <button
               type="button"
@@ -381,9 +381,9 @@ export default async function HomePage() {
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Badges & \u00E9tats RAG</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Badges & états RAG</h3>
             <div className="mt-4 space-y-3 text-xs text-slate-600">
-              <span className={RAG_OK_BADGE}>RAG \u2713 Contexte suffisant</span>
+              <span className={RAG_OK_BADGE}>RAG ✓ Contexte suffisant</span>
               <span className={`${RAG_LOW_BADGE} block max-w-max`}>RAG ! Contexte faible</span>
             </div>
           </div>
@@ -416,7 +416,7 @@ export default async function HomePage() {
           </ul>
         </div>
         <div className="rounded-3xl border border-amber-200 bg-amber-50/70 p-6">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">\u00C9tats vides</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">États vides</h3>
           <ul className="mt-4 space-y-3 text-sm text-amber-800">
             {EMPTY_STATES.map((state) => (
               <li key={state} className="rounded-2xl border border-amber-200 bg-white/80 px-4 py-3">
@@ -430,7 +430,7 @@ export default async function HomePage() {
       <section className="rounded-3xl border border-slate-200 bg-slate-50 px-8 py-10 text-center shadow-inner shadow-slate-200 sm:px-12">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">INNOVA+</p>
         <p className="mt-3 text-lg font-semibold text-slate-700">
-          Moteur IA d\u2019opportunit\u00E9s. Transparence \u00B7 \u00C9quit\u00E9 \u00B7 Impact.
+          Moteur IA d’opportunités. Transparence · Équité · Impact.
         </p>
       </section>
     </div>

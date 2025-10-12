@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.db.mongo import get_db
 
 router = APIRouter(tags=["me"])
 
@@ -23,23 +25,25 @@ class Recommendation(BaseModel):
     reasons: List[str]
 
 
-_profiles: dict[str, dict] = {}
+COLL_PROFILES = "me_profiles"
 
 
 @router.post("/me/profile")
-async def upsert_profile(body: OnboardingPayload):
-    _profiles[body.user_id] = {
+async def upsert_profile(body: OnboardingPayload, db: AsyncIOMotorDatabase = Depends(get_db)):
+    doc = {
+        "user_id": body.user_id,
         "country": body.country,
         "skills": body.skills,
         "goal": body.goal,
         "last_active_at": datetime.utcnow().isoformat(),
     }
+    await db[COLL_PROFILES].update_one({"user_id": body.user_id}, {"$set": doc}, upsert=True)
     return {"ok": True}
 
 
 @router.get("/me/recommendations", response_model=List[Recommendation])
-async def me_recommendations(user_id: str):
-    prof = _profiles.get(user_id, {})
+async def me_recommendations(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    prof = await db[COLL_PROFILES].find_one({"user_id": user_id}) or {}
     country = prof.get("country")
     skills = set([s.lower() for s in prof.get("skills", [])])
 
@@ -65,4 +69,3 @@ async def me_recommendations(user_id: str):
         out.append(Recommendation(id=s["id"], title=s["title"], country=s.get("country"), score=round(base, 2), reasons=rs))
     out.sort(key=lambda r: r.score, reverse=True)
     return out
-

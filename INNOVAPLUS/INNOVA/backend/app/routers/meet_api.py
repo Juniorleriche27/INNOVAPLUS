@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.db.mongo import get_db
 
 router = APIRouter(prefix="/meet", tags=["meet"])
 
@@ -46,7 +48,7 @@ class Post(BaseModel):
     created_at: str
 
 
-_posts: Dict[str, Post] = {}
+COLL_MEET = "meet_posts"
 
 
 def _new_id(prefix: str) -> str:
@@ -54,7 +56,7 @@ def _new_id(prefix: str) -> str:
 
 
 @router.post("/post", dependencies=[Depends(rate_limiter)])
-async def create_post(body: PostCreate):
+async def create_post(body: PostCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
     # Basic moderation: naive spam filter
     spam = ["http://", "https://", "buy now", "$$$"]
     text_l = body.text.lower()
@@ -62,18 +64,19 @@ async def create_post(body: PostCreate):
         raise HTTPException(status_code=400, detail="Spam detected")
     pid = _new_id("post")
     p = Post(id=pid, user_id=body.user_id, text=body.text, tags=body.tags, country=body.country, created_at=datetime.utcnow().isoformat())
-    _posts[pid] = p
+    await db[COLL_MEET].insert_one(p.dict())
     return {"post_id": pid}
 
 
 @router.get("/feed", dependencies=[Depends(rate_limiter)])
-async def feed(country: Optional[str] = None, tags: Optional[str] = None, limit: int = 20, offset: int = 0):
-    items = list(_posts.values())
+async def feed(country: Optional[str] = None, tags: Optional[str] = None, limit: int = 20, offset: int = 0, db: AsyncIOMotorDatabase = Depends(get_db)):
+    q: Dict = {}
     if country:
-        items = [x for x in items if (x.country or "").upper() == country.upper()]
+        q["country"] = country.upper()
+    cur = db[COLL_MEET].find(q).sort("created_at", -1).skip(offset).limit(limit)
+    items = [Post(**doc) async for doc in cur]
     if tags:
         want = {t.strip().lower() for t in tags.split(",") if t.strip()}
         items = [x for x in items if want.intersection({t.lower() for t in x.tags})]
-    items.sort(key=lambda x: x.created_at, reverse=True)
-    return {"items": [x.dict() for x in items[offset:offset+limit]], "total": len(items)}
-
+    total = await db[COLL_MEET].count_documents(q)
+    return {"items": [x.dict() for x in items], "total": total}

@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, validator
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.db.mongo import get_db
 
 router = APIRouter(prefix="/marketplace", tags=["marketplace"])
 
@@ -72,8 +74,9 @@ class Assignment(BaseModel):
     created_at: str
 
 
-_offers: Dict[str, Offer] = {}
-_assignments: Dict[str, Assignment] = {}
+COLL_OFFERS = "market_offers"
+COLL_ASSIGN = "assignments"
+COLL_AUDIT = "decisions_audit"
 
 
 def _new_id(prefix: str) -> str:
@@ -81,15 +84,21 @@ def _new_id(prefix: str) -> str:
 
 
 @router.post("/offers/create", dependencies=[Depends(rate_limiter)])
-async def create_offer(body: OfferCreate):
-    # Idempotence by title+owner in last minute
+async def create_offer(body: OfferCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
     now = datetime.utcnow().isoformat()
-    for o in _offers.values():
-        if o.owner_id == body.owner_id and o.title == body.title and (time.time() - _epoch(o.created_at)) < 60:
-            return {"offer_id": o.offer_id, "advice": _advice(body)}
+    # Idempotence: existing with same title/owner in last 60s
+    recent = datetime.utcnow().timestamp() - 60
+    cur = db[COLL_OFFERS].find({
+        "owner_id": body.owner_id,
+        "title": body.title,
+        "created_at": {"$gte": datetime.utcfromtimestamp(recent).isoformat()}
+    }).limit(1)
+    if await cur.to_list(1):
+        exist = (await cur.to_list(1))[0]
+        return {"offer_id": exist["offer_id"], "advice": _advice(body)}
 
     offer_id = _new_id("offer")
-    offer = Offer(
+    doc = Offer(
         offer_id=offer_id,
         title=body.title,
         skills=[s.strip() for s in (body.skills or []) if s.strip()],
@@ -99,8 +108,8 @@ async def create_offer(body: OfferCreate):
         owner_id=body.owner_id,
         status="live",
         created_at=now,
-    )
-    _offers[offer_id] = offer
+    ).dict()
+    await db[COLL_OFFERS].insert_one(doc)
     return {"offer_id": offer_id, "advice": _advice(body)}
 
 
@@ -128,55 +137,67 @@ def _epoch(iso: str) -> float:
 
 
 @router.get("/offers", dependencies=[Depends(rate_limiter)])
-async def list_offers(status: Optional[str] = None, country: Optional[str] = None, skills: Optional[str] = None, limit: int = 20, offset: int = 0):
-    items = list(_offers.values())
+async def list_offers(status: Optional[str] = None, country: Optional[str] = None, skills: Optional[str] = None, limit: int = 20, offset: int = 0, db: AsyncIOMotorDatabase = Depends(get_db)):
+    q: Dict = {}
     if status:
-        items = [o for o in items if o.status == status]
+        q["status"] = status
     if country:
-        items = [o for o in items if (o.country or "").upper() == country.upper()]
+        q["country"] = country.upper()
+    cur = db[COLL_OFFERS].find(q).sort("created_at", -1).skip(offset).limit(limit)
+    items = [Offer(**doc) async for doc in cur]
+    # skills filter in-memory for simplicity
     if skills:
         want = {s.strip().lower() for s in skills.split(",") if s.strip()}
         items = [o for o in items if want.intersection({s.lower() for s in o.skills})]
-    items.sort(key=lambda o: o.created_at, reverse=True)
-    return {"items": [o.dict() for o in items[offset:offset+limit]], "total": len(items)}
+    total = await db[COLL_OFFERS].count_documents(q)
+    return {"items": [o.dict() for o in items], "total": total}
 
 
 @router.post("/offers/apply", dependencies=[Depends(rate_limiter)])
-async def apply_offer(payload: ApplyPayload):
-    if payload.offer_id not in _offers:
+async def apply_offer(payload: ApplyPayload, db: AsyncIOMotorDatabase = Depends(get_db)):
+    if not await db[COLL_OFFERS].find_one({"offer_id": payload.offer_id}):
         raise HTTPException(status_code=404, detail="Offer not found")
-    # idempotent by (offer,user)
-    for a in _assignments.values():
-        if a.offer_id == payload.offer_id and a.user_id == payload.user_id:
-            return {"assignment_id": a.id}
+    exist = await db[COLL_ASSIGN].find_one({"offer_id": payload.offer_id, "user_id": payload.user_id})
+    if exist:
+        return {"assignment_id": exist["id"]}
     aid = _new_id("assign")
-    a = Assignment(id=aid, offer_id=payload.offer_id, user_id=payload.user_id, created_at=datetime.utcnow().isoformat())
-    _assignments[aid] = a
+    a = Assignment(id=aid, offer_id=payload.offer_id, user_id=payload.user_id, created_at=datetime.utcnow().isoformat()).dict()
+    await db[COLL_ASSIGN].insert_one(a)
+    # fairness audit placeholder
+    await db[COLL_AUDIT].insert_one({
+        "kind": "marketplace_apply",
+        "offer_id": payload.offer_id,
+        "user_id": payload.user_id,
+        "need_index": None,
+        "quota": {"target": None, "used": None},
+        "ts": datetime.utcnow().isoformat(),
+    })
     return {"assignment_id": aid}
 
 
 @router.post("/offers/close", dependencies=[Depends(rate_limiter)])
-async def close_offer(offer_id: str):
-    o = _offers.get(offer_id)
+async def close_offer(offer_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    o = await db[COLL_OFFERS].find_one({"offer_id": offer_id})
     if not o:
         raise HTTPException(status_code=404, detail="Offer not found")
-    o.status = "filled"
-    # in real life: sync assignments; here just return counts
-    count = sum(1 for a in _assignments.values() if a.offer_id == offer_id)
+    await db[COLL_OFFERS].update_one({"offer_id": offer_id}, {"$set": {"status": "filled"}})
+    count = await db[COLL_ASSIGN].count_documents({"offer_id": offer_id})
+    await db[COLL_AUDIT].insert_one({
+        "kind": "marketplace_close",
+        "offer_id": offer_id,
+        "ts": datetime.utcnow().isoformat(),
+        "assignments": count,
+    })
     return {"ok": True, "assignments": count}
 
 
 @router.get("/recommendations")
-async def market_recommendations(user_id: str):
-    # naive: reuse profile from me.py if present
-    try:
-        from .me import _profiles
-    except Exception:
-        _profiles = {}
-    prof = _profiles.get(user_id, {})
+async def market_recommendations(user_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    prof = await db["me_profiles"].find_one({"user_id": user_id}) or {}
     country = (prof.get("country") or "").upper()
     skills = {s.lower() for s in prof.get("skills", [])}
-    items = [o for o in _offers.values() if o.status == "live"]
+    cur = db[COLL_OFFERS].find({"status": "live"})
+    items = [Offer(**doc) async for doc in cur]
     scored = []
     for o in items:
         score = 0.4
@@ -200,4 +221,3 @@ async def market_recommendations(user_id: str):
         }
         for s in scored
     ]
-

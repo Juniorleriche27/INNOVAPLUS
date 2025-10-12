@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.db.mongo import get_db
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
@@ -15,21 +17,22 @@ class MetricEvent(BaseModel):
     ts: Optional[str] = None
 
 
-_events: List[MetricEvent] = []
+COLL_METRICS = "metrics_product"
 
 
 @router.post("/event")
-async def event(e: MetricEvent):
+async def event(e: MetricEvent, db: AsyncIOMotorDatabase = Depends(get_db)):
     e.ts = e.ts or datetime.utcnow().isoformat()
-    _events.append(e)
+    await db[COLL_METRICS].insert_one(e.dict())
     return {"ok": True}
 
 
 @router.get("/funnel")
-async def funnel(period: Optional[str] = "7d"):
+async def funnel(period: Optional[str] = "7d", db: AsyncIOMotorDatabase = Depends(get_db)):
     days = int(period.rstrip("d")) if period and period.endswith("d") else 7
     since = datetime.utcnow() - timedelta(days=days)
-    window = [e for e in _events if e.ts and datetime.fromisoformat(e.ts) >= since]
+    cur = db[COLL_METRICS].find({"ts": {"$gte": since.isoformat()}})
+    window = [MetricEvent(**doc) async for doc in cur]
     def c(name):
         return sum(1 for e in window if e.name == name)
     return {
@@ -41,4 +44,3 @@ async def funnel(period: Optional[str] = "7d"):
         "email_open": c("email_open"),
         "invite_sent": c("invite_sent"),
     }
-

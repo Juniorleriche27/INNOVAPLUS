@@ -56,6 +56,21 @@ async def on_startup():
             settings.EMBED_DIM = actual
     except Exception:
         pass
+    # Ensure indexes
+    try:
+        from app.db.mongo import get_db
+        from fastapi import Depends
+        db = await get_db()  # type: ignore
+        await db["market_offers"].create_index([("status", 1), ("created_at", -1)])
+        await db["market_offers"].create_index([("country", 1)])
+        await db["assignments"].create_index([("offer_id", 1), ("user_id", 1)], unique=True)
+        await db["meet_posts"].create_index([("country", 1), ("created_at", -1)])
+        await db["notifications"].create_index([("user_id", 1), ("created_at", -1)])
+        await db["metrics_product"].create_index([("name", 1), ("ts", -1)])
+        await db["me_profiles"].create_index([("user_id", 1)], unique=True)
+        await db["decisions_audit"].create_index([("offer_id", 1), ("ts", -1)])
+    except Exception:
+        pass
 
 
 @app.on_event("shutdown")

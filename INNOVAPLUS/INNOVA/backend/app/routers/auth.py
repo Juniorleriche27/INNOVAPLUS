@@ -10,7 +10,7 @@ from app.schemas.users import UserCreate, LoginPayload, AuthResponse, UserOut
 from app.utils.ids import serialize_id
 
 
-router = APIRouter(prefix="/api", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
@@ -52,4 +52,7 @@ async def me(current: dict = Depends(get_current_user)):
 async def logout():
     # Stateless JWT: nothing to revoke server-side here
     return {"message": "Déconnecté"}
-
+@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+async def signup_alias(payload: UserCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
+    # alias vers register pour compatibilité frontend
+    return await register(payload, db)

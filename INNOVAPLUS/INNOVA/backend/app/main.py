@@ -134,6 +134,7 @@ innova_api.include_router(notifications_router)
 innova_api.include_router(metrics_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)
+innova_api.include_router(auth_router)
 app.include_router(innova_api)
 
 innova_rag = APIRouter(prefix="/innova")

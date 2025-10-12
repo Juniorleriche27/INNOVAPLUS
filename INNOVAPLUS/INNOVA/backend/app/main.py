@@ -26,9 +26,12 @@ from app.routers.metrics import router as metrics_router
 from app.routers.emailer import router as email_router
 from app.routers.invite import router as invite_router
 from app.routers.opportunities import router as opportunities_router
+from app.routers.marketplace import router as market_router
+from app.routers.meet_api import router as meet_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
+import os
 
 
 app = FastAPI(title=settings.APP_NAME)
@@ -77,7 +80,23 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
     except Exception:
         ok = False
     uptime = int(__import__("time").time() - START_TIME)
-    return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": "ok" if ok else "fail", "uptime_s": uptime}
+    # env checks
+    required = [
+        # add critical keys here, optional in dev
+        # "MONGODB_URI",
+    ]
+    missing = [k for k in required if not os.getenv(k)]
+    vector_index = True  # placeholder
+    queue_depth = 0      # placeholder
+    return {
+        "status": "ok" if ok else "down",
+        "db": settings.DB_NAME,
+        "mongo": "ok" if ok else "fail",
+        "vector_index": vector_index,
+        "env_missing": missing,
+        "queue_depth": queue_depth,
+        "uptime_s": uptime,
+    }
 
 
 # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
@@ -91,6 +110,8 @@ app.include_router(rag_router)
 innova_api = APIRouter(prefix="/innova/api")
 innova_api.include_router(innova_core_router)
 innova_api.include_router(opportunities_router)
+innova_api.include_router(market_router)
+innova_api.include_router(meet_router)
 innova_api.include_router(me_router)
 innova_api.include_router(notifications_router)
 innova_api.include_router(metrics_router)

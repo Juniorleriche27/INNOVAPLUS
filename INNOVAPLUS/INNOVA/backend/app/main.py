@@ -96,6 +96,8 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
         "env_missing": missing,
         "queue_depth": queue_depth,
         "uptime_s": uptime,
+        "version": os.getenv("APP_VERSION", "1.0.0"),
+        "commit_sha": os.getenv("COMMIT_SHA", "unknown"),
     }
 
 

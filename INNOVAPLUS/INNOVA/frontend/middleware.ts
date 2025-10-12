@@ -42,7 +42,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  // Security headers
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  const csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; img-src 'self' https: data:; connect-src 'self' https:; frame-ancestors 'self';";
+  res.headers.set("Content-Security-Policy", csp);
+  return res;
 }
 
 export const config = {

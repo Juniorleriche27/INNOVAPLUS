@@ -90,6 +90,21 @@ export default function Headbar() {
       .catch(() => void 0);
   }, []);
 
+  // Mark notifications as read when opening the dropdown
+  useEffect(() => {
+    if (!notifOpen) return;
+    const unreadIds = notifs.filter((n) => !n.read_at).map((n) => n.id);
+    if (unreadIds.length === 0) return;
+    const userId = "demo-user";
+    apiNotifications
+      .markRead(userId, unreadIds)
+      .then(() => {
+        setNotifs((prev) => prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
+        setNotifCount(0);
+      })
+      .catch(() => void 0);
+  }, [notifOpen, notifs]);
+
   return (
     <header
       className={clsx(

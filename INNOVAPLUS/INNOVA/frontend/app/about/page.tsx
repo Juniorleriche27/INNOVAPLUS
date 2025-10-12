@@ -130,6 +130,50 @@ export default function AboutPage() {
             </p>
           </div>
         </div>
+  </section>
+
+      <section className="mb-8 grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-2">
+        <div>
+          <h2 className="text-lg font-semibold">Équation</h2>
+          <p className="mt-2 text-sm text-slate-700">O = f(P, C, I, J)</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Opportunités = f(Problèmes, Compétences, Intelligence, Justice). L’IA convertit des problèmes réels et des
+            compétences disponibles en opportunités distributives, mesurées et auditées.
+          </p>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">Comment ça marche</h2>
+          <ul className="mt-2 space-y-2">
+            <li className="rounded-2xl border border-slate-200 p-3"><p className="text-sm font-semibold">1. Besoin</p><p className="text-xs text-slate-600">Soumission d’un problème réel ou d’un document.</p></li>
+            <li className="rounded-2xl border border-slate-200 p-3"><p className="text-sm font-semibold">2. Opportunité</p><p className="text-xs text-slate-600">Structuration IA (contexte, objectifs, périmètre).</p></li>
+            <li className="rounded-2xl border border-slate-200 p-3"><p className="text-sm font-semibold">3. Matching + Équité</p><p className="text-xs text-slate-600">Compétences + NeedIndex (quotas min/max).</p></li>
+            <li className="rounded-2xl border border-slate-200 p-3"><p className="text-sm font-semibold">4. Attribution & Feedback</p><p className="text-xs text-slate-600">Attribution transparente et amélioration continue.</p></li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">Modules</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <a href="/chatlaya" className="rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:shadow"><p className="font-semibold">CHATLAYA</p><p className="text-sm text-slate-600">Copilote et RAG sur vos sources.</p></a>
+          <a href="/meet" className="rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:shadow"><p className="font-semibold">INNOVA-MEET</p><p className="text-sm text-slate-600">Fil d’opportunités et collaboration.</p></a>
+          <a href="/marketplace" className="rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:shadow"><p className="font-semibold">Marketplace</p><p className="text-sm text-slate-600">Offres, candidatures, attributions.</p></a>
+        </div>
+      </section>
+
+      <section className="mb-8 grid gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-2">
+        <div>
+          <h2 className="text-lg font-semibold">Transparence</h2>
+          <p className="mt-2 text-sm text-slate-600">Répartition NeedIndex + quotas min/max paramétrables. Décisions d’attribution auditées.<a href="/equity" className="ml-1 text-sky-600">En savoir plus</a>.</p>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold">Impact</h2>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Opportunités ouvertes</p><p className="text-base font-semibold text-sky-700">—</p></div>
+            <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Assignations</p><p className="text-base font-semibold text-sky-700">—</p></div>
+            <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Répartition par pays</p><p className="text-base font-semibold text-sky-700">NeedIndex</p></div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">

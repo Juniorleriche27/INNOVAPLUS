@@ -24,6 +24,22 @@ export function middleware(request: NextRequest) {
     url.pathname = pathname.replace("/chat-laya", "/chatlaya");
     return NextResponse.redirect(url, 308);
   }
+  // French aliases (rewrite to avoid 404 and keep 200)
+  if (pathname === "/opportunites") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/opportunities";
+    return NextResponse.rewrite(url);
+  }
+  if (pathname === "/a-propos") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/about";
+    return NextResponse.rewrite(url);
+  }
+  if (pathname === "/ressources") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/resources";
+    return NextResponse.rewrite(url);
+  }
 
   if (isProtectedPath(pathname) && !access) {
     const loginUrl = request.nextUrl.clone();
@@ -55,6 +71,9 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/chat-laya/:path*",
+    "/opportunites",
+    "/a-propos",
+    "/ressources",
     "/projects/:path*",
     "/domains/:path*",
     "/contributors/:path*",

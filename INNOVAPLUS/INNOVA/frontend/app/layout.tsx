@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   description: "Moteur IA d’opportunités. Transparence · Équité · Impact.",
   applicationName: "INNOVA+",
   manifest: "/manifest.webmanifest",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa"),
   openGraph: {
     title: "INNOVA+",
     description: "Moteur IA d’opportunités. Transparence · Équité · Impact.",

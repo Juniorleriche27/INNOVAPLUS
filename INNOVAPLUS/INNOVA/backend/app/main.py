@@ -19,7 +19,6 @@ from app.routers.pieagency import router as pieagency_router
 from app.routers.farmlink import router as farmlink_router
 from app.routers.sante import router as sante_router
 from app.routers.rag import router as rag_router
-from app.routers.innova_core import router as innova_core_router
 from app.routers.me import router as me_router
 from app.routers.notifications import router as notifications_router
 from app.routers.metrics import router as metrics_router

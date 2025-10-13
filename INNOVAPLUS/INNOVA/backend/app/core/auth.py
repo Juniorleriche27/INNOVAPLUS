@@ -10,23 +10,38 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+try:
+    import bcrypt as _bcrypt  # type: ignore
+    _HAS_BCRYPT = hasattr(_bcrypt, "__about__") or hasattr(_bcrypt, "__version__")
+except Exception:
+    _HAS_BCRYPT = False
+
+# Prefer bcrypt if usable; otherwise stick to PBKDF2 only
+pwd_context = CryptContext(
+    schemes=["bcrypt", "pbkdf2_sha256"] if _HAS_BCRYPT else ["pbkdf2_sha256"],
+    deprecated="auto",
+)
 _fallback_ctx = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
     try:
-        return pwd_context.hash(password)
+        if _HAS_BCRYPT:
+            return pwd_context.hash(password)
+        return _fallback_ctx.hash(password)
     except Exception:
-        # Fallback when bcrypt backend isn't available on target platform
+        # Fallback when hashing fails (e.g., bcrypt backend problem)
         return _fallback_ctx.hash(password)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     try:
-        return pwd_context.verify(plain, hashed)
+        if _HAS_BCRYPT:
+            return pwd_context.verify(plain, hashed)
+        # If bcrypt is not available, try PBKDF2 verification directly
+        return _fallback_ctx.verify(plain, hashed)
     except Exception:
-        # Verify against fallback scheme as well
+        # Last resort: PBKDF2
         try:
             return _fallback_ctx.verify(plain, hashed)
         except Exception:

@@ -21,7 +21,13 @@ export default function SignupPage() {
       const resp = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName || undefined }),
+        // Backend expects: name, email, password, role (user|coach)
+        body: JSON.stringify({
+          name: fullName || email.split("@")[0],
+          email,
+          password,
+          role: "user",
+        }),
       });
 
       const data = await resp.json().catch(() => ({}));
@@ -29,7 +35,7 @@ export default function SignupPage() {
         throw new Error(typeof data?.detail === "string" ? data.detail : "Impossible de creer le compte");
       }
 
-      setMessage("Compte cree. Verifie ta boite mail pour confirmer l inscription.");
+      setMessage("Compte créé. Bienvenue !");
       setEmail("");
       setPassword("");
       setFullName("");

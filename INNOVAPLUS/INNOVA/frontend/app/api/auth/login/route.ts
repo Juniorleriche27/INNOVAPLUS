@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").replace(/\/+$/, "");
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://innovaplus.onrender.com/innova/api"
+).replace(/\/+$/, "");
 
 if (!API_BASE) {
   console.warn("API base URL is not defined. Set NEXT_PUBLIC_API_URL or API_URL.");

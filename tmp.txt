@@ -1,0 +1,52 @@
+        <div className="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm shadow-slate-900/5">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+            Votre cadence
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold text-slate-900">
+            Une logique de travail centree sur la valeur
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Structurez vos cycles en trois etapes claires et gardez trace des apprentissages pour les projets suivants.
+          </p>
+          <div className="mt-6">
+            <WorkflowList items={WORKFLOW_ITEMS} />
+          </div>
+        </div>
+
+        <aside className="flex flex-col gap-6">
+          <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 p-6 text-slate-50 shadow-lg shadow-sky-500/25">
+            <h3 className="text-lg font-semibold">Activer votre intelligence collective</h3>
+            <p className="mt-2 text-sm text-sky-100">
+              Combinez les retours des experts, la memoire projet et les ressources externes directement dans Chat-LAYA.
+            </p>
+            <Link
+              href="/chat-laya"
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm transition hover:bg-sky-50"
+            >
+              Ouvrir Chat-LAYA
+            </Link>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200/70 bg-white p-6 shadow-sm shadow-slate-900/5">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+              Acces rapide
+            </p>
+            <ul className="mt-4 space-y-3 text-sm font-medium text-slate-700">
+              {QUICK_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="flex items-center justify-between rounded-2xl border border-transparent px-3 py-2 transition hover:border-sky-100 hover:bg-sky-50"
+                  >
+                    {link.label}
+                    <span aria-hidden="true" className="text-sky-400">&gt;</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+      </section>
+    </main>
+  );
+}

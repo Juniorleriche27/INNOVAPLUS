@@ -65,20 +65,28 @@ export default function Sidebar({ className, style }: { className?: string; styl
   useEffect(() => {
     const saved = localStorage.getItem("innova.sidebar.collapsed");
     setCollapsed(saved === "1");
+    // Initialize CSS var according to saved preference (only >= sm matters)
+    const root = document.documentElement;
+    const w = saved === "1" ? "72px" : undefined; // undefined lets media queries drive default
+    if (w) root.style.setProperty("--sidebar-w", w);
   }, []);
 
   function toggle() {
     const next = !collapsed;
     setCollapsed(next);
     localStorage.setItem("innova.sidebar.collapsed", next ? "1" : "0");
+    // Update CSS var so grid column adjusts instantly
+    document.documentElement.style.setProperty("--sidebar-w", next ? "72px" : "280px");
   }
 
   return (
     <aside
       className={clsx(
-        "sticky top-28 hidden shrink-0 rounded-3xl border border-slate-200 bg-white/95 p-3 shadow-lg shadow-slate-900/5 backdrop-blur lg:flex",
-        "max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain sidebar-scroll",
-        collapsed ? "w-16" : "w-72",
+        // Sticky, full-height column with internal scroll
+        "sticky top-16 shrink-0 rounded-none border-r border-slate-200 bg-white/95 p-3 shadow-none backdrop-blur",
+        "h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain sidebar-scroll",
+        // Width driven by CSS var to sync with grid column
+        collapsed ? "w-[72px]" : "w-[280px]",
         className
       )}
       style={style}

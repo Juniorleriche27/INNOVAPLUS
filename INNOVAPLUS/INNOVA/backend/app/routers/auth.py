@@ -17,7 +17,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(payload: UserCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
     existing = await db["users"].find_one({"email": payload.email})
     if existing:
-        raise HTTPException(status_code=422, detail="Email already used")
+        raise HTTPException(status_code=409, detail={"code": "EMAIL_EXISTS", "detail": "Email already used"})
     user_doc = {
         "name": payload.name,
         "email": payload.email,

@@ -193,7 +193,7 @@ export default function Headbar() {
               </div>
             )}
           </div>
-          {/* Account */}
+          {/* Auth controls */} {loggedIn ? (
           <div className="relative">
             <button
               onClick={() => setAccountOpen((v) => !v)}
@@ -211,6 +211,12 @@ export default function Headbar() {
               </div>
             )}
           </div>
+          ) : (
+            <>
+              <Link href="/login" className="btn-secondary hidden sm:inline-flex">Se connecter</Link>
+              <Link href="/signup" className="btn-primary hidden sm:inline-flex">Cr�er un compte</Link>
+            </>
+          )}
           {/* CTA */}
           <Link href="/opportunities/create" className="btn-primary hidden sm:inline-flex">
             Créer une opportunité

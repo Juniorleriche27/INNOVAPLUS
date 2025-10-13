@@ -27,6 +27,11 @@ function extractMessage(data: unknown, fallback: string): string {
 }
 
 export async function POST(req: Request) {
+  // If already authenticated, block signup to avoid weird states
+  const jar = cookies();
+  if (jar.get("innova_access")) {
+    return NextResponse.json({ code: "ALREADY_AUTHENTICATED", detail: "Vous êtes déjà connecté" }, { status: 401 });
+  }
   const body = await req.json().catch(() => ({}));
   const response = await fetch(`${API_BASE}/auth/signup`, {
     method: "POST",

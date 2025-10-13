@@ -58,6 +58,13 @@ export async function POST(req: Request) {
       maxAge,
       path: "/",
     });
+    jar.set("innova_logged_in", "1", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "lax",
+      maxAge,
+      path: "/",
+    });
   }
   return NextResponse.json({ user: parsed.user ?? null, id: parsed.id ?? null }, { status: 201 });
 }

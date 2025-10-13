@@ -66,6 +66,14 @@ export async function POST(req: Request) {
       maxAge,
       path: "/",
     });
+    // Non-sensitive flag for client-side UI state (no token exposed)
+    cookieStore.set("innova_logged_in", "1", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "lax",
+      maxAge,
+      path: "/",
+    });
   }
 
   if (refreshToken) {

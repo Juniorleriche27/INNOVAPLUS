@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -47,6 +49,8 @@ export default function SignupPage() {
       }
 
       setMessage("Compte créé. Bienvenue !");
+      // Redirection vers l'onboarding
+      setTimeout(() => router.replace("/onboarding"), 400);
       setEmail("");
       setPassword("");
       setFullName("");

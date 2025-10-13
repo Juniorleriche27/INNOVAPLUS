@@ -5,5 +5,6 @@ export async function POST() {
   const store = cookies();
   store.delete("innova_access");
   store.delete("innova_refresh");
+  store.set("innova_logged_in", "0", { httpOnly: false, maxAge: 1, path: "/" });
   return NextResponse.json({ ok: true });
 }

@@ -45,6 +45,7 @@ function IconClose(props: React.SVGProps<SVGSVGElement>) {
 export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -57,6 +58,14 @@ export default function Headbar() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Light login flag via non-HTTPOnly cookie
+  useEffect(() => {
+    const hasFlag = () => typeof document !== "undefined" && /(?:^|; )innova_logged_in=1/.test(document.cookie);
+    setLoggedIn(hasFlag());
+    const t = setInterval(() => setLoggedIn(hasFlag()), 3000);
+    return () => clearInterval(t);
   }, []);
 
   // Keyboard shortcut: '/' opens search (except when typing in inputs)
@@ -198,7 +207,7 @@ export default function Headbar() {
               <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 text-sm shadow-lg shadow-slate-900/10">
                 <Link className="block rounded-xl px-3 py-2 hover:bg-slate-50" href="/account">Profil</Link>
                 <Link className="block rounded-xl px-3 py-2 hover:bg-slate-50" href="/opportunities">Mes opportunités</Link>
-                <button className="block w-full rounded-xl px-3 py-2 text-left text-red-600 hover:bg-red-50">Déconnexion</button>
+                <button onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } finally { setAccountOpen(false); location.href = '/'; } }} className="block w-full rounded-xl px-3 py-2 text-left text-red-600 hover:bg-red-50">Déconnexion</button>
               </div>
             )}
           </div>
@@ -280,3 +289,5 @@ export default function Headbar() {
     </header>
   );
 }
+
+

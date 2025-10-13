@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").replace(/\/+$/, "");
@@ -5,6 +6,10 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").
 type SignupSuccess = {
   user?: unknown;
   id?: string;
+  token?: string;
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
 };
 
 type ApiError = {
@@ -37,12 +42,22 @@ export async function POST(req: Request) {
   }
 
   if (!response.ok) {
-    return NextResponse.json(
-      { detail: extractMessage(data, "Impossible de creer le compte") },
-      { status: response.status }
-    );
+    const msg = extractMessage(data, "Impossible de creer le compte");
+    return NextResponse.json({ detail: msg }, { status: response.status });
   }
 
   const parsed = (data ?? {}) as SignupSuccess;
+  const access = parsed.token || parsed.access_token;
+  const maxAge = Math.max(60, Math.min(parsed.expires_in ?? 3600, 60 * 60 * 24 * 30));
+  if (access) {
+    const jar = cookies();
+    jar.set("innova_access", access, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "lax",
+      maxAge,
+      path: "/",
+    });
+  }
   return NextResponse.json({ user: parsed.user ?? null, id: parsed.id ?? null }, { status: 201 });
 }

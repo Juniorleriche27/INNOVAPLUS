@@ -30,9 +30,20 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await resp.json().catch(() => ({}));
+      const data = await resp.json().catch(() => ({} as any));
       if (!resp.ok) {
-        throw new Error(typeof data?.detail === "string" ? data.detail : "Impossible de creer le compte");
+        const s = resp.status;
+        const msg = typeof (data as any)?.detail === "string" ? (data as any).detail : undefined;
+        if (s === 409 || (msg && /already used|exists|existe/i.test(msg))) {
+          throw new Error("Cet e-mail est déjà utilisé.");
+        }
+        if (s === 400 || s === 422) {
+          throw new Error(msg || "Données invalides (email ou mot de passe)");
+        }
+        if (s === 429) {
+          throw new Error("Trop de tentatives, réessayez dans 1 minute.");
+        }
+        throw new Error(msg || "Problème serveur, réessayez.");
       }
 
       setMessage("Compte créé. Bienvenue !");

@@ -37,7 +37,14 @@ import os
 app = FastAPI(title=settings.APP_NAME)
 
 origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "*").split(",") if o.strip()]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"],)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins if origins else ["https://innovaplus.africa"],
+    allow_origin_regex=r"https://.*\.vercel\.app$",
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 
 @app.on_event("startup")

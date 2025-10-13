@@ -6,6 +6,15 @@ const API_BASE =
   (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "") ||
   "https://innova-1-v3ab.onrender.com";
 
+if (typeof window !== "undefined") {
+  // Log once in browser to verify config in prod
+  if (!(window as any).__innova_api_logged) {
+    (window as any).__innova_api_logged = true;
+    // eslint-disable-next-line no-console
+    console.log("INNOVA API_BASE:", API_BASE);
+  }
+}
+
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");

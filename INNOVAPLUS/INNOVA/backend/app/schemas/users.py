@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
+from pydantic import AliasChoices
 
 
 class UserCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
+    # Accept name from multiple keys: name | full_name | fullName
+    name: str = Field(
+        ..., min_length=1, max_length=255, validation_alias=AliasChoices("name", "full_name", "fullName")
+    )
     email: EmailStr
     password: str = Field(..., min_length=6)
     role: str = Field(..., pattern=r"^(user|coach)$")
@@ -30,4 +34,3 @@ class LoginPayload(BaseModel):
 class AuthResponse(BaseModel):
     user: UserOut
     token: str
-

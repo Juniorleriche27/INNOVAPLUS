@@ -132,7 +132,8 @@ app.include_router(rag_router)
 
 # Mount module-prefixed routes
 innova_api = APIRouter(prefix="/innova/api")
-innova_api.include_router(innova_core_router)
+# Legacy INNOVA core lists (domains/contributors/technologies) disabled
+# innova_api.include_router(innova_core_router)
 innova_api.include_router(opportunities_router)
 innova_api.include_router(market_router)
 innova_api.include_router(meet_router)

@@ -61,37 +61,7 @@ export type Project = {
   created_at?: string | null;
 };
 
-export const apiDomains = {
-  async list(): Promise<Domain[]> {
-    const res = await fetch(`${API_BASE}/domains`, { cache: "no-store" });
-    return json<Domain[]>(res);
-  },
-};
-
-export const apiContributors = {
-  async list(): Promise<Contributor[]> {
-    const res = await fetch(`${API_BASE}/contributors`, { cache: "no-store" });
-    return json<Contributor[]>(res);
-  },
-};
-
-export const apiTechnologies = {
-  async list(): Promise<Technology[]> {
-    const res = await fetch(`${API_BASE}/technologies`, { cache: "no-store" });
-    return json<Technology[]>(res);
-  },
-};
-
-export const apiProjects = {
-  async list(): Promise<Project[]> {
-    const res = await fetch(`${API_BASE}/projects`, { cache: "no-store" });
-    return json<Project[]>(res);
-  },
-  async get(id: string): Promise<Project> {
-    const res = await fetch(`${API_BASE}/projects/${id}`, { cache: "no-store" });
-    return json<Project>(res);
-  },
-};
+// Legacy endpoints removed: domains, contributors, technologies, projects
 
 // Onboarding / profile
 export const apiMe = {

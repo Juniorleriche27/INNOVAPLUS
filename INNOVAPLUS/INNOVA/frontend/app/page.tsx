@@ -1,7 +1,11 @@
 // innova-frontend/app/page.tsx
 import Link from "next/link";
 export const dynamic = "force-dynamic";
-import { apiProjects, apiContributors, apiTechnologies, type Project, type Contributor, type Technology } from "@/lib/api";
+// Deprecated data sources (projects/contributors/technologies) removed from runtime
+// Keep types locally if needed, but do not call the legacy endpoints anymore.
+type Project = { id: string; name: string; status?: string | null };
+type Contributor = { id: string; name?: string | null };
+type Technology = { id: string; name?: string | null };
 
 const PROOFS = [
   {
@@ -100,16 +104,10 @@ const ACTION_PILL =
   "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:text-sky-600";
 
 export default async function HomePage() {
-  let projects: Project[] = [];
-  let contributors: Contributor[] = [];
-  let technologies: Technology[] = [];
-  try {
-    [projects, contributors, technologies] = await Promise.all([
-      apiProjects.list().catch(() => []),
-      apiContributors.list().catch(() => []),
-      apiTechnologies.list().catch(() => []),
-    ]);
-  } catch {}
+  // Do not call legacy endpoints. Initialize to empty arrays.
+  const projects: Project[] = [];
+  const contributors: Contributor[] = [];
+  const technologies: Technology[] = [];
 
   const publishedOrOpen = projects.filter((p) => (p.status || "").toLowerCase().includes("publish") || (p.status || "").toLowerCase().includes("open"));
   const KPIS_DYNAMIC = [

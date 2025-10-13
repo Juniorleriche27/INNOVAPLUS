@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PROTECTED_PATHS = [
-  "/projects",
-  "/domains",
-  "/contributors",
-  "/technologies",
   "/analytics",
   "/chatlaya",
 ];
@@ -74,10 +70,6 @@ export const config = {
     "/opportunites",
     "/a-propos",
     "/ressources",
-    "/projects/:path*",
-    "/domains/:path*",
-    "/contributors/:path*",
-    "/technologies/:path*",
     "/analytics/:path*",
     "/chatlaya",
     "/login",

@@ -18,18 +18,8 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 /** Types partagés */
 export type UUID = string;
 
-export type Project = {
-  id: UUID; name: string; slug: string;
-  title?: string | null;
-  description?: string | null;
-  domain_id?: UUID | null;
-  repo_url?: string | null;
-  live_url?: string | null;
-  logo_url?: string | null;
-  status?: "draft" | "published" | "archived" | null;
-  live?: string | null;
-  repo?: string | null;
-};
+// Legacy entities (removed)
+export type Project = { id: UUID; name: string; slug: string };
 
 export type Domain = {
   id: UUID;
@@ -57,18 +47,4 @@ export type Technology = {
 };
 
 /** Endpoints */
-export const apiProjects = {
-  list: () => api<Project[]>("/projects"),
-};
-
-export const apiDomains = {
-  list: () => api<Domain[]>("/domains"),
-};
-
-export const apiContributors = {
-  list: () => api<Contributor[]>("/contributors"),
-};
-
-export const apiTechnologies = {
-  list: () => api<Technology[]>("/technologies"),
-};
+// Legacy endpoints removed: projects/contributors/technologies/domains

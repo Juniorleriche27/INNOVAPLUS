@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { FormEvent, useState } from "react";
 
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect") || "/";
+  const { refresh } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +33,7 @@ export default function LoginClient() {
         throw new Error(typeof (data as any)?.detail === "string" ? (data as any).detail : "Email ou mot de passe invalide");
       }
 
+      await refresh();
       router.replace(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -107,4 +110,3 @@ export default function LoginClient() {
     </main>
   );
 }
-

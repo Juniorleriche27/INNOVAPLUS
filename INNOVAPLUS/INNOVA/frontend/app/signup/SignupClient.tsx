@@ -4,7 +4,10 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+
 export default function SignupClient() {
+  const { refresh } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,7 +54,8 @@ export default function SignupClient() {
       }
 
       setMessage("Compte créé. Bienvenue !");
-      setTimeout(() => router.replace("/onboarding"), 400);
+      await refresh();
+      setTimeout(() => router.replace("/onboarding"), 300);
       setEmail("");
       setPassword("");
       setFullName("");
@@ -145,4 +149,5 @@ export default function SignupClient() {
     </main>
   );
 }
+
 

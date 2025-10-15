@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
@@ -45,7 +46,7 @@ function IconClose(props: React.SVGProps<SVGSVGElement>) {
 export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { user } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -60,13 +61,7 @@ export default function Headbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Light login flag via non-HTTPOnly cookie
-  useEffect(() => {
-    const hasFlag = () => typeof document !== "undefined" && /(?:^|; )innova_logged_in=1/.test(document.cookie);
-    setLoggedIn(hasFlag());
-    const t = setInterval(() => setLoggedIn(hasFlag()), 3000);
-    return () => clearInterval(t);
-  }, []);
+  // Auth state now comes from context
 
   // Keyboard shortcut: '/' opens search (except when typing in inputs)
   useEffect(() => {
@@ -193,7 +188,7 @@ export default function Headbar() {
               </div>
             )}
           </div>
-          {/* Auth controls */} {loggedIn ? (
+          {/* Auth controls */} {user ? (
           <div className="relative">
             <button
               onClick={() => setAccountOpen((v) => !v)}
@@ -214,7 +209,7 @@ export default function Headbar() {
           ) : (
             <>
               <Link href="/login" className="btn-secondary hidden sm:inline-flex">Se connecter</Link>
-              <Link href="/signup" className="btn-primary hidden sm:inline-flex">Cr�er un compte</Link>
+              <Link href="/signup" className="btn-primary hidden sm:inline-flex">Créer un compte</Link>
             </>
           )}
           {/* CTA */}

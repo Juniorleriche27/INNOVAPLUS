@@ -56,6 +56,12 @@ export async function POST(req: Request) {
   const parsed = (data ?? {}) as SignupSuccess;
   const access = parsed.token || parsed.access_token;
   const maxAge = Math.max(60, Math.min(parsed.expires_in ?? 3600, 60 * 60 * 24 * 30));
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
+  let domain: string | undefined;
+  try {
+    const host = new URL(site).hostname;
+    if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
+  } catch {}
   if (access) {
     const jar = cookies();
     jar.set("innova_access", access, {
@@ -64,6 +70,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge,
       path: "/",
+      ...(domain ? { domain } : {}),
     });
     jar.set("innova_logged_in", "1", {
       httpOnly: false,
@@ -71,6 +78,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge,
       path: "/",
+      ...(domain ? { domain } : {}),
     });
   }
   return NextResponse.json({ user: parsed.user ?? null, id: parsed.id ?? null }, { status: 201 });

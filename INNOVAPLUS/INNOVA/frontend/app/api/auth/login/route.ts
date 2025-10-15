@@ -55,7 +55,18 @@ export async function POST(req: Request) {
 
   const parsed = (data ?? {}) as LoginSuccess;
   const cookieStore = cookies();
-  const accessToken = typeof parsed.access_token === "string" ? parsed.access_token : undefined;
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
+  let domain: string | undefined;
+  try {
+    const host = new URL(site).hostname;
+    if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
+  } catch {}
+  const accessToken =
+    typeof (parsed as any).access_token === "string"
+      ? (parsed as any).access_token
+      : typeof (parsed as any).token === "string"
+      ? (parsed as any).token
+      : undefined;
   const refreshToken = typeof parsed.refresh_token === "string" ? parsed.refresh_token : undefined;
   const expiresIn = typeof parsed.expires_in === "number" ? parsed.expires_in : 3600;
   const maxAge = Math.max(60, Math.min(expiresIn, 60 * 60 * 24 * 30));
@@ -67,6 +78,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge,
       path: "/",
+      ...(domain ? { domain } : {}),
     });
     // Non-sensitive flag for client-side UI state (no token exposed)
     cookieStore.set("innova_logged_in", "1", {
@@ -75,6 +87,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge,
       path: "/",
+      ...(domain ? { domain } : {}),
     });
   }
 
@@ -85,6 +98,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 30,
       path: "/",
+      ...(domain ? { domain } : {}),
     });
   }
 

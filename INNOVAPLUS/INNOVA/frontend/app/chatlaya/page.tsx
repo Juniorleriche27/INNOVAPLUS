@@ -39,17 +39,6 @@ type Thread = {
 type IconProps = SVGProps<SVGSVGElement>;
 
 /** Utils */
-const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const errorMessage = (error: unknown) => {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return "Erreur inconnue";
-  }
-};
-
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 /** Icons */
@@ -152,7 +141,6 @@ export default function ChatLayaPage() {
   const [prompt, setPrompt] = useState("");
   const [thinking, setThinking] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [contextPanelOpen, setContextPanelOpen] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -164,6 +152,16 @@ export default function ChatLayaPage() {
   // Current thread data
   const currentThreadData = threads.find(t => t.id === currentThread);
   const currentTurns = turns.filter(t => t.role === "user" || t.role === "assistant");
+
+  // Auto-collapse main sidebar when entering CHATLAYA
+  useEffect(() => {
+    // Force collapse of main sidebar by setting CSS variable
+    document.documentElement.style.setProperty('--sidebar-w', '0px');
+    return () => {
+      // Restore sidebar width when leaving
+      document.documentElement.style.setProperty('--sidebar-w', '280px');
+    };
+  }, []);
 
   // Auto-scroll
   useEffect(() => {
@@ -290,7 +288,7 @@ export default function ChatLayaPage() {
       const errorTurn: ChatTurn = {
         id: generateId(),
         role: "assistant",
-        text: `Erreur: ${errorMessage(error)}`,
+        text: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
         timestamp: Date.now()
       };
       setTurns(prev => [...prev, errorTurn]);
@@ -310,7 +308,7 @@ export default function ChatLayaPage() {
       const resp = await fetch(`${API}/documents`, { method: "POST", body: form });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     } catch (error) {
-      setUploadErr(errorMessage(error));
+      setUploadErr(error instanceof Error ? error.message : 'Erreur inconnue');
     } finally {
       setUploading(false);
     }
@@ -343,7 +341,7 @@ export default function ChatLayaPage() {
   }, [threads, searchQuery]);
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-slate-50 w-full">
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} flex flex-col border-r border-slate-200 bg-white transition-all duration-200`}>
         {/* Sidebar Header */}
@@ -446,8 +444,8 @@ export default function ChatLayaPage() {
         )}
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Chat Area - Full Width */}
+      <div className="flex-1 flex flex-col w-full">
         {/* Chat Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
           <div className="flex items-center gap-3">
@@ -456,13 +454,6 @@ export default function ChatLayaPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setContextPanelOpen(!contextPanelOpen)}
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-              title={contextPanelOpen ? "Masquer le contexte" : "Afficher le contexte"}
-            >
-              <IconSearch className="h-4 w-4" />
-            </button>
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-600 text-white text-sm font-medium cursor-pointer hover:bg-sky-700 transition-colors">
               <IconUpload className="h-4 w-4" />
               {uploading ? "Import..." : "Uploader"}
@@ -576,59 +567,6 @@ export default function ChatLayaPage() {
           </div>
         </div>
       </div>
-
-      {/* Context Panel */}
-      {contextPanelOpen && (
-        <div className="w-80 border-l border-slate-200 bg-white flex flex-col">
-          <div className="p-4 border-b border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900">Contexte RAG</h3>
-          </div>
-          <div className="flex-1 p-4">
-            <div className="space-y-4">
-              <div className="text-sm text-slate-500">
-                Sources utilisées dans la conversation actuelle
-              </div>
-              {currentTurns.some(t => t.sources && t.sources.length > 0) ? (
-                <div className="space-y-3">
-                  {currentTurns
-                    .filter(t => t.sources && t.sources.length > 0)
-                    .flatMap(t => t.sources!)
-                    .slice(0, 5)
-                    .map((source, i) => (
-                      <div key={i} className="p-3 rounded-lg border border-slate-200 bg-slate-50">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-slate-900 truncate">
-                              {source.payload?.title || "Source"}
-                            </h4>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Score: {(source.score * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                          {source.payload?.url && (
-                            <a
-                              href={String(source.payload.url)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sky-600 hover:text-sky-700 text-xs"
-                            >
-                              Ouvrir
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 py-8">
-                  <IconSearch className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                  <p className="text-sm">Aucune source utilisée</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -654,24 +592,42 @@ function MessageBubble({
           {turn.text}
         </div>
         
+        {/* Sources integrated in chat */}
         {turn.sources && turn.sources.length > 0 && (
           <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${
             isUser 
               ? "bg-white/20 text-white" 
               : "bg-slate-50 text-slate-600"
           }`}>
-            <div className="font-medium mb-2">Sources utilisées:</div>
-            <div className="space-y-1">
+            <div className="font-medium mb-2">📚 Sources utilisées:</div>
+            <div className="space-y-2">
               {turn.sources.slice(0, 3).map((source, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="truncate">
-                    {source.payload?.title || "Source"}
-                  </span>
-                  <span className="text-xs opacity-75">
-                    {(source.score * 100).toFixed(0)}%
-                  </span>
+                <div key={i} className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">
+                      {source.payload?.title || "Source"}
+                    </div>
+                    <div className="text-xs opacity-75 mt-1">
+                      Score: {(source.score * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                  {source.payload?.url && (
+                    <a
+                      href={String(source.payload.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sky-600 hover:text-sky-700 text-xs underline"
+                    >
+                      Ouvrir
+                    </a>
+                  )}
                 </div>
               ))}
+              {turn.sources.length > 3 && (
+                <div className="text-xs opacity-75">
+                  +{turn.sources.length - 3} autres sources
+                </div>
+              )}
             </div>
           </div>
         )}

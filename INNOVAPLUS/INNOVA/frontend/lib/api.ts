@@ -1,10 +1,10 @@
 // innova-frontend/lib/api.ts
 
 // Base URL du BACKEND (Render). Priorité:
-// NEXT_PUBLIC_API_URL > NEXT_PUBLIC_CHATLAYA_URL > valeur par défaut
+// NEXT_PUBLIC_API_URL > NEXT_PUBLIC_CHATLAYA_URL > valeur par défaut (alignée aux routes /api/auth/*)
 const API_BASE =
   (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "") ||
-  "https://innova-1-v3ab.onrender.com";
+  "https://innovaplus.onrender.com/innova/api";
 
 if (typeof window !== "undefined") {
   // Log once in browser to verify config in prod

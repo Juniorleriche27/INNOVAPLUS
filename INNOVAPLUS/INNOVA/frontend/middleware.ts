@@ -12,7 +12,8 @@ function isProtectedPath(pathname: string) {
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  const access = request.cookies.get("innova_access");
+  // Vérifie à la fois le token httpOnly et le flag non-HTTPOnly
+  const access = request.cookies.get("innova_access") || request.cookies.get("innova_logged_in");
 
   // Redirect legacy /chat-laya to /chatlaya (permanent)
   if (pathname === "/chat-laya" || pathname.startsWith("/chat-laya/")) {

@@ -55,11 +55,12 @@ export async function POST(req: Request) {
 
   const parsed = (data ?? {}) as LoginSuccess;
   const cookieStore = cookies();
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
+  const site = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://innovaplus.africa");
   let domain: string | undefined;
   try {
     const host = new URL(site).hostname;
     if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
+    else if (/vercel\.app$/i.test(host)) domain = undefined; // cookies host-only en preview/prod Vercel
   } catch {}
   const accessToken =
     typeof (parsed as any).access_token === "string"

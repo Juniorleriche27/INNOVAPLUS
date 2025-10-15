@@ -56,11 +56,12 @@ export async function POST(req: Request) {
   const parsed = (data ?? {}) as SignupSuccess;
   const access = parsed.token || parsed.access_token;
   const maxAge = Math.max(60, Math.min(parsed.expires_in ?? 3600, 60 * 60 * 24 * 30));
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
+  const site = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://innovaplus.africa");
   let domain: string | undefined;
   try {
     const host = new URL(site).hostname;
     if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
+    else if (/vercel\.app$/i.test(host)) domain = undefined;
   } catch {}
   if (access) {
     const jar = cookies();

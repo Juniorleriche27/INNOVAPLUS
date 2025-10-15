@@ -1,4 +1,4 @@
-import { api } from "./client";
+// Use the Next.js proxy to attach cookie-based auth in production
 
 export type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
@@ -33,5 +33,12 @@ export type ChatResponse = {
 };
 
 export async function sendChat(req: ChatRequest): Promise<ChatResponse> {
-  return api<ChatResponse>("/chatlaya/ask", { method: "POST", body: JSON.stringify(req) });
+  const res = await fetch("/api/proxy/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+  return (await res.json()) as ChatResponse;
 }

@@ -1,42 +1,34 @@
 // innova-frontend/app/page.tsx
 import Link from "next/link";
 export const dynamic = "force-dynamic";
-// Deprecated data sources (projects/contributors/technologies) removed from runtime
-// Keep types locally if needed, but do not call the legacy endpoints anymore.
-type Project = { id: string; name: string; status?: string | null };
-type Contributor = { id: string; name?: string | null };
-type Technology = { id: string; name?: string | null };
 
 const PROOFS = [
   {
-    title: "Détection des besoins (RAG)",
-    description:
-      "Ingestion automatique des signaux terrains et documents pour révéler les besoins socio-économiques latents."
+    title: "Détection intelligente des besoins",
+    description: "L'IA analyse automatiquement les signaux terrains et documents pour identifier les opportunités socio-économiques latentes."
   },
   {
-    title: "Matching IA + équité pays",
-    description:
-      "Algorithmes de recommandation équilibrés par quotas NeedIndex pour garantir une distribution juste."
+    title: "Matching équitable et transparent",
+    description: "Algorithmes de recommandation équilibrés par quotas NeedIndex pour garantir une distribution juste des opportunités."
   },
   {
     title: "Impact mesurable en temps réel",
-    description:
-      "Tableaux de bord continus sur les opportunités créées, assignées et l'impact sur l'emploi inclusif."
+    description: "Tableaux de bord continus sur les opportunités créées, assignées et l'impact sur l'écosystème économique."
   }
 ];
 
 const HOW_IT_WORKS = [
   { step: "01", title: "Déposez un besoin ou un document" },
-  { step: "02", title: "L’IA génère une opportunité structurée" },
-  { step: "03", title: "Matching des talents + quotas pays (NeedIndex)" },
+  { step: "02", title: "L'IA génère une opportunité structurée" },
+  { step: "03", title: "Matching des talents + quotas équitables" },
   { step: "04", title: "Attribution, suivi et amélioration continue" }
 ];
 
 const KPI_METRICS = [
   { label: "Opportunités ouvertes", value: "128" },
   { label: "Assignations cette semaine", value: "42" },
-  { label: "Taux d’acceptation", value: "87 %" },
-  { label: "Répartition par pays (équité)", value: "NeedIndex 0,41" },
+  { label: "Taux d'acceptation", value: "87 %" },
+  { label: "Répartition équitable", value: "NeedIndex 0,41" },
   { label: "Temps médian de matching", value: "36 h" }
 ];
 
@@ -49,11 +41,10 @@ const SAMPLE_OPPORTUNITY = {
 };
 
 const OPPORTUNITY_DETAILS = {
-  context:
-    "Analyse des ventes locales et recommandations de pricing pour 120 coopératives ivoiriennes. Données issues du RAG terrain + rapports FAO.",
+  context: "Analyse des ventes locales et recommandations de pricing pour 120 coopératives ivoiriennes. Données issues du RAG terrain + rapports FAO.",
   skills: ["Analyse de données", "Pricing dynamique", "Agriculture durable"],
-  country: "Côte d’Ivoire",
-  equity: "Quota pays actif (min 15 % / max 35 %)"
+  country: "Côte d'Ivoire",
+  equity: "Quota pays actif (min 15 % / max 35 %)"
 };
 
 const TALENT_SAMPLE = {
@@ -91,56 +82,37 @@ const EMPTY_STATES = [
 
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 const SECTION_SUBTITLE = "text-base text-slate-500";
-const KPI_CARD =
-  "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow";
+const KPI_CARD = "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow";
 const KPI_VALUE = "text-3xl font-semibold text-sky-600";
-const CHIP_CLASS =
-  "inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700";
+const CHIP_CLASS = "inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700";
 const BADGE_BASE = "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold";
 const EQUITY_BADGE = `${BADGE_BASE} border border-emerald-200 bg-emerald-50 text-emerald-700`;
 const RAG_OK_BADGE = `${BADGE_BASE} border border-sky-200 bg-sky-50 text-sky-700`;
 const RAG_LOW_BADGE = `${BADGE_BASE} border border-amber-200 bg-amber-50 text-amber-700`;
-const ACTION_PILL =
-  "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:text-sky-600";
+const ACTION_PILL = "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:text-sky-600";
 
 export default async function HomePage() {
-  // Do not call legacy endpoints. Initialize to empty arrays.
-  const projects: Project[] = [];
-  const contributors: Contributor[] = [];
-  const technologies: Technology[] = [];
-
-  const publishedOrOpen = projects.filter((p) => (p.status || "").toLowerCase().includes("publish") || (p.status || "").toLowerCase().includes("open"));
-  const KPIS_DYNAMIC = [
-    { label: "Opportunités ouvertes", value: String(publishedOrOpen.length || projects.length || 0) },
-    { label: "Assignations cette semaine", value: "—" },
-    { label: "Taux d’acceptation", value: "—" },
-    { label: "Répartition par pays (équité)", value: "NeedIndex 0,41" },
-    { label: "Temps médian de matching", value: "—" },
-  ];
-
-  const firstProject = projects[0];
-  const SAMPLE_CHIPS = (technologies.slice(0, 3).map((t) => t.name).filter(Boolean) as string[]);
-
   return (
     <div className="space-y-16 pb-12">
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-sky-900/10">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/30 to-blue-50/50 shadow-xl shadow-sky-900/5">
         <div className="absolute inset-y-0 -right-20 w-1/2 bg-sky-50/70 blur-3xl" aria-hidden />
         <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-sky-100 opacity-70 blur-3xl" aria-hidden />
-        <div className="relative z-10 grid gap-10 px-8 py-12 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-16">
+        <div className="relative z-10 grid gap-10 px-8 py-16 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-20">
           <div className="space-y-8">
             <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
               Moteur IA INNOVA+
             </span>
-            <div className="space-y-4">
-              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
-                INNOVA+ : l’IA qui transforme les besoins en emplois
+            <div className="space-y-6">
+              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                L'IA qui transforme les besoins en 
+                <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent"> opportunités</span>
               </h1>
-              <p className="text-lg leading-relaxed text-slate-600">
-                Notre moteur d’IA détecte les besoins réels, fait le matching des talents et répartit équitablement les
-                opportunités par pays.
+              <p className="text-lg leading-relaxed text-slate-600 max-w-2xl">
+                Notre moteur d'IA détecte les besoins réels, fait le matching des talents et répartit équitablement les opportunités par pays avec transparence totale.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-4">
               <Link href="/opportunities/create" className="btn-primary">
                 Créer une opportunité
               </Link>
@@ -171,11 +143,11 @@ export default async function HomePage() {
                 </span>
               </div>
               <p className="text-sm text-slate-600">
-                Répartition équitable active sur 24 pays. Mise à jour chaque fois qu’une opportunité est attribuée.
+                Répartition équitable active sur 24 pays. Mise à jour chaque fois qu'une opportunité est attribuée.
               </p>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>CI · Côte d’Ivoire</span>
+                  <span>CI · Côte d'Ivoire</span>
                   <span className="text-sky-600">+2 blocs</span>
                 </div>
                 <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
@@ -192,15 +164,16 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* How it works */}
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className={SECTION_TITLE}>Comment ça marche</h2>
             <p className={SECTION_SUBTITLE}>
-              Le cycle complet du besoin à l’impact, monitoré par l’IA et auditable à chaque étape.
+              Le cycle complet du besoin à l'impact, monitoré par l'IA et auditable à chaque étape.
             </p>
           </div>
-            <Link href="/resources" className="btn-secondary">
+          <Link href="/resources" className="btn-secondary">
             Voir la documentation
           </Link>
         </div>
@@ -218,12 +191,13 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Philosophy */}
       <section className="grid gap-10 rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:grid-cols-[1.3fr_1fr] sm:p-12">
         <div className="space-y-4">
-          <h2 className={SECTION_TITLE}>Emploi infini par l’IA, juste et mesurable</h2>
+          <h2 className={SECTION_TITLE}>Opportunités intelligentes par l'IA</h2>
           <p className="text-lg text-slate-600">
             INNOVA+ convertit en continu les problèmes locaux et les compétences disponibles en opportunités économiques,
-            avec une répartition équitable entre pays.
+            avec une répartition équitable entre pays et une transparence totale.
           </p>
           <div className="rounded-2xl border border-sky-100 bg-sky-50/60 px-6 py-4 text-sky-700 shadow-inner shadow-sky-200/40">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Équation</p>
@@ -236,19 +210,20 @@ export default async function HomePage() {
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-inner shadow-slate-200">
           <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Transparence & équité</h3>
           <p className="mt-4 text-sm leading-relaxed text-slate-600">
-            Chaque attribution d’opportunité est auditée par le moteur NeedIndex. Les quotas pays sont paramétrables et
+            Chaque attribution d'opportunité est auditée par le moteur NeedIndex. Les quotas pays sont paramétrables et
             visibles par chaque membre du collectif.
           </p>
           <Link href="/equity" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-sky-600">
-            Voir comment l’IA décide →
+            Voir comment l'IA décide →
           </Link>
         </div>
       </section>
 
+      {/* KPIs */}
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
         <h2 className={SECTION_TITLE}>Indicateurs temps réel</h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          {KPIS_DYNAMIC.map((kpi) => (
+          {KPI_METRICS.map((kpi) => (
             <div key={kpi.label} className={KPI_CARD}>
               <p className="text-sm text-slate-500">{kpi.label}</p>
               <p className={`${KPI_VALUE} mt-2`}>{kpi.value}</p>
@@ -257,6 +232,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Opportunities showcase */}
       <section className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 lg:grid-cols-[1.25fr_1fr] lg:p-12">
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -273,27 +249,27 @@ export default async function HomePage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-slate-900">{firstProject?.title || firstProject?.name || SAMPLE_OPPORTUNITY.title}</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{SAMPLE_OPPORTUNITY.title}</h3>
               <span className={EQUITY_BADGE}>
                 Équité active <span className="text-xs text-slate-500">NeedIndex {SAMPLE_OPPORTUNITY.needIndex}</span>
               </span>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              {(SAMPLE_CHIPS.length ? SAMPLE_CHIPS : SAMPLE_OPPORTUNITY.skills).map((skill) => (
+              {SAMPLE_OPPORTUNITY.skills.map((skill) => (
                 <span key={skill} className={CHIP_CLASS}>{skill}</span>
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-600">
               <span>Pays : {SAMPLE_OPPORTUNITY.country}</span>
-              <span>Statut : {(firstProject?.status as string) || SAMPLE_OPPORTUNITY.status}</span>
+              <span>Statut : {SAMPLE_OPPORTUNITY.status}</span>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href={`/projects/${firstProject?.id || 1}`} className="btn-secondary">
-                 Voir le contexte
-               </Link>
-              <Link href={`/projects/${firstProject?.id || 1}`} className="btn-primary">
-                 Postuler
-               </Link>
+              <Link href="/opportunities/1" className="btn-secondary">
+                Voir le contexte
+              </Link>
+              <Link href="/opportunities/1/apply" className="btn-primary">
+                Postuler
+              </Link>
             </div>
           </div>
 
@@ -335,7 +311,7 @@ export default async function HomePage() {
                   <dt className="font-semibold text-slate-800">Pays cible</dt>
                   <dd className="mt-1">{OPPORTUNITY_DETAILS.country}</dd>
                 </div>
-                <div className="text-xs font-semibold text-slate-500">Règles d’équité</div>
+                <div className="text-xs font-semibold text-slate-500">Règles d'équité</div>
               </div>
               <div>
                 <dd className="rounded-2xl bg-sky-50 px-4 py-3 text-xs font-semibold text-sky-700">
@@ -388,6 +364,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Actions */}
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 sm:p-12">
         <h2 className={SECTION_TITLE}>Actions globales</h2>
         <div className="mt-6 flex flex-wrap gap-3">
@@ -399,6 +376,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Messages and states */}
       <section className="grid gap-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-900/5 lg:grid-cols-2 lg:p-12">
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
           <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Messages</h3>
@@ -425,13 +403,13 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Footer */}
       <section className="rounded-3xl border border-slate-200 bg-slate-50 px-8 py-10 text-center shadow-inner shadow-slate-200 sm:px-12">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">INNOVA+</p>
         <p className="mt-3 text-lg font-semibold text-slate-700">
-          Moteur IA d’opportunités. Transparence · Équité · Impact.
+          Moteur IA d'opportunités. Transparence · Équité · Impact.
         </p>
       </section>
     </div>
   );
 }
-

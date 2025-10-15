@@ -1,9 +1,17 @@
 import { apiMe, apiMetrics } from "@/lib/api";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function MeRecommendations() {
-  const userId = "demo-user"; // TODO: auth
+  const token = cookies().get("innova_access")?.value;
+  if (!token) redirect("/login?redirect=/me/recommendations");
+  // Récupère l'utilisateur réel via proxy Next (évite d'exposer le token depuis le serveur)
+  const meRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa"}/api/auth/me`, { cache: "no-store" });
+  if (!meRes.ok) redirect("/login?redirect=/me/recommendations");
+  const me = (await meRes.json().catch(() => ({}))) as { id?: string };
+  const userId = me?.id || "unknown";
   const recos = await apiMe.recommendations(userId).catch(() => []);
   // fire-and-forget analytics
   apiMetrics.event("view_me_reco", undefined, userId).catch(() => {});

@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+pydantic
+llama-cpp-python
+python-dotenv
+

@@ -1,0 +1,13 @@
+# données & poids (ne jamais pousser)
+*.safetensors
+*.bin
+*.pt
+*.gguf
+INNOVAPLUS/INNOVA/training/data/
+INNOVAPLUS/INNOVA/training/models/
+
+# env & caches
+.env
+__pycache__/
+*.log
+

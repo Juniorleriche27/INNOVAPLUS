@@ -27,6 +27,7 @@ from app.routers.invite import router as invite_router
 from app.routers.opportunities import router as opportunities_router
 from app.routers.marketplace import router as market_router
 from app.routers.meet_api import router as meet_router
+from app.routers.smollm import router as smollm_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
@@ -62,6 +63,14 @@ async def on_startup():
             settings.EMBED_DIM = actual
     except Exception:
         pass
+    
+    # Initialize SmolLM if enabled
+    try:
+        from app.core.smollm_init import initialize_smollm_on_startup
+        initialize_smollm_on_startup()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"SmolLM initialization failed: {e}")
     # Ensure indexes
     try:
         from app.db.mongo import get_db
@@ -142,6 +151,7 @@ innova_api.include_router(metrics_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)
 innova_api.include_router(auth_router)
+innova_api.include_router(smollm_router)
 app.include_router(innova_api)
 
 innova_rag = APIRouter(prefix="/innova")

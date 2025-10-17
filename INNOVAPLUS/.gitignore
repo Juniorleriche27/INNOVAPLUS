@@ -1,0 +1,16 @@
+cd C:\INNOVAPLUS\INNOVAPLUS
+
+@"
+# modèles / données
+INNOVAPLUS/INNOVA/training/models/
+INNOVAPLUS/INNOVA/smollm-1.7b-instruct/
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.ckpt
+
+# divers
+__pycache__/
+.env
+"@ | Out-File -Encoding utf8 .gitignore

@@ -95,3 +95,4 @@ def get_named_db_instance(name: str) -> AsyncIOMotorDatabase:
 
 async def get_db_by_name(name: str) -> AsyncGenerator[AsyncIOMotorDatabase, None]:
     yield get_named_db_instance(name)
+ 

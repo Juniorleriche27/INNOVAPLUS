@@ -1,0 +1,34 @@
+name: Deploy backend to Hetzner
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'INNOVAPLUS/INNOVA/backend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write SSH key
+        run: |
+          install -m 600 -D /dev/stdin ~/.ssh/id_ed25519 <<'KEY'
+          ${{ secrets.HETZNER_SSH_KEY }}
+          KEY
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Push code to server
+        run: |
+          rsync -az --delete \
+            INNOVAPLUS/INNOVA/backend/ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
+
+      - name: Restart service via remote script
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            '~/deploy/deploy_backend.sh'

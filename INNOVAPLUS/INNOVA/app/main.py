@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import chatlaya
+from INNOVAPLUS.INNOVA.app.routers import chatlaya
 
 app = FastAPI(title="INNOVA+ / CHATLAYA API")
 

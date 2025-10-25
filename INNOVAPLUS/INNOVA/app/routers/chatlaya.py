@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from llama_cpp import Llama
 import os
-from app.prompts import SYSTEM_PROMPT
+from INNOVAPLUS.INNOVA.app.prompts import SYSTEM_PROMPT
 
 router = APIRouter(prefix="/chatlaya", tags=["chatlaya"])
 

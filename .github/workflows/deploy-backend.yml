@@ -22,15 +22,30 @@ jobs:
           KEY
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Push code to server
+      - name: Ensure remote path exists
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
+
+      - name: Push code to server (protect .venv and .env)
         run: |
           rsync -az --delete \
+            --filter='P .venv/' \
+            --filter='P .env' \
+            --exclude='.git/' \
+            --exclude='__pycache__/' \
             INNOVAPLUS/INNOVA/backend/ \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
 
+      - name: Install/Update Python deps in remote venv
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "'${{ secrets.DEPLOY_PATH }}/.venv/bin/pip' install -r '${{ secrets.DEPLOY_PATH }}/requirements.txt' --no-cache-dir"
+
       - name: Restart service via remote script
         run: |
-          ssh -o StrictHostKeyChecking=no "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" 'bash -lc "~/deploy/deploy_backend.sh"'
-
-
-
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            'bash -lc "~/deploy/deploy_backend.sh"'

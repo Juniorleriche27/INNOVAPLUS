@@ -30,5 +30,8 @@ jobs:
 
       - name: Restart service via remote script
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            '~/deploy/deploy_backend.sh'
+          ssh -o StrictHostKeyChecking=no \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            'bash -lc "~/deploy/deploy_backend.sh"'
+
+

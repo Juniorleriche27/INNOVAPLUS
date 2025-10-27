@@ -1,7 +1,7 @@
 // innova-frontend/lib/api.ts
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "https://api.innovaplus.africa/innova/api"
+  process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "https://api.innovaplus.africa"
 ).replace(/\/+$/, "");
 
 type JsonHeaders = HeadersInit;

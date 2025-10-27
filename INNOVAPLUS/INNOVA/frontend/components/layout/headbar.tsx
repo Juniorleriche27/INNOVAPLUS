@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
+import { AUTH_API_BASE } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const NAV_LINKS = [
@@ -298,7 +299,7 @@ export default function Headbar() {
                     <button 
                       onClick={async () => { 
                         try { 
-                          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); 
+                          await fetch(`${AUTH_API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }); 
                         } finally { 
                           setAccountOpen(false); 
                           location.href = '/'; 

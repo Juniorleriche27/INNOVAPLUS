@@ -1,8 +1,13 @@
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "").replace(/\/+$/, "");
+const DEFAULT_API_BASE = "https://api.innovaplus.africa";
 
-export function apiUrl(path: string) {
-  if (!path.startsWith("/")) path = "/" + path;
-  // If API_BASE is set, use it; otherwise rely on Next rewrites to /api
-  return API_BASE ? `${API_BASE}${path}` : `/api${path}`;
-}
+export const AUTH_API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.API_URL ||
+  DEFAULT_API_BASE
+).replace(/\/+$/, "");
 
+export const SITE_BASE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.SITE_URL ||
+  "https://innovaplus.africa"
+).replace(/\/+$/, "");

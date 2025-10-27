@@ -1,4 +1,5 @@
 import { apiMe, apiMetrics } from "@/lib/api";
+import { AUTH_API_BASE } from "@/lib/env";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -9,8 +10,7 @@ export default async function MeRecommendations() {
   const session = jar.get("innova_session")?.value;
   if (!session) redirect("/login?redirect=/me/recommendations");
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
-  const meRes = await fetch(`${site}/api/auth/me`, {
+  const meRes = await fetch(`${AUTH_API_BASE}/auth/me`, {
     cache: "no-store",
     headers: { cookie: jar.toString() },
     credentials: "include",

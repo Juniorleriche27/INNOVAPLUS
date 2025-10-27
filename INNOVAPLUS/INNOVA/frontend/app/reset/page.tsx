@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AUTH_API_BASE } from "@/lib/env";
 
 function ResetForm() {
   const searchParams = useSearchParams();
@@ -30,7 +31,7 @@ function ResetForm() {
     setError(null);
 
     try {
-      const resp = await fetch("/api/auth/reset", {
+      const resp = await fetch(`${AUTH_API_BASE}/auth/reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

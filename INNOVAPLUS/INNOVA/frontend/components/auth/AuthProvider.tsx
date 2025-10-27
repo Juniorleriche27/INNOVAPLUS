@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { AUTH_API_BASE } from "@/lib/env";
 
 type User = {
   id: string;
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/me", { cache: "no-store", credentials: "include" });
+      const res = await fetch(`${AUTH_API_BASE}/auth/me`, { cache: "no-store", credentials: "include" });
       if (!res.ok) throw new Error("not auth");
       const data = (await res.json()) as User;
       setUser(data);

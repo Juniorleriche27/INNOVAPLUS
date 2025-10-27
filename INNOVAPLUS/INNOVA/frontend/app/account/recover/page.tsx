@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { AUTH_API_BASE } from "@/lib/env";
 
 export default function RecoverPage() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function RecoverPage() {
     setError(null);
 
     try {
-      const resp = await fetch("/api/auth/recover", {
+      const resp = await fetch(`${AUTH_API_BASE}/auth/forgot`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

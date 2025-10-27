@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { AUTH_API_BASE } from "@/lib/env";
 import { FormEvent, useState } from "react";
 
 export default function LoginClient() {
@@ -22,7 +23,7 @@ export default function LoginClient() {
     setError(null);
 
     try {
-      const resp = await fetch("/api/auth/login", {
+      const resp = await fetch(`${AUTH_API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

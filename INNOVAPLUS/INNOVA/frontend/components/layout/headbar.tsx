@@ -73,7 +73,7 @@ export default function Headbar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [notifCount, setNotifCount] = useState<number>(0);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: any; created_at: string; read_at?: string }>>([]);
+  const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: Record<string, unknown> | null; created_at: string; read_at?: string }>>([]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);

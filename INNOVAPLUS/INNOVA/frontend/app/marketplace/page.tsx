@@ -40,7 +40,7 @@ export default function MarketplacePage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Mock data
-  const offers: Offer[] = [
+  const offers = useMemo<Offer[]>(() => [
     {
       id: "1",
       title: "Développeur Full-Stack React/Node.js",
@@ -116,7 +116,7 @@ export default function MarketplacePage() {
       type: "service",
       status: "active"
     }
-  ];
+  ], []);
 
   const countries = [
     { code: "all", name: "Tous les pays" },

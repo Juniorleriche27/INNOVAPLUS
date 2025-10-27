@@ -62,13 +62,6 @@ function IconChevronRight(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconMenu(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-}
 
 const WORKSPACE_LINKS = [
   { href: "/opportunities", label: "Opportunités", description: "Pipeline et statut", icon: IconTarget },

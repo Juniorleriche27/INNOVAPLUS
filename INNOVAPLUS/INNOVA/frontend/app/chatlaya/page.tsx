@@ -12,7 +12,7 @@ type ChatMessage = {
 
 const RAW_BASE = (
   process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$, "");
+).replace(/\/+$/, "");
 
 const API_BASE = RAW_BASE.replace(/\/innova\/api$/, "");
 

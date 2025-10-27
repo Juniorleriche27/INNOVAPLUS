@@ -82,7 +82,7 @@ export const apiNotifications = {
   async list(user_id: string, unread_only = false) {
     const url = `${API_BASE}/notifications?user_id=${encodeURIComponent(user_id)}${unread_only ? "&unread_only=1" : ""}`;
     const res = await apiFetch(url, { cache: "no-store" });
-    return json<Array<{ id: string; type: string; payload: any; created_at: string; read_at?: string }>>(res);
+    return json<Array<{ id: string; type: string; payload: Record<string, unknown> | null; created_at: string; read_at?: string }>>(res);
   },
   async markRead(user_id: string, ids: string[]) {
     const res = await apiFetch(`${API_BASE}/notifications/read?user_id=${encodeURIComponent(user_id)}`, {

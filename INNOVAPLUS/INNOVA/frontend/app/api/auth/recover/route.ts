@@ -1,12 +1,34 @@
 import { NextResponse } from "next/server";
 
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
+const API_ROOT = (
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa"
 ).replace(/\/+$/, "");
+
+const AUTH_PATHS = ["/auth/forgot", "/innova/api/auth/forgot"];
+
+async function forwardAuthRequest(init: RequestInit): Promise<Response> {
+  let response: Response | undefined;
+  let error: unknown;
+  for (const path of AUTH_PATHS) {
+    try {
+      response = await fetch(`${API_ROOT}${path}`, init);
+    } catch (err) {
+      error = err;
+      continue;
+    }
+    if (response.status !== 404) {
+      return response;
+    }
+  }
+  if (!response) {
+    throw error instanceof Error ? error : new Error("Auth upstream unreachable");
+  }
+  return response;
+}
 
 export async function POST(req: Request) {
   const rawBody = await req.text();
-  const response = await fetch(`${API_BASE}/auth/forgot`, {
+  const init: RequestInit = {
     method: "POST",
     headers: {
       "Content-Type": req.headers.get("content-type") ?? "application/json",
@@ -14,7 +36,8 @@ export async function POST(req: Request) {
     },
     body: rawBody,
     redirect: "manual",
-  });
+  };
+  const response = await forwardAuthRequest(init);
 
   let payload: unknown = null;
   try {

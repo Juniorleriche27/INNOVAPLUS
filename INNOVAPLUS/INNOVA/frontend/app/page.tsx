@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 // innova-frontend/app/page.tsx
 import Link from "next/link";
 export const dynamic = "force-dynamic";

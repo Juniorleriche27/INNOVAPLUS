@@ -2,7 +2,6 @@ import { apiMe, apiMetrics } from "@/lib/api";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-/* eslint-disable react/no-unescaped-entities */
 export const dynamic = "force-dynamic";
 
 export default async function MeRecommendations() {

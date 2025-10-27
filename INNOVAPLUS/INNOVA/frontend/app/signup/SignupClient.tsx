@@ -25,7 +25,7 @@ export default function SignupClient() {
     try {
       const [firstRaw, ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
       const first_name = firstRaw || email.split("@")[0];
-      const last_name = rest.join(" ");
+      const last_name = (rest.join(" ") || first_name).slice(0, 120);
       const resp = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,10 +33,11 @@ export default function SignupClient() {
         body: JSON.stringify({ email, password, first_name, last_name }),
       });
 
-      const data = await resp.json().catch(() => ({} as any));
+      type ApiError = { detail?: unknown };
+      const data: ApiError = await resp.json().catch(() => ({} as ApiError));
       if (!resp.ok) {
         const s = resp.status;
-        const msg = typeof (data as any)?.detail === "string" ? (data as any).detail : undefined;
+        const msg = typeof data.detail === "string" ? data.detail : undefined;
         if (s === 409 || (msg && /already used|exists|existe/i.test(msg))) {
           throw new Error("Cet e-mail est déjà utilisé.");
         }

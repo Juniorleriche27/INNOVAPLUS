@@ -34,12 +34,15 @@ Authentification & Sessions
 - Les sessions sont persistées dans `sessions` (hash SHA-256 du token, TTL automatique sur `expires_at`).
 - Déconnexion: `/auth/logout` révoque la session et supprime le cookie.
 - Endpoint `/auth/me` renvoie l'utilisateur courant si le cookie est valide.
+- L'ancien préfixe `/innova/api/auth/*` est considéré comme obsolète (encore toléré en fallback côté front, suppression prévue).
 
 Mot de passe oublié
 -------------------
 - Endpoint `/auth/forgot` génère un token à usage unique stocké dans `password_reset_tokens`
   (hashé, TTL 30 min, flag `used`).
 - Un email est envoyé via SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_USE_TLS`).
+  - `SMTP_FROM_EMAIL` (optionnel) permet de forcer l'expéditeur sinon `SMTP_USER` est utilisé.
+  - Après modification des identifiants SMTP, redémarrer le service pour recharger les variables.
 - Le front consomme `https://innovaplus.africa/reset?token=...&email=...`.
 - Endpoint `/auth/reset` met à jour le hash (`password_hash`), marque le token comme utilisé et révoque toutes les sessions actives.
 
@@ -52,6 +55,12 @@ Chatlaya (copilote)
   - `POST /chatlaya/message` : streaming SSE (`event: token`, `event: done`).
 - Messages persistés dans la collection `messages` (`conversation_id`, `user_id`, `role`, `content`, `created_at`).
 - Conversations dans `conversations` (`user_id`, `title`, `created_at`, `updated_at`, `archived`).
+- Configuration:
+  - `PROVIDER=echo` (par défaut) renvoie les messages brut pour les tests.
+  - `PROVIDER=openai|mistral` utilise les API cloud correspondantes (`OPENAI_API_KEY`, `MISTRAL_API_KEY` requis).
+  - `PROVIDER=local` active SmolLM embarqué (`backend/smollm-1.7b-instruct`) via `app/core/smollm.py`.
+    - Le modèle doit être téléchargé (`README_SMOLLM.md`) et suffisamment de RAM disponible.
+    - Possibilité de forcer `CHAT_MODEL` si plusieurs variantes locales sont déployées.
 
 CI/CD Workflow
 --------------

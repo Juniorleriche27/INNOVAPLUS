@@ -153,7 +153,6 @@ innova_api.include_router(notifications_router)
 innova_api.include_router(metrics_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)
-innova_api.include_router(auth_router)
 innova_api.include_router(smollm_router)
 app.include_router(innova_api)
 
@@ -166,7 +165,6 @@ app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")
 
 # Mount the same API under /plusbook prefix for unified gateway
 plusbook = APIRouter(prefix="/plusbook")
-plusbook.include_router(auth_router)
 plusbook.include_router(ebooks_router)
 plusbook.include_router(posts_router)
 plusbook.include_router(messages_router)

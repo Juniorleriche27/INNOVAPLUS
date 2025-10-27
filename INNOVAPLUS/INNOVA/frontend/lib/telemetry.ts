@@ -15,12 +15,9 @@ export async function track(name: string, payload?: Record<string, unknown>) {
         keepalive: true,
       });
     } else {
-      // eslint-disable-next-line no-console
       console.debug("telemetry", evt);
     }
   } catch {
-    // eslint-disable-next-line no-console
     console.debug("telemetry-fail", evt);
   }
 }
-

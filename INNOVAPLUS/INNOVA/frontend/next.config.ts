@@ -5,7 +5,8 @@ const isProd = process.env.NODE_ENV === "production";
 
 // Optionnel : proxy API (ex: Render) via /api/*
 // (ex: /api/projects -> https://innova-1-v3ab.onrender.com/projects)
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+const DEFAULT_API_BASE = "https://api.innovaplus.africa";
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
   // Qualité & DX
@@ -45,11 +46,14 @@ const nextConfig: NextConfig = {
 
   // (Optionnel) Proxy vers ton backend pour éviter les CORS côté navigateur.
   async rewrites() {
-    if (!API_BASE) return [];
     return [
       {
-        source: "/api/:path*",
-        destination: `${API_BASE}/:path*`,
+        source: "/api/auth/:path*",
+        destination: `${API_BASE}/auth/:path*`,
+      },
+      {
+        source: "/api/chatlaya/:path*",
+        destination: `${API_BASE}/chatlaya/:path*`,
       },
     ];
   },

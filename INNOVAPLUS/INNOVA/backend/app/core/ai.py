@@ -6,7 +6,15 @@ from typing import List, Sequence, Optional
 import logging
 
 from app.core.config import settings
-from app.prompts import SYSTEM_PROMPT
+
+try:
+    from app.prompts import SYSTEM_PROMPT  # type: ignore
+except ImportError:
+    SYSTEM_PROMPT = (
+        "Tu es CHATLAYA, copilote IA d'INNOVA+. Réponds en français clair, "
+        "en tenant compte du contexte utilisateur et en restant factuel."
+    )
+    logging.getLogger(__name__).warning("app.prompts absent: fallback SYSTEM_PROMPT loaded.")
 
 logger = logging.getLogger(__name__)
 

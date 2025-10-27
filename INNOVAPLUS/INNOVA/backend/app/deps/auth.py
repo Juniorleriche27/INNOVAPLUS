@@ -1,29 +1,48 @@
 from __future__ import annotations
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from datetime import datetime, timezone
+
 from bson import ObjectId
+from fastapi import Depends, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.core.auth import decode_token
+from app.core.auth import hash_token
+from app.core.config import settings
 from app.db.mongo import get_db
 
 
-bearer_scheme = HTTPBearer(auto_error=False)
-
-
-async def get_current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme), db: AsyncIOMotorDatabase = Depends(get_db)) -> dict:
-    if creds is None:
+async def get_current_user(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    raw_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
+    if not raw_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    data = decode_token(creds.credentials)
-    if not data or "sub" not in data:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    try:
-        uid = ObjectId(data["sub"])
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid subject")
-    user = await db["users"].find_one({"_id": uid})
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    return user
 
+    token_hash = hash_token(raw_token)
+    now = datetime.now(timezone.utc)
+    session = await db["sessions"].find_one(
+        {
+            "token_hash": token_hash,
+            "revoked": False,
+            "expires_at": {"$gt": now},
+        }
+    )
+    if not session:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expirée ou invalide")
+
+    user = await db["users"].find_one({"_id": ObjectId(session["user_id"]) if not isinstance(session["user_id"], ObjectId) else session["user_id"]})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+
+    # Best effort update last_seen_at (ignore failures)
+    try:
+        await db["sessions"].update_one(
+            {"_id": session["_id"]},
+            {"$set": {"last_seen_at": now}}
+        )
+    except Exception:
+        pass
+
+    request.state.session = session
+    return user

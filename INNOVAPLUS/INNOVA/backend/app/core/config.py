@@ -34,6 +34,18 @@ class Settings(BaseSettings):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "insecure-dev-secret-change-me")
     JWT_ALG: str = "HS256"
     JWT_EXPIRES_MINUTES: int = int(os.getenv("JWT_EXPIRES_MINUTES", "60"))
+    SESSION_COOKIE_NAME: str = os.getenv("SESSION_COOKIE_NAME", "innova_session")
+    SESSION_TTL_DAYS: int = int(os.getenv("SESSION_TTL_DAYS", "7"))
+    RESET_TOKEN_TTL_MIN: int = int(os.getenv("RESET_TOKEN_TTL_MIN", "30"))
+    FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "https://innovaplus.africa")
+    SMTP_HOST: str | None = os.getenv("SMTP_HOST")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str | None = os.getenv("SMTP_USER")
+    SMTP_PASS: str | None = os.getenv("SMTP_PASS")
+    SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", os.getenv("SMTP_STARTTLS", "true")).lower() in {"1", "true", "yes"}
+    SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
+    CHAT_PROVIDER: str = os.getenv("PROVIDER", "echo")
+    CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
     # CORS
     ALLOWED_ORIGINS: str | None = os.getenv("ALLOWED_ORIGINS")
     # RAG / AI

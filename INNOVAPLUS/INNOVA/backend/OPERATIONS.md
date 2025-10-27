@@ -3,74 +3,73 @@ INNOVAPLUS Backend Operations
 
 Service Overview
 ----------------
-- Canonical systemd unit: `innovaplus-backend.service` (keep this exact name).
-- Gunicorn with Uvicorn workers listens on `127.0.0.1:8000`.
-- Runtime env file: `/etc/innovaplus/backend.env` (`root:innova`, mode `640`).
-- Required variables include `ENV=production`, `PORT=8000`, `MONGO_URI`, `DB_NAME=innova_db`,
-  and `ALLOWED_ORIGINS=https://innovaplus.africa,https://www.innovaplus.africa`.
-- Secrets and `.env` files must stay off the repository (store only on the server or in GitHub Secrets).
+- Canonical systemd unit: `innovaplus-backend.service` (utiliser ce nom partout).
+- Application FastAPI servie par Gunicorn/Uvicorn sur `127.0.0.1:8000`.
+- Fichier d'environnement: `/etc/innovaplus/backend.env` (`root:innova`, mode `640`).
+- Variables indispensables: `ENV=production`, `PORT=8000`, `MONGO_URI`, `DB_NAME=innova_db`,
+  `ALLOWED_ORIGINS=https://innovaplus.africa,https://www.innovaplus.africa`.
+- Authentification HTTP: cookie `innova_session` (HTTPOnly, Secure, SameSite=Lax) valide 7 jours.
 
 MongoDB
 -------
-- Local Docker container bound to `127.0.0.1:27017`.
-- Database: `innova_db`; user: `appuser` (`dbOwner`) with a strong password.
-- Smoke test:  
-  `mongosh "mongodb://appuser:***@127.0.0.1:27017/innova_db?authSource=innova_db" --eval 'db.runCommand({ ping: 1 })'`.
-- Manual backup target directory: `/var/backups/innova`.
+- Mongo tourne en local (Docker) sur `127.0.0.1:27017`.
+- Base principale: `innova_db`; utilisateur applicatif: `appuser` (role `dbOwner`).
+- Test manuel: `mongosh "mongodb://appuser:***@127.0.0.1:27017/innova_db?authSource=innova_db" --eval 'db.runCommand({ ping: 1 })'`.
+- Sauvegarde ponctuelle: `mongodump --uri "$MONGO_URI" --db innova_db --out /var/backups/innova-$(date +%F)`.
 
 Reverse Proxy & TLS
 -------------------
-- Nginx vhost: `/etc/nginx/sites-available/innovaplus-api` (symlinked in `sites-enabled`).
-- Public endpoint: `https://api.innovaplus.africa` (HTTP redirected to HTTPS).
-- Certificates handled by Let's Encrypt (`certbot`), renewal timer active.
+- Nginx: `/etc/nginx/sites-available/innovaplus-api` (lien dans `sites-enabled`).
+- Endpoint public: `https://api.innovaplus.africa` (HTTP redirigé vers HTTPS).
+- Certificats Let's Encrypt via `certbot`; renouvellement systemd timer actif.
 
 Firewall
 --------
-- UFW enabled with only ports `22`, `80`, `443` opened (IPv4/IPv6); backend stays on loopback.
+- UFW actif avec uniquement les ports `22`, `80`, `443` ouverts (IPv4/IPv6). Le backend reste accessible en local.
 
-Health Endpoint
----------------
-- Public health URL: `https://api.innovaplus.africa/health`.
-- Expected JSON: `"status": "ok"` and `"mongo": "ok"`; other fields (db, vector_index, etc.) are informative.
-- Manual verification:  
-  `curl -sS https://api.innovaplus.africa/health | jq '{status, mongo, db, version}'`.
+Authentification & Sessions
+---------------------------
+- Inscriptions / connexions sur `/auth/register` et `/auth/login`.
+- À la connexion, un cookie `innova_session` est posé (HTTPOnly, Secure, Lax) avec un TTL de 7 jours.
+- Les sessions sont persistées dans `sessions` (hash SHA-256 du token, TTL automatique sur `expires_at`).
+- Déconnexion: `/auth/logout` révoque la session et supprime le cookie.
+- Endpoint `/auth/me` renvoie l'utilisateur courant si le cookie est valide.
+
+Mot de passe oublié
+-------------------
+- Endpoint `/auth/forgot` génère un token à usage unique stocké dans `password_reset_tokens`
+  (hashé, TTL 30 min, flag `used`).
+- Un email est envoyé via SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_USE_TLS`).
+- Le front consomme `https://innovaplus.africa/reset?token=...&email=...`.
+- Endpoint `/auth/reset` met à jour le hash (`password_hash`), marque le token comme utilisé et révoque toutes les sessions actives.
+
+Chatlaya (copilote)
+-------------------
+- Nouvelles routes `/chatlaya/*`:
+  - `POST /chatlaya/session` : récupère ou crée la conversation active.
+  - `GET /chatlaya/conversations` : liste paginée des conversations.
+  - `GET /chatlaya/messages?conversation_id=...` : messages historiques.
+  - `POST /chatlaya/message` : streaming SSE (`event: token`, `event: done`).
+- Messages persistés dans la collection `messages` (`conversation_id`, `user_id`, `role`, `content`, `created_at`).
+- Conversations dans `conversations` (`user_id`, `title`, `created_at`, `updated_at`, `archived`).
 
 CI/CD Workflow
 --------------
-- Workflow file: `.github/workflows/deploy-backend.yml`.
-- Trigger: push to `main` touching `INNOVAPLUS/INNOVA/backend/**` or manual dispatch.
-- Execution steps:
-  1. Checkout code.
-  2. Provision SSH key and ensure the remote deploy directory exists.
-  3. `rsync` only `INNOVAPLUS/INNOVA/backend/` to `${DEPLOY_PATH}` on the server.
-  4. Bootstrap/update `${DEPLOY_PATH}/.venv` and install `backend/requirements.txt`.
-  5. `sudo systemctl restart innovaplus-backend.service` then confirm the unit is active.
-  6. Poll `https://api.innovaplus.africa/health` until both `status` and `mongo` equal `"ok"`.
-     On failure the workflow streams the latest 200 lines from `journalctl -u innovaplus-backend.service`.
-- Outcome: a successful push on `main` redeploys without manual intervention.
+- Fichier GitHub Actions: `.github/workflows/deploy-backend.yml`.
+- Déclenchement: push sur `main` touchant `INNOVAPLUS/INNOVA/backend/**` ou dispatch manuel.
+- Étapes principales : checkout → clé SSH → rsync du dossier `backend/` → bootstrap `.venv` → `pip install -r requirements.txt`
+  → restart `innovaplus-backend.service` → sondage `https://api.innovaplus.africa/health` (attend `status=mongo=ok`).
+- En cas d'échec santé, les 200 dernières lignes `journalctl` sont renvoyées dans les logs du job.
 
 Runbook
 -------
-- Check health: `curl -sS https://api.innovaplus.africa/health | jq .`.
-- Service status: `sudo systemctl status innovaplus-backend.service --no-pager`.
-- Live logs: `journalctl -u innovaplus-backend.service -f`.
-- Manual restart: `sudo systemctl restart innovaplus-backend.service`.
-- Edit env vars: `sudo nano /etc/innovaplus/backend.env` then restart the service.
-- Certbot dry run: `sudo certbot renew --dry-run`.
+- Santé: `curl -sS https://api.innovaplus.africa/health | jq .` (attendu : `status="ok"`, `mongo="ok"`).
+- Service: `sudo systemctl status innovaplus-backend.service --no-pager`.
+- Logs live: `journalctl -u innovaplus-backend.service -f`.
+- Redéploiement manuel: push sur `main` ou `sudo systemctl restart innovaplus-backend.service`.
+- Modifier l'env: `sudo nano /etc/innovaplus/backend.env` puis restart du service.
+- Certificat: `sudo certbot renew --dry-run`.
 
-Monitoring (optional)
----------------------
-- Status: not enabled yet. Planned endpoints:
-  - FastAPI `/metrics` (Prometheus format). Restrict access to admin IPs or private network.
-  - Nginx `stub_status` exposed via a locked-down location block.
-- Document access rules and authentication before enabling either endpoint.
-
-Mongo Backups (optional)
-------------------------
-- Status: manual backup only.
-- Suggested automation:
-  - Nightly cron on the server running  
-    `mongodump --uri "$MONGO_URI" --db innova_db --out /var/backups/innova-$(date +%F)`.
-  - Rotate to keep the 7 most recent directories (e.g., via `find /var/backups/innova-* -maxdepth 0 -mtime +7 -exec rm -rf {} \;`).
-- Restoring from a dump:  
-  `mongorestore --uri "$MONGO_URI" --db innova_db /var/backups/innova-YYYY-MM-DD/innova_db`.
+Monitoring (optionnel)
+----------------------
+- Prévu : endpoint FastAPI `/m

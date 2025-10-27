@@ -13,6 +13,7 @@ from app.routers.posts import router as posts_router
 from app.routers.messages import router as messages_router
 from app.routers.groups import router as groups_router
 from app.routers.contact import router as contact_router
+from app.routers.chatlaya import router as chatlaya_router
 from app.routers.diagnostics import router as diag_router
 from app.routers.innova import router as innova_router
 from app.routers.pieagency import router as pieagency_router
@@ -137,6 +138,7 @@ app.include_router(pieagency_router)
 app.include_router(farmlink_router)
 app.include_router(sante_router)
 app.include_router(rag_router)
+app.include_router(chatlaya_router)
 
 # Mount module-prefixed routes
 innova_api = APIRouter(prefix="/innova/api")

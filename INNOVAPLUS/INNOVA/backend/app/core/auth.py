@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -60,3 +62,19 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
     except JWTError:
         return None
+
+
+def normalize_email(email: str) -> str:
+    return email.strip().lower()
+
+
+def generate_session_token() -> str:
+    return secrets.token_urlsafe(48)
+
+
+def hash_token(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def session_expiry() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(days=settings.SESSION_TTL_DAYS)

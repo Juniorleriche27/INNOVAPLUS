@@ -43,6 +43,16 @@ async def connect_to_mongo() -> None:
             await _db["fairness_windows"].create_index("period_start")
             await _db["decisions_audit"].create_index("created_at")
 
+            # Auth & Chatlaya collections
+            await _db["sessions"].create_index("token_hash", unique=True)
+            await _db["sessions"].create_index("expires_at", expireAfterSeconds=0)
+            await _db["sessions"].create_index([("user_id", 1), ("revoked", 1)])
+            await _db["password_reset_tokens"].create_index("token_hash", unique=True)
+            await _db["password_reset_tokens"].create_index("expires_at", expireAfterSeconds=0)
+            await _db["password_reset_tokens"].create_index([("user_id", 1), ("used", 1)])
+            await _db["conversations"].create_index([("user_id", 1), ("updated_at", -1)])
+            await _db["messages"].create_index([("conversation_id", 1), ("created_at", 1)])
+
             # Try to create Atlas Vector Search index if supported
             try:
                 await _db.command({

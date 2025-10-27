@@ -1,36 +1,42 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import List
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field
-from pydantic import AliasChoices
 
 
 class UserCreate(BaseModel):
-    # Accept name from multiple keys: name | full_name | fullName
-    name: str = Field(
-        ..., min_length=1, max_length=255, validation_alias=AliasChoices("name", "full_name", "fullName")
-    )
     email: EmailStr
-    password: str = Field(..., min_length=6)
-    role: str = Field(..., pattern=r"^(user|coach)$")
-    domain: Optional[str] = Field(default=None, max_length=255)
-    bio: Optional[str] = Field(default=None, max_length=1000)
-
-
-class UserOut(BaseModel):
-    id: str
-    name: str
-    email: EmailStr
-    role: str
-    domain: Optional[str] = None
-    bio: Optional[str] = None
+    password: str = Field(..., min_length=8, max_length=256)
+    first_name: str = Field(..., min_length=1, max_length=120)
+    last_name: str = Field(..., min_length=1, max_length=120)
 
 
 class LoginPayload(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, max_length=256)
+
+
+class ForgotPasswordPayload(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordPayload(BaseModel):
+    email: EmailStr
+    token: str = Field(..., min_length=16, max_length=256)
+    new_password: str = Field(..., min_length=8, max_length=256)
+
+
+class UserPublic(BaseModel):
+    id: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    roles: List[str] = Field(default_factory=list)
+    created_at: datetime
 
 
 class AuthResponse(BaseModel):
-    user: UserOut
-    token: str
+    user: UserPublic
+    session_expires_at: datetime

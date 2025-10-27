@@ -164,6 +164,22 @@ async def post_message(
         {"$set": {"updated_at": now, "title": title}},
     )
 
+    history_docs = await (
+        db["messages"]
+        .find({"conversation_id": conv_oid})
+        .sort("created_at", -1)
+        .limit(20)
+        .to_list(length=20)
+    )
+    history_docs.reverse()
+    chat_history = [
+        {
+            "role": doc.get("role", "assistant"),
+            "content": doc.get("content", ""),
+        }
+        for doc in history_docs
+    ]
+
     async def event_generator() -> AsyncGenerator[dict, None]:
         assistant_reply = ""
         try:
@@ -173,6 +189,7 @@ async def post_message(
                 provider=settings.CHAT_PROVIDER,
                 model=settings.CHAT_MODEL,
                 timeout=settings.LLM_TIMEOUT,
+                history=chat_history,
             )
         except Exception as exc:
             logger.exception("Chatlaya generation failed: %s", exc)

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import hashlib
-import os
-import time
-from typing import List, Sequence
+from typing import List, Sequence, Optional
+
+import logging
 
 from app.core.config import settings
-import logging
+from app.prompts import SYSTEM_PROMPT
+
 logger = logging.getLogger(__name__)
 
 
 def _hash_to_float32(seed: bytes) -> float:
-    # Map 8 bytes to a float in [-1, 1]
     h = int.from_bytes(seed[:8], byteorder="big", signed=False)
-    return (h % 2000000) / 1000000.0 - 1.0
+    return (h % 2_000_000) / 1_000_000.0 - 1.0
 
 
 _cohere_client = None
@@ -23,13 +23,13 @@ def _get_cohere_client():
     global _cohere_client
     if _cohere_client is None:
         try:
-            import cohere
+            import cohere  # type: ignore
 
             if not settings.COHERE_API_KEY:
                 raise RuntimeError("Missing COHERE_API_KEY")
             _cohere_client = cohere.Client(api_key=settings.COHERE_API_KEY)
-        except Exception as e:
-            logger.warning("Cohere client init failed: %s", e)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Cohere client init failed: %s", exc)
             _cohere_client = False
     return _cohere_client
 
@@ -42,56 +42,80 @@ def embed_texts(texts: Sequence[str], dim: int | None = None) -> List[List[float
         try:
             model = settings.EMBED_MODEL or "embed-multilingual-v3.0"
             resp = client.embed(texts=list(texts), model=model, input_type="search_query")
-            # Cohere SDK returns resp.embeddings
-            return [list(map(float, v)) for v in resp.embeddings]
-        except Exception as e:
-            logger.warning("Cohere embed failed, falling back to stub: %s", e)
-    # Fallback deterministic stub
-    d = dim or settings.EMBED_DIM
+            return [list(map(float, vector)) for vector in resp.embeddings]
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Cohere embed failed, falling back to stub: %s", exc)
+    dimension = dim or settings.EMBED_DIM
     vectors: List[List[float]] = []
-    for t in texts:
-        base = hashlib.sha256(t.encode("utf-8")).digest()
-        vec: List[float] = []
+    for text in texts:
+        base = hashlib.sha256(text.encode("utf-8")).digest()
+        vector: List[float] = []
         chunk = base
         i = 0
-        while len(vec) < d:
+        while len(vector) < dimension:
             if i % len(base) == 0:
                 chunk = hashlib.sha256(chunk).digest()
-            vec.append(_hash_to_float32(chunk[i % len(chunk):] + i.to_bytes(2, 'big')))
+            vector.append(_hash_to_float32(chunk[i % len(chunk):] + i.to_bytes(2, "big")))
             i += 1
-        vectors.append(vec)
+        vectors.append(vector)
     return vectors
 
 
-def generate_answer(prompt: str, provider: str | None = None, model: str | None = None, timeout: int | None = None) -> str:
-    prov = (provider or settings.LLM_PROVIDER or "").lower()
-    if prov == "cohere":
+def generate_answer(
+    prompt: str,
+    provider: str | None = None,
+    model: str | None = None,
+    timeout: int | None = None,
+    history: Optional[List[dict[str, str]]] = None,
+) -> str:
+    provider_name = (provider or settings.CHAT_PROVIDER or settings.LLM_PROVIDER or "echo").lower()
+    effective_prompt = prompt or (history[-1]["content"] if history else "")
+
+    if provider_name in {"local", "smollm", "chatlaya"}:
+        try:
+            from app.core.smollm import get_smollm_model
+
+            conversation = list(history or [])
+            if not conversation:
+                conversation = [{"role": "user", "content": effective_prompt}]
+            if all(message.get("role") != "system" for message in conversation):
+                conversation.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
+
+            smollm = get_smollm_model()
+            max_tokens = max(64, min((timeout or 512), 1024))
+            response = smollm.chat_completion(conversation, max_tokens=max_tokens, temperature=0.7)
+            return response.strip()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Local provider failed, fallback to echo: %s", exc)
+
+    if provider_name == "cohere":
         client = _get_cohere_client()
         if client:
             try:
                 mdl = model or settings.LLM_MODEL or "command-r"
-                resp = client.chat(model=mdl, message=prompt)
-                # New SDK: resp.text contains the assistant reply
+                last_user = effective_prompt
+                if history:
+                    last_user = next((msg["content"] for msg in reversed(history) if msg.get("role") == "user"), effective_prompt)
+                resp = client.chat(model=mdl, message=last_user)
                 return getattr(resp, "text", None) or str(resp)
-            except Exception as e:
-                logger.warning("Cohere chat failed, falling back to stub: %s", e)
-    # Fallback stub
-    return (
-        "Réponse générée (stub).\n\n"
-        "Contexte traité: " + (prompt[:500] + ("..." if len(prompt) > 500 else ""))
-    )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Cohere chat failed, falling back to echo: %s", exc)
+
+    if provider_name == "echo":
+        return effective_prompt
+
+    if provider_name in {"openai", "mistral"}:
+        logger.warning("Provider '%s' not configured. Falling back to echo.", provider_name)
+        return effective_prompt
+
+    snippet = effective_prompt[:200] + ("..." if len(effective_prompt) > 200 else "")
+    return f"[stub] Traitement de la requete: {snippet}"
 
 
 def detect_embed_dim() -> int:
-    """Best-effort detection of embedding dimension.
-    - If a real provider is plugged later, this should call it once and
-      return len(vector).
-    - With the current stub, we infer from settings.EMBED_DIM.
-    """
     try:
-        # In a real setup, replace this by one provider call and measure len.
-        v = embed_texts(["dimension_probe"], dim=None)[0]
-        return len(v)
-    except Exception as e:
-        logger.warning("Failed to detect embed dim automatically: %s", e)
+        vector = embed_texts(["dimension_probe"], dim=None)[0]
+        return len(vector)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to detect embed dim automatically: %s", exc)
         return settings.EMBED_DIM

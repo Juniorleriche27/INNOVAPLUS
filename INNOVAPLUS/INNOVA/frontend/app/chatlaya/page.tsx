@@ -1,20 +1,20 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
-const API_BASE = (
-  process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$/, "");
-
-const CHAT_BASE = API_BASE.replace(/\/innova\/api$/, "");
-
-interface ChatMessage {
+type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
   created_at?: string;
   pending?: boolean;
-}
+};
+
+const RAW_BASE = (
+  process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.innovaplus.africa/innova/api"
+).replace(/\/+$, "");
+
+const API_BASE = RAW_BASE.replace(/\/innova\/api$/, "");
 
 export default function ChatlayaPage() {
   const [conversationId, setConversationId] = useState<string>("");
@@ -39,12 +39,12 @@ export default function ChatlayaPage() {
 
   async function bootstrapConversation() {
     try {
-      const res = await fetch(`${CHAT_BASE}/chatlaya/session`, {
+      const res = await fetch(`${API_BASE}/chatlaya/session`, {
         method: "POST",
         credentials: "include",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.detail || "Impossible de créer la session");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.detail || "Impossible de creer la session");
       setConversationId(data.conversation_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -53,12 +53,12 @@ export default function ChatlayaPage() {
 
   async function loadMessages(id: string) {
     try {
-      const res = await fetch(`${CHAT_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`, {
+      const res = await fetch(`${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`, {
         credentials: "include",
         cache: "no-store",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.detail || "Impossible de récupérer les messages");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.detail || "Impossible de recuperer les messages");
       setMessages(data.items ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -69,27 +69,28 @@ export default function ChatlayaPage() {
     event.preventDefault();
     if (!conversationId || !input.trim()) return;
     setError(null);
-    const userMsg: ChatMessage = {
+    const userEntry: ChatMessage = {
       id: `local-${Date.now()}`,
       role: "user",
       content: input,
       pending: false,
     };
-    const assistantMsg: ChatMessage = {
+    const assistantPlaceholder: ChatMessage = {
       id: `pending-${Date.now()}`,
       role: "assistant",
       content: "",
       pending: true,
     };
-    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+    setMessages((prev) => [...prev, userEntry, assistantPlaceholder]);
+    const prompt = input;
     setInput("");
     setLoading(true);
 
     try {
-      await streamAssistant(conversationId, input);
+      await streamAssistant(conversationId, prompt);
       await loadMessages(conversationId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur pendant la génération");
+      setError(err instanceof Error ? err.message : "Erreur pendant la generation");
       setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("pending-")));
     } finally {
       setLoading(false);
@@ -97,7 +98,7 @@ export default function ChatlayaPage() {
   }
 
   async function streamAssistant(id: string, prompt: string) {
-    const res = await fetch(`${CHAT_BASE}/chatlaya/message`, {
+    const res = await fetch(`${API_BASE}/chatlaya/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -105,7 +106,7 @@ export default function ChatlayaPage() {
     });
     if (!res.ok || !res.body) {
       const text = await res.text().catch(() => "");
-      throw new Error(text || "Échec de la réponse");
+      throw new Error(text || "Echec de la reponse");
     }
 
     const reader = res.body.getReader();
@@ -121,15 +122,24 @@ export default function ChatlayaPage() {
         const packet = buffer.slice(0, boundary);
         buffer = buffer.slice(boundary + 2);
         if (!packet.trim()) continue;
+
         let event = "message";
         let data = "";
         for (const line of packet.split("\n")) {
           if (line.startsWith("event:")) event = line.slice(6).trim();
           if (line.startsWith("data:")) data += line.slice(5).trim();
         }
+
         if (event === "token") {
-          setMessages((prev) => prev.map((msg) => (msg.pending ? { ...msg, content: msg.content + data } : msg)));
+          setMessages((prev) =>
+            prev.map((msg) => (msg.pending ? { ...msg, content: msg.content + data } : msg)),
+          );
         }
+
+        if (event === "done") {
+          setMessages((prev) => prev.filter((msg) => !msg.pending));
+        }
+
         if (event === "error") {
           throw new Error(data || "Erreur de streaming");
         }
@@ -143,9 +153,9 @@ export default function ChatlayaPage() {
         <div className="flex h-full flex-col">
           <header className="border-b border-slate-100 px-6 py-4">
             <h1 className="text-xl font-semibold text-slate-900">CHATLAYA</h1>
-            <p className="text-sm text-slate-500">Discute avec notre copilote intelligent connecté à INNOVA+.</p>
+            <p className="text-sm text-slate-500">Discute avec le copilote IA de la plateforme INNOVA+.</p>
           </header>
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4 px-6 py-4">
             {messages.map((msg) => (
               <div key={msg.id} className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div
@@ -155,8 +165,10 @@ export default function ChatlayaPage() {
                       : "max-w-[80%] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow"
                   }
                 >
-                  <div className="whitespace-pre-wrap leading-relaxed">{msg.content || (msg.pending ? "…" : "")}</div>
-                  {msg.pending && <div className="mt-2 text-xs text-slate-400">Réponse en cours…</div>}
+                  <div className="whitespace-pre-wrap leading-relaxed">
+                    {msg.content || (msg.pending ? "..." : "")}
+                  </div>
+                  {msg.pending && <div className="mt-2 text-xs text-slate-400">Reponse en cours...</div>}
                 </div>
               </div>
             ))}
@@ -171,17 +183,17 @@ export default function ChatlayaPage() {
             rows={3}
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Pose ta question…"
+            placeholder="Pose ta question"
             className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
           />
           <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>{conversationId ? "Session active" : "Initialisation…"}</span>
+            <span>{conversationId ? "Session active" : "Initialisation"}</span>
             <button
               type="submit"
               disabled={!input.trim() || loading || !conversationId}
               className="rounded-full bg-sky-600 px-5 py-2 font-medium text-white shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-50"
             >
-              {loading ? "Envoi…" : "Envoyer"}
+              {loading ? "Envoi..." : "Envoyer"}
             </button>
           </div>
         </form>

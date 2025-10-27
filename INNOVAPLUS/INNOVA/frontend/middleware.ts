@@ -10,18 +10,17 @@ function isProtectedPath(pathname: string) {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+const SESSION_COOKIE = "innova_session";
+
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  // Vérifie à la fois le token httpOnly et le flag non-HTTPOnly
-  const access = request.cookies.get("innova_access") || request.cookies.get("innova_logged_in");
+  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
 
-  // Redirect legacy /chat-laya to /chatlaya (permanent)
   if (pathname === "/chat-laya" || pathname.startsWith("/chat-laya/")) {
     const url = request.nextUrl.clone();
     url.pathname = pathname.replace("/chat-laya", "/chatlaya");
     return NextResponse.redirect(url, 308);
   }
-  // French aliases (rewrite to avoid 404 and keep 200)
   if (pathname === "/opportunites") {
     const url = request.nextUrl.clone();
     url.pathname = "/opportunities";
@@ -38,7 +37,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  if (isProtectedPath(pathname) && !access) {
+  if (isProtectedPath(pathname) && !hasSession) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set(
@@ -48,7 +47,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if ((pathname === "/login" || pathname === "/signup") && access) {
+  if ((pathname === "/login" || pathname === "/signup") && hasSession) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/";
     redirectUrl.search = "";
@@ -56,7 +55,6 @@ export function middleware(request: NextRequest) {
   }
 
   const res = NextResponse.next();
-  // Security headers
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");

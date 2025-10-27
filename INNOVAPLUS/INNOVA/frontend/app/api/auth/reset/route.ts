@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$/, "");
+).replace(/\/+$, "");
 
 export async function POST(req: Request) {
   const rawBody = await req.text();
-  const response = await fetch(`${API_BASE}/auth/register`, {
+  const response = await fetch(`${API_BASE}/auth/reset`, {
     method: "POST",
     headers: {
       "Content-Type": req.headers.get("content-type") ?? "application/json",
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     payload = null;
   }
 
-  const nextRes = NextResponse.json(payload ?? null, { status: response.status });
+  const nextRes = NextResponse.json(payload ?? { ok: response.ok }, { status: response.status });
   const setCookies = response.headers.getSetCookie?.() ?? [];
   for (const cookie of setCookies) {
     nextRes.headers.append("Set-Cookie", cookie);

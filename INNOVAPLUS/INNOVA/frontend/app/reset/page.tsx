@@ -1,0 +1,146 @@
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { FormEvent, useMemo, useState } from "react";
+
+export default function ResetPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const presetEmail = searchParams?.get("email") || "";
+  const token = searchParams?.get("token") || "";
+
+  const [email, setEmail] = useState(presetEmail);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const tokenMissing = useMemo(() => token.trim().length === 0, [token]);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (password !== confirm) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    setLoading(true);
+    setMessage(null);
+    setError(null);
+
+    try {
+      const resp = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, token, new_password: password }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        const msg = typeof data?.detail === "string" ? data.detail : undefined;
+        throw new Error(msg || "Le lien est invalide ou expiré.");
+      }
+      setMessage("Mot de passe mis à jour. Vous pouvez maintenant vous connecter.");
+      setTimeout(() => router.replace("/login"), 600);
+      setPassword("");
+      setConfirm("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="mx-auto w-full max-w-xl px-4 py-10">
+      <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
+        <h1 className="text-2xl font-semibold text-slate-900">Réinitialiser le mot de passe</h1>
+        {tokenMissing ? (
+          <p className="mt-4 text-sm text-red-600">
+            Ce lien est invalide ou incomplet. Vérifiez votre email ou demandez un nouveau lien de réinitialisation.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-slate-600">
+              Choisis un nouveau mot de passe. Par sécurité, toutes les sessions actives seront déconnectées.
+            </p>
+
+            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                  Adresse email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  Nouveau mot de passe
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirm" className="block text-sm font-medium text-slate-700">
+                  Confirme le mot de passe
+                </label>
+                <input
+                  id="confirm"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={confirm}
+                  onChange={(event) => setConfirm(event.target.value)}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+
+              {message && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {message}
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
+                disabled={loading}
+              >
+                {loading ? "Réinitialisation..." : "Mettre à jour"}
+              </button>
+            </form>
+          </>
+        )}
+
+        <p className="mt-6 text-sm text-slate-500">
+          Besoin d'aide ?{" "}
+          <Link href="/account/recover" className="font-semibold text-sky-700 hover:underline">
+            Demande un nouveau lien
+          </Link>
+        </p>
+      </section>
+    </main>
+  );
+}

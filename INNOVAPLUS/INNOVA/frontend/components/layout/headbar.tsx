@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -61,6 +61,13 @@ export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn } = useAuth();
+  const displayName = useMemo(() => {
+    if (!user) return "";
+    const parts = [user.first_name, user.last_name].filter(Boolean);
+    if (parts.length) return parts.join(" ");
+    return user.email ?? "";
+  }, [user]);
+  const userInitial = useMemo(() => (displayName ? displayName.charAt(0).toUpperCase() : "I"), [displayName]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -258,7 +265,7 @@ export default function Headbar() {
                   className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-all duration-200"
                 >
                   <div className="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-xs font-bold">
-                    {user?.name?.charAt(0) || "M"}
+                    {userInitial}
                   </div>
                   <span className="hidden sm:block">ME</span>
                   <IconChevronDown className="h-3 w-3 hidden sm:block" />
@@ -268,7 +275,7 @@ export default function Headbar() {
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200/60 bg-white/95 backdrop-blur-xl p-2 shadow-xl shadow-slate-900/10">
                     <div className="px-3 py-2 border-b border-slate-200/60 mb-2">
                       <p className="text-sm font-medium text-slate-900">
-                        {user?.name || "Utilisateur"}
+                        {displayName || "Utilisateur"}
                       </p>
                       <p className="text-xs text-slate-500">{user?.email || ""}</p>
                     </div>
@@ -291,7 +298,7 @@ export default function Headbar() {
                     <button 
                       onClick={async () => { 
                         try { 
-                          await fetch('/api/auth/logout', { method: 'POST' }); 
+                          await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); 
                         } finally { 
                           setAccountOpen(false); 
                           location.href = '/'; 
@@ -454,3 +461,4 @@ export default function Headbar() {
     </header>
   );
 }
+

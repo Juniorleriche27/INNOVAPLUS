@@ -1,18 +1,34 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  const store = cookies();
-  const site = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://innovaplus.africa");
-  let domain: string | undefined;
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
+).replace(/\/+$/, "");
+
+export async function POST(req: Request) {
+  const response = await fetch(`${API_BASE}/auth/logout`, {
+    method: "POST",
+    headers: {
+      cookie: req.headers.get("cookie") ?? "",
+    },
+    redirect: "manual",
+  });
+
+  let payload: unknown = null;
   try {
-    const host = new URL(site).hostname;
-    if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
-    else if (/vercel\.app$/i.test(host)) domain = undefined;
-  } catch {}
-  // Overwrite with immediate expiry to ensure deletion across domain scope
-  store.set("innova_access", "", { httpOnly: true, maxAge: 0, path: "/", ...(domain ? { domain } : {}) });
-  store.set("innova_refresh", "", { httpOnly: true, maxAge: 0, path: "/", ...(domain ? { domain } : {}) });
-  store.set("innova_logged_in", "0", { httpOnly: false, maxAge: 0, path: "/", ...(domain ? { domain } : {}) });
-  return NextResponse.json({ ok: true });
+    const text = await response.text();
+    payload = text ? JSON.parse(text) : null;
+  } catch {
+    payload = null;
+  }
+
+  const nextRes = NextResponse.json(payload ?? { ok: response.ok }, { status: response.status });
+  const setCookies = response.headers.getSetCookie?.() ?? [];
+  for (const cookie of setCookies) {
+    nextRes.headers.append("Set-Cookie", cookie);
+  }
+  if (!setCookies.length) {
+    const header = response.headers.get("set-cookie");
+    if (header) nextRes.headers.append("Set-Cookie", header);
+  }
+  return nextRes;
 }

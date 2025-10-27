@@ -1,42 +1,37 @@
 import { NextResponse } from "next/server";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").replace(/\/+$/, "");
-
-type ApiError = {
-  detail?: string;
-  message?: string;
-};
-
-function extractMessage(data: unknown, fallback: string) {
-  if (data && typeof data === "object") {
-    const obj = data as ApiError;
-    if (typeof obj.detail === "string") return obj.detail;
-    if (typeof obj.message === "string") return obj.message;
-  }
-  return fallback;
-}
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
+).replace(/\/+$/, "");
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
-  const response = await fetch(`${API_BASE}/auth/recover`, {
+  const rawBody = await req.text();
+  const response = await fetch(`${API_BASE}/auth/forgot`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": req.headers.get("content-type") ?? "application/json",
+      cookie: req.headers.get("cookie") ?? "",
+    },
+    body: rawBody,
+    redirect: "manual",
   });
 
-  let data: unknown = null;
+  let payload: unknown = null;
   try {
-    data = await response.json();
+    const text = await response.text();
+    payload = text ? JSON.parse(text) : null;
   } catch {
-    data = null;
+    payload = null;
   }
 
-  if (!response.ok) {
-    return NextResponse.json(
-      { detail: extractMessage(data, "Impossible d envoyer le mail de reinitialisation") },
-      { status: response.status }
-    );
+  const nextRes = NextResponse.json(payload ?? { ok: response.ok }, { status: response.status });
+  const setCookies = response.headers.getSetCookie?.() ?? [];
+  for (const cookie of setCookies) {
+    nextRes.headers.append("Set-Cookie", cookie);
   }
-
-  return NextResponse.json({ ok: true }, { status: 202 });
+  if (!setCookies.length) {
+    const header = response.headers.get("set-cookie");
+    if (header) nextRes.headers.append("Set-Cookie", header);
+  }
+  return nextRes;
 }

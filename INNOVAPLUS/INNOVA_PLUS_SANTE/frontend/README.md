@@ -2,7 +2,7 @@ INNOVA+ Santé — Frontend (React + Vite)
 ======================================
 
 - Base URL backend (Render): `/sante`
-- Définis `VITE_API_BASE` (local/Vercel) vers `https://innovaplus.onrender.com/sante`
+- Définis `VITE_API_BASE` (local/Vercel) vers `https://api.innovaplus.africa/sante`
 
 Scripts
 -------
@@ -28,6 +28,7 @@ Déploiement Vercel (monorepo)
 - Install: `npm ci`
 - Build: `npm run build`
 - Output: `dist`
-- Env: `VITE_API_BASE=https://innovaplus.onrender.com/sante`
+- Env: `VITE_API_BASE=https://api.innovaplus.africa/sante`
 
 Assure-toi que CORS côté backend autorise ce domaine Vercel.
+

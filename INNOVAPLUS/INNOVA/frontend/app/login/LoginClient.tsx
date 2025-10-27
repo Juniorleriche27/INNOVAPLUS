@@ -25,12 +25,13 @@ export default function LoginClient() {
       const resp = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        throw new Error(typeof (data as any)?.detail === "string" ? (data as any).detail : "Email ou mot de passe invalide");
+        throw new Error(typeof data?.detail === "string" ? data.detail : "Email ou mot de passe invalide");
       }
 
       await refresh();
@@ -96,13 +97,13 @@ export default function LoginClient() {
           <p>
             Pas encore de compte ? {" "}
             <Link href="/signup" className="font-semibold text-sky-700 hover:underline">
-              Creer un compte
+              Créer un compte
             </Link>
           </p>
           <p>
-            Mot de passe oublie ? {" "}
+            Mot de passe oublié ? {" "}
             <Link href="/account/recover" className="font-semibold text-sky-700 hover:underline">
-              Reinitialiser ici
+              Réinitialiser ici
             </Link>
           </p>
         </div>

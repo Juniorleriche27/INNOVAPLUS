@@ -2,25 +2,34 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-type User = { id: string; name?: string | null; email?: string } | null;
+type User = {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  roles?: string[];
+  created_at?: string;
+} | null;
 
 type AuthContextValue = {
   user: User;
   loading: boolean;
   refresh: () => Promise<void>;
   clear: () => void;
+  initialLoggedIn: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const SESSION_COOKIE = "innova_session";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
-  // Bootstrap hint from non-HTTPOnly cookie to reduce UI clignotement
-  const hasLoginFlag = useMemo(() => {
+
+  const hasSessionCookie = useMemo(() => {
+    if (typeof document === "undefined") return false;
     try {
-      if (typeof document === "undefined") return false;
-      return /(?:^|; )innova_logged_in=1(?:;|$)/.test(document.cookie);
+      return document.cookie.split(";").some((part) => part.trim().startsWith(`${SESSION_COOKIE}=`));
     } catch {
       return false;
     }
@@ -31,8 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store", credentials: "include" });
       if (!res.ok) throw new Error("not auth");
-      const u = await res.json();
-      setUser(u);
+      const data = (await res.json()) as User;
+      setUser(data);
     } catch {
       setUser(null);
     } finally {
@@ -45,19 +54,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Si on a l'indicateur, tente immédiatement un rafraîchissement
-    // Sinon, marque l'état comme non connecté sans flash
-    if (hasLoginFlag) {
+    if (hasSessionCookie) {
       void refresh();
-    } else {
-      setLoading(false);
-      setUser(null);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasLoginFlag]);
+    setLoading(false);
+    setUser(null);
+  }, [hasSessionCookie, refresh]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, clear }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, refresh, clear, initialLoggedIn: hasSessionCookie }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

@@ -23,15 +23,14 @@ export default function SignupClient() {
     setError(null);
 
     try {
+      const [firstRaw, ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
+      const first_name = firstRaw || email.split("@")[0];
+      const last_name = rest.join(" ");
       const resp = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fullName || email.split("@")[0],
-          email,
-          password,
-          role: "user",
-        }),
+        credentials: "include",
+        body: JSON.stringify({ email, password, first_name, last_name }),
       });
 
       const data = await resp.json().catch(() => ({} as any));
@@ -45,7 +44,7 @@ export default function SignupClient() {
           throw new Error(msg || "Données invalides (email ou mot de passe)");
         }
         if (s === 401 || s === 403) {
-          throw new Error("Vous êtes déjà connecté.");
+          throw new Error("Vous êtes déjà connecté·e.");
         }
         if (s === 429) {
           throw new Error("Trop de tentatives, réessayez dans 1 minute.");
@@ -110,12 +109,12 @@ export default function SignupClient() {
               id="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
-            <p className="mt-1 text-xs text-slate-500">6 caractères minimum recommandé.</p>
+            <p className="mt-1 text-xs text-slate-500">8 caractères minimum recommandés.</p>
           </div>
 
           {message && (
@@ -135,7 +134,7 @@ export default function SignupClient() {
             className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
             disabled={loading}
           >
-            {loading ? "Création en cours..." : "S’inscrire"}
+            {loading ? "Création en cours..." : "S'inscrire"}
           </button>
         </form>
 
@@ -149,5 +148,3 @@ export default function SignupClient() {
     </main>
   );
 }
-
-

@@ -1,113 +1,38 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://innovaplus.onrender.com/innova/api"
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
 ).replace(/\/+$/, "");
 
-if (!API_BASE) {
-  console.warn("API base URL is not defined. Set NEXT_PUBLIC_API_URL or API_URL.");
-}
-
-type LoginSuccess = {
-  access_token?: string;
-  refresh_token?: string;
-  expires_in?: number;
-  token_type?: string;
-  user?: unknown;
-};
-
-type ApiError = {
-  detail?: string;
-  message?: string;
-};
-
-function extractMessage(data: unknown, fallback: string): string {
-  if (data && typeof data === "object") {
-    const obj = data as ApiError;
-    if (typeof obj.detail === "string") return obj.detail;
-    if (typeof obj.message === "string") return obj.message;
-  }
-  return fallback;
-}
-
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
+  const rawBody = await req.text();
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": req.headers.get("content-type") ?? "application/json",
+      cookie: req.headers.get("cookie") ?? "",
+    },
+    body: rawBody,
+    redirect: "manual",
   });
 
-  let data: unknown = null;
+  let payload: unknown = null;
   try {
-    data = await response.json();
+    const text = await response.text();
+    payload = text ? JSON.parse(text) : null;
   } catch {
-    data = null;
+    payload = null;
   }
 
-  if (!response.ok) {
-    return NextResponse.json(
-      { detail: extractMessage(data, "Email ou mot de passe invalide") },
-      { status: response.status }
-    );
+  const nextRes = NextResponse.json(payload ?? null, { status: response.status });
+  const setCookies = response.headers.getSetCookie?.() ?? [];
+  for (const cookie of setCookies) {
+    nextRes.headers.append("Set-Cookie", cookie);
   }
-
-  const parsed = (data ?? {}) as LoginSuccess;
-  const cookieStore = cookies();
-  const site = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://innovaplus.africa");
-  let domain: string | undefined;
-  try {
-    const host = new URL(site).hostname;
-    if (host.endsWith("innovaplus.africa")) domain = ".innovaplus.africa";
-    else if (/vercel\.app$/i.test(host)) domain = undefined; // cookies host-only en preview/prod Vercel
-  } catch {}
-  const accessToken =
-    typeof (parsed as any).access_token === "string"
-      ? (parsed as any).access_token
-      : typeof (parsed as any).token === "string"
-      ? (parsed as any).token
-      : undefined;
-  const refreshToken = typeof parsed.refresh_token === "string" ? parsed.refresh_token : undefined;
-  const expiresIn = typeof parsed.expires_in === "number" ? parsed.expires_in : 3600;
-  const maxAge = Math.max(60, Math.min(expiresIn, 60 * 60 * 24 * 30));
-
-  if (accessToken) {
-    cookieStore.set("innova_access", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: "lax",
-      maxAge,
-      path: "/",
-      ...(domain ? { domain } : {}),
-    });
-    // Non-sensitive flag for client-side UI state (no token exposed)
-    cookieStore.set("innova_logged_in", "1", {
-      httpOnly: false,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: "lax",
-      maxAge,
-      path: "/",
-      ...(domain ? { domain } : {}),
-    });
+  if (!setCookies.length) {
+    const header = response.headers.get("set-cookie");
+    if (header) nextRes.headers.append("Set-Cookie", header);
   }
-
-  if (refreshToken) {
-    cookieStore.set("innova_refresh", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== "development",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-      ...(domain ? { domain } : {}),
-    });
-  }
-
-  return NextResponse.json({
-    user: parsed.user ?? null,
-    expires_in: parsed.expires_in ?? null,
-    token_type: parsed.token_type ?? "bearer",
-  });
+  return nextRes;
 }
-
 

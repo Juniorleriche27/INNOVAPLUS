@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
 
 export default function LoginPage() {
-  const access = cookies().get("innova_access")?.value;
-  if (access) redirect("/me/recommendations");
+  const session = cookies().get("innova_session")?.value;
+  if (session) redirect("/me/recommendations");
   return <LoginClient />;
 }

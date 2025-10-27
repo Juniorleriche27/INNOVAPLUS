@@ -20,13 +20,15 @@ export default function RecoverPage() {
       const resp = await fetch("/api/auth/recover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, redirect_to: redirectTo || undefined }),
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        throw new Error(typeof data?.detail === "string" ? data.detail : "Impossible d envoyer le mail de reinitialisation");
+        const msg = typeof data?.detail === "string" ? data.detail : undefined;
+        throw new Error(msg || "Impossible d'envoyer le mail de réinitialisation");
       }
-      setMessage("Un lien de reinitialisation vient d etre envoye si l adresse est connue.");
+      setMessage("Si cette adresse est connue, un lien de réinitialisation vient d'être envoyé.");
       setEmail("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -38,9 +40,9 @@ export default function RecoverPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Mot de passe oublie</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Mot de passe oublié</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Entrez votre adresse email pour recevoir un lien de reinitialisation. Le lien expirera apres un court delai.
+          Entrez votre adresse email pour recevoir un lien de réinitialisation. Le lien expirera au bout de 30 minutes.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
@@ -67,11 +69,11 @@ export default function RecoverPage() {
               type="url"
               value={redirectTo}
               onChange={(event) => setRedirectTo(event.target.value)}
-              placeholder="https://innova.co/accueil"
+              placeholder="https://innovaplus.africa/login"
               className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
             <p className="mt-1 text-xs text-slate-500">
-              Laisse vide pour utiliser l URL par defaut configuree cote serveur.
+              Laisse vide pour utiliser l'URL par défaut configurée côté serveur.
             </p>
           </div>
 
@@ -97,7 +99,7 @@ export default function RecoverPage() {
         </form>
 
         <p className="mt-6 text-sm text-slate-500">
-          Retour a la {" "}
+          Retour à la {" "}
           <Link href="/login" className="font-semibold text-sky-700 hover:underline">
             page de connexion
           </Link>

@@ -6,9 +6,8 @@ import { redirect } from "next/navigation";
 import SignupClient from "./SignupClient";
 
 export default function SignupPage() {
-  const jar = cookies();
-  const access = jar.get("innova_access")?.value;
-  if (access) {
+  const session = cookies().get("innova_session")?.value;
+  if (session) {
     redirect("/me/recommendations");
   }
   return <SignupClient />;

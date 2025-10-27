@@ -1,19 +1,30 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://innovaplus.onrender.com/innova/api"
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa/innova/api"
 ).replace(/\/+$/, "");
 
-export async function GET() {
-  const token = cookies().get("innova_access")?.value;
-  if (!token) return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+export async function GET(req: Request) {
+  const response = await fetch(`${API_BASE}/auth/me`, {
+    headers: {
+      cookie: req.headers.get("cookie") ?? "",
+    },
     cache: "no-store",
+    redirect: "manual",
   });
-  const text = await res.text().catch(() => "");
-  if (!res.ok) return NextResponse.json({ detail: text || res.statusText }, { status: res.status });
-  return new NextResponse(text, { status: 200, headers: { "Content-Type": "application/json" } });
-}
 
+  const text = await response.text().catch(() => "");
+  const nextRes = new NextResponse(text, {
+    status: response.status,
+    headers: { "Content-Type": response.headers.get("content-type") ?? "application/json" },
+  });
+  const setCookies = response.headers.getSetCookie?.() ?? [];
+  for (const cookie of setCookies) {
+    nextRes.headers.append("Set-Cookie", cookie);
+  }
+  if (!setCookies.length) {
+    const header = response.headers.get("set-cookie");
+    if (header) nextRes.headers.append("Set-Cookie", header);
+  }
+  return nextRes;
+}

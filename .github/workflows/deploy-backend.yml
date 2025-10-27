@@ -10,6 +10,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SERVICE_NAME: innovaplus-backend
+      RSYNC_SOURCE: INNOVAPLUS/INNOVA/backend/
+      REMOTE_ROOT: ${{ secrets.DEPLOY_PATH }}
+      REMOTE_VENV: ${{ secrets.DEPLOY_PATH }}/.venv
+      REQUIREMENTS_FILE: ${{ secrets.DEPLOY_PATH }}/requirements.txt
+      HEALTHCHECK_URL: https://api.innovaplus.africa/health
+      HEALTHCHECK_INTERVAL: "5"
+      HEALTHCHECK_TIMEOUT: "180"
 
     steps:
       - name: Checkout
@@ -26,7 +35,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
+            "mkdir -p '${{ env.REMOTE_ROOT }}'"
 
       - name: Push code to server (protect .venv and .env)
         run: |
@@ -35,17 +44,76 @@ jobs:
             --filter='P .env' \
             --exclude='.git/' \
             --exclude='__pycache__/' \
-            INNOVAPLUS/INNOVA/backend/ \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
+            ${{ env.RSYNC_SOURCE }} \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.REMOTE_ROOT }}/
 
       - name: Install/Update Python deps in remote venv
         run: |
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "'${{ secrets.DEPLOY_PATH }}/.venv/bin/pip' install -r '${{ secrets.DEPLOY_PATH }}/requirements.txt' --no-cache-dir"
+            <<'EOF'
+          set -e
+          REMOTE_VENV="${{ env.REMOTE_VENV }}"
+          REQUIREMENTS_FILE="${{ env.REQUIREMENTS_FILE }}"
+          if [ ! -x "${REMOTE_VENV}/bin/python" ]; then
+            python3 -m venv "${REMOTE_VENV}"
+          fi
+          "${REMOTE_VENV}/bin/python" -m pip install -U pip wheel
+          "${REMOTE_VENV}/bin/pip" install -r "${REQUIREMENTS_FILE}" --no-cache-dir
+          EOF
 
-      - name: Restart service via remote script
+      - name: Restart service
         run: |
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            'bash -lc "~/deploy/deploy_backend.sh"'
+            <<'EOF'
+          set -euo pipefail
+          SERVICE_NAME="${{ env.SERVICE_NAME }}"
+          DEPLOY_ROOT="${{ env.REMOTE_ROOT }}"
+          export DEPLOY_ROOT
+          sudo systemctl daemon-reload
+          sudo systemctl restart "${SERVICE_NAME}"
+          sudo systemctl is-active --quiet "${SERVICE_NAME}"
+          sudo systemctl status "${SERVICE_NAME}" --no-pager
+          EOF
+
+      - name: Validate public health endpoint
+        run: |
+          set -euo pipefail
+          SERVICE_NAME="${{ env.SERVICE_NAME }}"
+          HEALTH_URL="${{ env.HEALTHCHECK_URL }}"
+          INTERVAL=${{ env.HEALTHCHECK_INTERVAL }}
+          TIMEOUT=${{ env.HEALTHCHECK_TIMEOUT }}
+          if ! command -v jq >/dev/null; then
+            echo "::group::Installing jq for health validation"
+            sudo apt-get update
+            sudo apt-get install -y jq
+            echo "::endgroup::"
+          fi
+          deadline=$((SECONDS + TIMEOUT))
+          attempt=1
+          last_response=""
+          while [ $SECONDS -lt $deadline ]; do
+            echo "Health attempt ${attempt}..."
+            response=$(curl -sS --max-time 10 "${HEALTH_URL}" || true)
+            last_response="${response}"
+            status=$(printf '%s' "${response}" | jq -r '.status // empty' 2>/dev/null || true)
+            mongo=$(printf '%s' "${response}" | jq -r '.mongo // empty' 2>/dev/null || true)
+            if [ "${status}" = "ok" ] && [ "${mongo}" = "ok" ]; then
+              echo "Health check succeeded on attempt ${attempt}."
+              exit 0
+            fi
+            sleep "${INTERVAL}"
+            attempt=$((attempt + 1))
+          done
+
+          echo "::error::Health endpoint did not report status==ok and mongo==ok within timeout."
+          echo "Last response from ${HEALTH_URL}:"
+          printf '%s\n' "${last_response}"
+
+          echo "::group::Recent service logs"
+          ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "sudo journalctl -u '${SERVICE_NAME}' -n 200 --no-pager || true"
+          echo "::endgroup::"
+          exit 1

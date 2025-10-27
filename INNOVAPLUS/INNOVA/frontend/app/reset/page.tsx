@@ -1,11 +1,10 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function ResetPage() {
+function ResetForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const presetEmail = searchParams?.get("email") || "";
@@ -40,9 +39,9 @@ export default function ResetPage() {
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const msg = typeof data?.detail === "string" ? data.detail : undefined;
-        throw new Error(msg || "Le lien est invalide ou expiré.");
+        throw new Error(msg || "Le lien est invalide ou expire.");
       }
-      setMessage("Mot de passe mis à jour. Vous pouvez maintenant vous connecter.");
+      setMessage("Mot de passe mis a jour. Vous pouvez maintenant vous connecter.");
       setTimeout(() => router.replace("/login"), 600);
       setPassword("");
       setConfirm("");
@@ -56,15 +55,15 @@ export default function ResetPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Réinitialiser le mot de passe</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Reinitialiser le mot de passe</h1>
         {tokenMissing ? (
           <p className="mt-4 text-sm text-red-600">
-            Ce lien est invalide ou incomplet. Vérifiez votre email ou demandez un nouveau lien de réinitialisation.
+            Ce lien est invalide ou incomplet. Verifiez votre email ou demandez un nouveau lien de reinitialisation.
           </p>
         ) : (
           <>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis un nouveau mot de passe. Par sécurité, toutes les sessions actives seront déconnectées.
+              Choisissez un nouveau mot de passe. Par securite, toutes les sessions actives seront deconnectees.
             </p>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
@@ -99,7 +98,7 @@ export default function ResetPage() {
 
               <div>
                 <label htmlFor="confirm" className="block text-sm font-medium text-slate-700">
-                  Confirme le mot de passe
+                  Confirmez le mot de passe
                 </label>
                 <input
                   id="confirm"
@@ -129,7 +128,7 @@ export default function ResetPage() {
                 className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
                 disabled={loading}
               >
-                {loading ? "Réinitialisation..." : "Mettre à jour"}
+                {loading ? "Reinitialisation..." : "Mettre a jour"}
               </button>
             </form>
           </>
@@ -138,10 +137,18 @@ export default function ResetPage() {
         <p className="mt-6 text-sm text-slate-500">
           Besoin d'aide ?{" "}
           <Link href="/account/recover" className="font-semibold text-sky-700 hover:underline">
-            Demande un nouveau lien
+            Demandez un nouveau lien
           </Link>
         </p>
       </section>
     </main>
+  );
+}
+
+export default function ResetPage() {
+  return (
+    <Suspense fallback={<div className="px-4 py-10 text-sm text-slate-500">Chargement...</div>}>
+      <ResetForm />
+    </Suspense>
   );
 }

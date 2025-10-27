@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$, "");
+).replace(/\/+$/, "");
 
 const CHAT_BASE = API_BASE.replace(/\/innova\/api$/, "");
 

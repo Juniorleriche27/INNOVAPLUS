@@ -2,14 +2,7 @@
 
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$, "");
-
-if (typeof window !== "undefined") {
-  if (!(window as any).__innova_api_logged) {
-    (window as any).__innova_api_logged = true;
-    console.log("INNOVA API_BASE:", API_BASE);
-  }
-}
+).replace(/\/+$/, "");
 
 type JsonHeaders = HeadersInit;
 

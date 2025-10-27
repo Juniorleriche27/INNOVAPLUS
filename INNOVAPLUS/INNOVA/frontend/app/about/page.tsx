@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 // innova-frontend/app/about/page.tsx
 import Link from "next/link";
 

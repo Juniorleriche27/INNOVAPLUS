@@ -23,51 +23,87 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const SESSION_COOKIE = "innova_session";
 
+function detectSessionCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  try {
+    return document.cookie.split(";").some((part) => part.trim().startsWith(`${SESSION_COOKIE}=`));
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoggedIn, setInitialLoggedIn] = useState<boolean>(() => detectSessionCookie());
 
-  const hasSessionCookie = useMemo(() => {
-    if (typeof document === "undefined") return false;
-    try {
-      return document.cookie.split(";").some((part) => part.trim().startsWith(`${SESSION_COOKIE}=`));
-    } catch {
-      return false;
-    }
+  const syncCookiePresence = useCallback(() => {
+    const present = detectSessionCookie();
+    setInitialLoggedIn(present);
+    return present;
   }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    const cookiePresent = syncCookiePresence();
+    if (!cookiePresent) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await fetch(`${AUTH_API_BASE}/auth/me`, { cache: "no-store", credentials: "include" });
       if (!res.ok) throw new Error("not auth");
       const data = (await res.json()) as User;
       setUser(data);
+      setInitialLoggedIn(true);
     } catch {
       setUser(null);
+      setInitialLoggedIn(false);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncCookiePresence]);
 
   const clear = useCallback(() => {
     setUser(null);
+    setInitialLoggedIn(false);
   }, []);
 
   useEffect(() => {
-    if (hasSessionCookie) {
+    const present = syncCookiePresence();
+    if (present) {
       void refresh();
-      return;
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
-    setUser(null);
-  }, [hasSessionCookie, refresh]);
+  }, [refresh, syncCookiePresence]);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, refresh, clear, initialLoggedIn: hasSessionCookie }}>
-      {children}
-    </AuthContext.Provider>
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleVisibility = () => {
+      const present = syncCookiePresence();
+      if (present && !user) {
+        void refresh();
+      }
+      if (!present) {
+        setUser(null);
+      }
+    };
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [refresh, syncCookiePresence, user]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, loading, refresh, clear, initialLoggedIn }),
+    [user, loading, refresh, clear, initialLoggedIn]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {

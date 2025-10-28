@@ -61,7 +61,7 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
 export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const { user, initialLoggedIn } = useAuth();
+  const { user, initialLoggedIn, loading } = useAuth();
   const displayName = useMemo(() => {
     if (!user) return "";
     const parts = [user.first_name, user.last_name].filter(Boolean);
@@ -69,6 +69,9 @@ export default function Headbar() {
     return user.email ?? "";
   }, [user]);
   const userInitial = useMemo(() => (displayName ? displayName.charAt(0).toUpperCase() : "I"), [displayName]);
+  const showAccount = loading || initialLoggedIn || Boolean(user);
+  const accountTitle = displayName || (loading ? "Chargement..." : "Mon espace");
+  const accountEmail = user?.email ?? (loading ? "Connexion en cours..." : "");
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -105,22 +108,28 @@ export default function Headbar() {
 
   // Try to fetch notifications count if backend exposes it
   useEffect(() => {
-    const userId = "demo-user";
+    if (!showAccount) return;
+    const userId = user?.id ?? "demo-user";
+    let active = true;
     apiNotifications
       .list(userId, true)
       .then((items) => {
+        if (!active) return;
         setNotifs(items);
         setNotifCount(items.length);
       })
       .catch(() => void 0);
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [showAccount, user]);
 
   // Mark notifications as read when opening the dropdown
   useEffect(() => {
-    if (!notifOpen) return;
+    if (!notifOpen || !showAccount) return;
     const unreadIds = notifs.filter((n) => !n.read_at).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    const userId = "demo-user";
+    const userId = user?.id ?? "demo-user";
     apiNotifications
       .markRead(userId, unreadIds)
       .then(() => {
@@ -128,7 +137,7 @@ export default function Headbar() {
         setNotifCount(0);
       })
       .catch(() => void 0);
-  }, [notifOpen, notifs]);
+  }, [notifOpen, notifs, showAccount, user]);
 
   return (
     <header
@@ -257,7 +266,7 @@ export default function Headbar() {
             </div>
 
             {/* Auth controls */}
-            {user || initialLoggedIn ? (
+            {showAccount ? (
               <div className="relative">
                 <button
                   onClick={() => setAccountOpen((v) => !v)}
@@ -276,9 +285,9 @@ export default function Headbar() {
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200/60 bg-white/95 backdrop-blur-xl p-2 shadow-xl shadow-slate-900/10">
                     <div className="px-3 py-2 border-b border-slate-200/60 mb-2">
                       <p className="text-sm font-medium text-slate-900">
-                        {displayName || "Utilisateur"}
+                        {accountTitle}
                       </p>
-                      <p className="text-xs text-slate-500">{user?.email || ""}</p>
+                      <p className="text-xs text-slate-500">{accountEmail}</p>
                     </div>
                     <Link 
                       className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors" 

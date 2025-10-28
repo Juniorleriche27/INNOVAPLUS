@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     SMTP_PASS: str | None = os.getenv("SMTP_PASS")
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", os.getenv("SMTP_STARTTLS", "true")).lower() in {"1", "true", "yes"}
     SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
-    CHAT_PROVIDER: str = os.getenv("PROVIDER", "echo")
+    CHAT_PROVIDER: str = os.getenv("PROVIDER", "local")
     CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
     # CORS
     ALLOWED_ORIGINS: str | None = os.getenv("ALLOWED_ORIGINS")

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type ChatMessage = {
   id: string;
@@ -10,11 +11,7 @@ type ChatMessage = {
   pending?: boolean;
 };
 
-const RAW_BASE = (
-  process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.innovaplus.africa/innova/api"
-).replace(/\/+$/, "");
-
-const API_BASE = RAW_BASE.replace(/\/innova\/api$/, "");
+const API_BASE = CHATLAYA_API_BASE;
 
 export default function ChatlayaPage() {
   const [conversationId, setConversationId] = useState<string>("");

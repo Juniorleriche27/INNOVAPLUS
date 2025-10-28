@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AUTH_API_BASE } from "@/lib/env";
 
 type User = {
@@ -21,82 +21,78 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-const SESSION_COOKIE = "innova_session";
-
-function detectSessionCookie(): boolean {
-  if (typeof document === "undefined") return false;
-  try {
-    return document.cookie.split(";").some((part) => part.trim().startsWith(`${SESSION_COOKIE}=`));
-  } catch {
-    return false;
-  }
-}
+const pendingRefresh = new WeakMap<Window | Document, Promise<void>>();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
-  const [initialLoggedIn, setInitialLoggedIn] = useState<boolean>(() => detectSessionCookie());
-
-  const syncCookiePresence = useCallback(() => {
-    const present = detectSessionCookie();
-    setInitialLoggedIn(present);
-    return present;
-  }, []);
+  const [initialLoggedIn, setInitialLoggedIn] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
-    const cookiePresent = syncCookiePresence();
-    if (!cookiePresent) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
     try {
-      const res = await fetch(`${AUTH_API_BASE}/auth/me`, { cache: "no-store", credentials: "include" });
+      const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+        cache: "no-store",
+        credentials: "include",
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error("not auth");
       const data = (await res.json()) as User;
       setUser(data);
       setInitialLoggedIn(true);
-    } catch {
-      setUser(null);
-      setInitialLoggedIn(false);
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        setUser(null);
+        setInitialLoggedIn(false);
+      }
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }, [syncCookiePresence]);
+  }, []);
 
   const clear = useCallback(() => {
+    abortRef.current?.abort();
     setUser(null);
     setInitialLoggedIn(false);
   }, []);
 
   useEffect(() => {
-    const present = syncCookiePresence();
-    if (present) {
-      void refresh();
-    } else {
-      setLoading(false);
-    }
-  }, [refresh, syncCookiePresence]);
+    void refresh();
+    return () => abortRef.current?.abort();
+  }, [refresh]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const targetWindow = window;
+    const targetDocument = document;
+
+    const scheduleRefresh = () => {
+      const existing = pendingRefresh.get(targetWindow);
+      if (existing) return;
+      const promise = refresh().finally(() => pendingRefresh.delete(targetWindow));
+      pendingRefresh.set(targetWindow, promise);
+    };
+
     const handleVisibility = () => {
-      const present = syncCookiePresence();
-      if (present && !user) {
-        void refresh();
-      }
-      if (!present) {
-        setUser(null);
+      if (targetDocument.visibilityState === "visible") {
+        scheduleRefresh();
       }
     };
-    window.addEventListener("focus", handleVisibility);
-    document.addEventListener("visibilitychange", handleVisibility);
+
+    targetWindow.addEventListener("focus", scheduleRefresh);
+    targetDocument.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      window.removeEventListener("focus", handleVisibility);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      targetWindow.removeEventListener("focus", scheduleRefresh);
+      targetDocument.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [refresh, syncCookiePresence, user]);
+  }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, loading, refresh, clear, initialLoggedIn }),

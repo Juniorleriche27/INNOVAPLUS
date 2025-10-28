@@ -16,6 +16,9 @@ SPECIAL_TOKENS: List[str] = [
     "<|end|>",
     "<s>",
     "</s>",
+    "<|im_start|>",
+    "<|im_end|>",
+    "<|endoftext|>",
 ]
 
 class SmolLMModel:
@@ -159,10 +162,11 @@ class SmolLMModel:
                 prompt=prompt,
                 max_length=max_tokens,
                 temperature=temperature,
-                num_return_sequences=1
+                num_return_sequences=1,
+                stop_tokens=["<|im_end|>"]
             )
-            
-            return self._clean_response(responses[0]) if responses else "Je suis désolé, je n'ai pas de réponse pour l'instant."
+
+            return responses[0] if responses else "Je suis désolé, je n'ai pas de réponse pour l'instant."
             
         except Exception as e:
             logger.error(f"Error in chat completion: {e}")
@@ -170,23 +174,21 @@ class SmolLMModel:
     
     def _format_chat_messages(self, messages: List[Dict[str, str]]) -> str:
         """Format chat messages for SmolLM"""
-        formatted_prompt = ""
-        
+        chat_messages: List[Dict[str, str]] = []
         for message in messages:
-            role = message.get("role", "")
-            content = message.get("content", "")
-            
-            if role == "system":
-                formatted_prompt += f"<|system|>\n{content}\n"
-            elif role == "user":
-                formatted_prompt += f"<|user|>\n{content}\n"
-            elif role == "assistant":
-                formatted_prompt += f"<|assistant|>\n{content}\n"
-        
-        # Add assistant prompt
-        formatted_prompt += "<|assistant|>\n"
+            role = message.get("role", "user").lower()
+            if role not in {"system", "user", "assistant"}:
+                role = "user"
+            chat_messages.append({
+                "role": role,
+                "content": message.get("content", ""),
+            })
 
-        return formatted_prompt
+        return self.tokenizer.apply_chat_template(
+            chat_messages,
+            add_generation_prompt=True,
+            tokenize=False,
+        )
 
     @staticmethod
     def _clean_response(text: str) -> str:

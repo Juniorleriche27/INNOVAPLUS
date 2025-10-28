@@ -9,6 +9,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+SPECIAL_TOKENS: List[str] = [
+    "<|system|>",
+    "<|user|>",
+    "<|assistant|>",
+    "<|end|>",
+    "<s>",
+    "</s>",
+]
+
 class SmolLMModel:
     """SmolLM-1.7B-Instruct model wrapper for INNOVA+"""
     
@@ -115,8 +124,8 @@ class SmolLMModel:
                     for stop_token in stop_tokens:
                         if stop_token in text:
                             text = text.split(stop_token)[0]
-                
-                generated_texts.append(text.strip())
+
+                generated_texts.append(self._clean_response(text))
             
             return generated_texts
             
@@ -153,7 +162,7 @@ class SmolLMModel:
                 num_return_sequences=1
             )
             
-            return responses[0] if responses else "I'm sorry, I couldn't generate a response."
+            return self._clean_response(responses[0]) if responses else "Je suis désolé, je n'ai pas de réponse pour l'instant."
             
         except Exception as e:
             logger.error(f"Error in chat completion: {e}")
@@ -176,8 +185,20 @@ class SmolLMModel:
         
         # Add assistant prompt
         formatted_prompt += "<|assistant|>\n"
-        
+
         return formatted_prompt
+
+    @staticmethod
+    def _clean_response(text: str) -> str:
+        """Remove training prompt markers and extra whitespace from model output."""
+        cleaned = text
+        for token in SPECIAL_TOKENS:
+            cleaned = cleaned.replace(token, "")
+        # remove stray role markers that may appear without pipe characters
+        cleaned = cleaned.replace("<user>", "").replace("<assistant>", "")
+        # collapse repeated blank lines and trim
+        cleaned = "\n".join(line.strip() for line in cleaned.splitlines() if line.strip())
+        return cleaned.strip()
     
     def get_model_info(self) -> Dict[str, Any]:
         """Get model information"""

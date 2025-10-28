@@ -1,8 +1,8 @@
 // innova-frontend/lib/api.ts
 
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_CHATLAYA_URL || "https://api.innovaplus.africa"
-).replace(/\/+$/, "");
+import { INNOVA_API_BASE } from "@/lib/env";
+
+const API_BASE = INNOVA_API_BASE;
 
 type JsonHeaders = HeadersInit;
 

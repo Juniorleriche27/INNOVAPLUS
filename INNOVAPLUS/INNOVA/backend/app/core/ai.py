@@ -78,6 +78,12 @@ def generate_answer(
 ) -> str:
     provider_name = (provider or settings.CHAT_PROVIDER or settings.LLM_PROVIDER or "echo").lower()
     effective_prompt = prompt or (history[-1]["content"] if history else "")
+    logger.debug(
+        "generate_answer provider=%s history=%d snippet=%r",
+        provider_name,
+        len(history or []),
+        effective_prompt[:80],
+    )
 
     if provider_name in {"local", "smollm", "chatlaya"}:
         try:
@@ -92,7 +98,15 @@ def generate_answer(
             smollm = get_smollm_model()
             max_tokens = max(64, min((timeout or 512), 1024))
             response = smollm.chat_completion(conversation, max_tokens=max_tokens, temperature=0.7)
-            return response.strip()
+            cleaned = response.strip()
+            logger.debug(
+                "SmolLM returned len=%d snippet=%r",
+                len(cleaned),
+                cleaned[:120],
+            )
+            if cleaned:
+                return cleaned
+            logger.debug("SmolLM empty response, falling back to snippet echo.")
         except Exception as exc:  # noqa: BLE001
             logger.warning("Local provider failed, fallback to echo: %s", exc)
 
@@ -116,6 +130,7 @@ def generate_answer(
         logger.warning("Provider '%s' not configured. Falling back to echo.", provider_name)
         return effective_prompt
 
+    logger.debug("Returning stub fallback for provider=%s", provider_name)
     snippet = effective_prompt[:200] + ("..." if len(effective_prompt) > 200 else "")
     return f"[stub] Traitement de la requete: {snippet}"
 

@@ -1,13 +1,22 @@
 """
-SmolLM-1.7B-Instruct integration for INNOVA+ backend
+SmolLM integration for INNOVA+ backend.
+Permet de charger un modèle local (ex. smollm-360m-instruct) sans contact réseau.
 """
+from __future__ import annotations
+
+import logging
 import os
+from pathlib import Path
+from typing import Optional, List, Dict, Any
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from typing import Optional, List, Dict, Any
-import logging
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_MODEL_DIR = "smollm-1.7b-instruct"
 
 SPECIAL_TOKENS: List[str] = [
     "<|system|>",
@@ -21,12 +30,41 @@ SPECIAL_TOKENS: List[str] = [
     "<|endoftext|>",
 ]
 
+def _sanitize_path(raw_path: str | None) -> Path:
+    """
+    Nettoie et résout le chemin fourni via l'env / config.
+    On essaye successivement :
+    - chemin tel quel (absolu ou relatif)
+    - chemin relatif à la racine backend
+    - dossier par défaut du repo
+    """
+    candidates: List[Path] = []
+
+    if raw_path:
+        stripped = raw_path.strip().strip("\"'")
+        if stripped:
+            expanded = Path(os.path.expandvars(stripped)).expanduser()
+            candidates.append(expanded)
+            if not expanded.is_absolute():
+                candidates.append((_BACKEND_ROOT / expanded).resolve())
+
+    candidates.append((_BACKEND_ROOT / _DEFAULT_MODEL_DIR).resolve())
+
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+
+    raise FileNotFoundError(
+        f"Impossible de trouver le dossier SmolLM parmi: {', '.join(str(p) for p in candidates)}"
+    )
+
+
 class SmolLMModel:
     """SmolLM-1.7B-Instruct model wrapper for INNOVA+"""
     
-    def __init__(self, model_path: str = "smollm-1.7b-instruct"):
-        raw_path = model_path.strip()
-        self.model_path = os.path.abspath(raw_path)
+    def __init__(self, model_path: Optional[str] = None):
+        resolved = _sanitize_path(model_path or settings.SMOLLM_MODEL_PATH)
+        self.model_path = resolved
         self.model = None
         self.tokenizer = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -35,22 +73,19 @@ class SmolLMModel:
     def _load_model(self):
         """Load the SmolLM model and tokenizer"""
         try:
-            logger.info(f"Loading SmolLM model from {self.model_path}")
-            logger.info(f"Using device: {self.device}")
-
-            if not os.path.isdir(self.model_path):
-                raise FileNotFoundError(f"SmolLM model path not found: {self.model_path}")
+            logger.info("Chargement du modèle SmolLM depuis %s", self.model_path)
+            logger.info("Périphérique utilisé: %s", self.device)
             
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
+                str(self.model_path),
                 trust_remote_code=True,
                 local_files_only=True,
             )
             
             # Load model
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,
+                str(self.model_path),
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 device_map="auto" if self.device == "cuda" else None,
                 trust_remote_code=True,
@@ -212,7 +247,7 @@ class SmolLMModel:
         """Get model information"""
         return {
             "model_name": "SmolLM-1.7B-Instruct",
-            "model_path": self.model_path,
+            "model_path": str(self.model_path),
             "device": self.device,
             "parameters": self.model.num_parameters() if self.model else 0,
             "dtype": str(self.model.dtype) if self.model else "unknown"
@@ -226,8 +261,7 @@ def get_smollm_model() -> SmolLMModel:
     global _smollm_model
     
     if _smollm_model is None:
-        model_path = os.getenv("SMOLLM_MODEL_PATH", "smollm-1.7b-instruct")
-        _smollm_model = SmolLMModel(model_path)
+        _smollm_model = SmolLMModel(settings.SMOLLM_MODEL_PATH)
     
     return _smollm_model
 

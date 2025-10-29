@@ -23,7 +23,10 @@ Le modèle a été téléchargé et installé dans le répertoire `smollm-1.7b-i
 # Activer SmolLM (optionnel, par défaut false)
 ENABLE_SMOLLM=true
 
-# Chemin vers le modèle (par défaut: smollm-1.7b-instruct)
+# Chemin vers le modèle (par défaut: smollm-1.7b-instruct dans le repo)
+# Exemples :
+#   SMOLLM_MODEL_PATH=smollm-360m-instruct                # dossier présent dans backend/
+#   SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m  # chemin absolu sur le serveur
 SMOLLM_MODEL_PATH=smollm-1.7b-instruct
 ```
 
@@ -43,7 +46,7 @@ accelerate>=0.25.0
 
 ### Chat Completion
 ```
-POST /innova/api/smollm/chat
+POST /smollm/chat
 ```
 
 **Request:**
@@ -71,7 +74,7 @@ POST /innova/api/smollm/chat
 
 ### Text Generation
 ```
-POST /innova/api/smollm/generate
+POST /smollm/generate
 ```
 
 **Request:**
@@ -86,12 +89,12 @@ POST /innova/api/smollm/generate
 
 ### Model Info
 ```
-GET /innova/api/smollm/info
+GET /smollm/info
 ```
 
 ### Health Check
 ```
-POST /innova/api/smollm/health
+POST /smollm/health
 ```
 
 ## Utilisation
@@ -144,7 +147,7 @@ SmolLM peut être utilisé comme alternative ou complément à Cohere dans CHATL
 Le statut de SmolLM est inclus dans les endpoints de santé de l'application:
 
 ```bash
-curl http://localhost:8000/innova/api/smollm/health
+curl http://localhost:8000/smollm/health
 ```
 
 ## Déploiement

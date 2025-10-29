@@ -25,7 +25,7 @@ class SmolLMModel:
     """SmolLM-1.7B-Instruct model wrapper for INNOVA+"""
     
     def __init__(self, model_path: str = "smollm-1.7b-instruct"):
-        self.model_path = model_path
+        self.model_path = os.path.abspath(model_path)
         self.model = None
         self.tokenizer = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -40,7 +40,8 @@ class SmolLMModel:
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_path,
-                trust_remote_code=True
+                trust_remote_code=True,
+                local_files_only=True,
             )
             
             # Load model
@@ -48,7 +49,8 @@ class SmolLMModel:
                 self.model_path,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 device_map="auto" if self.device == "cuda" else None,
-                trust_remote_code=True
+                trust_remote_code=True,
+                local_files_only=True,
             )
             
             if self.device == "cpu":

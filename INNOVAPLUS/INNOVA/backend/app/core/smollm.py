@@ -25,17 +25,21 @@ class SmolLMModel:
     """SmolLM-1.7B-Instruct model wrapper for INNOVA+"""
     
     def __init__(self, model_path: str = "smollm-1.7b-instruct"):
-        self.model_path = os.path.abspath(model_path)
+        raw_path = model_path.strip()
+        self.model_path = os.path.abspath(raw_path)
         self.model = None
         self.tokenizer = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self._load_model()
-    
+
     def _load_model(self):
         """Load the SmolLM model and tokenizer"""
         try:
             logger.info(f"Loading SmolLM model from {self.model_path}")
             logger.info(f"Using device: {self.device}")
+
+            if not os.path.isdir(self.model_path):
+                raise FileNotFoundError(f"SmolLM model path not found: {self.model_path}")
             
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(

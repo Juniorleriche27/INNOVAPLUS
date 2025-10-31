@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from urllib.parse import urlparse
 
 from app.core.config import settings
 from app.db.mongo import close_mongo_connection, connect_to_mongo
@@ -37,10 +38,24 @@ import os
 
 app = FastAPI(title=settings.APP_NAME)
 
-origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "*").split(",") if o.strip()]
+raw_origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",") if o.strip()]
+cors_origins = {origin.rstrip("/") for origin in raw_origins}
+
+frontend_url = (settings.FRONTEND_BASE_URL or "").strip()
+if frontend_url:
+    cors_origins.add(frontend_url.rstrip("/"))
+    parsed = urlparse(frontend_url)
+    host = parsed.hostname or ""
+    scheme = parsed.scheme or "https"
+    if host and not host.startswith("www."):
+        cors_origins.add(f"{scheme}://www.{host}".rstrip("/"))
+
+if not cors_origins:
+    cors_origins = {"https://innovaplus.africa", "https://www.innovaplus.africa"}
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins else ["https://innovaplus.africa"],
+    allow_origins=sorted(cors_origins),
     allow_origin_regex=r"https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],

@@ -50,15 +50,14 @@ def _cookie_domain() -> str | None:
 
 
 def _set_session_cookie(response: Response, token: str, expires_at: datetime) -> None:
-    max_age = max(60, int((expires_at - datetime.now(timezone.utc)).total_seconds()))
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
         secure=True,
         samesite="lax",
-        max_age=max_age,
-        expires=expires_at,
+        max_age=None,
+        expires=None,
         path="/",
         domain=_cookie_domain(),
     )

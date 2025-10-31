@@ -12,7 +12,6 @@ type ChatMessage = {
 };
 
 const API_BASE = CHATLAYA_API_BASE;
-
 export default function ChatlayaPage() {
   const [conversationId, setConversationId] = useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -34,12 +33,30 @@ export default function ChatlayaPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  function forceLoginRedirect() {
+    if (typeof window === "undefined") return;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const redirect = current && current !== "/" ? encodeURIComponent(current) : "%2Fchatlaya";
+    window.location.href = `/login?redirect=${redirect}`;
+  }
+
+  function isAuthFailure(status: number) {
+    if (status === 401 || status === 403) {
+      forceLoginRedirect();
+      return true;
+    }
+    return false;
+  }
+
   async function bootstrapConversation() {
     try {
       const res = await fetch(`${API_BASE}/chatlaya/session`, {
         method: "POST",
         credentials: "include",
       });
+      if (!res.ok) {
+        if (isAuthFailure(res.status)) return;
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.detail || "Impossible de creer la session");
       setConversationId(data.conversation_id);
@@ -54,6 +71,9 @@ export default function ChatlayaPage() {
         credentials: "include",
         cache: "no-store",
       });
+      if (!res.ok) {
+        if (isAuthFailure(res.status)) return;
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.detail || "Impossible de recuperer les messages");
       setMessages(data.items ?? []);
@@ -102,6 +122,9 @@ export default function ChatlayaPage() {
       body: JSON.stringify({ conversation_id: id, message: prompt }),
     });
     if (!res.ok || !res.body) {
+      if (isAuthFailure(res.status)) {
+        throw new Error("Authentification requise");
+      }
       const text = await res.text().catch(() => "");
       throw new Error(text || "Echec de la reponse");
     }

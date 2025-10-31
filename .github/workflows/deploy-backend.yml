@@ -42,6 +42,7 @@ jobs:
           rsync -az --delete \
             --filter='P .venv/' \
             --filter='P .env' \
+            --filter='P models/' \
             --exclude='.git/' \
             --exclude='__pycache__/' \
             ${{ env.RSYNC_SOURCE }} \

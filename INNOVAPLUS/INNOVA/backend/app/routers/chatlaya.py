@@ -103,6 +103,42 @@ async def list_conversations(
     return ConversationListResponse(items=items, page=page, limit=limit)
 
 
+@router.post("/conversations", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
+async def create_conversation(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    now = datetime.now(timezone.utc)
+    doc = {
+        "user_id": current["_id"],
+        "title": DEFAULT_CONVERSATION_TITLE,
+        "created_at": now,
+        "updated_at": now,
+        "archived": False,
+    }
+    res = await db["conversations"].insert_one(doc)
+    doc["_id"] = res.inserted_id
+    logger.debug("Created new Chatlaya conversation %s for user %s", res.inserted_id, current["_id"])
+    return _serialize_conversation(doc)
+
+
+@router.post("/conversations/{conversation_id}/archive", status_code=status.HTTP_204_NO_CONTENT)
+async def archive_conversation(
+    conversation_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    conv_oid = to_object_id(conversation_id)
+    result = await db["conversations"].update_one(
+        {"_id": conv_oid, "user_id": current["_id"]},
+        {"$set": {"archived": True, "updated_at": datetime.now(timezone.utc)}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
+    # No body for 204
+    return None
+
+
 @router.get("/messages", response_model=MessagesResponse)
 async def list_messages(
     conversation_id: str = Query(..., alias="conversation_id"),

@@ -143,3 +143,5 @@ def detect_embed_dim() -> int:
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to detect embed dim automatically: %s", exc)
         return settings.EMBED_DIM
+
+

@@ -324,14 +324,16 @@ export default function Headbar() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
+                  prefetch={false}
                   className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200"
                 >
                   Se connecter
                 </Link>
-                <Link 
-                  href="/signup" 
+                <Link
+                  href="/signup"
+                  prefetch={false}
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <IconSparkles className="h-4 w-4" />
@@ -471,4 +473,3 @@ export default function Headbar() {
     </header>
   );
 }
-

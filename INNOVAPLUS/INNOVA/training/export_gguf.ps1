@@ -26,5 +26,4 @@ Write-Host "[3/3] Quantizing to q4_k_m"
 
 Write-Host "`n=== Export Completed ==="
 Get-ChildItem -Recurse -File $OutDir | Measure-Object -Property Length -Sum | ForEach-Object { "Size: {0:N1} MB" -f ($_.Sum/1MB) }
-Write-Host "Next: deploy GGUF (q4_k_m) on Render with llama.cpp server or compatible runtime."
-
+Write-Host "Next: load the q4_k_m GGUF with llama.cpp or another compatible runtime."

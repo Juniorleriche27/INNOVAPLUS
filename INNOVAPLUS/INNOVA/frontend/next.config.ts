@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
 
-// Optionnel : proxy API (ex: Render) via /api/*
-// (ex: /api/projects -> https://innova-1-v3ab.onrender.com/projects)
+// Optionnel : proxy API (via /api/*) si un reverse proxy local est utilisé
+// (ex: /api/projects -> http://localhost:8000/projects)
 const DEFAULT_API_BASE = "https://api.innovaplus.africa";
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(/\/+$/, "");
 

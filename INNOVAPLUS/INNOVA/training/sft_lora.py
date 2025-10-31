@@ -28,7 +28,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer
 
-BASE_MODEL = os.environ.get("BASE_MODEL", "HuggingFaceTB/SmolLM-1.7B-Instruct")
+BASE_MODEL = os.environ.get("BASE_MODEL", "HuggingFaceTB/SmolLM-360M-Instruct")
 MAX_LEN = int(os.environ.get("MAX_SEQ_LEN", "1024"))
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Convert merged HF model to GGUF and quantize for CPU inference (Render)
+# Convert merged HF model to GGUF and quantize for CPU inference (llama.cpp)
 # Requirements:
 #   - git clone https://github.com/ggerganov/llama.cpp
 #   - Python deps for convert: pip install -r llama.cpp/requirements.txt
@@ -34,5 +34,4 @@ echo "[3/3] Quantizing to q4_k_m (CPU-friendly)"
 
 echo "\n=== Export Completed ==="
 du -h "$OUT_DIR" || true
-echo "Next: deploy GGUF (q4_k_m) on Render with llama.cpp server or compatible runtime."
-
+echo "Next: load the q4_k_m GGUF with llama.cpp or another compatible runtime."

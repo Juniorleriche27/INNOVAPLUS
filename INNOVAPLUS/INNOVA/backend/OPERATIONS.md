@@ -58,9 +58,9 @@ Chatlaya (copilote)
 - Configuration:
   - `PROVIDER=echo` (par défaut) renvoie les messages brut pour les tests.
   - `PROVIDER=openai|mistral` utilise les API cloud correspondantes (`OPENAI_API_KEY`, `MISTRAL_API_KEY` requis).
-  - `PROVIDER=local` active SmolLM embarqué (`backend/smollm-1.7b-instruct`) via `app/core/smollm.py`.
-    - Le modèle doit être téléchargé (`README_SMOLLM.md`) et suffisamment de RAM disponible.
-    - Possibilité de forcer `CHAT_MODEL` si plusieurs variantes locales sont déployées.
+  - `PROVIDER=local` active SmolLM embarque (`models/smollm-360m-instruct`) via `app/core/smollm.py`.
+    - Activer `ENABLE_SMOLLM=true` et pointer `SMOLLM_MODEL_PATH` vers le dossier des poids.
+    - Possibilite de forcer `CHAT_MODEL` si plusieurs variantes locales sont deployees.
 
 CI/CD Workflow
 --------------

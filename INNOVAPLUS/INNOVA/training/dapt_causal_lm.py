@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Domain-Adaptive Pre-Training (DAPT) for SmolLM-1.7B-Instruct on French corpus.
+Domain-Adaptive Pre-Training (DAPT) for SmolLM-360M-Instruct on French corpus.
 
 Usage (Linux/Mac):
   python INNOVAPLUS/INNOVA/training/dapt_causal_lm.py \
@@ -35,7 +35,7 @@ from transformers import (
 )
 
 
-BASE_MODEL = os.environ.get("BASE_MODEL", "HuggingFaceTB/SmolLM-1.7B-Instruct")
+BASE_MODEL = os.environ.get("BASE_MODEL", "HuggingFaceTB/SmolLM-360M-Instruct")
 MAX_LEN = int(os.environ.get("MAX_SEQ_LEN", "1024"))
 
 

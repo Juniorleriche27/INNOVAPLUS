@@ -1,8 +1,0 @@
-# ne pas uploader/packer ces dossiers pour Render
-frontend/
-training/
-smollm-1.7b-instruct/
-data/
-models/
-node_modules/
-

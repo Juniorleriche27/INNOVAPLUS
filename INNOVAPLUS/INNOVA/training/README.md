@@ -61,9 +61,9 @@ Conseils
 - bf16 si GPU le supporte, sinon fp16, sinon float32.
 - Ajustez `lora_r`, `lora_alpha`, `lr`, `grad_accum` selon la VRAM.
 
-Déploiement Render (CPU)
-------------------------
+Déploiement llama.cpp (optionnel)
+---------------------------------
 - Utilisez le fichier GGUF `chatlaya-merged-q4_k_m.gguf`.
-- Démarrez un serveur compatible (llama.cpp server ou binding Python) et pointez vos endpoints dessus.
+- Démarrez un serveur compatible (llama.cpp server ou binding Python) et pointez les endpoints dessus.
 
 

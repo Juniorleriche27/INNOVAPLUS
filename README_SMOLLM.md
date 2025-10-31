@@ -110,7 +110,7 @@ response = model.chat_completion(
 
 1. Copy the model directory to `/opt/innovaplus/models/smollm-360m-instruct/` (or any
    location owned by the `innova` user).
-2. Update `/etc/innovaplus/backend.env` with:
+2. Update `/etc/innovaplUS/backend.env` with:
    - `ENABLE_SMOLLM=true`
    - `PROVIDER=local`
    - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`

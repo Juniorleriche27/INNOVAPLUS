@@ -32,7 +32,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Load base (DAPT or hub)
-    base = args.base_model if Path(args.base_model).exists() else "HuggingFaceTB/SmolLM-1.7B-Instruct"
+    base = args.base_model if Path(args.base_model).exists() else "HuggingFaceTB/SmolLM-360M-Instruct"
     model = AutoModelForCausalLM.from_pretrained(base, torch_dtype=torch.float32)
     model = PeftModel.from_pretrained(model, args.lora_dir)
 

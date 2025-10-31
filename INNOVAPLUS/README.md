@@ -55,9 +55,9 @@ Notes
 - Les uploads PDF sont servis via `/storage/ebooks/...` par le backend.
 - CORS est activé pour le dev; restreins en prod si besoin.
 
-Déploiement Render (Blueprint)
-------------------------------
+Déploiement Hetzner
+-------------------
 
-- Fichier racine `render.yaml` configure un service web sur `INNOVAPLUS/INNOVA/backend`.
-- Variables d'env à renseigner: `MONGO_URI`, `DB_NAME` (innova_db), `JWT_SECRET`, `JWT_EXPIRES_MINUTES`.
-- Bases optionnelles par module: `DB_INNOVA`, `DB_PLUSBOOK`, `DB_PIEAGENCY`, `DB_FARMLINK`, `DB_SANTE`.
+- Service systemd: `innovaplus-backend.service` (voir `INNOVAPLUS/INNOVA/backend/OPERATIONS.md`).
+- Fichier d'environnement: `/etc/innovaplus/backend.env` (`ENABLE_SMOLLM=true`, `PROVIDER=local`, `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`).
+- FastAPI écoute sur `127.0.0.1:8000` et Nginx publie `https://api.innovaplus.africa`.

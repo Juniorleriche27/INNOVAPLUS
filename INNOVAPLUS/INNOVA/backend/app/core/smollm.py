@@ -1,6 +1,6 @@
 """
 SmolLM integration for INNOVA+ backend.
-Permet de charger un modèle local (ex. smollm-360m-instruct) sans contact réseau.
+Permet de charger un modele local (ex. smollm-360m-instruct) sans contact reseau.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_MODEL_DIR = "smollm-1.7b-instruct"
+_DEFAULT_MODEL_DIR = "models/smollm-360m-instruct"
 
 SPECIAL_TOKENS: List[str] = [
     "<|system|>",
@@ -60,7 +60,7 @@ def _sanitize_path(raw_path: str | None) -> Path:
 
 
 class SmolLMModel:
-    """SmolLM-1.7B-Instruct model wrapper for INNOVA+"""
+    """SmolLM-360M-Instruct model wrapper for INNOVA+"""
     
     def __init__(self, model_path: Optional[str] = None):
         resolved = _sanitize_path(model_path or settings.SMOLLM_MODEL_PATH)
@@ -73,8 +73,8 @@ class SmolLMModel:
     def _load_model(self):
         """Load the SmolLM model and tokenizer"""
         try:
-            logger.info("Chargement du modèle SmolLM depuis %s", self.model_path)
-            logger.info("Périphérique utilisé: %s", self.device)
+            logger.info("Chargement du modele SmolLM depuis %s", self.model_path)
+            logger.info("Peripherique utilise: %s", self.device)
             
             # Load tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -207,7 +207,7 @@ class SmolLMModel:
                 stop_tokens=["<|im_end|>"]
             )
 
-            return responses[0] if responses else "Je suis désolé, je n'ai pas de réponse pour l'instant."
+            return responses[0] if responses else "Je suis desole, je n'ai pas de reponse pour l'instant."
             
         except Exception as e:
             logger.error(f"Error in chat completion: {e}")
@@ -246,7 +246,7 @@ class SmolLMModel:
     def get_model_info(self) -> Dict[str, Any]:
         """Get model information"""
         return {
-            "model_name": "SmolLM-1.7B-Instruct",
+            "model_name": "SmolLM-360M-Instruct",
             "model_path": str(self.model_path),
             "device": self.device,
             "parameters": self.model.num_parameters() if self.model else 0,

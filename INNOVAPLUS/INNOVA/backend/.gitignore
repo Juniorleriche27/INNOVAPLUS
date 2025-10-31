@@ -22,3 +22,7 @@ venv/
 # Storage
 storage/public/ebooks/*
 !storage/public/.gitkeep
+
+# Local LLM weights
+smollm-*-instruct/
+models/

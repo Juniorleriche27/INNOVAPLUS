@@ -96,7 +96,8 @@ def generate_answer(
                 conversation.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
 
             smollm = get_smollm_model()
-            max_tokens = max(64, min((timeout or 512), 1024))
+            configured_max = settings.CHAT_MAX_NEW_TOKENS or 320
+            max_tokens = max(64, min(configured_max, 768))
             response = smollm.chat_completion(conversation, max_tokens=max_tokens, temperature=0.7)
             cleaned = response.strip()
             logger.debug(

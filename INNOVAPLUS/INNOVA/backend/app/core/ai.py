@@ -17,6 +17,7 @@ except ImportError:
     logging.getLogger(__name__).warning("app.prompts absent: fallback SYSTEM_PROMPT loaded.")
 
 logger = logging.getLogger(__name__)
+FALLBACK_REPLY = "Je rencontre un problème technique pour le moment. Merci de réessayer plus tard."
 
 
 def _hash_to_float32(seed: bytes) -> float:
@@ -107,9 +108,11 @@ def generate_answer(
             )
             if cleaned:
                 return cleaned
-            logger.debug("SmolLM empty response, falling back to snippet echo.")
+            logger.debug("SmolLM empty response, returning fallback reply.")
+            return FALLBACK_REPLY
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Local provider failed, fallback to echo: %s", exc)
+            logger.warning("Local provider failed, returning fallback reply: %s", exc)
+            return FALLBACK_REPLY
 
     if provider_name == "cohere":
         client = _get_cohere_client()
@@ -131,9 +134,8 @@ def generate_answer(
         logger.warning("Provider '%s' not configured. Falling back to echo.", provider_name)
         return effective_prompt
 
-    logger.debug("Returning stub fallback for provider=%s", provider_name)
-    snippet = effective_prompt[:200] + ("..." if len(effective_prompt) > 200 else "")
-    return f"[stub] Traitement de la requete: {snippet}"
+    logger.debug("Returning fallback reply for provider=%s", provider_name)
+    return FALLBACK_REPLY
 
 
 def detect_embed_dim() -> int:
@@ -143,5 +145,3 @@ def detect_embed_dim() -> int:
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to detect embed dim automatically: %s", exc)
         return settings.EMBED_DIM
-
-

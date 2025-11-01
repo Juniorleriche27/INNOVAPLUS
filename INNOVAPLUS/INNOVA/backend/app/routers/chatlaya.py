@@ -32,7 +32,7 @@ DEFAULT_CONVERSATION_TITLE = "Nouvelle conversation"
 
 def _serialize_conversation(doc: dict) -> ConversationResponse:
     return ConversationResponse(
-        id=str(doc["_id"]),
+        conversation_id=str(doc["_id"]),
         title=doc.get("title") or DEFAULT_CONVERSATION_TITLE,
         created_at=doc.get("created_at"),
         updated_at=doc.get("updated_at"),

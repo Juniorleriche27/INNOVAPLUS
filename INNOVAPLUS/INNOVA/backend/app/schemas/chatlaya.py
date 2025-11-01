@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class ConversationResponse(BaseModel):
-    conversation_id: str = Field(..., alias="id")
+    conversation_id: str
     title: str
     created_at: datetime
     updated_at: datetime

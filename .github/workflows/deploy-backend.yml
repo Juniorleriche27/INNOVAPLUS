@@ -19,6 +19,7 @@ jobs:
       HEALTHCHECK_URL: https://api.innovaplus.africa/health
       HEALTHCHECK_INTERVAL: "5"
       HEALTHCHECK_TIMEOUT: "180"
+      SSH_OPTS: "-o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519"
 
     steps:
       - name: Checkout
@@ -33,13 +34,15 @@ jobs:
 
       - name: Ensure remote path exists
         run: |
-          ssh -o StrictHostKeyChecking=no \
+          ssh ${{ env.SSH_OPTS }} \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "mkdir -p '${{ env.REMOTE_ROOT }}'"
+
 
       - name: Push code to server (protect .venv and .env)
         run: |
           rsync -az --delete \
+            -e "ssh ${{ env.SSH_OPTS }}" \
             --filter='P .venv/' \
             --filter='P .env' \
             --exclude='models/***' \
@@ -48,9 +51,10 @@ jobs:
             ${{ env.RSYNC_SOURCE }} \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ env.REMOTE_ROOT }}/
 
+
       - name: Install/Update Python deps in remote venv
         run: |
-          ssh -o StrictHostKeyChecking=no \
+          ssh ${{ env.SSH_OPTS }} \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             <<'EOF'
           set -e
@@ -65,7 +69,7 @@ jobs:
 
       - name: Restart service
         run: |
-          ssh -o StrictHostKeyChecking=no \
+          ssh ${{ env.SSH_OPTS }} \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             <<'EOF'
           set -euo pipefail
@@ -113,7 +117,7 @@ jobs:
           printf '%s\n' "${last_response}"
 
           echo "::group::Recent service logs"
-          ssh -o StrictHostKeyChecking=no \
+          ssh ${{ env.SSH_OPTS }} \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "sudo journalctl -u '${SERVICE_NAME}' -n 200 --no-pager || true"
           echo "::endgroup::"

@@ -33,6 +33,9 @@ export default function ChatlayaPage() {
   const ensuredConversation = useRef(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const resizingSidebar = useRef(false);
+  const [sidebarWidth, setSidebarWidth] = useState(288);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -61,7 +64,47 @@ export default function ChatlayaPage() {
   }, []);
 
   useEffect(() => {
+    function handlePointerMove(event: PointerEvent) {
+      if (!resizingSidebar.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const proposed = event.clientX - rect.left;
+      const clamped = Math.min(Math.max(proposed, 220), 420);
+      setSidebarWidth(clamped);
+    }
+
+    function handlePointerUp() {
+      if (!resizingSidebar.current) return;
+      resizingSidebar.current = false;
+      document.body.style.userSelect = "";
+    }
+
+    document.addEventListener("pointermove", handlePointerMove);
+    document.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      document.removeEventListener("pointermove", handlePointerMove);
+      document.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, []);
+
+  useEffect(() => {
     void loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      const available = window.innerWidth - 480;
+      const max = Math.min(420, Math.max(260, available));
+      setSidebarWidth((prev) => {
+        if (Number.isNaN(max)) return prev;
+        return Math.min(Math.max(prev, 220), Math.max(max, 220));
+      });
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -385,7 +428,11 @@ export default function ChatlayaPage() {
   const composerDisabled = streaming || !selectedConversationId;
 
   return (
-    <main className="relative flex h-[calc(100vh-5.5rem)] w-full bg-slate-100/80">
+    <div
+      ref={workspaceRef}
+      className="-mx-4 -mt-2 flex h-[calc(100vh-5.5rem)] w-full max-w-none flex-col sm:-mx-6 lg:-mx-8 md:w-[calc(100vw-var(--sidebar-w,72px))]"
+    >
+      <div className="relative flex h-full w-full bg-gradient-to-br from-slate-100/90 via-white to-slate-100/90">
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm transition md:hidden"
@@ -393,9 +440,10 @@ export default function ChatlayaPage() {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 transform flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:flex md:translate-x-0 md:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-40 flex transform flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:flex md:translate-x-0 md:shadow-none ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ width: sidebarWidth }}
       >
         <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
           <div>
@@ -487,8 +535,20 @@ export default function ChatlayaPage() {
           )}
         </nav>
       </aside>
+      <div
+        className="hidden w-2 cursor-col-resize select-none md:block"
+        onPointerDown={(event) => {
+          if (typeof window !== "undefined" && window.innerWidth >= 768) {
+            resizingSidebar.current = true;
+            document.body.style.userSelect = "none";
+            event.preventDefault();
+          }
+        }}
+      >
+        <div className="mx-auto h-full w-1 rounded-full bg-slate-200 transition-colors hover:bg-sky-300" />
+      </div>
       <section className="flex flex-1 flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur md:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 bg-white/95 px-4 py-4 shadow-sm backdrop-blur-md md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -542,7 +602,7 @@ export default function ChatlayaPage() {
             )}
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-10">
           {error && (
             <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
@@ -577,7 +637,7 @@ export default function ChatlayaPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 pb-10">
               {messages.map((message) => {
                 const isUser = message.role === "user";
                 return (
@@ -586,7 +646,7 @@ export default function ChatlayaPage() {
                     className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-3xl whitespace-pre-wrap break-words rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                      className={`max-w-4xl whitespace-pre-wrap break-words rounded-3xl px-5 py-3.5 text-[0.95rem] leading-relaxed shadow ${
                         isUser
                           ? "bg-sky-600 text-white"
                           : "bg-white text-slate-900 ring-1 ring-slate-200"
@@ -614,7 +674,7 @@ export default function ChatlayaPage() {
             </div>
           )}
         </div>
-        <form onSubmit={onSubmit} className="border-t border-slate-200 bg-white px-4 py-4 shadow-inner md:px-6">
+        <form onSubmit={onSubmit} className="border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10">
           <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
             <textarea
               ref={composerRef}
@@ -649,6 +709,7 @@ export default function ChatlayaPage() {
           </p>
         </form>
       </section>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type ChatMessage = {
@@ -32,12 +32,31 @@ export default function ChatlayaPage() {
   const [error, setError] = useState<string | null>(null);
   const ensuredConversation = useRef(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const syncSidebar = () => setSidebarOpen(mediaQuery.matches);
+    syncSidebar();
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncSidebar);
+      return () => {
+        mediaQuery.removeEventListener("change", syncSidebar);
+      };
+    }
+    mediaQuery.addListener(syncSidebar);
+    return () => {
+      mediaQuery.removeListener(syncSidebar);
     };
   }, []);
 
@@ -56,6 +75,12 @@ export default function ChatlayaPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (composerRef.current) {
+      composerRef.current.focus();
+    }
+  }, [selectedConversationId]);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
@@ -166,10 +191,19 @@ export default function ChatlayaPage() {
   }
 
   async function handleSelectConversation(id: string) {
-    if (id === selectedConversationId) return;
+    const shouldCollapseSidebar = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+    if (id === selectedConversationId) {
+      if (shouldCollapseSidebar) {
+        setSidebarOpen(false);
+      }
+      return;
+    }
     setError(null);
     setMessages([]);
     setSelectedConversationId(id);
+    if (shouldCollapseSidebar) {
+      setSidebarOpen(false);
+    }
   }
 
   async function handleCreateConversation() {
@@ -189,6 +223,9 @@ export default function ChatlayaPage() {
       setConversations((prev) => [created, ...prev]);
       setSelectedConversationId(created.conversation_id);
       setMessages([]);
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setSidebarOpen(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
     }
@@ -216,28 +253,30 @@ export default function ChatlayaPage() {
     }
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!selectedConversationId || !input.trim()) return;
+  async function sendMessage() {
+    if (!selectedConversationId || streaming) return;
+    const prompt = input.trim();
+    if (!prompt) return;
     setError(null);
 
+    const now = Date.now();
     const userEntry: ChatMessage = {
-      id: `local-${Date.now()}`,
+      id: `local-${now}`,
       role: "user",
-      content: input,
+      content: prompt,
       pending: false,
     };
     const assistantPlaceholder: ChatMessage = {
-      id: `pending-${Date.now()}`,
+      id: `pending-${now}`,
       role: "assistant",
       content: "",
       pending: true,
     };
 
     setMessages((prev) => [...prev, userEntry, assistantPlaceholder]);
-    const prompt = input;
     setInput("");
     setStreaming(true);
+    composerRef.current?.focus();
 
     try {
       await streamAssistant(selectedConversationId, prompt);
@@ -248,6 +287,18 @@ export default function ChatlayaPage() {
       setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("pending-")));
     } finally {
       setStreaming(false);
+    }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await sendMessage();
+  }
+
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendMessage();
     }
   }
 
@@ -309,24 +360,295 @@ export default function ChatlayaPage() {
     [messagesLoading, messages.length],
   );
 
+  function normalizeTitle(title?: string | null) {
+    if (!title) return "Nouvelle conversation";
+    const trimmed = title.trim();
+    return trimmed.length > 0 ? trimmed : "Nouvelle conversation";
+  }
+
+  function formatRelativeTimestamp(timestamp?: string | null) {
+    if (!timestamp) return "";
+    try {
+      return new Intl.DateTimeFormat("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "short",
+      }).format(new Date(timestamp));
+    } catch {
+      return "";
+    }
+  }
+
+  const activeConversationTitle = normalizeTitle(activeConversation?.title);
+  const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
+  const composerDisabled = streaming || !selectedConversationId;
+
   return (
-    <main className="flex h-[calc(100vh-5.5rem)] w-full overflow-hidden bg-slate-50/60">
-      <aside className="hidden w-72 flex-col border-r border-slate-200 bg-white shadow-sm lg:flex">
-        <header className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-slate-900">Conversations</h2>
-          <p className="mt-1 text-xs text-slate-500">
-            Historique personnel · synchronisé par compte
-          </p>
+    <main className="relative flex h-[calc(100vh-5.5rem)] w-full bg-slate-100/80">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm transition md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 transform flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:flex md:translate-x-0 md:shadow-none ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Historique</h2>
+            <p className="text-xs text-slate-500">Tous vos échanges Chatlaya</p>
+          </div>
           <button
-            onClick={handleCreateConversation}
-            className="mt-4 w-full rounded-2xl bg-sky-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-700 md:hidden"
           >
-            Nouvelle conversation
+            <span className="sr-only">Fermer l'historique</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              className="h-4 w-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </header>
-        <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <button
+            type="button"
+            onClick={handleCreateConversation}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
+          >
+            <span aria-hidden>＋</span>
+            Nouvelle conversation
+          </button>
+        </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
           {conversationsLoading ? (
-            <p className="px-3 py-2 text-sm text-slate-500">Chargement...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+              ))}
+            </div>
           ) : conversations.length === 0 ? (
-            <p className="px-3 py-2 text-sm text-slate-500">
-              Aucune conversation pour le moment. Lancez-vous !
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+              Aucune conversation encore. Lancez-vous pour remplir l'historique.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {conversations.map((conversation) => {
+                const isActive = conversation.conversation_id === selectedConversationId;
+                const label = normalizeTitle(conversation.title);
+                const updatedLabel =
+                  formatRelativeTimestamp(conversation.updated_at) || "Jamais utilisée";
+                return (
+                  <li key={conversation.conversation_id}>
+                    <div
+                      className={`group relative overflow-hidden rounded-2xl border ${
+                        isActive
+                          ? "border-sky-500 bg-sky-50"
+                          : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => void handleSelectConversation(conversation.conversation_id)}
+                        className="block w-full px-4 py-3 text-left"
+                      >
+                        <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {isActive ? "Session en cours" : `Mis à jour · ${updatedLabel}`}
+                        </p>
+                      </button>
+                      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 gap-2">
+                        <button
+                          type="button"
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleArchiveConversation(conversation.conversation_id);
+                          }}
+                        >
+                          Archiver
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </nav>
+      </aside>
+      <section className="flex flex-1 flex-col">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur md:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-800 md:hidden"
+            >
+              <span className="sr-only">Afficher l'historique</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="h-5 w-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h10M4 18h16"
+                />
+              </svg>
+            </button>
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold text-slate-900">
+                {activeConversationTitle}
+              </p>
+              <p className="text-xs text-slate-500">
+                {activeConversationUpdatedAt
+                  ? `Dernière activité · ${activeConversationUpdatedAt}`
+                  : "Commencez votre échange avec Chatlaya"}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-none items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCreateConversation}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+            >
+              Nouvelle conversation
+            </button>
+            {activeConversation && (
+              <button
+                type="button"
+                onClick={() => void handleArchiveConversation(activeConversation.conversation_id)}
+                disabled={streaming}
+                className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Archiver
+              </button>
+            )}
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+          {error && (
+            <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
+          {messagesLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}
+                >
+                  <div className="h-16 w-3/4 max-w-md animate-pulse rounded-3xl bg-slate-200" />
+                </div>
+              ))}
+            </div>
+          ) : emptyConversation ? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-10 shadow-sm">
+                <h3 className="text-base font-semibold text-slate-900">Prêt à discuter ?</h3>
+                <p className="mt-2 max-w-sm text-sm text-slate-500">
+                  Posez une question précise ou décrivez un besoin. Chatlaya vous répondra en
+                  français avec des suggestions concrètes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => composerRef.current?.focus()}
+                  className="mt-4 rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
+                >
+                  Commencer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => {
+                const isUser = message.role === "user";
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-3xl whitespace-pre-wrap break-words rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                        isUser
+                          ? "bg-sky-600 text-white"
+                          : "bg-white text-slate-900 ring-1 ring-slate-200"
+                      }`}
+                    >
+                      {message.pending && !message.content ? (
+                        <span className="inline-flex items-center gap-2 text-slate-400">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
+                          Chatlaya réfléchit…
+                        </span>
+                      ) : (
+                        message.content
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={bottomRef} />
+            </div>
+          )}
+          {streaming && !messagesLoading && (
+            <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+              Chatlaya génère une réponse…
+            </div>
+          )}
+        </div>
+        <form onSubmit={onSubmit} className="border-t border-slate-200 bg-white px-4 py-4 shadow-inner md:px-6">
+          <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
+            <textarea
+              ref={composerRef}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleComposerKeyDown}
+              placeholder={streaming ? "Patientez pendant la réponse..." : "Pose ta question à Chatlaya"}
+              rows={1}
+              className="block w-full resize-none rounded-3xl bg-transparent px-4 py-3 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              disabled={composerDisabled}
+            />
+            <div className="absolute bottom-2 right-2 flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={composerDisabled || !input.trim()}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+              >
+                <span className="sr-only">Envoyer</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-4 w-4"
+                >
+                  <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-slate-400">
+            Entrée pour envoyer · Maj + Entrée pour aller à la ligne
+          </p>
+        </form>
+      </section>
+    </main>
+  );
+}

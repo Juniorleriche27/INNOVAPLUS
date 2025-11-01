@@ -104,7 +104,7 @@ class SmolLMModel:
     def generate(
         self,
         prompt: str,
-        max_length: int = 512,
+        max_new_tokens: int = 512,
         temperature: float = 0.7,
         top_p: float = 0.9,
         do_sample: bool = True,
@@ -116,7 +116,7 @@ class SmolLMModel:
         
         Args:
             prompt: Input prompt
-            max_length: Maximum length of generated text
+            max_new_tokens: Maximum number of new tokens to generate
             temperature: Sampling temperature
             top_p: Top-p sampling parameter
             do_sample: Whether to use sampling
@@ -140,7 +140,7 @@ class SmolLMModel:
             with torch.no_grad():
                 outputs = self.model.generate(
                     **inputs,
-                    max_length=max_length,
+                    max_new_tokens=max_new_tokens,
                     temperature=temperature,
                     top_p=top_p,
                     do_sample=do_sample,
@@ -201,7 +201,7 @@ class SmolLMModel:
             # Generate response
             responses = self.generate(
                 prompt=prompt,
-                max_length=max_tokens,
+                max_new_tokens=max_tokens,
                 temperature=temperature,
                 num_return_sequences=1,
                 stop_tokens=["<|im_end|>"]

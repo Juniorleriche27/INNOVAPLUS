@@ -54,6 +54,11 @@ def _set_session_cookie(response: Response, token: str, expires_at: datetime) ->
     ttl_seconds = int((expires_at - now).total_seconds())
     if ttl_seconds <= 0:
         ttl_seconds = 60
+    expires_utc = expires_at
+    if expires_at.tzinfo is None:
+        expires_utc = expires_at.replace(tzinfo=timezone.utc)
+    else:
+        expires_utc = expires_at.astimezone(timezone.utc)
     secure_cookie = True
     try:
         secure_cookie = urlparse(settings.FRONTEND_BASE_URL).scheme == "https"
@@ -67,10 +72,11 @@ def _set_session_cookie(response: Response, token: str, expires_at: datetime) ->
         secure=secure_cookie,
         samesite="lax",
         max_age=ttl_seconds,
-        expires=expires_at,
+        expires=expires_utc,
         path="/",
         domain=_cookie_domain(),
     )
+
 def _clear_session_cookie(response: Response) -> None:
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,

@@ -40,12 +40,17 @@ export default function ChatlayaPage(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
 
   const ensuredConversation = useRef(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
 
+  // NEW: viewport scrollable des messages
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
+
+  // NEW: top sticky dynamique pour éviter de passer sous le header
+  const [stickyTop, setStickyTop] = useState(96);
 
   // Toggle Cadre / Plein écran (persisté)
   const [framed, setFramed] = useState(true);
@@ -101,10 +106,12 @@ export default function ChatlayaPage(): JSX.Element {
     void loadMessages(selectedConversationId);
   }, [selectedConversationId]);
 
-  // Scroll en bas quand messages changent
+  // NEW: auto-scroll dans le panneau messages (pas la page)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const el = messagesViewportRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages.length]);
 
   // Focus composer quand on change de conversation
   useEffect(() => {
@@ -132,6 +139,22 @@ export default function ChatlayaPage(): JSX.Element {
       window.removeEventListener("scroll", syncPosition);
     };
   }, [sidebarOpen, framed]);
+
+  // NEW: calcule un top sticky dynamique (évite le chevauchement avec le header)
+  useEffect(() => {
+    const syncTop = () => {
+      if (!frameRef.current) return;
+      const t = Math.max(frameRef.current.getBoundingClientRect().top, 64);
+      setStickyTop(t);
+    };
+    syncTop();
+    window.addEventListener("resize", syncTop);
+    window.addEventListener("scroll", syncTop, { passive: true });
+    return () => {
+      window.removeEventListener("resize", syncTop);
+      window.removeEventListener("scroll", syncTop);
+    };
+  }, [framed, messages.length]);
 
   // Annule tout stream en cours à l’unmount
   useEffect(() => {
@@ -461,6 +484,10 @@ export default function ChatlayaPage(): JSX.Element {
     }
   }
 
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId],
+  );
   const activeConversationTitle = normalizeTitle(activeConversation?.title);
   const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
   const composerDisabled = streaming || !selectedConversationId;
@@ -580,20 +607,22 @@ export default function ChatlayaPage(): JSX.Element {
     [framed],
   );
 
-  // Hauteur min alignée sur le viewport (réglable selon la hauteur du header global)
+  // Hauteur min alignée sur le viewport (ajuste la constante si besoin)
   const paneMinH = "calc(100vh - 7.5rem)";
 
   // ---------- RENDU (UI) ----------
   return (
     <div
       ref={frameRef}
-      className={`relative mx-auto w-full ${framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"}`}
+      className={`relative mx-auto w-full ${
+        framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"
+      }`}
       style={frameStyle}
     >
       <div className="flex w-full flex-col gap-3 md:flex-row md:gap-3">
         {/* Sidebar */}
         <div className="hidden md:block md:w-72 md:flex-shrink-0">
-          <div className="sticky top-24" style={{ height: paneMinH }}>
+          <div className="sticky" style={{ top: stickyTop, height: paneMinH }}>
             <div className="h-full overflow-hidden">
               <SidebarContent />
             </div>
@@ -692,7 +721,8 @@ export default function ChatlayaPage(): JSX.Element {
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+          {/* NEW: ref sur le viewport messages */}
+          <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
             {error && (
               <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {error}
@@ -754,13 +784,6 @@ export default function ChatlayaPage(): JSX.Element {
                     </div>
                   );
                 })}
-                <div ref={bottomRef} />
-              </div>
-            )}
-            {streaming && !messagesLoading && (
-              <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
-                Chatlaya génère une réponse…
               </div>
             )}
           </div>

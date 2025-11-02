@@ -30,13 +30,33 @@ export default function ChatlayaPage() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const ensuredConversation = useRef(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const frameRef = useRef<HTMLDivElement | null>(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
 
+  // Toggle Cadre/Plein écran (persisté)
+  const [framed, setFramed] = useState(true);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("chatlaya_framed");
+      if (saved !== null) setFramed(saved === "1");
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem("chatlaya_framed", framed ? "1" : "0");
+    } catch {}
+  }, [framed]);
+
+  // Contrôleur d’annulation pour le stream
+  const streamAbortRef = useRef<AbortController | null>(null);
+
+  // Empêche le body de scroller sous la page app
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -45,6 +65,7 @@ export default function ChatlayaPage() {
     };
   }, []);
 
+  // Ouvre/ferme la sidebar selon la largeur
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(min-width: 768px)");
@@ -52,20 +73,18 @@ export default function ChatlayaPage() {
     syncSidebar();
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", syncSidebar);
-      return () => {
-        mediaQuery.removeEventListener("change", syncSidebar);
-      };
+      return () => mediaQuery.removeEventListener("change", syncSidebar);
     }
     mediaQuery.addListener(syncSidebar);
-    return () => {
-      mediaQuery.removeListener(syncSidebar);
-    };
+    return () => mediaQuery.removeListener(syncSidebar);
   }, []);
 
+  // Charge conversations au mount
   useEffect(() => {
     void loadConversations();
   }, []);
 
+  // Charge messages quand on change de conversation
   useEffect(() => {
     if (!selectedConversationId) {
       setMessages([]);
@@ -74,16 +93,17 @@ export default function ChatlayaPage() {
     void loadMessages(selectedConversationId);
   }, [selectedConversationId]);
 
+  // Scroll en bas quand messages changent
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Focus composer quand on change de conversation
   useEffect(() => {
-    if (composerRef.current) {
-      composerRef.current.focus();
-    }
+    composerRef.current?.focus();
   }, [selectedConversationId]);
 
+  // Calage de l’overlay mobile sur le cadre
   useEffect(() => {
     if (!sidebarOpen) return;
     if (typeof window === "undefined") return;
@@ -103,7 +123,14 @@ export default function ChatlayaPage() {
       window.removeEventListener("resize", syncPosition);
       window.removeEventListener("scroll", syncPosition);
     };
-  }, [sidebarOpen]);
+  }, [sidebarOpen, framed]);
+
+  // Annule tout stream en cours à l’unmount
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+    };
+  }, []);
 
   const activeConversation = useMemo(
     () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
@@ -120,7 +147,7 @@ export default function ChatlayaPage() {
   }
 
   function isAuthFailure(status: number) {
-    if (status === 401 || status === 403) {
+    if (status === 401 || status === 403 || status === 419) {
       forceLoginRedirect();
       return true;
     }
@@ -128,9 +155,7 @@ export default function ChatlayaPage() {
   }
 
   async function ensureSeedConversation() {
-    if (ensuredConversation.current) {
-      return;
-    }
+    if (ensuredConversation.current) return;
     ensuredConversation.current = true;
     try {
       const res = await fetch(`${API_BASE}/chatlaya/session`, {
@@ -214,19 +239,18 @@ export default function ChatlayaPage() {
   }
 
   async function handleSelectConversation(id: string) {
+    // Annule un stream en cours avant de changer
+    streamAbortRef.current?.abort();
+
     const shouldCollapseSidebar = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     if (id === selectedConversationId) {
-      if (shouldCollapseSidebar) {
-        setSidebarOpen(false);
-      }
+      if (shouldCollapseSidebar) setSidebarOpen(false);
       return;
     }
     setError(null);
     setMessages([]);
     setSelectedConversationId(id);
-    if (shouldCollapseSidebar) {
-      setSidebarOpen(false);
-    }
+    if (shouldCollapseSidebar) setSidebarOpen(false);
   }
 
   async function handleCreateConversation() {
@@ -243,7 +267,11 @@ export default function ChatlayaPage() {
       }
       const data = await res.json();
       const created: Conversation = data;
-      setConversations((prev) => [created, ...prev]);
+      // Déduplique
+      setConversations((prev) => [
+        created,
+        ...prev.filter((c) => c.conversation_id !== created.conversation_id),
+      ]);
       setSelectedConversationId(created.conversation_id);
       setMessages([]);
       if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -328,13 +356,19 @@ export default function ChatlayaPage() {
     }
   }
 
+  // Stream SSE robuste (CRLF, data multi-lignes, annulation)
   async function streamAssistant(id: string, prompt: string) {
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
     const res = await fetch(`${API_BASE}/chatlaya/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ conversation_id: id, message: prompt }),
+      signal: controller.signal,
     });
+
     if (!res.ok || !res.body) {
       if (!res.ok && isAuthFailure(res.status)) {
         throw new Error("Authentification requise");
@@ -347,36 +381,49 @@ export default function ChatlayaPage() {
     const decoder = new TextDecoder();
     let buffer = "";
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let boundary: number;
-      while ((boundary = buffer.indexOf("\n\n")) !== -1) {
-        const packet = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
-        if (!packet.trim()) continue;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-        let event = "message";
-        let data = "";
-        for (const line of packet.split("\n")) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:")) data += line.slice(5).trim();
-        }
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
 
-        if (event === "token") {
-          setMessages((prev) =>
-            prev.map((msg) => (msg.pending ? { ...msg, content: msg.content + data } : msg)),
-          );
-        }
+        let boundary: number;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const packet = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          if (!packet.trim()) continue;
 
-        if (event === "done") {
-          setMessages((prev) => prev.filter((msg) => !msg.pending));
-        }
+          let event = "message";
+          const dataLines: string[] = [];
+          for (const line of packet.split("\n")) {
+            if (line.startsWith("event:")) event = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataLines.push(line.slice(5));
+          }
+          const data = dataLines.join("\n");
 
-        if (event === "error") {
-          throw new Error(data || "Erreur de streaming");
+          if (event === "token") {
+            setMessages((prev) =>
+              prev.map((msg) => (msg.pending ? { ...msg, content: msg.content + data } : msg)),
+            );
+          } else if (event === "done") {
+            setMessages((prev) => prev.filter((msg) => !msg.pending));
+            return; // fin normale
+          } else if (event === "error") {
+            throw new Error(data || "Erreur de streaming");
+          }
         }
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") {
+        // annulation volontaire : on retire le placeholder
+        setMessages((prev) => prev.filter((msg) => !msg.pending));
+        return;
+      }
+      throw e;
+    } finally {
+      if (streamAbortRef.current === controller) {
+        streamAbortRef.current = null;
       }
     }
   }
@@ -429,7 +476,7 @@ export default function ChatlayaPage() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
+              strokeWidth={1.5}
               className="h-4 w-4"
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -505,17 +552,34 @@ export default function ChatlayaPage() {
       </div>
     );
   }
+
+  // Style du cadre (framed) vs plein écran (safe-areas conservées)
+  const frameStyle = framed
+    ? {
+        paddingTop: "max(8px, env(safe-area-inset-top))",
+        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+        paddingLeft: "max(8px, env(safe-area-inset-left))",
+        paddingRight: "max(8px, env(safe-area-inset-right))",
+      }
+    : {
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      };
+
+  // ---------- RENDER ----------
   return (
-    <div
-      ref={frameRef}
-      className="relative mx-auto flex w-full max-w-6xl flex-col gap-6 px-2 pb-8 pt-4 sm:px-4 lg:px-6"
-    >
-      <div className="flex flex-1 flex-col gap-6 md:flex-row">
+    // OUTER WRAPPER : crée le "cadre" subtil tout autour
+    <div ref={frameRef} className="relative mx-auto w-full max-w-6xl bg-slate-50" style={frameStyle}>
+      {/* Inner layout : espaces réduits entre la sidebar et la zone droite */}
+      <div className="flex w-full flex-col gap-3 md:flex-row md:gap-3">
         <div className="hidden md:block md:w-72 md:flex-shrink-0">
           <div className="sticky top-24">
             <SidebarContent />
           </div>
         </div>
+
         <section className="flex min-h-[70vh] flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
             <div className="flex min-w-0 items-center gap-3">
@@ -530,14 +594,10 @@ export default function ChatlayaPage() {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth={1.5}
                   className="h-5 w-5"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 6h16M4 12h10M4 18h16"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
                 </svg>
               </button>
               <div className="min-w-0">
@@ -552,6 +612,42 @@ export default function ChatlayaPage() {
               </div>
             </div>
             <div className="flex flex-none items-center gap-2">
+              {/* Toggle Cadre/Plein écran */}
+              <button
+                type="button"
+                onClick={() => setFramed((v) => !v)}
+                className="rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
+                title={framed ? "Passer en plein écran" : "Afficher le cadre"}
+              >
+                {framed ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    className="h-4 w-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    className="h-4 w-4"
+                  >
+                    <rect x="4" y="4" width="16" height="16" rx="3" />
+                  </svg>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={handleCreateConversation}
@@ -562,9 +658,7 @@ export default function ChatlayaPage() {
               {activeConversation && (
                 <button
                   type="button"
-                  onClick={() =>
-                    void handleArchiveConversation(activeConversation.conversation_id)
-                  }
+                  onClick={() => void handleArchiveConversation(activeConversation.conversation_id)}
                   disabled={streaming}
                   className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -573,6 +667,7 @@ export default function ChatlayaPage() {
               )}
             </div>
           </header>
+
           <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
             {error && (
               <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -645,6 +740,7 @@ export default function ChatlayaPage() {
               </div>
             )}
           </div>
+
           <form
             onSubmit={onSubmit}
             className="border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10"
@@ -659,6 +755,7 @@ export default function ChatlayaPage() {
                   streaming ? "Patientez pendant la réponse..." : "Pose ta question à Chatlaya"
                 }
                 rows={1}
+                aria-label="Message pour Chatlaya"
                 className="block w-full resize-none rounded-3xl bg-transparent px-4 py-3 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 disabled={composerDisabled}
               />
@@ -686,6 +783,8 @@ export default function ChatlayaPage() {
           </form>
         </section>
       </div>
+
+      {/* Overlay mobile — cadré sur frameRef via mobileSidebarInsets */}
       {sidebarOpen && (
         <>
           <div

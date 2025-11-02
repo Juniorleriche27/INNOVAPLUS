@@ -1,6 +1,14 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type ChatMessage = {
@@ -21,7 +29,7 @@ type Conversation = {
 
 const API_BASE = CHATLAYA_API_BASE;
 
-export default function ChatlayaPage() {
+export default function ChatlayaPage(): JSX.Element {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -39,7 +47,7 @@ export default function ChatlayaPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
 
-  // Toggle Cadre/Plein écran (persisté)
+  // Toggle Cadre / Plein écran (persisté)
   const [framed, setFramed] = useState(true);
   useEffect(() => {
     try {
@@ -554,33 +562,49 @@ export default function ChatlayaPage() {
   }
 
   // Style du cadre (framed) vs plein écran (safe-areas conservées)
-  const frameStyle = framed
-    ? {
-        paddingTop: "max(8px, env(safe-area-inset-top))",
-        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
-        paddingLeft: "max(8px, env(safe-area-inset-left))",
-        paddingRight: "max(8px, env(safe-area-inset-right))",
-      }
-    : {
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)",
-      };
+  const frameStyle = useMemo<CSSProperties>(
+    () =>
+      framed
+        ? {
+            paddingTop: "max(8px, env(safe-area-inset-top))",
+            paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+            paddingLeft: "max(8px, env(safe-area-inset-left))",
+            paddingRight: "max(8px, env(safe-area-inset-right))",
+          }
+        : {
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+            paddingLeft: "env(safe-area-inset-left)",
+            paddingRight: "env(safe-area-inset-right)",
+          },
+    [framed],
+  );
 
-  // ---------- RENDER ----------
+  // Hauteur min alignée sur le viewport (réglable selon la hauteur du header global)
+  const paneMinH = "calc(100vh - 7.5rem)";
+
+  // ---------- RENDU (UI) ----------
   return (
-    // OUTER WRAPPER : crée le "cadre" subtil tout autour
-    <div ref={frameRef} className="relative mx-auto w-full max-w-6xl bg-slate-50" style={frameStyle}>
-      {/* Inner layout : espaces réduits entre la sidebar et la zone droite */}
+    <div
+      ref={frameRef}
+      className={`relative mx-auto w-full ${framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"}`}
+      style={frameStyle}
+    >
       <div className="flex w-full flex-col gap-3 md:flex-row md:gap-3">
+        {/* Sidebar */}
         <div className="hidden md:block md:w-72 md:flex-shrink-0">
-          <div className="sticky top-24">
-            <SidebarContent />
+          <div className="sticky top-24" style={{ height: paneMinH }}>
+            <div className="h-full overflow-hidden">
+              <SidebarContent />
+            </div>
           </div>
         </div>
 
-        <section className="flex min-h-[70vh] flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
+        {/* Zone principale */}
+        <section
+          className="flex flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl"
+          style={{ minHeight: paneMinH }}
+        >
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
             <div className="flex min-w-0 items-center gap-3">
               <button

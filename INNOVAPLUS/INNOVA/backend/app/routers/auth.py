@@ -50,19 +50,27 @@ def _cookie_domain() -> str | None:
 
 
 def _set_session_cookie(response: Response, token: str, expires_at: datetime) -> None:
+    now = datetime.now(timezone.utc)
+    ttl_seconds = int((expires_at - now).total_seconds())
+    if ttl_seconds <= 0:
+        ttl_seconds = 60
+    secure_cookie = True
+    try:
+        secure_cookie = urlparse(settings.FRONTEND_BASE_URL).scheme == "https"
+    except Exception:
+        secure_cookie = True
+
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
-        secure=True,
+        secure=secure_cookie,
         samesite="lax",
-        max_age=None,
-        expires=None,
+        max_age=ttl_seconds,
+        expires=expires_at,
         path="/",
         domain=_cookie_domain(),
     )
-
-
 def _clear_session_cookie(response: Response) -> None:
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,

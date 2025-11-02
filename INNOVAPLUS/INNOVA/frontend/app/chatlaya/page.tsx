@@ -385,7 +385,7 @@ export default function ChatlayaPage() {
   const composerDisabled = streaming || !selectedConversationId;
 
   return (
-    <div className="flex h-[calc(100vh-5.5rem)] w-full max-w-6xl gap-6 px-4 sm:px-6 lg:px-10">
+    <div className="flex min-h-[calc(100vh-5.5rem)] w-full max-w-6xl gap-6 px-3 py-6 sm:px-6 lg:px-9">
       <div className="relative flex h-full w-full">
       {sidebarOpen && (
         <div
@@ -394,7 +394,7 @@ export default function ChatlayaPage() {
         />
       )}
       <aside
-        className={`fixed left-0 top-[5.5rem] z-40 flex h-[calc(100vh-5.5rem)] w-72 flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:h-full md:w-72 md:translate-x-0 md:rounded-3xl md:border md:shadow-lg ${
+        className={`fixed left-0 top-[6.75rem] z-40 flex h-[calc(100vh-6.75rem)] w-72 flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:mt-0 md:h-full md:w-72 md:translate-x-0 md:rounded-3xl md:border md:shadow-lg ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

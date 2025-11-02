@@ -385,7 +385,7 @@ export default function ChatlayaPage() {
   const composerDisabled = streaming || !selectedConversationId;
 
   return (
-    <div className="flex min-h-[calc(100vh-5.5rem)] w-full max-w-6xl gap-6 px-3 py-6 sm:px-6 lg:px-9">
+    <div className="flex min-h-[calc(100vh-5.5rem)] w-full max-w-6xl gap-5 px-3 py-6 sm:px-6 lg:px-8">
       <div className="relative flex h-full w-full">
       {sidebarOpen && (
         <div
@@ -394,7 +394,7 @@ export default function ChatlayaPage() {
         />
       )}
       <aside
-        className={`fixed left-0 top-[6.75rem] z-40 flex h-[calc(100vh-6.75rem)] w-72 flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:mt-0 md:h-full md:w-72 md:translate-x-0 md:rounded-3xl md:border md:shadow-lg ${
+        className={`fixed left-0 top-[6.75rem] z-40 flex h-[calc(100vh-6.75rem)] w-72 flex-col border-r border-slate-200 bg-white shadow-lg transition-transform duration-200 md:static md:z-0 md:mt-4 md:mb-4 md:h-[calc(100%-2rem)] md:w-72 md:translate-x-0 md:rounded-3xl md:border md:shadow-lg ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -488,7 +488,7 @@ export default function ChatlayaPage() {
           )}
         </nav>
       </aside>
-      <section className="ml-auto flex h-full w-full flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl md:max-w-3xl lg:max-w-4xl">
+      <section className="flex h-full w-full flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl md:mt-4 md:mb-4 md:max-w-3xl lg:max-w-4xl">
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
@@ -587,7 +587,7 @@ export default function ChatlayaPage() {
                     className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[70%] whitespace-pre-wrap break-words rounded-3xl px-5 py-3 text-[0.95rem] leading-relaxed shadow ${
+                      className={`max-w-[65%] whitespace-pre-wrap break-words rounded-3xl px-5 py-3 text-[0.95rem] leading-relaxed shadow ${
                         isUser
                           ? "bg-sky-600 text-white"
                           : "bg-white text-slate-900 ring-1 ring-slate-200"

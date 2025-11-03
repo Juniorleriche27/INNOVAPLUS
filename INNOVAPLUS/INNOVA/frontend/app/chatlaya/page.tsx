@@ -30,6 +30,7 @@ type Conversation = {
 const API_BASE = CHATLAYA_API_BASE;
 
 export default function ChatlayaPage(): JSX.Element {
+  // ---- State ----
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -39,21 +40,20 @@ export default function ChatlayaPage(): JSX.Element {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ---- Refs ----
   const ensuredConversation = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
-
-  // NEW: viewport scrollable des messages
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
+  // ---- UI toggles ----
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
-
-  // NEW: top sticky dynamique pour éviter de passer sous le header
   const [stickyTop, setStickyTop] = useState(96);
-
-  // Toggle Cadre / Plein écran (persisté)
   const [framed, setFramed] = useState(true);
+
+  // Persist framing
   useEffect(() => {
     try {
       const saved = localStorage.getItem("chatlaya_framed");
@@ -66,38 +66,33 @@ export default function ChatlayaPage(): JSX.Element {
     } catch {}
   }, [framed]);
 
-  // Contrôleur d’annulation pour le stream
-  const streamAbortRef = useRef<AbortController | null>(null);
-
-  // Empêche le body de scroller sous la page app
+  // Lock body scroll
   useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = prev;
     };
   }, []);
 
-  // Ouvre/ferme la sidebar selon la largeur
+  // Sidebar responsive
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-    const syncSidebar = () => setSidebarOpen(mediaQuery.matches);
-    syncSidebar();
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", syncSidebar);
-      return () => mediaQuery.removeEventListener("change", syncSidebar);
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setSidebarOpen(mq.matches);
+    sync();
+    if (mq.addEventListener) {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
     }
-    mediaQuery.addListener(syncSidebar);
-    return () => mediaQuery.removeListener(syncSidebar);
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
   }, []);
 
-  // Charge conversations au mount
+  // Load conversations/messages
   useEffect(() => {
     void loadConversations();
   }, []);
-
-  // Charge messages quand on change de conversation
   useEffect(() => {
     if (!selectedConversationId) {
       setMessages([]);
@@ -106,23 +101,22 @@ export default function ChatlayaPage(): JSX.Element {
     void loadMessages(selectedConversationId);
   }, [selectedConversationId]);
 
-  // NEW: auto-scroll dans le panneau messages (pas la page)
+  // Autoscroll inside the messages viewport (not the page)
   useEffect(() => {
     const el = messagesViewportRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  // Focus composer quand on change de conversation
+  // Focus composer when switching conv
   useEffect(() => {
     composerRef.current?.focus();
   }, [selectedConversationId]);
 
-  // Calage de l’overlay mobile sur le cadre
+  // Overlay position relative to frame
   useEffect(() => {
-    if (!sidebarOpen) return;
-    if (typeof window === "undefined") return;
-    const syncPosition = () => {
+    if (!sidebarOpen || typeof window === "undefined") return;
+    const sync = () => {
       if (!frameRef.current) return;
       const rect = frameRef.current.getBoundingClientRect();
       setMobileSidebarInsets({
@@ -131,16 +125,16 @@ export default function ChatlayaPage(): JSX.Element {
         top: Math.max(rect.top, 72),
       });
     };
-    syncPosition();
-    window.addEventListener("resize", syncPosition);
-    window.addEventListener("scroll", syncPosition, { passive: true });
+    sync();
+    window.addEventListener("resize", sync);
+    window.addEventListener("scroll", sync, { passive: true });
     return () => {
-      window.removeEventListener("resize", syncPosition);
-      window.removeEventListener("scroll", syncPosition);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("scroll", sync);
     };
   }, [sidebarOpen, framed]);
 
-  // NEW: calcule un top sticky dynamique (évite le chevauchement avec le header)
+  // Sticky top under the site header (dynamic)
   useEffect(() => {
     const syncTop = () => {
       if (!frameRef.current) return;
@@ -156,27 +150,16 @@ export default function ChatlayaPage(): JSX.Element {
     };
   }, [framed, messages.length]);
 
-  // Annule tout stream en cours à l’unmount
-  useEffect(() => {
-    return () => {
-      streamAbortRef.current?.abort();
-    };
-  }, []);
+  // Abort stream on unmount
+  useEffect(() => () => streamAbortRef.current?.abort(), []);
 
-  const activeConversation = useMemo(
-    () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
-    [conversations, selectedConversationId],
-  );
-
+  // ---- Helpers ----
   function forceLoginRedirect() {
     if (typeof window === "undefined") return;
-    const nextLocation = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const redirect = encodeURIComponent(
-      nextLocation && nextLocation !== "/" ? nextLocation : "/chatlaya",
-    );
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const redirect = encodeURIComponent(next && next !== "/" ? next : "/chatlaya");
     window.location.href = `/login?redirect=${redirect}`;
   }
-
   function isAuthFailure(status: number) {
     if (status === 401 || status === 403 || status === 419) {
       forceLoginRedirect();
@@ -198,8 +181,8 @@ export default function ChatlayaPage(): JSX.Element {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.detail || "Impossible de creer la conversation initiale");
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
     }
   }
 
@@ -232,13 +215,10 @@ export default function ChatlayaPage(): JSX.Element {
         return;
       }
 
-      const stillExists = items.some((c) => c.conversation_id === selectedConversationId);
-      const nextSelection = stillExists
-        ? selectedConversationId
-        : items[0]?.conversation_id ?? null;
-      setSelectedConversationId(nextSelection);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      const still = items.some((c) => c.conversation_id === selectedConversationId);
+      setSelectedConversationId(still ? selectedConversationId : items[0]?.conversation_id ?? null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
     } finally {
       setConversationsLoading(false);
     }
@@ -249,10 +229,7 @@ export default function ChatlayaPage(): JSX.Element {
     try {
       const res = await fetch(
         `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`,
-        {
-          credentials: "include",
-          cache: "no-store",
-        },
+        { credentials: "include", cache: "no-store" },
       );
       if (!res.ok) {
         if (isAuthFailure(res.status)) return;
@@ -261,8 +238,8 @@ export default function ChatlayaPage(): JSX.Element {
       }
       const data = await res.json().catch(() => ({}));
       setMessages(data.items ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
       setMessages([]);
     } finally {
       setMessagesLoading(false);
@@ -270,18 +247,17 @@ export default function ChatlayaPage(): JSX.Element {
   }
 
   async function handleSelectConversation(id: string) {
-    // Annule un stream en cours avant de changer
-    streamAbortRef.current?.abort();
+    streamAbortRef.current?.abort(); // stop stream before switching
 
-    const shouldCollapseSidebar = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+    const collapse = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     if (id === selectedConversationId) {
-      if (shouldCollapseSidebar) setSidebarOpen(false);
+      if (collapse) setSidebarOpen(false);
       return;
     }
     setError(null);
     setMessages([]);
     setSelectedConversationId(id);
-    if (shouldCollapseSidebar) setSidebarOpen(false);
+    if (collapse) setSidebarOpen(false);
   }
 
   async function handleCreateConversation() {
@@ -296,20 +272,16 @@ export default function ChatlayaPage(): JSX.Element {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.detail || "Impossible de creer la conversation");
       }
-      const data = await res.json();
-      const created: Conversation = data;
-      // Déduplique
+      const created: Conversation = await res.json();
       setConversations((prev) => [
         created,
         ...prev.filter((c) => c.conversation_id !== created.conversation_id),
       ]);
       setSelectedConversationId(created.conversation_id);
       setMessages([]);
-      if (typeof window !== "undefined" && window.innerWidth < 768) {
-        setSidebarOpen(false);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      if (typeof window !== "undefined" && window.innerWidth < 768) setSidebarOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
     }
   }
 
@@ -327,14 +299,13 @@ export default function ChatlayaPage(): JSX.Element {
       setConversations((prev) => {
         const remaining = prev.filter((c) => c.conversation_id !== id);
         if (selectedConversationId === id) {
-          const nextConversationId = remaining[0]?.conversation_id ?? null;
-          setSelectedConversationId(nextConversationId);
+          setSelectedConversationId(remaining[0]?.conversation_id ?? null);
           setMessages([]);
         }
         return remaining;
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
     }
   }
 
@@ -345,12 +316,7 @@ export default function ChatlayaPage(): JSX.Element {
     setError(null);
 
     const now = Date.now();
-    const userEntry: ChatMessage = {
-      id: `local-${now}`,
-      role: "user",
-      content: prompt,
-      pending: false,
-    };
+    const userEntry: ChatMessage = { id: `local-${now}`, role: "user", content: prompt };
     const assistantPlaceholder: ChatMessage = {
       id: `pending-${now}`,
       role: "assistant",
@@ -367,27 +333,27 @@ export default function ChatlayaPage(): JSX.Element {
       await streamAssistant(selectedConversationId, prompt);
       await loadMessages(selectedConversationId);
       await loadConversations(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur pendant la generation");
-      setMessages((prev) => prev.filter((msg) => !msg.id.startsWith("pending-")));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur pendant la generation");
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith("pending-")));
     } finally {
       setStreaming(false);
     }
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     await sendMessage();
   }
 
-  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
+  function handleComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       void sendMessage();
     }
   }
 
-  // Stream SSE robuste (CRLF, data multi-lignes, annulation)
+  // ---- Streaming SSE robuste ----
   async function streamAssistant(id: string, prompt: string) {
     const controller = new AbortController();
     streamAbortRef.current = controller;
@@ -401,9 +367,7 @@ export default function ChatlayaPage(): JSX.Element {
     });
 
     if (!res.ok || !res.body) {
-      if (!res.ok && isAuthFailure(res.status)) {
-        throw new Error("Authentification requise");
-      }
+      if (!res.ok && isAuthFailure(res.status)) throw new Error("Authentification requise");
       const text = await res.text().catch(() => "");
       throw new Error(text || "Echec de la reponse");
     }
@@ -418,8 +382,8 @@ export default function ChatlayaPage(): JSX.Element {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-
         let boundary: number;
+
         while ((boundary = buffer.indexOf("\n\n")) !== -1) {
           const packet = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
@@ -435,11 +399,11 @@ export default function ChatlayaPage(): JSX.Element {
 
           if (event === "token") {
             setMessages((prev) =>
-              prev.map((msg) => (msg.pending ? { ...msg, content: msg.content + data } : msg)),
+              prev.map((m) => (m.pending ? { ...m, content: m.content + data } : m)),
             );
           } else if (event === "done") {
-            setMessages((prev) => prev.filter((msg) => !msg.pending));
-            return; // fin normale
+            setMessages((prev) => prev.filter((m) => !m.pending));
+            return;
           } else if (event === "error") {
             throw new Error(data || "Erreur de streaming");
           }
@@ -447,29 +411,21 @@ export default function ChatlayaPage(): JSX.Element {
       }
     } catch (e: any) {
       if (e?.name === "AbortError") {
-        // annulation volontaire : on retire le placeholder
-        setMessages((prev) => prev.filter((msg) => !msg.pending));
+        setMessages((prev) => prev.filter((m) => !m.pending));
         return;
       }
       throw e;
     } finally {
-      if (streamAbortRef.current === controller) {
-        streamAbortRef.current = null;
-      }
+      if (streamAbortRef.current === controller) streamAbortRef.current = null;
     }
   }
 
-  const emptyConversation = useMemo(
-    () => !messagesLoading && messages.length === 0,
-    [messagesLoading, messages.length],
-  );
-
+  // ---- Utils ----
   function normalizeTitle(title?: string | null) {
     if (!title) return "Nouvelle conversation";
-    const trimmed = title.trim();
-    return trimmed.length > 0 ? trimmed : "Nouvelle conversation";
+    const t = title.trim();
+    return t.length > 0 ? t : "Nouvelle conversation";
   }
-
   function formatRelativeTimestamp(timestamp?: string | null) {
     if (!timestamp) return "";
     try {
@@ -484,7 +440,16 @@ export default function ChatlayaPage(): JSX.Element {
     }
   }
 
+  // ---- Dérivés d'UI (UN SEUL BLOC) ----
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId],
+  );
+  const activeConversationTitle = normalizeTitle(activeConversation?.title);
+  const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
+  const composerDisabled = streaming || !selectedConversationId;
 
+  // ---- Sidebar component ----
   function SidebarContent({ onClose }: { onClose?: () => void }) {
     return (
       <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
@@ -499,14 +464,7 @@ export default function ChatlayaPage(): JSX.Element {
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-700 md:hidden"
           >
             <span className="sr-only">Fermer l'historique</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              className="h-4 w-4"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -524,8 +482,8 @@ export default function ChatlayaPage(): JSX.Element {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {conversationsLoading ? (
             <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
               ))}
             </div>
           ) : conversations.length === 0 ? (
@@ -534,13 +492,12 @@ export default function ChatlayaPage(): JSX.Element {
             </div>
           ) : (
             <ul className="space-y-2">
-              {conversations.map((conversation) => {
-                const isActive = conversation.conversation_id === selectedConversationId;
-                const label = normalizeTitle(conversation.title);
-                const updatedLabel =
-                  formatRelativeTimestamp(conversation.updated_at) || "Jamais utilisée";
+              {conversations.map((c) => {
+                const isActive = c.conversation_id === selectedConversationId;
+                const label = normalizeTitle(c.title);
+                const updatedLabel = formatRelativeTimestamp(c.updated_at) || "Jamais utilisée";
                 return (
-                  <li key={conversation.conversation_id}>
+                  <li key={c.conversation_id}>
                     <div
                       className={`group relative overflow-hidden rounded-2xl border ${
                         isActive
@@ -550,7 +507,7 @@ export default function ChatlayaPage(): JSX.Element {
                     >
                       <button
                         type="button"
-                        onClick={() => void handleSelectConversation(conversation.conversation_id)}
+                        onClick={() => void handleSelectConversation(c.conversation_id)}
                         className="block w-full px-4 py-3 text-left"
                       >
                         <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
@@ -562,9 +519,9 @@ export default function ChatlayaPage(): JSX.Element {
                         <button
                           type="button"
                           className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            void handleArchiveConversation(conversation.conversation_id);
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleArchiveConversation(c.conversation_id);
                           }}
                         >
                           Archiver
@@ -581,7 +538,7 @@ export default function ChatlayaPage(): JSX.Element {
     );
   }
 
-  // Style du cadre (framed) vs plein écran (safe-areas conservées)
+  // ---- Frame styles ----
   const frameStyle = useMemo<CSSProperties>(
     () =>
       framed
@@ -600,16 +557,14 @@ export default function ChatlayaPage(): JSX.Element {
     [framed],
   );
 
-  // Hauteur min alignée sur le viewport (ajuste la constante si besoin)
+  // hauteur de travail (ajuste si besoin selon la hauteur réelle du header global)
   const paneMinH = "calc(100vh - 7.5rem)";
 
-  // ---------- RENDU (UI) ----------
+  // ---- Rendu ----
   return (
     <div
       ref={frameRef}
-      className={`relative mx-auto w-full ${
-        framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"
-      }`}
+      className={`relative mx-auto w-full ${framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"}`}
       style={frameStyle}
     >
       <div className="flex w-full flex-col gap-3 md:flex-row md:gap-3">
@@ -635,21 +590,12 @@ export default function ChatlayaPage(): JSX.Element {
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-800 md:hidden"
               >
                 <span className="sr-only">Afficher l'historique</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  className="h-5 w-5"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
                 </svg>
               </button>
               <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-slate-900">
-                  {activeConversationTitle}
-                </p>
+                <p className="truncate text-base font-semibold text-slate-900">{activeConversationTitle}</p>
                 <p className="text-xs text-slate-500">
                   {activeConversationUpdatedAt
                     ? `Dernière activité · ${activeConversationUpdatedAt}`
@@ -658,7 +604,7 @@ export default function ChatlayaPage(): JSX.Element {
               </div>
             </div>
             <div className="flex flex-none items-center gap-2">
-              {/* Toggle Cadre/Plein écran */}
+              {/* Toggle cadre/plein écran */}
               <button
                 type="button"
                 onClick={() => setFramed((v) => !v)}
@@ -666,29 +612,11 @@ export default function ChatlayaPage(): JSX.Element {
                 title={framed ? "Passer en plein écran" : "Afficher le cadre"}
               >
                 {framed ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    className="h-4 w-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4" />
                   </svg>
                 ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    className="h-4 w-4"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
                     <rect x="4" y="4" width="16" height="16" rx="3" />
                   </svg>
                 )}
@@ -714,7 +642,7 @@ export default function ChatlayaPage(): JSX.Element {
             </div>
           </header>
 
-          {/* NEW: ref sur le viewport messages */}
+          {/* Messages viewport (scroll interne) */}
           <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
             {error && (
               <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -723,22 +651,18 @@ export default function ChatlayaPage(): JSX.Element {
             )}
             {messagesLoading ? (
               <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}
-                  >
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
                     <div className="h-16 w-3/4 max-w-md animate-pulse rounded-3xl bg-slate-200" />
                   </div>
                 ))}
               </div>
-            ) : emptyConversation ? (
+            ) : messages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-10 shadow-sm">
                   <h3 className="text-base font-semibold text-slate-900">Prêt à discuter ?</h3>
                   <p className="mt-2 max-w-sm text-sm text-slate-500">
-                    Posez une question précise ou décrivez un besoin. Chatlaya vous répondra en
-                    français avec des suggestions concrètes.
+                    Posez une question précise ou décrivez un besoin. Chatlaya vous répondra en français avec des suggestions concrètes.
                   </p>
                   <button
                     type="button"
@@ -751,27 +675,22 @@ export default function ChatlayaPage(): JSX.Element {
               </div>
             ) : (
               <div className="space-y-4 pb-10">
-                {messages.map((message) => {
-                  const isUser = message.role === "user";
+                {messages.map((m) => {
+                  const isUser = m.role === "user";
                   return (
-                    <div
-                      key={message.id}
-                      className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
-                    >
+                    <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[60%] whitespace-pre-wrap break-words rounded-3xl px-5 py-3 text-[0.95rem] leading-relaxed shadow ${
-                          isUser
-                            ? "bg-sky-600 text-white"
-                            : "bg-white text-slate-900 ring-1 ring-slate-200"
+                          isUser ? "bg-sky-600 text-white" : "bg-white text-slate-900 ring-1 ring-slate-200"
                         }`}
                       >
-                        {message.pending && !message.content ? (
+                        {m.pending && !m.content ? (
                           <span className="inline-flex items-center gap-2 text-slate-400">
                             <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
                             Chatlaya réfléchit…
                           </span>
                         ) : (
-                          message.content
+                          m.content
                         )}
                       </div>
                     </div>
@@ -781,19 +700,14 @@ export default function ChatlayaPage(): JSX.Element {
             )}
           </div>
 
-          <form
-            onSubmit={onSubmit}
-            className="border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10"
-          >
+          <form onSubmit={onSubmit} className="border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10">
             <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
               <textarea
                 ref={composerRef}
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleComposerKeyDown}
-                placeholder={
-                  streaming ? "Patientez pendant la réponse..." : "Pose ta question à Chatlaya"
-                }
+                placeholder={streaming ? "Patientez pendant la réponse..." : "Pose ta question à Chatlaya"}
                 rows={1}
                 aria-label="Message pour Chatlaya"
                 className="block w-full resize-none rounded-3xl bg-transparent px-4 py-3 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
@@ -806,38 +720,24 @@ export default function ChatlayaPage(): JSX.Element {
                   className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 >
                   <span className="sr-only">Envoyer</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="h-4 w-4"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                     <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
                   </svg>
                 </button>
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Entrée pour envoyer · Maj + Entrée pour aller à la ligne
-            </p>
+            <p className="mt-2 text-xs text-slate-400">Entrée pour envoyer · Maj + Entrée pour aller à la ligne</p>
           </form>
         </section>
       </div>
 
-      {/* Overlay mobile — cadré sur frameRef via mobileSidebarInsets */}
+      {/* Overlay mobile */}
       {sidebarOpen && (
         <>
-          <div
-            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />
           <div
             className="fixed z-50 max-h-[80vh] overflow-hidden md:hidden"
-            style={{
-              left: mobileSidebarInsets.left,
-              right: mobileSidebarInsets.right,
-              top: mobileSidebarInsets.top,
-            }}
+            style={{ left: mobileSidebarInsets.left, right: mobileSidebarInsets.right, top: mobileSidebarInsets.top }}
           >
             <SidebarContent onClose={() => setSidebarOpen(false)} />
           </div>

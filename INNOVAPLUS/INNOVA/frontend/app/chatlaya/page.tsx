@@ -47,11 +47,14 @@ export default function ChatlayaPage(): JSX.Element {
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
 
-  // ---- UI toggles ----
+  // ---- UI toggles / layout ----
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
-  const [stickyTop, setStickyTop] = useState(96);
   const [framed, setFramed] = useState(true);
+
+  // Hauteur exacte disponible sous le header + top réel
+  const [stickyTop, setStickyTop] = useState(96);
+  const [paneMinH, setPaneMinH] = useState<number>(640);
 
   // Persist framing
   useEffect(() => {
@@ -66,7 +69,7 @@ export default function ChatlayaPage(): JSX.Element {
     } catch {}
   }, [framed]);
 
-  // Lock body scroll
+  // Empêcher le body de scroller
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -89,7 +92,7 @@ export default function ChatlayaPage(): JSX.Element {
     return () => mq.removeListener(sync);
   }, []);
 
-  // Load conversations/messages
+  // Charger conversations/messages
   useEffect(() => {
     void loadConversations();
   }, []);
@@ -101,19 +104,19 @@ export default function ChatlayaPage(): JSX.Element {
     void loadMessages(selectedConversationId);
   }, [selectedConversationId]);
 
-  // Autoscroll inside the messages viewport (not the page)
+  // Autoscroll dans la liste des messages (pas la page)
   useEffect(() => {
     const el = messagesViewportRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  // Focus composer when switching conv
+  // Focus composer quand on change de conv
   useEffect(() => {
     composerRef.current?.focus();
   }, [selectedConversationId]);
 
-  // Overlay position relative to frame
+  // Positionner l’overlay mobile par rapport au cadre
   useEffect(() => {
     if (!sidebarOpen || typeof window === "undefined") return;
     const sync = () => {
@@ -134,26 +137,32 @@ export default function ChatlayaPage(): JSX.Element {
     };
   }, [sidebarOpen, framed]);
 
-  // Sticky top under the site header (dynamic)
+  // Calcul **unique** de stickyTop + hauteur utile sous le header
   useEffect(() => {
-    const syncTop = () => {
+    const calcLayout = () => {
       if (!frameRef.current) return;
-      const t = Math.max(frameRef.current.getBoundingClientRect().top, 64);
-      setStickyTop(t);
+      const rect = frameRef.current.getBoundingClientRect();
+      // top exact sous le header du site (garde-fou 64px)
+      const top = Math.max(rect.top, 64);
+      setStickyTop(top);
+      // hauteur utile = viewport - top - padding vertical du cadre (si framed)
+      const pad = framed ? 16 : 0; // 8px haut + 8px bas
+      const h = Math.max(420, window.innerHeight - top - pad);
+      setPaneMinH(h);
     };
-    syncTop();
-    window.addEventListener("resize", syncTop);
-    window.addEventListener("scroll", syncTop, { passive: true });
+    calcLayout();
+    window.addEventListener("resize", calcLayout);
+    window.addEventListener("scroll", calcLayout, { passive: true });
     return () => {
-      window.removeEventListener("resize", syncTop);
-      window.removeEventListener("scroll", syncTop);
+      window.removeEventListener("resize", calcLayout);
+      window.removeEventListener("scroll", calcLayout);
     };
   }, [framed, messages.length]);
 
-  // Abort stream on unmount
+  // Annuler le stream à l’unmount
   useEffect(() => () => streamAbortRef.current?.abort(), []);
 
-  // ---- Helpers ----
+  // ---- Helpers API ----
   function forceLoginRedirect() {
     if (typeof window === "undefined") return;
     const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -206,7 +215,6 @@ export default function ChatlayaPage(): JSX.Element {
         await loadConversations(true);
         return;
       }
-
       setConversations(items);
 
       if (items.length === 0) {
@@ -247,8 +255,7 @@ export default function ChatlayaPage(): JSX.Element {
   }
 
   async function handleSelectConversation(id: string) {
-    streamAbortRef.current?.abort(); // stop stream before switching
-
+    streamAbortRef.current?.abort();
     const collapse = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     if (id === selectedConversationId) {
       if (collapse) setSidebarOpen(false);
@@ -353,7 +360,7 @@ export default function ChatlayaPage(): JSX.Element {
     }
   }
 
-  // ---- Streaming SSE robuste ----
+  // ---- Streaming SSE ----
   async function streamAssistant(id: string, prompt: string) {
     const controller = new AbortController();
     streamAbortRef.current = controller;
@@ -449,7 +456,7 @@ export default function ChatlayaPage(): JSX.Element {
   const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
   const composerDisabled = streaming || !selectedConversationId;
 
-  // ---- Sidebar component ----
+  // ---- Sidebar (liste) ----
   function SidebarContent({ onClose }: { onClose?: () => void }) {
     return (
       <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
@@ -557,9 +564,6 @@ export default function ChatlayaPage(): JSX.Element {
     [framed],
   );
 
-  // hauteur de travail (ajuste si besoin selon la hauteur réelle du header global)
-  const paneMinH = "calc(100vh - 7.5rem)";
-
   // ---- Rendu ----
   return (
     <div
@@ -567,21 +571,20 @@ export default function ChatlayaPage(): JSX.Element {
       className={`relative mx-auto w-full ${framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"}`}
       style={frameStyle}
     >
-      <div className="flex w-full flex-col gap-3 md:flex-row md:gap-3">
+      {/* CADRE collé sous le header : toute la zone est sticky & de hauteur fixe */}
+      <div
+        className="sticky overflow-hidden flex w-full flex-col gap-3 md:flex-row md:gap-3"
+        style={{ top: stickyTop, height: paneMinH }}
+      >
         {/* Sidebar */}
         <div className="hidden md:block md:w-72 md:flex-shrink-0">
-          <div className="sticky" style={{ top: stickyTop, height: paneMinH }}>
-            <div className="h-full overflow-hidden">
-              <SidebarContent />
-            </div>
+          <div className="h-full overflow-hidden">
+            <SidebarContent />
           </div>
         </div>
 
         {/* Zone principale */}
-        <section
-          className="flex flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl"
-          style={{ minHeight: paneMinH }}
-        >
+        <section className="flex min-h-full flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -642,7 +645,7 @@ export default function ChatlayaPage(): JSX.Element {
             </div>
           </header>
 
-          {/* Messages viewport (scroll interne) */}
+          {/* Messages : seul conteneur scrollable */}
           <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
             {error && (
               <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -700,7 +703,11 @@ export default function ChatlayaPage(): JSX.Element {
             )}
           </div>
 
-          <form onSubmit={onSubmit} className="border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10">
+          {/* Composer : toujours visible en bas du cadre */}
+          <form
+            onSubmit={onSubmit}
+            className="sticky bottom-0 z-10 border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10"
+          >
             <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
               <textarea
                 ref={composerRef}

@@ -109,12 +109,18 @@ response = model.chat_completion(
 ## Deployment on Hetzner
 
 1. Copy the model directory to `/opt/innovaplus/models/smollm-360m-instruct/` (or any
-   location owned by the `innova` user).
-2. Update `/etc/innovaplus/backend.env` with:
+   location owned by the `innova` user). The backend now auto-detects this path and
+   re-creates a symlink inside `INNOVAPLUS/INNOVA/backend/models/` so redeploying the
+   repository will not delete the weights.
+2. (Optional) keep `/etc/innovaplus/backend.env` with:
    - `ENABLE_SMOLLM=true`
    - `PROVIDER=local`
-   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`
-3. Reload the service:
+   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct` *(the loader will
+     fall back to this location automatically if the variable points elsewhere)*
+3. (Optionnel) pour charger un adapter LoRA, positionner `SMOLLM_ADAPTER_PATH` vers le dossier
+   produit par le script `scripts/finetune_smollm_lora.py`. Au démarrage, le backend fusionne
+   automatiquement l’adapter.
+4. Reload the service:
 
 ```
 sudo systemctl daemon-reload

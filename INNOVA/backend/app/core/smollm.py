@@ -11,6 +11,7 @@ from typing import Optional, List, Dict, Any
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from peft import PeftModel
 
 from app.core.config import settings
 
@@ -68,6 +69,7 @@ class SmolLMModel:
         self.model = None
         self.tokenizer = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.adapter_path: Optional[Path] = None
         self._load_model()
 
     def _load_model(self):
@@ -91,6 +93,24 @@ class SmolLMModel:
                 trust_remote_code=True,
                 local_files_only=True,
             )
+
+            adapter_path = settings.SMOLLM_ADAPTER_PATH or os.getenv("SMOLLM_ADAPTER_PATH")
+            if adapter_path:
+                adapter_path = Path(adapter_path).expanduser()
+                if not adapter_path.is_absolute():
+                    adapter_path = (_BACKEND_ROOT / adapter_path).resolve()
+                if adapter_path.exists():
+                    logger.info("Application de l'adapter LoRA depuis %s", adapter_path)
+                    self.model = PeftModel.from_pretrained(self.model, str(adapter_path), is_trainable=False)
+                    # Fusionner pour inference CPU/GPU + simplicité
+                    try:
+                        self.model = self.model.merge_and_unload()
+                        logger.info("Adapter LoRA fusionné dans le modèle de base.")
+                    except AttributeError:
+                        logger.info("Adapter chargé sans fusion (merge_and_unload indisponible).")
+                    self.adapter_path = adapter_path
+                else:
+                    logger.warning("SMOLLM_ADAPTER_PATH pointe vers %s mais le dossier est introuvable.", adapter_path)
             
             if self.device == "cpu":
                 self.model = self.model.to(self.device)
@@ -248,6 +268,7 @@ class SmolLMModel:
         return {
             "model_name": "SmolLM-360M-Instruct",
             "model_path": str(self.model_path),
+            "adapter_path": str(self.adapter_path) if self.adapter_path else None,
             "device": self.device,
             "parameters": self.model.num_parameters() if self.model else 0,
             "dtype": str(self.model.dtype) if self.model else "unknown"

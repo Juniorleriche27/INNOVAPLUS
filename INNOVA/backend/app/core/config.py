@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str | None = os.getenv("LLM_MODEL")
     LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
     SMOLLM_MODEL_PATH: str = os.getenv("SMOLLM_MODEL_PATH", "models/smollm-360m-instruct")
+    SMOLLM_ADAPTER_PATH: str | None = os.getenv("SMOLLM_ADAPTER_PATH")
     COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")
     VECTOR_INDEX_NAME: str = os.getenv("VECTOR_INDEX_NAME", "vector_index")
     RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))

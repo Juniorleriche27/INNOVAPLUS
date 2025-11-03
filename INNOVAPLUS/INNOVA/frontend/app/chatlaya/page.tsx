@@ -484,13 +484,6 @@ export default function ChatlayaPage(): JSX.Element {
     }
   }
 
-  const activeConversation = useMemo(
-    () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
-    [conversations, selectedConversationId],
-  );
-  const activeConversationTitle = normalizeTitle(activeConversation?.title);
-  const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
-  const composerDisabled = streaming || !selectedConversationId;
 
   function SidebarContent({ onClose }: { onClose?: () => void }) {
     return (

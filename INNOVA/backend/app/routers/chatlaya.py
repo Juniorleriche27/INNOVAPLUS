@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import AsyncGenerator, List
+from typing import AsyncGenerator, Dict, List, Any
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -12,7 +12,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.ai import generate_answer
 from app.core.config import settings
+from app.prompts import SYSTEM_PROMPT
 from app.db.mongo import get_db
+from app.core.rag_client import retrieve_rag_results
 from app.deps.auth import get_current_user
 from app.schemas.chatlaya import (
     ChatMessageItem,
@@ -28,6 +30,78 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chatlaya", tags=["chatlaya"])
 
 DEFAULT_CONVERSATION_TITLE = "Nouvelle conversation"
+GREETING_TOKENS = {"bonjour", "salut", "bonsoir", "hello", "hey", "bonjour chatlaya", "salut chatlaya"}
+IDENTITY_KEYWORDS = [
+    "qui es tu",
+    "qui es-tu",
+    "tu es qui",
+    "qui t a cree",
+    "qui t'a cree",
+    "qui t as cree",
+    "qui t a construit",
+    "qui t'a construit",
+    "qui t as construit",
+    "qui t a fait",
+    "qui t'a fait",
+    "qui t a fabrique",
+    "qui t'a fabrique",
+]
+
+
+def _build_rag_context(chunks: List[Dict[str, Any]], token_budget: int) -> tuple[str, List[Dict[str, Any]]]:
+    """Prepare a concise context string from retrieved RAG chunks."""
+    if not chunks:
+        return "", []
+
+    selected: List[Dict[str, Any]] = []
+    total_tokens = 0
+    max_chunks = 3
+    seen: set[str] = set()
+
+    for chunk in chunks:
+        text = (chunk.get("text") or "").strip()
+        if not text:
+            continue
+        key = " ".join(text.lower().split())
+        if key in seen:
+            continue
+        seen.add(key)
+        estimated_tokens = max(1, len(text.split()))
+        if selected and total_tokens + estimated_tokens > token_budget:
+            break
+        total_tokens += estimated_tokens
+        selected.append(
+            {
+                "doc_id": chunk.get("doc_id"),
+                "score": chunk.get("score"),
+                "text": text,
+                "meta": chunk.get("meta") or {},
+            }
+        )
+        if len(selected) >= max_chunks:
+            break
+
+    if not selected:
+        return "", []
+
+    lines = [f"- [{idx}] {chunk['text']}" for idx, chunk in enumerate(selected, 1)]
+
+    context = (
+        "Contextes pertinents extraits de la base de connaissances :\n"
+        f"{chr(10).join(lines)}\n\n"
+        "Utilise ces informations uniquement si elles renforcent la reponse. "
+        "Si tu t'appuies sur un extrait, cite la balise correspondante comme [Source X]."
+    )
+    return context, selected
+
+
+def _inject_system_context(history: List[Dict[str, Any]], context: str) -> List[Dict[str, Any]]:
+    system_content = SYSTEM_PROMPT
+    if context:
+        system_content = f"{SYSTEM_PROMPT}\n\n{context}"
+    augmented = [{"role": "system", "content": system_content}]
+    augmented.extend(history)
+    return augmented
 
 
 def _serialize_conversation(doc: dict) -> ConversationResponse:
@@ -157,13 +231,39 @@ async def list_messages(
     return MessagesResponse(items=items)
 
 
-def _tokenize_reply(text: str, chunk_size: int = 40) -> List[str]:
-    tokens: List[str] = []
-    for start in range(0, len(text), chunk_size):
-        tokens.append(text[start:start + chunk_size])
-    if not tokens:
-        tokens.append("")
-    return tokens
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    return " ".join(value.lower().strip().split())
+
+
+def _classify_message_kind(message: str) -> str:
+    norm = _normalize_text(message)
+    if not norm:
+        return "default"
+    if norm in GREETING_TOKENS:
+        return "greeting"
+    tokens = norm.replace("!", "").replace("?", "").split()
+    if tokens and all(token in GREETING_TOKENS for token in tokens):
+        return "greeting"
+    if any(keyword in norm for keyword in IDENTITY_KEYWORDS):
+        return "identity"
+    return "default"
+
+
+def _build_direct_reply(kind: str) -> str:
+    if kind == "greeting":
+        return (
+            "Bonjour, comment allez-vous ? Je suis ChatLAYA, l'assistant d'INNOVA+. "
+            "Decrivez-moi un besoin, un probleme local ou une idee et je vous aiderai a le transformer en opportunite concrete."
+        )
+    if kind == "identity":
+        return (
+            "Je suis ChatLAYA, l'assistant IA d'INNOVA+. Je m'appuie sur des modeles open-source ajustes par l'equipe INNOVA+. "
+            "Je suis encore en phase d'entrainement, donc certaines reponses peuvent etre moins completes qu'un grand modele comme ChatGPT. "
+            "Mon role est de vous aider a clarifier vos besoins locaux et a generer des pistes d'action frugales et inclusives."
+        )
+    return ""
 
 
 @router.post("/message")
@@ -204,10 +304,11 @@ async def post_message(
         db["messages"]
         .find({"conversation_id": conv_oid})
         .sort("created_at", -1)
-        .limit(20)
-        .to_list(length=20)
+        .limit(12)
+        .to_list(length=12)
     )
     history_docs.reverse()
+    history_docs = history_docs[-8:]
     chat_history = [
         {
             "role": doc.get("role", "assistant"),
@@ -216,35 +317,107 @@ async def post_message(
         for doc in history_docs
     ]
 
-    async def event_generator() -> AsyncGenerator[dict, None]:
-        assistant_reply = ""
+    message_kind = _classify_message_kind(payload.message)
+    rag_results: List[Dict[str, Any]] = []
+    rag_context = ""
+    if message_kind == "default" and settings.RAG_API_URL:
         try:
-            response_text = await asyncio.to_thread(
-                generate_answer,
+            raw_chunks = await retrieve_rag_results(
                 payload.message,
-                provider=settings.CHAT_PROVIDER,
-                model=settings.CHAT_MODEL,
-                timeout=settings.LLM_TIMEOUT,
-                history=chat_history,
+                top_k=settings.RAG_TOP_K_DEFAULT,
             )
+            rag_context, rag_results = _build_rag_context(raw_chunks, settings.RAG_MAX_CONTEXT_TOKENS)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("RAG retrieval failed: %s", exc)
+    augmented_history = _inject_system_context(chat_history, rag_context)
+    direct_reply = _build_direct_reply(message_kind)
+
+    async def event_generator() -> AsyncGenerator[dict, None]:
+        if direct_reply:
+            if await request.is_disconnected():
+                return
+            yield {"event": "token", "data": direct_reply}
+            assistant_doc = {
+                "conversation_id": conv_oid,
+                "user_id": current["_id"],
+                "role": "assistant",
+                "content": direct_reply,
+                "created_at": datetime.now(timezone.utc),
+                "meta": {},
+            }
+            try:
+                await db["messages"].insert_one(assistant_doc)
+                await db["conversations"].update_one(
+                    {"_id": conv_oid},
+                    {"$set": {"updated_at": datetime.now(timezone.utc)}},
+                )
+            except Exception as exc:
+                logger.warning("Failed to persist direct reply: %s", exc)
+            yield {"event": "done", "data": "done"}
+            return
+
+        loop = asyncio.get_running_loop()
+        token_queue: asyncio.Queue[str | None] = asyncio.Queue()
+        streamed_tokens: List[str] = []
+
+        def handle_token(token: str) -> None:
+            if not token:
+                return
+            loop.call_soon_threadsafe(token_queue.put_nowait, token)
+
+        def sync_generate() -> str:
+            try:
+                return generate_answer(
+                    payload.message,
+                    provider=settings.CHAT_PROVIDER,
+                    model=settings.CHAT_MODEL,
+                    timeout=settings.LLM_TIMEOUT,
+                    history=augmented_history,
+                    context=rag_context,
+                    rag_sources=rag_results,
+                    on_token=handle_token,
+                )
+            finally:
+                loop.call_soon_threadsafe(token_queue.put_nowait, None)
+
+        generation_task = asyncio.create_task(asyncio.to_thread(sync_generate))
+
+        try:
+            while True:
+                token = await token_queue.get()
+                if token is None:
+                    break
+                streamed_tokens.append(token)
+                if await request.is_disconnected():
+                    logger.debug("Client disconnected during SSE stream.")
+                    generation_task.cancel()
+                    return
+                yield {"event": "token", "data": token}
         except Exception as exc:
-            logger.exception("Chatlaya generation failed: %s", exc)
+            logger.exception("Chatlaya streaming failed: %s", exc)
+            generation_task.cancel()
             yield {"event": "error", "data": "internal_error"}
             return
 
-        for chunk in _tokenize_reply(response_text):
-            assistant_reply += chunk
-            if await request.is_disconnected():
-                logger.debug("Client disconnected during SSE stream.")
+        assistant_reply = "".join(streamed_tokens)
+        try:
+            response_text = await generation_task
+        except Exception as exc:
+            logger.exception("Chatlaya generation failed: %s", exc)
+            if not assistant_reply:
+                yield {"event": "error", "data": "internal_error"}
                 return
-            yield {"event": "token", "data": chunk}
+            response_text = assistant_reply
+
+        final_reply = response_text or assistant_reply
 
         assistant_doc = {
             "conversation_id": conv_oid,
             "user_id": current["_id"],
             "role": "assistant",
-            "content": assistant_reply,
+            "content": final_reply,
             "created_at": datetime.now(timezone.utc),
+            "meta": {"rag_sources": rag_results} if rag_results else {},
         }
         try:
             await db["messages"].insert_one(assistant_doc)

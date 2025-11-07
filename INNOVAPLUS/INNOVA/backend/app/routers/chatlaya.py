@@ -30,6 +30,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chatlaya", tags=["chatlaya"])
 
 DEFAULT_CONVERSATION_TITLE = "Nouvelle conversation"
+GREETING_TOKENS = {"bonjour", "salut", "bonsoir", "hello", "hey", "bonjour chatlaya", "salut chatlaya"}
+IDENTITY_KEYWORDS = [
+    "qui es tu",
+    "qui es-tu",
+    "tu es qui",
+    "qui t a cree",
+    "qui t'a cree",
+    "qui t as cree",
+    "qui t a construit",
+    "qui t'a construit",
+    "qui t as construit",
+    "qui t a fait",
+    "qui t'a fait",
+    "qui t a fabrique",
+    "qui t'a fabrique",
+]
 
 
 def _build_rag_context(chunks: List[Dict[str, Any]], token_budget: int) -> tuple[str, List[Dict[str, Any]]]:
@@ -215,6 +231,41 @@ async def list_messages(
     return MessagesResponse(items=items)
 
 
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    return " ".join(value.lower().strip().split())
+
+
+def _classify_message_kind(message: str) -> str:
+    norm = _normalize_text(message)
+    if not norm:
+        return "default"
+    if norm in GREETING_TOKENS:
+        return "greeting"
+    tokens = norm.replace("!", "").replace("?", "").split()
+    if tokens and all(token in GREETING_TOKENS for token in tokens):
+        return "greeting"
+    if any(keyword in norm for keyword in IDENTITY_KEYWORDS):
+        return "identity"
+    return "default"
+
+
+def _build_direct_reply(kind: str) -> str:
+    if kind == "greeting":
+        return (
+            "Bonjour, comment allez-vous ? Je suis ChatLAYA, l'assistant d'INNOVA+. "
+            "Decrivez-moi un besoin, un probleme local ou une idee et je vous aiderai a le transformer en opportunite concrete."
+        )
+    if kind == "identity":
+        return (
+            "Je suis ChatLAYA, l'assistant IA d'INNOVA+. Je m'appuie sur des modeles open-source ajustes par l'equipe INNOVA+. "
+            "Je suis encore en phase d'entrainement, donc certaines reponses peuvent etre moins completes qu'un grand modele comme ChatGPT. "
+            "Mon role est de vous aider a clarifier vos besoins locaux et a generer des pistes d'action frugales et inclusives."
+        )
+    return ""
+
+
 @router.post("/message")
 async def post_message(
     payload: ChatMessagePayload,
@@ -266,9 +317,10 @@ async def post_message(
         for doc in history_docs
     ]
 
+    message_kind = _classify_message_kind(payload.message)
     rag_results: List[Dict[str, Any]] = []
     rag_context = ""
-    if settings.RAG_API_URL:
+    if message_kind == "default" and settings.RAG_API_URL:
         try:
             raw_chunks = await retrieve_rag_results(
                 payload.message,
@@ -278,8 +330,32 @@ async def post_message(
         except Exception as exc:  # noqa: BLE001
             logger.warning("RAG retrieval failed: %s", exc)
     augmented_history = _inject_system_context(chat_history, rag_context)
+    direct_reply = _build_direct_reply(message_kind)
 
     async def event_generator() -> AsyncGenerator[dict, None]:
+        if direct_reply:
+            if await request.is_disconnected():
+                return
+            yield {"event": "token", "data": direct_reply}
+            assistant_doc = {
+                "conversation_id": conv_oid,
+                "user_id": current["_id"],
+                "role": "assistant",
+                "content": direct_reply,
+                "created_at": datetime.now(timezone.utc),
+                "meta": {},
+            }
+            try:
+                await db["messages"].insert_one(assistant_doc)
+                await db["conversations"].update_one(
+                    {"_id": conv_oid},
+                    {"$set": {"updated_at": datetime.now(timezone.utc)}},
+                )
+            except Exception as exc:
+                logger.warning("Failed to persist direct reply: %s", exc)
+            yield {"event": "done", "data": "done"}
+            return
+
         loop = asyncio.get_running_loop()
         token_queue: asyncio.Queue[str | None] = asyncio.Queue()
         streamed_tokens: List[str] = []

@@ -604,23 +604,23 @@ export default function ChatlayaPage(): JSX.Element {
                 return (
                   <li key={c.conversation_id}>
                     <div
-                      className={`group relative overflow-hidden rounded-2xl border ${
+                      className={`rounded-2xl border ${
                         isActive
                           ? "border-sky-500 bg-sky-50"
                           : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
                       }`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => void handleSelectConversation(c.conversation_id)}
-                        className="block w-full px-4 py-3 text-left"
-                      >
-                        <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {isActive ? "Session en cours" : `Mis a jour · ${updatedLabel}`}
-                        </p>
-                      </button>
-                      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 gap-2">
+                      <div className="flex items-start justify-between gap-3 px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleSelectConversation(c.conversation_id)}
+                          className="flex-1 text-left"
+                        >
+                          <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {isActive ? "Session en cours" : `Mis a jour · ${updatedLabel}`}
+                          </p>
+                        </button>
                         <button
                           type="button"
                           className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
@@ -656,7 +656,7 @@ export default function ChatlayaPage(): JSX.Element {
   return (
     <div className={rootClasses}>
       <div className="flex h-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-        <aside className="hidden w-72 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
+        <aside className="hidden w-80 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
           <SidebarContent />
         </aside>
         <main className="flex flex-1 flex-col bg-white">

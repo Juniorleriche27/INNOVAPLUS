@@ -30,22 +30,34 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chatlaya", tags=["chatlaya"])
 
 DEFAULT_CONVERSATION_TITLE = "Nouvelle conversation"
-GREETING_TOKENS = {"bonjour", "salut", "bonsoir", "hello", "hey", "bonjour chatlaya", "salut chatlaya"}
-IDENTITY_KEYWORDS = [
+GREETING_PHRASES = {
+    "bonjour",
+    "bonjour chatlaya",
+    "salut",
+    "salut chatlaya",
+    "bonsoir",
+    "hello",
+    "hey",
+}
+IDENTITY_PHRASES = {
     "qui es tu",
     "qui es-tu",
     "tu es qui",
+    "qui es tu chatlaya",
+    "qui es-tu chatlaya",
     "qui t a cree",
     "qui t'a cree",
     "qui t as cree",
-    "qui t a construit",
     "qui t'a construit",
+    "qui t a construit",
     "qui t as construit",
-    "qui t a fait",
     "qui t'a fait",
+    "qui t a fait",
     "qui t a fabrique",
     "qui t'a fabrique",
-]
+    "qui t a construit chatlaya",
+    "qui t a cree innova",
+}
 
 
 def _build_rag_context(chunks: List[Dict[str, Any]], token_budget: int) -> tuple[str, List[Dict[str, Any]]]:
@@ -241,12 +253,10 @@ def _classify_message_kind(message: str) -> str:
     norm = _normalize_text(message)
     if not norm:
         return "default"
-    if norm in GREETING_TOKENS:
+    stripped = norm.rstrip("!?.,; ")
+    if stripped in GREETING_PHRASES:
         return "greeting"
-    tokens = norm.replace("!", "").replace("?", "").split()
-    if tokens and all(token in GREETING_TOKENS for token in tokens):
-        return "greeting"
-    if any(keyword in norm for keyword in IDENTITY_KEYWORDS):
+    if stripped in IDENTITY_PHRASES:
         return "identity"
     return "default"
 

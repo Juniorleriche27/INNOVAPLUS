@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from typing import List, Sequence, Optional
+from typing import List, Sequence, Optional, Dict, Any, Callable
 
 import logging
 
@@ -76,6 +76,9 @@ def generate_answer(
     model: str | None = None,
     timeout: int | None = None,
     history: Optional[List[dict[str, str]]] = None,
+    context: str | None = None,
+    rag_sources: Optional[List[Dict[str, Any]]] = None,
+    on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
     provider_name = (provider or settings.CHAT_PROVIDER or settings.LLM_PROVIDER or "echo").lower()
     effective_prompt = prompt or (history[-1]["content"] if history else "")
@@ -93,13 +96,37 @@ def generate_answer(
             conversation = list(history or [])
             if not conversation:
                 conversation = [{"role": "user", "content": effective_prompt}]
-            if all(message.get("role") != "system" for message in conversation):
-                conversation.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
-
+            system_prompt = SYSTEM_PROMPT
+            if context:
+                system_prompt = f"{SYSTEM_PROMPT}\n\n{context}"
+            if conversation[0].get("role") == "system":
+                conversation[0]["content"] = f"{system_prompt}\n\n{conversation[0].get('content','')}"
+            else:
+                conversation.insert(0, {"role": "system", "content": system_prompt})
             smollm = get_smollm_model()
             configured_max = settings.CHAT_MAX_NEW_TOKENS or 320
             max_tokens = max(64, min(configured_max, 768))
-            response = smollm.chat_completion(conversation, max_tokens=max_tokens, temperature=0.7)
+            if on_token and getattr(smollm, "chat_completion_stream", None):
+                response = smollm.chat_completion_stream(
+                    conversation,
+                    max_tokens=max_tokens,
+                    temperature=0.7,
+                    top_p=0.9,
+                    repeat_penalty=1.05,
+                    stop_tokens=["</s>", "<|im_end|>", "###"],
+                    ignore_eos=True,
+                    on_token=on_token,
+                )
+            else:
+                response = smollm.chat_completion(
+                    conversation,
+                    max_tokens=max_tokens,
+                    temperature=0.7,
+                    top_p=0.9,
+                    repeat_penalty=1.05,
+                    stop_tokens=["</s>", "<|im_end|>", "###"],
+                    ignore_eos=True,
+                )
             cleaned = response.strip()
             logger.debug(
                 "SmolLM returned len=%d snippet=%r",
@@ -107,6 +134,8 @@ def generate_answer(
                 cleaned[:120],
             )
             if cleaned:
+                if on_token and not getattr(smollm, "chat_completion_stream", None):
+                    on_token(cleaned)
                 return cleaned
             logger.debug("SmolLM empty response, returning fallback reply.")
             return FALLBACK_REPLY
@@ -123,18 +152,27 @@ def generate_answer(
                 if history:
                     last_user = next((msg["content"] for msg in reversed(history) if msg.get("role") == "user"), effective_prompt)
                 resp = client.chat(model=mdl, message=last_user)
-                return getattr(resp, "text", None) or str(resp)
+                text = getattr(resp, "text", None) or str(resp)
+                if text and on_token:
+                    on_token(text)
+                return text
             except Exception as exc:  # noqa: BLE001
                 logger.warning("Cohere chat failed, falling back to echo: %s", exc)
 
     if provider_name == "echo":
+        if on_token:
+            on_token(effective_prompt)
         return effective_prompt
 
     if provider_name in {"openai", "mistral"}:
         logger.warning("Provider '%s' not configured. Falling back to echo.", provider_name)
+        if on_token:
+            on_token(effective_prompt)
         return effective_prompt
 
     logger.debug("Returning fallback reply for provider=%s", provider_name)
+    if on_token:
+        on_token(FALLBACK_REPLY)
     return FALLBACK_REPLY
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import AsyncGenerator, List
+from typing import AsyncGenerator, Dict, List, Any
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -12,7 +12,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.ai import generate_answer
 from app.core.config import settings
+from app.prompts import SYSTEM_PROMPT
 from app.db.mongo import get_db
+from app.core.rag_client import retrieve_rag_results
 from app.deps.auth import get_current_user
 from app.schemas.chatlaya import (
     ChatMessageItem,
@@ -28,6 +30,62 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chatlaya", tags=["chatlaya"])
 
 DEFAULT_CONVERSATION_TITLE = "Nouvelle conversation"
+
+
+def _build_rag_context(chunks: List[Dict[str, Any]], token_budget: int) -> tuple[str, List[Dict[str, Any]]]:
+    """Prepare a concise context string from retrieved RAG chunks."""
+    if not chunks:
+        return "", []
+
+    selected: List[Dict[str, Any]] = []
+    total_tokens = 0
+    max_chunks = 3
+    seen: set[str] = set()
+
+    for chunk in chunks:
+        text = (chunk.get("text") or "").strip()
+        if not text:
+            continue
+        key = " ".join(text.lower().split())
+        if key in seen:
+            continue
+        seen.add(key)
+        estimated_tokens = max(1, len(text.split()))
+        if selected and total_tokens + estimated_tokens > token_budget:
+            break
+        total_tokens += estimated_tokens
+        selected.append(
+            {
+                "doc_id": chunk.get("doc_id"),
+                "score": chunk.get("score"),
+                "text": text,
+                "meta": chunk.get("meta") or {},
+            }
+        )
+        if len(selected) >= max_chunks:
+            break
+
+    if not selected:
+        return "", []
+
+    lines = [f"- [{idx}] {chunk['text']}" for idx, chunk in enumerate(selected, 1)]
+
+    context = (
+        "Contextes pertinents extraits de la base de connaissances :\n"
+        f"{chr(10).join(lines)}\n\n"
+        "Utilise ces informations uniquement si elles renforcent la reponse. "
+        "Si tu t'appuies sur un extrait, cite la balise correspondante comme [Source X]."
+    )
+    return context, selected
+
+
+def _inject_system_context(history: List[Dict[str, Any]], context: str) -> List[Dict[str, Any]]:
+    system_content = SYSTEM_PROMPT
+    if context:
+        system_content = f"{SYSTEM_PROMPT}\n\n{context}"
+    augmented = [{"role": "system", "content": system_content}]
+    augmented.extend(history)
+    return augmented
 
 
 def _serialize_conversation(doc: dict) -> ConversationResponse:
@@ -204,10 +262,11 @@ async def post_message(
         db["messages"]
         .find({"conversation_id": conv_oid})
         .sort("created_at", -1)
-        .limit(20)
-        .to_list(length=20)
+        .limit(12)
+        .to_list(length=12)
     )
     history_docs.reverse()
+    history_docs = history_docs[-8:]
     chat_history = [
         {
             "role": doc.get("role", "assistant"),
@@ -215,6 +274,19 @@ async def post_message(
         }
         for doc in history_docs
     ]
+
+    rag_results: List[Dict[str, Any]] = []
+    rag_context = ""
+    if settings.RAG_API_URL:
+        try:
+            raw_chunks = await retrieve_rag_results(
+                payload.message,
+                top_k=settings.RAG_TOP_K_DEFAULT,
+            )
+            rag_context, rag_results = _build_rag_context(raw_chunks, settings.RAG_MAX_CONTEXT_TOKENS)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("RAG retrieval failed: %s", exc)
+    augmented_history = _inject_system_context(chat_history, rag_context)
 
     async def event_generator() -> AsyncGenerator[dict, None]:
         assistant_reply = ""
@@ -225,7 +297,9 @@ async def post_message(
                 provider=settings.CHAT_PROVIDER,
                 model=settings.CHAT_MODEL,
                 timeout=settings.LLM_TIMEOUT,
-                history=chat_history,
+                history=augmented_history,
+                context=rag_context,
+                rag_sources=rag_results,
             )
         except Exception as exc:
             logger.exception("Chatlaya generation failed: %s", exc)
@@ -245,6 +319,7 @@ async def post_message(
             "role": "assistant",
             "content": assistant_reply,
             "created_at": datetime.now(timezone.utc),
+            "meta": {"rag_sources": rag_results} if rag_results else {},
         }
         try:
             await db["messages"].insert_one(assistant_doc)

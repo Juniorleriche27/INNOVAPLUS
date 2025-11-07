@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  FormEvent,
-  KeyboardEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type ChatMessage = {
@@ -28,6 +20,177 @@ type Conversation = {
 };
 
 const API_BASE = CHATLAYA_API_BASE;
+const SECTION_ICON_MAP: Record<string, string> = {
+  "1) Resume bref": "💡",
+  "2) Reponse detaillee": "📘",
+  "3) Pistes d'action (3 puces max)": "🚀",
+  "4) KPIs (1-3) si utiles": "📊",
+  "5) Risques / limites (1-2) si utiles": "⚠️",
+};
+const LEFT_NAV_ITEMS = [
+  { icon: "🏠", label: "Accueil" },
+  { icon: "📁", label: "Opportunites" },
+  { icon: "💬", label: "ChatLAYA" },
+  { icon: "⚙️", label: "Parametres" },
+];
+
+type StructuredSection = {
+  title: string;
+  body: string;
+};
+
+function normalizeSectionTitle(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+const SECTION_ICON_ENTRIES = Object.entries(SECTION_ICON_MAP).map(([label, icon]) => ({
+  icon,
+  normalized: normalizeSectionTitle(label),
+}));
+
+function resolveSectionIcon(title: string): string | undefined {
+  const normalized = normalizeSectionTitle(title);
+  const entry = SECTION_ICON_ENTRIES.find((candidate) => normalized.startsWith(candidate.normalized));
+  return entry?.icon;
+}
+
+function parseStructuredSections(content: string): StructuredSection[] {
+  const lines = content.split(/\r?\n/);
+  const sections: StructuredSection[] = [];
+  let currentTitle: string | null = null;
+  let buffer: string[] = [];
+  const commit = () => {
+    if (!currentTitle) return;
+    const body = buffer.join("\n").trim();
+    sections.push({ title: currentTitle, body });
+    buffer = [];
+  };
+
+  for (const rawLine of lines) {
+    const headingMatch = rawLine.match(/^#{2,3}\s+(.*)$/);
+    if (headingMatch) {
+      if (currentTitle) commit();
+      currentTitle = headingMatch[1].trim();
+      continue;
+    }
+    if (currentTitle) {
+      buffer.push(rawLine);
+    }
+  }
+  if (currentTitle) commit();
+  return sections;
+}
+
+type ContentBlock =
+  | {
+      type: "paragraph";
+      lines: string[];
+    }
+  | {
+      type: "list";
+      items: string[];
+    };
+
+function buildContentBlocks(text: string): ContentBlock[] {
+  const blocks: ContentBlock[] = [];
+  let paragraph: string[] = [];
+  let list: string[] = [];
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    blocks.push({ type: "paragraph", lines: [...paragraph] });
+    paragraph = [];
+  };
+
+  const flushList = () => {
+    if (!list.length) return;
+    blocks.push({ type: "list", items: [...list] });
+    list = [];
+  };
+
+  const lines = text.split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+    if (/^[-*]\s+/.test(line)) {
+      flushParagraph();
+      list.push(line.replace(/^[-*]\s+/, "").trim());
+      continue;
+    }
+    flushList();
+    paragraph.push(line);
+  }
+  flushParagraph();
+  flushList();
+  return blocks;
+}
+
+function StructuredSectionContent({ text }: { text: string }): JSX.Element | null {
+  if (!text.trim()) return null;
+  const blocks = buildContentBlocks(text);
+  if (!blocks.length) {
+    return <p className="mt-1 text-sm text-slate-700">{text}</p>;
+  }
+  return (
+    <>
+      {blocks.map((block, idx) => {
+        if (block.type === "paragraph") {
+          return (
+            <p key={`p-${idx}`} className={`${idx === 0 ? "mt-1" : "mt-2"} text-sm text-slate-700`}>
+              {block.lines.join(" ")}
+            </p>
+          );
+        }
+        return (
+          <ul
+            key={`ul-${idx}`}
+            className={`${idx === 0 ? "mt-1" : "mt-2"} list-disc pl-5 text-sm text-slate-700 marker:text-sky-500`}
+          >
+            {block.items.map((item, itemIdx) => (
+              <li key={itemIdx} className="mb-1 last:mb-0">
+                {item}
+              </li>
+            ))}
+          </ul>
+        );
+      })}
+    </>
+  );
+}
+
+function AssistantMessageContent({ content }: { content: string }): JSX.Element {
+  const sections = parseStructuredSections(content);
+  if (!sections.length) {
+    return <span className="whitespace-pre-wrap break-words">{content}</span>;
+  }
+  return (
+    <div className="space-y-4">
+      {sections.map((section, index) => {
+        const icon = resolveSectionIcon(section.title);
+        return (
+          <div key={`${section.title}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-sky-800">
+              {icon ? (
+                <span aria-hidden="true" className="text-base">
+                  {icon}
+                </span>
+              ) : null}
+              <span>{section.title}</span>
+            </div>
+            <StructuredSectionContent text={section.body} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ChatlayaPage(): JSX.Element {
   // ---- State ----
@@ -43,54 +206,12 @@ export default function ChatlayaPage(): JSX.Element {
   // ---- Refs ----
   const ensuredConversation = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
-  const frameRef = useRef<HTMLDivElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
 
   // ---- UI toggles / layout ----
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mobileSidebarInsets, setMobileSidebarInsets] = useState({ left: 16, right: 16, top: 96 });
-  const [framed, setFramed] = useState(true);
-
-  // Hauteur exacte disponible sous le header + top réel
-  const [stickyTop, setStickyTop] = useState(96);
-  const [paneMinH, setPaneMinH] = useState<number>(640);
-
-  // Persist framing
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("chatlaya_framed");
-      if (saved !== null) setFramed(saved === "1");
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("chatlaya_framed", framed ? "1" : "0");
-    } catch {}
-  }, [framed]);
-
-  // Empêcher le body de scroller
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  // Sidebar responsive
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 768px)");
-    const sync = () => setSidebarOpen(mq.matches);
-    sync();
-    if (mq.addEventListener) {
-      mq.addEventListener("change", sync);
-      return () => mq.removeEventListener("change", sync);
-    }
-    mq.addListener(sync);
-    return () => mq.removeListener(sync);
-  }, []);
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
   // Charger conversations/messages
   useEffect(() => {
@@ -115,49 +236,16 @@ export default function ChatlayaPage(): JSX.Element {
   useEffect(() => {
     composerRef.current?.focus();
   }, [selectedConversationId]);
-
-  // Positionner l’overlay mobile par rapport au cadre
+  // Ajuster automatiquement la hauteur du textarea
   useEffect(() => {
-    if (!sidebarOpen || typeof window === "undefined") return;
-    const sync = () => {
-      if (!frameRef.current) return;
-      const rect = frameRef.current.getBoundingClientRect();
-      setMobileSidebarInsets({
-        left: Math.max(rect.left, 12),
-        right: Math.max(window.innerWidth - rect.right, 12),
-        top: Math.max(rect.top, 72),
-      });
-    };
-    sync();
-    window.addEventListener("resize", sync);
-    window.addEventListener("scroll", sync, { passive: true });
-    return () => {
-      window.removeEventListener("resize", sync);
-      window.removeEventListener("scroll", sync);
-    };
-  }, [sidebarOpen, framed]);
-
-  // Calcul **unique** de stickyTop + hauteur utile sous le header
-  useEffect(() => {
-    const calcLayout = () => {
-      if (!frameRef.current) return;
-      const rect = frameRef.current.getBoundingClientRect();
-      // top exact sous le header du site (garde-fou 64px)
-      const top = Math.max(rect.top, 64);
-      setStickyTop(top);
-      // hauteur utile = viewport - top - padding vertical du cadre (si framed)
-      const pad = framed ? 16 : 0; // 8px haut + 8px bas
-      const h = Math.max(420, window.innerHeight - top - pad);
-      setPaneMinH(h);
-    };
-    calcLayout();
-    window.addEventListener("resize", calcLayout);
-    window.addEventListener("scroll", calcLayout, { passive: true });
-    return () => {
-      window.removeEventListener("resize", calcLayout);
-      window.removeEventListener("scroll", calcLayout);
-    };
-  }, [framed, messages.length]);
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    const maxHeight = 200;
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [input]);
 
   // Annuler le stream à l’unmount
   useEffect(() => () => streamAbortRef.current?.abort(), []);
@@ -459,11 +547,11 @@ export default function ChatlayaPage(): JSX.Element {
   // ---- Sidebar (liste) ----
   function SidebarContent({ onClose }: { onClose?: () => void }) {
     return (
-      <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
+      <div className="flex h-full flex-col bg-white">
         <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Historique</h2>
-            <p className="text-xs text-slate-500">Tous vos échanges Chatlaya</p>
+            <p className="text-xs text-slate-500">Tous vos echanges Chatlaya</p>
           </div>
           <button
             type="button"
@@ -502,7 +590,7 @@ export default function ChatlayaPage(): JSX.Element {
               {conversations.map((c) => {
                 const isActive = c.conversation_id === selectedConversationId;
                 const label = normalizeTitle(c.title);
-                const updatedLabel = formatRelativeTimestamp(c.updated_at) || "Jamais utilisée";
+                const updatedLabel = formatRelativeTimestamp(c.updated_at) || "Jamais utilisee";
                 return (
                   <li key={c.conversation_id}>
                     <div
@@ -519,7 +607,7 @@ export default function ChatlayaPage(): JSX.Element {
                       >
                         <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
                         <p className="mt-1 text-xs text-slate-500">
-                          {isActive ? "Session en cours" : `Mis à jour · ${updatedLabel}`}
+                          {isActive ? "Session en cours" : `Mis a jour · ${updatedLabel}`}
                         </p>
                       </button>
                       <div className="absolute right-3 top-1/2 flex -translate-y-1/2 gap-2">
@@ -545,86 +633,75 @@ export default function ChatlayaPage(): JSX.Element {
     );
   }
 
-  // ---- Frame styles ----
-  const frameStyle = useMemo<CSSProperties>(
-    () =>
-      framed
-        ? {
-            paddingTop: "max(8px, env(safe-area-inset-top))",
-            paddingBottom: "max(8px, env(safe-area-inset-bottom))",
-            paddingLeft: "max(8px, env(safe-area-inset-left))",
-            paddingRight: "max(8px, env(safe-area-inset-right))",
-          }
-        : {
-            paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-            paddingLeft: "env(safe-area-inset-left)",
-            paddingRight: "env(safe-area-inset-right)",
-          },
-    [framed],
-  );
+  // ---- Message bubbles ----
+  const bubbleBaseClass = "w-full max-w-3xl rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-sm";
+  const userBubbleClass = `${bubbleBaseClass} bg-sky-600 text-white`;
+  const assistantBubbleClass = `${bubbleBaseClass} bg-slate-50 text-slate-900 border border-slate-100`;
 
   // ---- Rendu ----
   return (
-    <div
-      ref={frameRef}
-      className={`relative mx-auto w-full ${framed ? "max-w-6xl bg-slate-50" : "max-w-6xl bg-transparent"}`}
-      style={frameStyle}
-    >
-      {/* CADRE collé sous le header : toute la zone est sticky & de hauteur fixe */}
-      <div
-        className="sticky overflow-hidden flex w-full flex-col gap-3 md:flex-row md:gap-3"
-        style={{ top: stickyTop, height: paneMinH }}
+    <div className="flex h-screen flex-col bg-slate-50">
+      <header
+        className={`flex items-center justify-between border-b bg-white px-4 py-3 transition-all duration-200 sm:px-6 ${headerCollapsed ? "h-12" : "h-20"}`}
       >
-        {/* Sidebar */}
-        <div className="hidden md:block md:w-72 md:flex-shrink-0">
-          <div className="h-full overflow-hidden">
-            <SidebarContent />
-          </div>
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">INNOVA+</span>
+          <span className="truncate text-base font-semibold text-slate-900">ChatLAYA</span>
         </div>
-
-        {/* Zone principale */}
-        <section className="flex min-h-full flex-1 flex-col rounded-3xl border border-slate-200 bg-white shadow-xl">
-          <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl border-b border-slate-200 bg-white px-4 py-4 shadow-sm md:px-6">
-            <div className="flex min-w-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(true)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-800 md:hidden"
-              >
-                <span className="sr-only">Afficher l'historique</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
-                </svg>
-              </button>
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold text-slate-900">{activeConversationTitle}</p>
-                <p className="text-xs text-slate-500">
-                  {activeConversationUpdatedAt
-                    ? `Dernière activité · ${activeConversationUpdatedAt}`
-                    : "Commencez votre échange avec Chatlaya"}
-                </p>
-              </div>
+        <div className="flex flex-none items-center gap-2">
+          <button
+            type="button"
+            className="hidden rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 sm:inline-flex"
+          >
+            Creer une opportunite
+          </button>
+          <div className="hidden h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 sm:flex">
+            IN
+          </div>
+          <button
+            type="button"
+            onClick={() => setHeaderCollapsed((v) => !v)}
+            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
+          >
+            {headerCollapsed ? "Agrandir le header" : "Reduire le header"}
+          </button>
+        </div>
+      </header>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="hidden w-16 shrink-0 flex-col items-center gap-4 border-r bg-white/95 px-2 py-6 md:flex">
+          {LEFT_NAV_ITEMS.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              title={item.label}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+            >
+              <span aria-hidden="true">{item.icon}</span>
+            </button>
+          ))}
+        </div>
+        <aside className="hidden w-72 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
+          <SidebarContent />
+        </aside>
+        <main className="flex flex-1 flex-col bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
+              <p className="truncate text-lg font-semibold text-slate-900">{activeConversationTitle}</p>
+              <p className="text-xs text-slate-500">
+                {activeConversationUpdatedAt
+                  ? `Derniere activite · ${activeConversationUpdatedAt}`
+                  : "Commencez votre echange avec Chatlaya"}
+              </p>
             </div>
             <div className="flex flex-none items-center gap-2">
-              {/* Toggle cadre/plein écran */}
               <button
                 type="button"
-                onClick={() => setFramed((v) => !v)}
-                className="rounded-full border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
-                title={framed ? "Passer en plein écran" : "Afficher le cadre"}
+                onClick={() => setHistoryDrawerOpen(true)}
+                className="inline-flex items-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 md:hidden"
               >
-                {framed ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
-                    <rect x="4" y="4" width="16" height="16" rx="3" />
-                  </svg>
-                )}
+                Historique
               </button>
-
               <button
                 type="button"
                 onClick={handleCreateConversation}
@@ -643,29 +720,28 @@ export default function ChatlayaPage(): JSX.Element {
                 </button>
               )}
             </div>
-          </header>
-
-          {/* Messages : seul conteneur scrollable */}
-          <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 md:px-6 lg:px-8">
+          </div>
+          <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
             {error && (
-              <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <div className="mx-auto mb-4 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {error}
               </div>
             )}
             {messagesLoading ? (
               <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
-                    <div className="h-16 w-3/4 max-w-md animate-pulse rounded-3xl bg-slate-200" />
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex justify-center">
+                    <div className="h-16 w-full max-w-3xl animate-pulse rounded-2xl bg-slate-100" />
                   </div>
                 ))}
               </div>
             ) : messages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-white/80 px-6 py-10 shadow-sm">
-                  <h3 className="text-base font-semibold text-slate-900">Prêt à discuter ?</h3>
-                  <p className="mt-2 max-w-sm text-sm text-slate-500">
-                    Posez une question précise ou décrivez un besoin. Chatlaya vous répondra en français avec des suggestions concrètes.
+                <div className="w-full max-w-lg rounded-3xl border border-dashed border-slate-300 bg-white/80 px-8 py-10 shadow-sm">
+                  <h3 className="text-base font-semibold text-slate-900">Pret a discuter ?</h3>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Posez une question precise ou decrivez un besoin. Chatlaya vous repondra en francais avec des
+                    suggestions concretes.
                   </p>
                   <button
                     type="button"
@@ -681,19 +757,17 @@ export default function ChatlayaPage(): JSX.Element {
                 {messages.map((m) => {
                   const isUser = m.role === "user";
                   return (
-                    <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[60%] whitespace-pre-wrap break-words rounded-3xl px-5 py-3 text-[0.95rem] leading-relaxed shadow ${
-                          isUser ? "bg-sky-600 text-white" : "bg-white text-slate-900 ring-1 ring-slate-200"
-                        }`}
-                      >
+                    <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-center"}`}>
+                      <div className={isUser ? userBubbleClass : assistantBubbleClass}>
                         {m.pending && !m.content ? (
                           <span className="inline-flex items-center gap-2 text-slate-400">
                             <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                            Chatlaya réfléchit…
+                            Chatlaya reflechit...
                           </span>
-                        ) : (
+                        ) : isUser ? (
                           m.content
+                        ) : (
+                          <AssistantMessageContent content={m.content} />
                         )}
                       </div>
                     </div>
@@ -702,51 +776,41 @@ export default function ChatlayaPage(): JSX.Element {
               </div>
             )}
           </div>
-
-          {/* Composer : toujours visible en bas du cadre */}
-          <form
-            onSubmit={onSubmit}
-            className="sticky bottom-0 z-10 border-t border-slate-200/70 bg-white px-4 py-4 shadow-inner md:px-6 lg:px-10"
-          >
-            <div className="relative rounded-3xl border border-slate-200 bg-white shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
+          <form onSubmit={onSubmit} className="border-t border-slate-100 bg-white px-4 py-4 sm:px-6 lg:px-10">
+            <div className="mx-auto flex w-full max-w-3xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
               <textarea
                 ref={composerRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleComposerKeyDown}
-                placeholder={streaming ? "Patientez pendant la réponse..." : "Pose ta question à Chatlaya"}
+                placeholder={streaming ? "Patientez pendant la reponse..." : "Pose ta question a Chatlaya"}
                 rows={1}
                 aria-label="Message pour Chatlaya"
-                className="block w-full resize-none rounded-3xl bg-transparent px-4 py-3 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none"
                 disabled={composerDisabled}
               />
-              <div className="absolute bottom-2 right-2 flex items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={composerDisabled || !input.trim()}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                >
-                  <span className="sr-only">Envoyer</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                    <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={composerDisabled || !input.trim()}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+              >
+                <span className="sr-only">Envoyer</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                  <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
+                </svg>
+              </button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">Entrée pour envoyer · Maj + Entrée pour aller à la ligne</p>
+            <p className="mx-auto mt-2 max-w-3xl text-right text-xs text-slate-400">
+              Entree pour envoyer · Maj + Entree pour aller a la ligne
+            </p>
           </form>
-        </section>
+        </main>
       </div>
-
-      {/* Overlay mobile */}
-      {sidebarOpen && (
+      {historyDrawerOpen && (
         <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />
-          <div
-            className="fixed z-50 max-h-[80vh] overflow-hidden md:hidden"
-            style={{ left: mobileSidebarInsets.left, right: mobileSidebarInsets.right, top: mobileSidebarInsets.top }}
-          >
-            <SidebarContent onClose={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryDrawerOpen(false)} />
+          <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-full bg-white shadow-2xl md:hidden">
+            <SidebarContent onClose={() => setHistoryDrawerOpen(false)} />
           </div>
         </>
       )}

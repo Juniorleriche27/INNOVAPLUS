@@ -1,24 +1,23 @@
-# Qwen2.5-0.5B Integration
+# SmolLM-360M-Instruct Integration
 
-This document explains how the Qwen2.5 0.5B Instruct model is wired inside the INNOVA+ backend.
-It replaces the previous SmolLM-360M setup while remaining lightweight enough to run on a
-16 GB CX43 instance.
+This document explains how the 360M instruct model is wired inside the INNOVA+ backend.
+The goal is to keep everything local while staying light enough to run comfortably on the
+Hetzner instance.
 
 ## Model Layout
 
 Download the weights from Hugging Face (for example with `huggingface-cli` or `curl`) and
-place them under `INNOVAPLUS/INNOVA/backend/models/qwen2.5-0.5b-instruct/`.
+place them under `INNOVAPLUS/INNOVA/backend/models/smollm-360m-instruct/`.
 
 Expected files:
 
 - `config.json`
 - `generation_config.json`
 - `merges.txt`
+- `special_tokens_map.json`
 - `tokenizer.json`
 - `tokenizer_config.json`
-- `merges.txt`
-- `vocab.json`
-- `model.safetensors` (~950 MB)
+- `model.safetensors` (~610 MB)
 
 The repository keeps the directory ignored in `.gitignore`, so only the server needs the
 actual weights.
@@ -28,7 +27,7 @@ actual weights.
 ```
 ENABLE_SMOLLM=true
 PROVIDER=local
-SMOLLM_MODEL_PATH=models/qwen2.5-0.5b-instruct
+SMOLLM_MODEL_PATH=models/smollm-360m-instruct
 ```
 
 `SMOLLM_MODEL_PATH` accepts absolute paths as well; the loader resolves relative values
@@ -102,20 +101,19 @@ response = model.chat_completion(
 
 ## Performance Notes
 
-- Parameter count: ~500M (~950 MB on disk).
-- CPU friendly: fonctionne sur CX43 (16 GB) sans GPU.
-- RAM usage: ~3.5 GB après chargement.
+- Parameter count: ~360M (~610 MB on disk).
+- CPU friendly: works on the Hetzner CX/RX range without GPU.
+- VRAM/RAM usage: ~1.5 GB resident with default settings.
 - Latency: first request may take a few seconds (model load), subsequent ones are faster.
 
 ## Deployment on Hetzner
 
-1. Copy the model directory to `/opt/innovaplus/models/qwen2.5-0.5b-instruct/` (or any
+1. Copy the model directory to `/opt/innovaplus/models/smollm-360m-instruct/` (or any
    location owned by the `innova` user).
 2. Update `/etc/innovaplus/backend.env` with:
    - `ENABLE_SMOLLM=true`
    - `PROVIDER=local`
-   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/qwen2.5-0.5b-instruct`
-   - `SMOLLM_ADAPTER_PATH=/opt/innovaplus/models/qwen2.5-0.5b-instruct-lora` (optionnel, si un LoRA est disponible)
+   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`
 3. Reload the service:
 
 ```
@@ -145,5 +143,5 @@ Logs remain available through `journalctl -u innovaplus-backend.service -f`.
 
 ## References
 
-- https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct
+- https://huggingface.co/HuggingFaceTB/SmolLM-360M-Instruct
 - https://huggingface.co/docs/transformers/

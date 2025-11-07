@@ -27,18 +27,6 @@ def _load_dotenv_with_fallback() -> None:
 _load_dotenv_with_fallback()
 
 
-def _default_adapter_path() -> Optional[str]:
-    """Return default adapter path if present locally."""
-    guesses = [
-        Path(__file__).resolve().parents[2] / "models" / "qwen2.5-0.5b-instruct-lora",
-        Path("/opt/innovaplus/models/qwen2.5-0.5b-instruct-lora"),
-    ]
-    for candidate in guesses:
-        if candidate.exists():
-            return str(candidate)
-    return None
-
-
 class Settings(BaseSettings):
     MONGO_URI: str
     DB_NAME: str
@@ -58,7 +46,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
     CHAT_PROVIDER: str = os.getenv("PROVIDER", "local")
     CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
-    CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "600"))
+    CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "320"))
     # CORS
     ALLOWED_ORIGINS: str | None = os.getenv("ALLOWED_ORIGINS")
     # RAG / AI
@@ -67,14 +55,11 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str | None = os.getenv("LLM_PROVIDER")
     LLM_MODEL: str | None = os.getenv("LLM_MODEL")
     LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
-    SMOLLM_MODEL_PATH: str = os.getenv("SMOLLM_MODEL_PATH", "models/qwen2.5-0.5b-instruct")
-    SMOLLM_ADAPTER_PATH: Optional[str] = os.getenv("SMOLLM_ADAPTER_PATH") or _default_adapter_path()
+    SMOLLM_MODEL_PATH: str = os.getenv("SMOLLM_MODEL_PATH", "models/smollm-360m-instruct")
     COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")
     VECTOR_INDEX_NAME: str = os.getenv("VECTOR_INDEX_NAME", "vector_index")
     RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))
     RAG_MAX_CONTEXT_TOKENS: int = int(os.getenv("RAG_MAX_CONTEXT_TOKENS", "1200"))
-    RAG_API_URL: str | None = os.getenv("RAG_API_URL", "http://127.0.0.1:8011")
-    RAG_API_TIMEOUT: float = float(os.getenv("RAG_API_TIMEOUT", "8.0"))
     UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "20"))
     ALLOWED_UPLOAD_MIME: str | None = os.getenv("ALLOWED_UPLOAD_MIME")
     # Matching / Fairness (INNOVA)

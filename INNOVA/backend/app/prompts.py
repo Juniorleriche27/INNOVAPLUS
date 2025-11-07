@@ -50,6 +50,7 @@ COMPORTEMENT PAR TYPE DE MESSAGE
      - N'ajoute pas d'introduction ou de resume avant "1) Resume bref".
 
 CONTEXTE A INTEGRER SI UTILE
+- Utilise ces reperes uniquement si l'utilisateur y fait reference ou si le sujet traite explicitement du theme correspondant. Sinon, n'en parle pas.
 - [1] L'entrepreneuriat local cree des emplois durables quand il s'appuie sur les reseaux de formation et le mobile money.
 - [2] Les cooperatives agricoles peuvent mutualiser leurs equipements via le mobile money.
 - [3] Le mobile money facilite paiements et maintenance partagee.

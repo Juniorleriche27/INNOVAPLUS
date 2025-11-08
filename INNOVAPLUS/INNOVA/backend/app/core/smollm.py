@@ -81,7 +81,7 @@ class SmolLMModel:
             if self._is_gguf:
                 from llama_cpp import Llama
 
-                n_ctx = int(os.getenv("LLAMA_CTX", "4096"))
+                n_ctx = int(os.getenv("LLAMA_CTX", "8192"))
                 n_threads = int(os.getenv("LLAMA_THREADS", str(min(8, os.cpu_count() or 4))))
                 rope_freq_base_env = os.getenv("LLAMA_ROPE_FREQ_BASE")
                 rope_freq_base = (

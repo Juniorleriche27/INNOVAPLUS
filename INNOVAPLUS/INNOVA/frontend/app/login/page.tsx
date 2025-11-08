@@ -1,12 +1,32 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import LoginClient from "./LoginClient";
+import { AUTH_API_BASE } from "@/lib/env";
 
-export default function LoginPage() {
-  const session = cookies().get("innova_session")?.value;
-  if (session) redirect("/me/recommendations");
+async function hasValidSession(): Promise<boolean> {
+  const session = cookies().get("innova_session");
+  if (!session?.value) return false;
+  try {
+    const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+      cache: "no-store",
+      headers: {
+        cookie: `${session.name}=${session.value}`,
+        "user-agent": headers().get("user-agent") || "innova-login",
+      },
+      next: { revalidate: 0 },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export default async function LoginPage() {
+  if (await hasValidSession()) {
+    redirect("/me/recommendations");
+  }
   return <LoginClient />;
 }

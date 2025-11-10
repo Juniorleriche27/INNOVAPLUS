@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Any
 
@@ -282,6 +283,15 @@ def _build_direct_reply(kind: str) -> str:
             "Mon role est de vous aider a clarifier vos besoins locaux et a generer des pistes d'action frugales et inclusives."
         )
     return ""
+
+
+_SOURCE_PATTERN = re.compile(r"\s*\[Source[^\]]*\]")
+
+
+def _strip_dummy_sources(text: str) -> str:
+    if not text:
+        return text
+    return _SOURCE_PATTERN.sub("", text)
 
 
 @router.post("/message")

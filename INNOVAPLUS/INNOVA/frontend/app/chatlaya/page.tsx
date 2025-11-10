@@ -27,13 +27,6 @@ const SECTION_ICON_MAP: Record<string, string> = {
   "4) KPIs (1-3) si utiles": "📊",
   "5) Risques / limites (1-2) si utiles": "⚠️",
 };
-const LEFT_NAV_ITEMS = [
-  { icon: "🏠", label: "Accueil" },
-  { icon: "📁", label: "Opportunites" },
-  { icon: "💬", label: "ChatLAYA" },
-  { icon: "⚙️", label: "Parametres" },
-];
-
 type StructuredSection = {
   title: string;
   body: string;
@@ -250,15 +243,15 @@ export default function ChatlayaPage(): JSX.Element {
   // Annuler le stream à l’unmount
   useEffect(() => () => streamAbortRef.current?.abort(), []);
 
-  // Bloquer le scroll body lorsqu'on passe en plein écran
+  // Bloquer le scroll du body pendant l'utilisation de la page
   useEffect(() => {
-    if (!fullScreen) return;
+    if (typeof document === "undefined") return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [fullScreen]);
+  }, []);
 
   // ---- Helpers API ----
   function forceLoginRedirect() {
@@ -514,12 +507,13 @@ export default function ChatlayaPage(): JSX.Element {
           }
         }
       }
-    } catch (e: any) {
-      if (e?.name === "AbortError") {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
         setMessages((prev) => prev.filter((m) => !m.pending));
         return;
       }
-      throw e;
+      if (err instanceof Error) throw err;
+      throw new Error("Erreur de streaming");
     } finally {
       if (streamAbortRef.current === controller) streamAbortRef.current = null;
     }
@@ -649,146 +643,144 @@ export default function ChatlayaPage(): JSX.Element {
   const assistantBubbleClass = `${bubbleBaseClass} bg-slate-50 text-slate-900 border border-slate-100`;
 
   // ---- Rendu ----
-  const rootClasses = fullScreen
-    ? "fixed inset-0 z-50 flex flex-col bg-slate-50"
-    : "flex h-full flex-1 flex-col";
+  const containerClasses = fullScreen
+    ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-[#f7f7f8]"
+    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
 
   return (
-    <div className={rootClasses}>
-      <div className="flex h-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl">
-        <aside className="hidden w-80 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
-          <SidebarContent />
-        </aside>
-        <main className="flex flex-1 flex-col bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
-              <p className="truncate text-lg font-semibold text-slate-900">{activeConversationTitle}</p>
-              <p className="text-xs text-slate-500">
-                {activeConversationUpdatedAt
-                  ? `Derniere activite · ${activeConversationUpdatedAt}`
-                  : "Commencez votre echange avec Chatlaya"}
-              </p>
+    <div className={containerClasses}>
+      <aside className="hidden w-80 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
+        <SidebarContent />
+      </aside>
+      <main className="flex flex-1 flex-col bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
+            <p className="truncate text-lg font-semibold text-slate-900">{activeConversationTitle}</p>
+            <p className="text-xs text-slate-500">
+              {activeConversationUpdatedAt
+                ? `Derniere activite · ${activeConversationUpdatedAt}`
+                : "Commencez votre echange avec Chatlaya"}
+            </p>
+          </div>
+          <div className="flex flex-none items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setHistoryDrawerOpen(true)}
+              className="inline-flex items-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 md:hidden"
+            >
+              Historique
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateConversation}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+            >
+              Nouvelle conversation
+            </button>
+            {activeConversation && (
+              <button
+                type="button"
+                onClick={() => void handleArchiveConversation(activeConversation.conversation_id)}
+                disabled={streaming}
+                className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Archiver
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFullScreen((v) => !v)}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
+            >
+              {fullScreen ? "Quitter le plein écran" : "Plein écran"}
+            </button>
+          </div>
+        </div>
+        <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
+          {error && (
+            <div className="mx-auto mb-4 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
             </div>
-            <div className="flex flex-none items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setHistoryDrawerOpen(true)}
-                className="inline-flex items-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 md:hidden"
-              >
-                Historique
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateConversation}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-              >
-                Nouvelle conversation
-              </button>
-              {activeConversation && (
+          )}
+          {messagesLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex justify-center">
+                  <div className="h-16 w-full max-w-3xl animate-pulse rounded-2xl bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <div className="w-full max-w-lg rounded-3xl border border-dashed border-slate-300 bg-white/80 px-8 py-10 shadow-sm">
+                <h3 className="text-base font-semibold text-slate-900">Pret a discuter ?</h3>
+                <p className="mt-2 text-sm text-slate-500">
+                  Posez une question precise ou decrivez un besoin. Chatlaya vous repondra en francais avec des
+                  suggestions concretes.
+                </p>
                 <button
                   type="button"
-                  onClick={() => void handleArchiveConversation(activeConversation.conversation_id)}
-                  disabled={streaming}
-                  className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => composerRef.current?.focus()}
+                  className="mt-4 rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
                 >
-                  Archiver
+                  Commencer
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setFullScreen((v) => !v)}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
-              >
-                {fullScreen ? "Quitter le plein écran" : "Plein écran"}
-              </button>
+              </div>
             </div>
-          </div>
-          <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
-            {error && (
-              <div className="mx-auto mb-4 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
-              </div>
-            )}
-            {messagesLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex justify-center">
-                    <div className="h-16 w-full max-w-3xl animate-pulse rounded-2xl bg-slate-100" />
-                  </div>
-                ))}
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="w-full max-w-lg rounded-3xl border border-dashed border-slate-300 bg-white/80 px-8 py-10 shadow-sm">
-                  <h3 className="text-base font-semibold text-slate-900">Pret a discuter ?</h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Posez une question precise ou decrivez un besoin. Chatlaya vous repondra en francais avec des
-                    suggestions concretes.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => composerRef.current?.focus()}
-                    className="mt-4 rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
-                  >
-                    Commencer
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 pb-10">
-                {messages.map((m) => {
-                  const isUser = m.role === "user";
-                  return (
-                    <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-center"}`}>
-                      <div className={isUser ? userBubbleClass : assistantBubbleClass}>
-                        {m.pending && !m.content ? (
-                          <span className="inline-flex items-center gap-2 text-slate-400">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                            Chatlaya reflechit...
-                          </span>
-                        ) : isUser ? (
-                          m.content
-                        ) : (
-                          <AssistantMessageContent content={m.content} />
-                        )}
-                      </div>
+          ) : (
+            <div className="space-y-4 pb-10">
+              {messages.map((m) => {
+                const isUser = m.role === "user";
+                return (
+                  <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-center"}`}>
+                    <div className={isUser ? userBubbleClass : assistantBubbleClass}>
+                      {m.pending && !m.content ? (
+                        <span className="inline-flex items-center gap-2 text-slate-400">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
+                          Chatlaya reflechit...
+                        </span>
+                      ) : isUser ? (
+                        m.content
+                      ) : (
+                        <AssistantMessageContent content={m.content} />
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <form onSubmit={onSubmit} className="border-t border-slate-100 bg-white px-4 py-4 sm:px-6 lg:px-10">
-            <div className="mx-auto flex w-full max-w-3xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
-              <textarea
-                ref={composerRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleComposerKeyDown}
-                placeholder={streaming ? "Patientez pendant la reponse..." : "Pose ta question a Chatlaya"}
-                rows={1}
-                aria-label="Message pour Chatlaya"
-                className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                disabled={composerDisabled}
-              />
-              <button
-                type="submit"
-                disabled={composerDisabled || !input.trim()}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-              >
-                <span className="sr-only">Envoyer</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                  <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
-                </svg>
-              </button>
+                  </div>
+                );
+              })}
             </div>
-            <p className="mx-auto mt-2 max-w-3xl text-right text-xs text-slate-400">
-              Entree pour envoyer · Maj + Entree pour aller a la ligne
-            </p>
-          </form>
-        </main>
-      </div>
+          )}
+        </div>
+        <form onSubmit={onSubmit} className="border-t border-slate-100 bg-white px-4 py-4 sm:px-6 lg:px-10">
+          <div className="mx-auto flex w-full max-w-3xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
+            <textarea
+              ref={composerRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleComposerKeyDown}
+              placeholder={streaming ? "Patientez pendant la reponse..." : "Pose ta question a Chatlaya"}
+              rows={1}
+              aria-label="Message pour Chatlaya"
+              className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              disabled={composerDisabled}
+            />
+            <button
+              type="submit"
+              disabled={composerDisabled || !input.trim()}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+            >
+              <span className="sr-only">Envoyer</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
+              </svg>
+            </button>
+          </div>
+          <p className="mx-auto mt-2 max-w-3xl text-right text-xs text-slate-400">
+            Entree pour envoyer · Maj + Entree pour aller a la ligne
+          </p>
+        </form>
+      </main>
       {historyDrawerOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryDrawerOpen(false)} />

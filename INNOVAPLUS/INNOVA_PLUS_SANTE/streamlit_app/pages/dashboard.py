@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Tableau de bord modernisé.
+KORYXA Santé — Tableau de bord modernisé.
 """
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Version simplifiée qui fonctionne
+KORYXA SANTÉ - Version simplifiée qui fonctionne
 Interface utilisateur pour la plateforme d'IA santé
 """
 
@@ -11,11 +11,11 @@ import numpy as np
 from datetime import datetime, timedelta
 
 def main():
-    """Application principale INNOVA+ Santé - Version simplifiée"""
+    """Application principale KORYXA Santé - Version simplifiée"""
     
     # Configuration de la page
     st.set_page_config(
-        page_title="INNOVA+ SANTÉ",
+        page_title="KORYXA SANTÉ",
         page_icon="🏥",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -23,7 +23,7 @@ def main():
     
     # Sidebar avec navigation
     with st.sidebar:
-        st.title("🏥 INNOVA+ SANTÉ")
+        st.title("🏥 KORYXA SANTÉ")
         st.markdown("---")
         
         # Menu de navigation - Simplifié pour ne garder que Datasets
@@ -59,8 +59,8 @@ def main():
     st.markdown(
         """
         <div style='text-align: center; color: #666;'>
-            <p>🏥 <strong>INNOVA+ SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
-            <p>Développé par <strong>INNOVA+</strong> - Startup spécialisée dans l'IA santé</p>
+            <p>🏥 <strong>KORYXA SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
+            <p>Développé par <strong>KORYXA</strong> - Startup spécialisée dans l'IA santé</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -69,7 +69,7 @@ def main():
 def dashboard_page():
     """Page dashboard principal"""
     
-    st.title("🏥 Dashboard INNOVA+ SANTÉ")
+    st.title("🏥 Dashboard KORYXA SANTÉ")
     st.markdown("Vue d'ensemble de votre plateforme d'IA pour l'analyse prédictive de données de santé")
     
     # Métriques principales
@@ -245,7 +245,7 @@ def dashboard_page():
 def datasets_page():
     """Page de gestion des datasets"""
     
-    st.title("📊 Datasets INNOVA+ SANTÉ")
+    st.title("📊 Datasets KORYXA SANTÉ")
     st.markdown("Gestion et analyse des 10 datasets spécialisés en santé")
     
     # Configuration des datasets
@@ -389,7 +389,7 @@ def datasets_page():
 def models_page():
     """Page de gestion des modèles prédictifs"""
     
-    st.title("🤖 Modèles Prédictifs INNOVA+ SANTÉ")
+    st.title("🤖 Modèles Prédictifs KORYXA SANTÉ")
     st.markdown("Gestion et monitoring des 4 modèles d'IA spécialisés en santé")
     
     # Configuration des modèles
@@ -533,7 +533,7 @@ def models_page():
 def chatbot_page():
     """Page du chatbot RAG médical"""
     
-    st.title("💬 Chatbot INNOVA+ SANTÉ")
+    st.title("💬 Chatbot KORYXA SANTÉ")
     st.markdown("Assistant IA médical avec système RAG pour l'analyse de données de santé")
     
     # Initialisation de la session
@@ -541,7 +541,7 @@ def chatbot_page():
         st.session_state.messages = []
     
     # Zone de chat principale
-    st.subheader("💬 Conversation avec Dr. INNOVA+")
+    st.subheader("💬 Conversation avec Dr. KORYXA")
     
     # Affichage des messages
     for message in st.session_state.messages:
@@ -559,7 +559,7 @@ def chatbot_page():
         
         # Génération de la réponse du bot
         with st.chat_message("assistant"):
-            with st.spinner("Dr. INNOVA+ réfléchit..."):
+            with st.spinner("Dr. KORYXA réfléchit..."):
                 # Simulation de la génération de réponse
                 import time
                 time.sleep(1)
@@ -588,7 +588,7 @@ def chatbot_page():
 def analytics_page():
     """Page d'analyses avancées"""
     
-    st.title("📈 Analytics INNOVA+ SANTÉ")
+    st.title("📈 Analytics KORYXA SANTÉ")
     st.markdown("Analyses avancées et visualisations des données de santé")
     
     # Configuration des analyses

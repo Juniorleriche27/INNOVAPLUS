@@ -1,4 +1,4 @@
-INNOVA+ Santé — Frontend (React + Vite)
+KORYXA Santé — Frontend (React + Vite)
 ======================================
 
 - Base URL backend (Render): `/sante`

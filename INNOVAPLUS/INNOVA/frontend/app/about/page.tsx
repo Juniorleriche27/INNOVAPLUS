@@ -91,7 +91,7 @@ export default function AboutPage() {
               À propos
             </span>
             <h1 className="text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              INNOVA+, une communauté IA pour construire des 
+              KORYXA, une communauté IA pour construire des 
               <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent"> opportunités durables</span>
             </h1>
             <p className="text-sm text-slate-600 sm:text-base">
@@ -305,7 +305,7 @@ export default function AboutPage() {
             </p>
             <h2 className="text-2xl font-semibold text-slate-900">Un capital commun documenté et mesurable</h2>
             <p className="text-sm text-slate-600">
-              INNOVA+ publie des tableaux de bord ouverts, documente les décisions produit et partage les bonnes pratiques RAG/LLM. Nous croyons à un modèle où chaque membre peut apprendre, contribuer et réutiliser les briques construites par le collectif.
+              KORYXA publie des tableaux de bord ouverts, documente les décisions produit et partage les bonnes pratiques RAG/LLM. Nous croyons à un modèle où chaque membre peut apprendre, contribuer et réutiliser les briques construites par le collectif.
             </p>
           </div>
           <div className="rounded-3xl border border-sky-100 bg-slate-50 p-5 text-sm text-slate-600">

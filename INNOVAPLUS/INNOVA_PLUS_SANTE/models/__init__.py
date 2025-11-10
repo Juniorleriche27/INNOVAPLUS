@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Module des modèles prédictifs
+KORYXA SANTÉ - Module des modèles prédictifs
 Modèles ML pour la santé et le bien-être
 """
 

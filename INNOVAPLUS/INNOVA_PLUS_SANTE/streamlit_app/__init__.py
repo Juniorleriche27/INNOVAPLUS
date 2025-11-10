@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Interface Streamlit
+KORYXA SANTÉ - Interface Streamlit
 Interface utilisateur pour la plateforme d'IA santé
 """
 

@@ -1,5 +1,5 @@
 """
-SmolLM initialization module for INNOVA+ backend
+SmolLM initialization module for KORYXA backend
 """
 import logging
 import os

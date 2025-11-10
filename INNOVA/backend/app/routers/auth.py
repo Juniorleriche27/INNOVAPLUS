@@ -239,22 +239,22 @@ async def forgot_password(
 
     params = urlencode({"token": token, "email": email})
     reset_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/reset?{params}"
-    subject = "Réinitialisation de votre mot de passe INNOVA+"
+    subject = "Réinitialisation de votre mot de passe KORYXA"
     first_name = user.get("first_name", "") or "membre"
     html_body = f"""
     <p>Bonjour {first_name},</p>
-    <p>Vous avez demandé à réinitialiser votre mot de passe INNOVA+.</p>
+    <p>Vous avez demandé à réinitialiser votre mot de passe KORYXA.</p>
     <p>Veuillez cliquer sur le lien ci-dessous (valide {settings.RESET_TOKEN_TTL_MIN} minutes) :</p>
     <p><a href="{reset_url}">{reset_url}</a></p>
     <p>Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.</p>
-    <p>L’équipe INNOVA+</p>
+    <p>L’équipe KORYXA</p>
     """
     text_body = (
         f"Bonjour {first_name},\n\n"
-        "Vous avez demandé à réinitialiser votre mot de passe INNOVA+.\n"
+        "Vous avez demandé à réinitialiser votre mot de passe KORYXA.\n"
         f"Veuillez ouvrir le lien suivant (valide {settings.RESET_TOKEN_TTL_MIN} minutes) :\n{reset_url}\n\n"
         "Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.\n\n"
-        "L’équipe INNOVA+"
+        "L’équipe KORYXA"
     )
 
     try:

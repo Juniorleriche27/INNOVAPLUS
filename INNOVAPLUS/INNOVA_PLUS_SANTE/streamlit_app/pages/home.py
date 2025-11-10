@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Accueil et synthèse exécutive.
+KORYXA Santé — Accueil et synthèse exécutive.
 """
 
 from __future__ import annotations
@@ -162,7 +162,7 @@ def home_page() -> None:
 
     section_header(
         "Actualités produit",
-        "Les trois dernières évolutions marquantes d'INNOVA+ Santé.",
+        "Les trois dernières évolutions marquantes d'KORYXA Santé.",
         icon="📰",
     )
 

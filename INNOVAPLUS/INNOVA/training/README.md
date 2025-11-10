@@ -1,4 +1,4 @@
-INNOVA+ — SmolLM Fine-tuning
+KORYXA — SmolLM Fine-tuning
 ============================
 
 Objectif

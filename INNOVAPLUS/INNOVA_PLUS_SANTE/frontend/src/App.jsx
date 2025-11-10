@@ -4,7 +4,7 @@ export default function App() {
   return (
     <div className="container">
       <header className="header">
-        <h1>INNOVA+ Santé</h1>
+        <h1>KORYXA Santé</h1>
         <nav>
           <NavLink to="/" end>Accueil</NavLink>
           <NavLink to="/health">Health</NavLink>

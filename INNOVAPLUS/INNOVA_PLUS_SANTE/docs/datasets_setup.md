@@ -1,6 +1,6 @@
 # Datasets — Phase 1 Setup
 
-Ce document récapitule la procédure pour rapatrier les 10 datasets Kaggle utilisés par la plateforme INNOVA+ Santé.
+Ce document récapitule la procédure pour rapatrier les 10 datasets Kaggle utilisés par la plateforme KORYXA Santé.
 
 ## 1. Pré-requis
 

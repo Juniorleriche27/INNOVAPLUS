@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Application finale propre
+KORYXA SANTÉ - Application finale propre
 Version sans éléments indésirables au-dessus du titre
 """
 
@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 # Configuration de la page
 st.set_page_config(
-    page_title="INNOVA+ SANTÉ",
+    page_title="KORYXA SANTÉ",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -55,7 +55,7 @@ div[data-testid="stSidebar"] > div:first-child {
 
 # Sidebar avec navigation
 with st.sidebar:
-    st.title("🏥 INNOVA+ SANTÉ")
+    st.title("🏥 KORYXA SANTÉ")
     st.markdown("---")
     
     # Menu de navigation
@@ -178,7 +178,7 @@ with st.sidebar:
 # Fonctions des pages
 def dashboard_page():
     """Page dashboard principal"""
-    st.title("🏥 Dashboard INNOVA+ SANTÉ")
+    st.title("🏥 Dashboard KORYXA SANTÉ")
     st.markdown("Vue d'ensemble de votre plateforme d'IA pour l'analyse prédictive de données de santé")
     
     # Métriques principales
@@ -195,7 +195,7 @@ def dashboard_page():
 
 def datasets_page():
     """Page de gestion des datasets"""
-    st.title("📊 Datasets INNOVA+ SANTÉ")
+    st.title("📊 Datasets KORYXA SANTÉ")
     st.markdown("Gestion et analyse des 10 datasets spécialisés en santé")
     
     # Contenu principal
@@ -305,19 +305,19 @@ def datasets_page():
 
 def models_page():
     """Page de gestion des modèles"""
-    st.title("🤖 Modèles INNOVA+ SANTÉ")
+    st.title("🤖 Modèles KORYXA SANTÉ")
     st.markdown("Gestion des modèles prédictifs de santé")
     st.info("Page en cours de développement...")
 
 def chatbot_page():
     """Page du chatbot"""
-    st.title("💬 Chatbot INNOVA+ SANTÉ")
+    st.title("💬 Chatbot KORYXA SANTÉ")
     st.markdown("Assistant IA médical avec système RAG")
     st.info("Page en cours de développement...")
 
 def analytics_page():
     """Page d'analytics"""
-    st.title("📈 Analytics INNOVA+ SANTÉ")
+    st.title("📈 Analytics KORYXA SANTÉ")
     st.markdown("Analyses avancées et visualisations")
     st.info("Page en cours de développement...")
 
@@ -491,8 +491,8 @@ st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; color: #666;'>
-        <p>🏥 <strong>INNOVA+ SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
-        <p>Développé par <strong>INNOVA+</strong> - Startup spécialisée dans l'IA santé</p>
+        <p>🏥 <strong>KORYXA SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
+        <p>Développé par <strong>KORYXA</strong> - Startup spécialisée dans l'IA santé</p>
     </div>
     """,
     unsafe_allow_html=True

@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Page À propos.
+KORYXA Santé — Page À propos.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ def about_page() -> None:
 
     st.markdown(
         """
-        INNOVA+ Santé combine expertise clinique, data science et expérience utilisateur
+        KORYXA Santé combine expertise clinique, data science et expérience utilisateur
         pour offrir une plateforme complète : collecte, préparation, modèles IA, copilote RAG
         et outils de visualisation. L'objectif : aider les praticiens à anticiper, personnaliser
         et sécuriser leurs décisions.

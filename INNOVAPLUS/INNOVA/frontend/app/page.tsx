@@ -101,7 +101,7 @@ export default async function HomePage() {
         <div className="relative z-10 grid gap-10 px-8 py-16 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-20">
           <div className="space-y-8">
             <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
-              Moteur IA INNOVA+
+              Moteur IA KORYXA
             </span>
             <div className="space-y-6">
               <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
@@ -196,7 +196,7 @@ export default async function HomePage() {
         <div className="space-y-4">
           <h2 className={SECTION_TITLE}>Opportunités intelligentes par l'IA</h2>
           <p className="text-lg text-slate-600">
-            INNOVA+ convertit en continu les problèmes locaux et les compétences disponibles en opportunités économiques,
+            KORYXA convertit en continu les problèmes locaux et les compétences disponibles en opportunités économiques,
             avec une répartition équitable entre pays et une transparence totale.
           </p>
           <div className="rounded-2xl border border-sky-100 bg-sky-50/60 px-6 py-4 text-sky-700 shadow-inner shadow-sky-200/40">
@@ -405,7 +405,7 @@ export default async function HomePage() {
 
       {/* Footer */}
       <section className="rounded-3xl border border-slate-200 bg-slate-50 px-8 py-10 text-center shadow-inner shadow-slate-200 sm:px-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">INNOVA+</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA</p>
         <p className="mt-3 text-lg font-semibold text-slate-700">
           Moteur IA d'opportunités. Transparence · Équité · Impact.
         </p>

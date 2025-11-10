@@ -161,7 +161,7 @@ export default function Headbar() {
               </div>
               <div className="leading-tight hidden sm:block">
                 <p className="text-lg font-semibold text-slate-900 group-hover:text-sky-700 transition-colors">
-                  INNOVA+
+                  KORYXA
                 </p>
                 <p className="text-xs text-slate-500">
                   Intelligence Artificielle • Transparence • Équité
@@ -411,7 +411,7 @@ export default function Headbar() {
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-sm">AI</span>
                 </div>
-                <span className="text-lg font-semibold text-slate-900">INNOVA+</span>
+                <span className="text-lg font-semibold text-slate-900">KORYXA</span>
               </Link>
               <button 
                 aria-label="Fermer" 

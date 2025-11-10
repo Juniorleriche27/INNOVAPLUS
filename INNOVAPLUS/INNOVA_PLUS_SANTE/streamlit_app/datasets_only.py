@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Version Datasets uniquement
+KORYXA SANTÉ - Version Datasets uniquement
 Interface simplifiée comme dans la capture d'écran
 """
 
@@ -11,11 +11,11 @@ import numpy as np
 from datetime import datetime, timedelta
 
 def main():
-    """Application INNOVA+ Santé - Version Datasets uniquement"""
+    """Application KORYXA Santé - Version Datasets uniquement"""
     
     # Configuration de la page
     st.set_page_config(
-        page_title="INNOVA+ SANTÉ",
+        page_title="KORYXA SANTÉ",
         page_icon="🏥",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -28,7 +28,7 @@ def main():
     
     # Sidebar avec navigation
     with st.sidebar:
-        st.title("🏥 INNOVA+ SANTÉ")
+        st.title("🏥 KORYXA SANTÉ")
         st.markdown("---")
         
         # Informations sur l'application
@@ -53,8 +53,8 @@ def main():
     st.markdown(
         """
         <div style='text-align: center; color: #666;'>
-            <p>🏥 <strong>INNOVA+ SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
-            <p>Développé par <strong>INNOVA+</strong> - Startup spécialisée dans l'IA santé</p>
+            <p>🏥 <strong>KORYXA SANTÉ</strong> - Plateforme d'IA pour l'analyse prédictive de données de santé</p>
+            <p>Développé par <strong>KORYXA</strong> - Startup spécialisée dans l'IA santé</p>
         </div>
         """,
         unsafe_allow_html=True
@@ -63,7 +63,7 @@ def main():
 def datasets_page():
     """Page de gestion des datasets"""
     
-    st.title("📊 Datasets INNOVA+ SANTÉ")
+    st.title("📊 Datasets KORYXA SANTÉ")
     st.markdown("Gestion et analyse des 10 datasets spécialisés en santé")
     
     # Configuration des datasets

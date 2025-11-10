@@ -1,4 +1,4 @@
-# 🏥 INNOVA+ SANTÉ & BIEN-ÊTRE
+# 🏥 KORYXA SANTÉ & BIEN-ÊTRE
 
 ## 🎯 Vision
 Plateforme d'Intelligence Artificielle pour l'analyse prédictive de données de santé, la prédiction de risques et l'assistance médicale intelligente.
@@ -50,7 +50,7 @@ INNOVA_PLUS_SANTE/
 └── docs/                   # Documentation
 ```
 
-## 🎯 Développé par INNOVA+
+## 🎯 Développé par KORYXA
 Startup spécialisée dans l'Intelligence Artificielle pour la santé.
 \n## Backend API\n\n- Documentation : `docs/backend_api.md`\n- Lancement local : `uvicorn backend.main:app --reload --port 8000`\n
 \n## Upload & Laboratoire\n\n- Nouvelle page `Laboratoire` : chargement CSV/XLSX/Parquet (≤20 Mo) avec profil rapide et export.\n- Optionnel : API de prédiction `POST /predict/hospital_risk` (voir docs/backend_api.md).\n

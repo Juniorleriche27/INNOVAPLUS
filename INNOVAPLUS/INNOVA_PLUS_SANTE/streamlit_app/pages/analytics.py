@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Augmented analytics workspace.
+KORYXA Santé — Augmented analytics workspace.
 """
 
 from __future__ import annotations

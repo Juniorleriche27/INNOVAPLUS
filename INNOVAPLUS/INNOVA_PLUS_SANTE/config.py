@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Configuration
+KORYXA SANTÉ - Configuration
 Plateforme d'IA pour l'analyse prédictive de données de santé
 """
 
@@ -9,10 +9,10 @@ from typing import Dict, List, Optional
 from pydantic_settings import BaseSettings
 
 class INNOVASettings(BaseSettings):
-    """Configuration principale d'INNOVA+ Santé"""
+    """Configuration principale d'KORYXA Santé"""
     
     # Informations de l'application
-    APP_NAME: str = "INNOVA+ SANTÉ & BIEN-ÊTRE"
+    APP_NAME: str = "KORYXA SANTÉ & BIEN-ÊTRE"
     APP_VERSION: str = "1.0.0"
     APP_DESCRIPTION: str = "Plateforme d'IA pour l'analyse prédictive de données de santé"
     
@@ -129,7 +129,7 @@ class INNOVASettings(BaseSettings):
     
     # Configuration Streamlit
     STREAMLIT_CONFIG: Dict = {
-        "page_title": "INNOVA+ SANTÉ",
+        "page_title": "KORYXA SANTÉ",
         "page_icon": "🏥",
         "layout": "wide",
         "initial_sidebar_state": "expanded"
@@ -186,4 +186,4 @@ def create_directories():
 
 if __name__ == "__main__":
     create_directories()
-    print("🏥 Structure INNOVA+ SANTÉ créée avec succès !")
+    print("🏥 Structure KORYXA SANTÉ créée avec succès !")

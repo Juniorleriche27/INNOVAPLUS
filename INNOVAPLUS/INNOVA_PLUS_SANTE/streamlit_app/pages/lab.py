@@ -1,4 +1,4 @@
-"""INNOVA+ Santé — Laboratoire d'analyse personnalisée."""
+"""KORYXA Santé — Laboratoire d'analyse personnalisée."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Prediction services for INNOVA+ backend."""
+"""Prediction services for KORYXA backend."""
 
 from __future__ import annotations
 

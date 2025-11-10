@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Dict, List, Any
 
@@ -272,16 +273,25 @@ def _classify_message_kind(message: str) -> str:
 def _build_direct_reply(kind: str) -> str:
     if kind == "greeting":
         return (
-            "Bonjour, comment allez-vous ? Je suis ChatLAYA, l'assistant d'INNOVA+. "
+            "Bonjour, comment allez-vous ? Je suis ChatLAYA, l'assistant d'KORYXA. "
             "Decrivez-moi un besoin, un probleme local ou une idee et je vous aiderai a le transformer en opportunite concrete."
         )
     if kind == "identity":
         return (
-            "Je suis ChatLAYA, l'assistant IA d'INNOVA+. Je m'appuie sur des modeles open-source ajustes par l'equipe INNOVA+. "
+            "Je suis ChatLAYA, l'assistant IA d'KORYXA. Je m'appuie sur des modeles open-source ajustes par l'equipe KORYXA. "
             "Je suis encore en phase d'entrainement, donc certaines reponses peuvent etre moins completes qu'un grand modele comme ChatGPT. "
             "Mon role est de vous aider a clarifier vos besoins locaux et a generer des pistes d'action frugales et inclusives."
         )
     return ""
+
+
+_SOURCE_PATTERN = re.compile(r"\s*\[Source[^\]]*\]")
+
+
+def _strip_dummy_sources(text: str) -> str:
+    if not text:
+        return text
+    return _SOURCE_PATTERN.sub("", text)
 
 
 @router.post("/message")

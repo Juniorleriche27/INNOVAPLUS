@@ -12,7 +12,7 @@ from streamlit_app.lib.data_catalog import get_dataset, load_catalog, load_dataf
 from backend.services.prediction import predict_hospital_risk, PredictionPayloadError
 
 app = FastAPI(
-    title="INNOVA+ Santé Data API",
+    title="KORYXA Santé Data API",
     description="Endpoints d’accès aux jeux de données et services IA",
     version="0.1.0",
 )

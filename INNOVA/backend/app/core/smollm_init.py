@@ -1,5 +1,5 @@
 """
-SmolLM initialization module for INNOVA+ backend
+SmolLM initialization module for KORYXA backend
 """
 import logging
 import os
@@ -17,7 +17,7 @@ def initialize_smollm_on_startup():
             return
         
         # Check if model files exist
-        model_path = os.getenv("SMOLLM_MODEL_PATH", "models/smollm-360m-instruct")
+        model_path = os.getenv("SMOLLM_MODEL_PATH", "models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf")
         if not os.path.exists(model_path):
             logger.warning(f"SmolLM model path not found: {model_path}")
             return

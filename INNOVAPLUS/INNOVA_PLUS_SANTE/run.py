@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-INNOVA+ SANTÉ - Script de lancement
+KORYXA SANTÉ - Script de lancement
 Lance l'application Streamlit principale
 """
 
@@ -9,9 +9,9 @@ import subprocess
 from pathlib import Path
 
 def main():
-    """Lance l'application INNOVA+ Santé"""
+    """Lance l'application KORYXA Santé"""
     
-    print("🏥 INNOVA+ SANTÉ & BIEN-ÊTRE")
+    print("🏥 KORYXA SANTÉ & BIEN-ÊTRE")
     print("=" * 50)
     print("🚀 Démarrage de la plateforme d'IA santé...")
     print()
@@ -61,7 +61,7 @@ def main():
         
     except KeyboardInterrupt:
         print("\n⏹️  Arrêt de l'application...")
-        print("👋 Merci d'avoir utilisé INNOVA+ SANTÉ !")
+        print("👋 Merci d'avoir utilisé KORYXA SANTÉ !")
         
     except subprocess.CalledProcessError as e:
         print(f"❌ Erreur lors du lancement: {e}")

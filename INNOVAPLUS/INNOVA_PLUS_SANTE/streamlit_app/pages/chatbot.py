@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Clinical copilot (RAG) experience.
+KORYXA Santé — Clinical copilot (RAG) experience.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import streamlit as st
 from streamlit_app.utils.ui import metric_cards, section_header, stat_pills
 
 CHATBOT_CONFIG: Dict[str, str] = {
-    "name": "Dr. INNOVA+",
+    "name": "Dr. KORYXA",
     "version": "2.3.0",
     "embedding_model": "text-embedding-3-large",
     "generation_model": "GPT-4o mini",
@@ -107,7 +107,7 @@ def _simulate_response(message: str) -> Dict[str, object]:
             "- Aucun signal critique détecté.\n"
             "- Pour approfondir : demander un rapport PDF détaillé ou consulter les mesures en temps réel."
         )
-        sources = ["Knowledge base INNOVA+", "Logs inférence temps réel"]
+        sources = ["Knowledge base KORYXA", "Logs inférence temps réel"]
 
     return {"answer": answer, "sources": sources}
 

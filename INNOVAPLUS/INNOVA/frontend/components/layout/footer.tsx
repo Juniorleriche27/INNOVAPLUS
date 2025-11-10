@@ -12,9 +12,9 @@ export default function Footer() {
             IN
           </span>
           <div className="leading-tight">
-            <p className="font-semibold text-slate-800">INNOVA+</p>
+            <p className="font-semibold text-slate-800">KORYXA</p>
             <p className="text-xs text-slate-500">
-              INNOVA+ — Moteur IA d’opportunités. Transparence · Équité · Impact.
+              KORYXA — Moteur IA d’opportunités. Transparence · Équité · Impact.
             </p>
           </div>
         </div>
@@ -30,7 +30,7 @@ export default function Footer() {
         </div>
 
         <p className="text-xs text-slate-400 sm:text-sm">
-          Copyright {year} INNOVA+. Tous droits réservés.
+          Copyright {year} KORYXA. Tous droits réservés.
         </p>
       </div>
     </footer>

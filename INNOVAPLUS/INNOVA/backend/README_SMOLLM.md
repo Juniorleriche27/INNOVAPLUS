@@ -1,6 +1,6 @@
 # Local LLM (Qwen2.5-1.5B-Instruct 4-bit)
 
-This document explains how the local LLM integration is wired inside the INNOVA+ backend
+This document explains how the local LLM integration is wired inside the KORYXA backend
 when we use the **Qwen2.5-1.5B-Instruct** model quantized in 4 bits (GGUF).  
 The goal is to keep everything local while staying light enough to run comfortably on the
 Hetzner instance without GPU.
@@ -64,7 +64,7 @@ Sample chat payload:
 ```json
 {
   "messages": [
-    {"role": "user", "content": "Bonjour, que peux-tu faire pour INNOVA+ ?"}
+    {"role": "user", "content": "Bonjour, que peux-tu faire pour KORYXA ?"}
   ],
   "max_tokens": 512,
   "temperature": 0.7

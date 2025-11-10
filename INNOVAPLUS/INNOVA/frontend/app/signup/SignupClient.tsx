@@ -72,7 +72,7 @@ export default function SignupClient() {
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
         <h1 className="text-2xl font-semibold text-slate-900">Créer un compte</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Rejoins INNOVA+ pour accéder aux projets, à la communauté et au copilote CHATLAYA.
+          Rejoins KORYXA pour accéder aux projets, à la communauté et au copilote CHATLAYA.
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">

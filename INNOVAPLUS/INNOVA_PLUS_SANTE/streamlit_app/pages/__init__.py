@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Pages Streamlit
+KORYXA SANTÉ - Pages Streamlit
 Pages de l'interface utilisateur
 """
 

@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé — Models operations centre.
+KORYXA Santé — Models operations centre.
 """
 
 from __future__ import annotations
@@ -162,7 +162,7 @@ def _history_dataframe(model_key: str, periods: int = 12) -> pd.DataFrame:
 
 
 def models_page() -> None:
-    """Render the MLOps cockpit for INNOVA+ models."""
+    """Render the MLOps cockpit for KORYXA models."""
     metric_cards(
         [
             {

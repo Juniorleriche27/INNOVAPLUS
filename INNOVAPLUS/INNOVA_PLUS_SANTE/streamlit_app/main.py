@@ -1,5 +1,5 @@
 """
-INNOVA+ Santé - modern Streamlit entrypoint with a refreshed navigation shell.
+KORYXA Santé - modern Streamlit entrypoint with a refreshed navigation shell.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from streamlit_app.pages.lab import lab_page
 from streamlit_app.utils.ui import inject_app_css, page_header
 
 APP_META = {
-    "title": "INNOVA+ Santé",
+    "title": "KORYXA Santé",
     "icon": "🧬",
     "tagline": "Plateforme d'IA et de data science pour la décision médicale augmentée.",
     "version": "2.1.0",
@@ -89,7 +89,7 @@ PAGES: Dict[str, PageConfig] = {
     "about": {
         "label": "À propos",
         "emoji": "ℹ️",
-        "description": "Mission, conformité, gouvernance et vision produit d'INNOVA+ Santé.",
+        "description": "Mission, conformité, gouvernance et vision produit d'KORYXA Santé.",
         "tags": ["Mission", "Équipe", "Conformité"],
         "renderer": about_page,
     },

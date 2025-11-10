@@ -1,6 +1,6 @@
 # SmolLM-360M-Instruct Integration
 
-This document explains how the 360M instruct model is wired inside the INNOVA+ backend.
+This document explains how the 360M instruct model is wired inside the KORYXA backend.
 The goal is to keep everything local while staying light enough to run comfortably on the
 Hetzner instance.
 
@@ -67,7 +67,7 @@ Sample chat payload:
 ```json
 {
   "messages": [
-    {"role": "user", "content": "Bonjour, que peux-tu faire pour INNOVA+ ?"}
+    {"role": "user", "content": "Bonjour, que peux-tu faire pour KORYXA ?"}
   ],
   "max_tokens": 512,
   "temperature": 0.7

@@ -1,6 +1,6 @@
 
 """
-INNOVA+ Santé — Datasets explorer connecté aux données traitées.
+KORYXA Santé — Datasets explorer connecté aux données traitées.
 """
 
 from __future__ import annotations

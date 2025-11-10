@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Système RAG et Chatbot
+KORYXA SANTÉ - Système RAG et Chatbot
 Système de récupération et génération pour l'assistance médicale
 """
 

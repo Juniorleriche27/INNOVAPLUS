@@ -1,37 +1,34 @@
-# SmolLM-360M-Instruct Integration
+# Local LLM (Qwen2.5-1.5B-Instruct 4-bit)
 
-This document explains how the 360M instruct model is wired inside the INNOVA+ backend.
+This document explains how the local LLM integration is wired inside the KORYXA backend
+when we use the **Qwen2.5-1.5B-Instruct** model quantized in 4 bits (GGUF).  
 The goal is to keep everything local while staying light enough to run comfortably on the
-Hetzner instance.
+Hetzner instance without GPU.
 
 ## Model Layout
 
-Download the weights from Hugging Face (for example with `huggingface-cli` or `curl`) and
-place them under `INNOVAPLUS/INNOVA/backend/models/smollm-360m-instruct/`.
+Download the GGUF file from Hugging Face (for example `Qwen/Qwen2.5-1.5B-Instruct-GGUF`)
+and place it under `INNOVAPLUS/INNOVA/backend/models/`.
 
-Expected files:
+Recommended placement:
 
-- `config.json`
-- `generation_config.json`
-- `merges.txt`
-- `special_tokens_map.json`
-- `tokenizer.json`
-- `tokenizer_config.json`
-- `model.safetensors` (~610 MB)
+- `INNOVAPLUS/INNOVA/backend/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
 
-The repository keeps the directory ignored in `.gitignore`, so only the server needs the
-actual weights.
+You can choose any other GGUF quantization variant if you prefer a different balance
+between memory footprint and quality (e.g. `Q4_0`, `Q4_K_S`, ...). The path is ignored by
+Git so only the server needs the file.
 
 ## Environment Variables
 
 ```
 ENABLE_SMOLLM=true
 PROVIDER=local
-SMOLLM_MODEL_PATH=models/smollm-360m-instruct
+SMOLLM_MODEL_PATH=models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
 ```
 
 `SMOLLM_MODEL_PATH` accepts absolute paths as well; the loader resolves relative values
-from the backend root.
+from the backend root. When the path ends with `.gguf`, the backend automatically switches
+to the llama.cpp backend for inference.
 
 ## Dependencies
 
@@ -67,7 +64,7 @@ Sample chat payload:
 ```json
 {
   "messages": [
-    {"role": "user", "content": "Bonjour, que peux-tu faire pour INNOVA+ ?"}
+    {"role": "user", "content": "Bonjour, que peux-tu faire pour KORYXA ?"}
   ],
   "max_tokens": 512,
   "temperature": 0.7
@@ -80,9 +77,9 @@ Sample response:
 {
   "response": "Bonjour ! Je peux analyser vos besoins et proposer des actions...",
   "model_info": {
-    "model_name": "SmolLM-360M-Instruct",
+    "model_name": "Qwen2.5-1.5B-Instruct-Q4_K_M",
     "device": "cpu",
-    "parameters": 360000000
+    "parameters": 1500000000
   }
 }
 ```
@@ -101,19 +98,19 @@ response = model.chat_completion(
 
 ## Performance Notes
 
-- Parameter count: ~360M (~610 MB on disk).
-- CPU friendly: works on the Hetzner CX/RX range without GPU.
-- VRAM/RAM usage: ~1.5 GB resident with default settings.
-- Latency: first request may take a few seconds (model load), subsequent ones are faster.
+- Parameter count: ~1.5B (quantized to ~2.4 GB in Q4_K_M).
+- CPU friendly: thanks to the 4-bit quantization it runs on the Hetzner CX/RX range.
+- RAM usage: ~4 GB resident with default settings (plan accordingly).
+- Latency: first request loads the GGUF into memory; subsequent requests stream tokens promptly.
 
 ## Deployment on Hetzner
 
-1. Copy the model directory to `/opt/innovaplus/models/smollm-360m-instruct/` (or any
-   location owned by the `innova` user).
+1. Copy the GGUF file to `/opt/innovaplus/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
+   (or any location owned by the `innova` user).
 2. Update `/etc/innovaplus/backend.env` with:
    - `ENABLE_SMOLLM=true`
    - `PROVIDER=local`
-   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`
+   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
 3. Reload the service:
 
 ```
@@ -143,5 +140,5 @@ Logs remain available through `journalctl -u innovaplus-backend.service -f`.
 
 ## References
 
-- https://huggingface.co/HuggingFaceTB/SmolLM-360M-Instruct
-- https://huggingface.co/docs/transformers/
+- https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
+- https://github.com/ggerganov/llama.cpp

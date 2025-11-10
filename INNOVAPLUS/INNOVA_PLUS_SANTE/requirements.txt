@@ -1,4 +1,4 @@
-# INNOVA+ SANTÉ - Requirements
+# KORYXA SANTÉ - Requirements
 # Plateforme d'IA pour l'analyse prédictive de données de santé
 
 # Interface utilisateur

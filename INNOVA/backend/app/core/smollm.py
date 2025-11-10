@@ -1,5 +1,5 @@
 """
-SmolLM integration for INNOVA+ backend.
+SmolLM integration for KORYXA backend.
 Permet de charger un modele local (ex. smollm-360m-instruct) sans contact reseau.
 """
 from __future__ import annotations
@@ -61,7 +61,7 @@ def _sanitize_path(raw_path: str | None) -> Path:
 
 
 class SmolLMModel:
-    """SmolLM-360M-Instruct model wrapper for INNOVA+"""
+    """SmolLM-360M-Instruct model wrapper for KORYXA"""
     
     def __init__(self, model_path: Optional[str] = None, adapter_path: Optional[str] = None):
         resolved = _sanitize_path(model_path or settings.SMOLLM_MODEL_PATH)

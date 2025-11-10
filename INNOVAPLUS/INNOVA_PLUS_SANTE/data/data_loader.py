@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Chargeur de données
+KORYXA SANTÉ - Chargeur de données
 Gestion du chargement des 10 datasets santé
 """
 
@@ -13,7 +13,7 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 class DataLoader:
-    """Chargeur de données pour INNOVA+ Santé"""
+    """Chargeur de données pour KORYXA Santé"""
     
     def __init__(self):
         self.data_dir = settings.DATA_DIR

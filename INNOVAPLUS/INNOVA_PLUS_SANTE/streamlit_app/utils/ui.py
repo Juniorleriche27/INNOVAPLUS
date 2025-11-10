@@ -1,5 +1,5 @@
 """
-UI helper utilities for the INNOVA+ Santé Streamlit experience.
+UI helper utilities for the KORYXA Santé Streamlit experience.
 """
 
 from __future__ import annotations

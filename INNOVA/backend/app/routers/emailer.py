@@ -24,6 +24,6 @@ def _send_email(to: str, subject: str, html: str) -> bool:
 async def weekly_digest_run(dry_run: Optional[int] = 1):
     # In real life: enumerate users and compile top opportunities + stats
     # Here: send a single sample message
-    ok = _send_email("sample@user.tld", "Votre synthèse hebdo INNOVA+", "<h1>Top 5 opportunités</h1><p>…</p>")
+    ok = _send_email("sample@user.tld", "Votre synthèse hebdo KORYXA", "<h1>Top 5 opportunités</h1><p>…</p>")
     return {"ok": ok, "dry_run": dry_run}
 

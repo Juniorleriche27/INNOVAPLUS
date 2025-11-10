@@ -1,5 +1,5 @@
 """
-INNOVA+ SANTÉ - Module de gestion des données
+KORYXA SANTÉ - Module de gestion des données
 Gestion des 10 datasets santé spécialisés
 """
 

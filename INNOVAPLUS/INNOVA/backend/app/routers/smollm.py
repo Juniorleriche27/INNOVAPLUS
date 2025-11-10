@@ -1,5 +1,5 @@
 """
-SmolLM API routes for INNOVA+ backend
+SmolLM API routes for KORYXA backend
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel

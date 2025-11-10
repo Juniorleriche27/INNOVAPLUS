@@ -10,21 +10,21 @@ import PWARegister from "@/components/util/PWARegister";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "INNOVA+",
+  title: "KORYXA",
   description: "Moteur IA d’opportunités. Transparence · Équité · Impact.",
-  applicationName: "INNOVA+",
+  applicationName: "KORYXA",
   manifest: "/manifest.webmanifest",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa"),
   openGraph: {
-    title: "INNOVA+",
+    title: "KORYXA",
     description: "Moteur IA d’opportunités. Transparence · Équité · Impact.",
     url: "/",
-    siteName: "INNOVA+",
+    siteName: "KORYXA",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "INNOVA+",
+    title: "KORYXA",
     description: "Moteur IA d’opportunités. Transparence · Équité · Impact."
   }
 };

@@ -551,7 +551,7 @@ export default function ChatlayaPage(): JSX.Element {
   // ---- Sidebar (liste) ----
   function SidebarContent({ onClose }: { onClose?: () => void }) {
     return (
-      <div className="flex h-full flex-col bg-white">
+      <div className="flex h-full min-h-0 flex-col bg-white">
         <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Historique</h2>
@@ -578,7 +578,7 @@ export default function ChatlayaPage(): JSX.Element {
             Nouvelle conversation
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 pr-4">
           {conversationsLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -649,10 +649,10 @@ export default function ChatlayaPage(): JSX.Element {
 
   return (
     <div className={containerClasses}>
-      <aside className="hidden w-80 shrink-0 border-r border-slate-100 bg-slate-50/60 md:flex">
+      <aside className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-r border-slate-100 bg-slate-50/60 md:flex">
         <SidebarContent />
       </aside>
-      <main className="flex flex-1 flex-col bg-white">
+      <main className="flex min-w-0 flex-1 flex-col bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
@@ -697,7 +697,7 @@ export default function ChatlayaPage(): JSX.Element {
             </button>
           </div>
         </div>
-        <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
+        <div ref={messagesViewportRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
           {error && (
             <div className="mx-auto mb-4 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
@@ -784,7 +784,7 @@ export default function ChatlayaPage(): JSX.Element {
       {historyDrawerOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryDrawerOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-full bg-white shadow-2xl md:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 flex w-80 max-w-full flex-col bg-white shadow-2xl md:hidden">
             <SidebarContent onClose={() => setHistoryDrawerOpen(false)} />
           </div>
         </>

@@ -16,12 +16,6 @@ def initialize_smollm_on_startup():
             logger.info("SmolLM is disabled via ENABLE_SMOLLM environment variable")
             return
         
-        # Check if model files exist
-        model_path = os.getenv("SMOLLM_MODEL_PATH", "models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf")
-        if not os.path.exists(model_path):
-            logger.warning(f"SmolLM model path not found: {model_path}")
-            return
-        
         # Import and initialize SmolLM
         from app.core.smollm import initialize_smollm
         initialize_smollm()

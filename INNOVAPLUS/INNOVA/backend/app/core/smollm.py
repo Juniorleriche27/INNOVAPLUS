@@ -17,7 +17,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_MODEL_DIR = "models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf"
+_DEFAULT_MODEL_DIR = "models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
 
 SPECIAL_TOKENS: List[str] = [
     "<|system|>",
@@ -50,6 +50,7 @@ def _sanitize_path(raw_path: str | None) -> Path:
                 candidates.append((_BACKEND_ROOT / expanded).resolve())
 
     candidates.append((_BACKEND_ROOT / _DEFAULT_MODEL_DIR).resolve())
+    candidates.append(Path("/opt/innovaplus/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"))
 
     for candidate in candidates:
         if candidate.exists():
@@ -94,7 +95,7 @@ class SmolLMModel:
                     "model_path": str(self.model_path),
                     "n_ctx": n_ctx,
                     "n_threads": n_threads,
-                    "chat_format": "qwen2",
+                    "chat_format": "llama-3.1",
                     "logits_all": False,
                 }
                 if rope_freq_base is not None:
@@ -431,7 +432,7 @@ class SmolLMModel:
         """Get model information"""
         if self.backend_type == "llama_cpp":
             return {
-                "model_name": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+                "model_name": "Llama-3.2-3B-Instruct-Q4_K_M",
                 "model_path": str(self.model_path),
                 "device": "cpu",
                 "parameters": None,

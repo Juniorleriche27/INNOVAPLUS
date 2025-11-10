@@ -31,10 +31,8 @@ def _default_adapter_path() -> Optional[str]:
     """Return default adapter path if present locally."""
     backend_root = Path(__file__).resolve().parents[2]
     guesses = [
-        backend_root / "models" / "qwen2.5-1.5b-instruct-lora",
-        Path("/opt/innovaplus/models/qwen2.5-1.5b-instruct-lora"),
-        backend_root / "models" / "qwen2.5-0.5b-instruct-lora",
-        Path("/opt/innovaplus/models/qwen2.5-0.5b-instruct-lora"),
+        backend_root / "models" / "llama-3.2-3b-instruct-lora",
+        Path("/opt/innovaplus/models/llama-3.2-3b-instruct-lora"),
     ]
     for candidate in guesses:
         if candidate.exists():
@@ -72,7 +70,7 @@ class Settings(BaseSettings):
     LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
     SMOLLM_MODEL_PATH: str = os.getenv(
         "SMOLLM_MODEL_PATH",
-        "models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+        "models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
     )
     SMOLLM_ADAPTER_PATH: Optional[str] = os.getenv("SMOLLM_ADAPTER_PATH") or _default_adapter_path()
     COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")

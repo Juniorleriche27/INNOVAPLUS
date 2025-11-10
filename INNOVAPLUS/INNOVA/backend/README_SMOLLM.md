@@ -1,18 +1,18 @@
-# Local LLM (Qwen2.5-1.5B-Instruct 4-bit)
+# Local LLM (Llama-3.2-3B-Instruct 4-bit)
 
 This document explains how the local LLM integration is wired inside the KORYXA backend
-when we use the **Qwen2.5-1.5B-Instruct** model quantized in 4 bits (GGUF).  
+when we use the **Llama-3.2-3B-Instruct** model quantized in 4 bits (GGUF).  
 The goal is to keep everything local while staying light enough to run comfortably on the
 Hetzner instance without GPU.
 
 ## Model Layout
 
-Download the GGUF file from Hugging Face (for example `Qwen/Qwen2.5-1.5B-Instruct-GGUF`)
+Download the GGUF file from Hugging Face (for example `TheBloke/Llama-3.2-3B-Instruct-GGUF`)
 and place it under `INNOVAPLUS/INNOVA/backend/models/`.
 
 Recommended placement:
 
-- `INNOVAPLUS/INNOVA/backend/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
+- `INNOVAPLUS/INNOVA/backend/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf`
 
 You can choose any other GGUF quantization variant if you prefer a different balance
 between memory footprint and quality (e.g. `Q4_0`, `Q4_K_S`, ...). The path is ignored by
@@ -23,7 +23,7 @@ Git so only the server needs the file.
 ```
 ENABLE_SMOLLM=true
 PROVIDER=local
-SMOLLM_MODEL_PATH=models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
+SMOLLM_MODEL_PATH=models/Llama-3.2-3B-Instruct-Q4_K_M.gguf
 ```
 
 `SMOLLM_MODEL_PATH` accepts absolute paths as well; the loader resolves relative values
@@ -77,9 +77,9 @@ Sample response:
 {
   "response": "Bonjour ! Je peux analyser vos besoins et proposer des actions...",
   "model_info": {
-    "model_name": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+    "model_name": "Llama-3.2-3B-Instruct-Q4_K_M",
     "device": "cpu",
-    "parameters": 1500000000
+    "parameters": 3000000000
   }
 }
 ```
@@ -98,19 +98,19 @@ response = model.chat_completion(
 
 ## Performance Notes
 
-- Parameter count: ~1.5B (quantized to ~2.4 GB in Q4_K_M).
+- Parameter count: ~3B (quantized to ~3.6 GB in Q4_K_M).
 - CPU friendly: thanks to the 4-bit quantization it runs on the Hetzner CX/RX range.
-- RAM usage: ~4 GB resident with default settings (plan accordingly).
+- RAM usage: ~5 GB resident with default settings (plan accordingly).
 - Latency: first request loads the GGUF into memory; subsequent requests stream tokens promptly.
 
 ## Deployment on Hetzner
 
-1. Copy the GGUF file to `/opt/innovaplus/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
+1. Copy the GGUF file to `/opt/innovaplus/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf`
    (or any location owned by the `innova` user).
 2. Update `/etc/innovaplus/backend.env` with:
    - `ENABLE_SMOLLM=true`
    - `PROVIDER=local`
-   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`
+   - `SMOLLM_MODEL_PATH=/opt/innovaplus/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf`
 3. Reload the service:
 
 ```
@@ -140,5 +140,5 @@ Logs remain available through `journalctl -u innovaplus-backend.service -f`.
 
 ## References
 
-- https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
+- https://huggingface.co/TheBloke/Llama-3.2-3B-Instruct-GGUF
 - https://github.com/ggerganov/llama.cpp

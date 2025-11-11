@@ -45,7 +45,7 @@ class OTPRequestPayload(BaseModel):
 
 class OTPVerifyPayload(BaseModel):
     email: EmailStr
-    code: str = Field(..., min_length=4, max_length=8, regex=r"^\d+$")
+    code: str = Field(..., min_length=4, max_length=8, pattern=r"^\d+$")
     first_name: Optional[str] = Field(None, max_length=120)
     last_name: Optional[str] = Field(None, max_length=120)
 

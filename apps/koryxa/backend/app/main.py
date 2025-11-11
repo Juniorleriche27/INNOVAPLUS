@@ -162,7 +162,6 @@ app.include_router(farmlink_router)
 app.include_router(sante_router)
 app.include_router(rag_router)
 app.include_router(chatlaya_router)
-app.include_router(auth_router)
 
 # Mount module-prefixed routes
 innova_api = APIRouter(prefix="/innova/api")
@@ -179,6 +178,7 @@ innova_api.include_router(invite_router)
 innova_api.include_router(smollm_router)
 innova_api.include_router(profiles_router)
 innova_api.include_router(missions_router)
+innova_api.include_router(auth_router)
 app.include_router(innova_api)
 
 innova_rag = APIRouter(prefix="/innova")

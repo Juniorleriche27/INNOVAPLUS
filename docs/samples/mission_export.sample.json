@@ -1,0 +1,32 @@
+{
+  "mission_id": "666f2c9c4f2a4a001234abcd",
+  "title": "Cartographier l'offre de formation technique à Abidjan",
+  "status": "matching",
+  "ai": {
+    "summary": "Mission visant à documenter les fablabs et hubs numériques en Côte d'Ivoire...",
+    "keywords": ["cartographie", "fablab", "formation"],
+    "deliverables": [
+      "Base de données nettoyée",
+      "Rapport synthétique",
+      "Tableau de bord partageable"
+    ]
+  },
+  "offers": [
+    {
+      "offer_id": "677044aa9f1c3a00abcd0001",
+      "prestataire_id": "anonymized",
+      "wave": 1,
+      "status": "pending",
+      "expires_at": "2025-01-12T10:20:00Z",
+      "scores": { "match": 0.78 }
+    }
+  ],
+  "events": [
+    { "type": "created", "ts": "2025-01-10T08:00:00Z" },
+    { "type": "wave_dispatched", "ts": "2025-01-10T08:05:00Z", "payload": { "count": 3, "timeout_min": 10 } }
+  ],
+  "milestones": [
+    { "title": "Collecte terrain", "status": "in_progress", "due_date": "2025-01-17" },
+    { "title": "Synthèse + restitution", "status": "todo", "due_date": "2025-01-24" }
+  ]
+}

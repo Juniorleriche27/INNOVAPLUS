@@ -1,0 +1,14 @@
+[
+  {
+    "mission_id": "666f2c9c4f2a4a001234abcd",
+    "reasons": ["prompt>8k_tokens"],
+    "target": "hf-fallback",
+    "decided_at": "2025-01-10T08:01:00Z"
+  },
+  {
+    "mission_id": "66aa55bb44cc33001234efef",
+    "reasons": ["multilingue", "scope_elargissable"],
+    "target": "hf-fallback",
+    "decided_at": "2025-01-11T09:42:00Z"
+  }
+]

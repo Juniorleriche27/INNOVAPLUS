@@ -1,13 +1,6 @@
-INNOVA_PLUS_SANTE/data/raw/
-INNOVA_PLUS_SANTE/data/processed/
-# secrets
-.env
-.env.*
-*.env
-**/.env
-**/.env.*
-secrets.toml
-**/secrets.toml
+products/koryxa-sante/data/raw/
+products/koryxa-sante/data/processed/
+
 # secrets
 .env
 .env.*

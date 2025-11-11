@@ -1,0 +1,24 @@
+{
+  "demandeur": {
+    "display_name": "Collectif NeedIndex",
+    "organization": "NeedIndex Labs",
+    "country": "SN",
+    "city": "Dakar",
+    "languages": ["fr", "en"],
+    "preferred_channels": ["email"],
+    "remote_ok": true,
+    "user_id": "anonymized"
+  },
+  "prestataire": {
+    "display_name": "DataCraft Africa",
+    "bio": "Nous accompagnons les coopératives dans la structuration de données marchés...",
+    "skills": ["data analysis", "mlops", "dashboard"],
+    "languages": ["fr", "en"],
+    "remote": true,
+    "zones": ["CI", "remote"],
+    "rate_min": 400,
+    "rate_max": 900,
+    "currency": "EUR",
+    "user_id": "anonymized"
+  }
+}

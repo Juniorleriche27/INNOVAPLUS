@@ -1,0 +1,12 @@
+# données & poids (ne jamais pousser)
+*.safetensors
+*.bin
+*.pt
+*.gguf
+apps/koryxa/training/data/
+apps/koryxa/training/models/
+
+# env & caches
+.env
+__pycache__/
+*.log

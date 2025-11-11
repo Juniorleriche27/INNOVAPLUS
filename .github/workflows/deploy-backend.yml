@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'INNOVAPLUS/INNOVA/backend/**'
+      - 'apps/koryxa/backend/**'
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SERVICE_NAME: innovaplus-backend
-      RSYNC_SOURCE: INNOVAPLUS/INNOVA/backend/
+      RSYNC_SOURCE: apps/koryxa/backend/
       REMOTE_ROOT: ${{ secrets.DEPLOY_PATH }}
       REMOTE_VENV: ${{ secrets.DEPLOY_PATH }}/.venv
       REQUIREMENTS_FILE: ${{ secrets.DEPLOY_PATH }}/requirements.txt

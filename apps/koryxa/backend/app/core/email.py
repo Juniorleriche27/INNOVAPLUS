@@ -27,6 +27,7 @@ def _send_email(
     message["Subject"] = subject
     message["From"] = sender
     message["To"] = recipient
+    message["Content-Language"] = "fr"
 
     if text_body:
         message.attach(MIMEText(text_body, "plain", "utf-8"))

@@ -199,10 +199,14 @@ async def request_otp(
 
     subject = "Code de connexion KORYXA"
     html_body = f"""
-    <p>Bonjour,</p>
-    <p>Voici votre code de connexion KORYXA :</p>
-    <p style="font-size:24px;font-weight:bold;letter-spacing:4px;">{code}</p>
-    <p>Il expire dans {settings.OTP_TTL_MIN} minutes.</p>
+    <html lang=\"fr\">
+        <body>
+            <p>Bonjour,</p>
+            <p>Voici votre code de connexion KORYXA :</p>
+            <p style=\"font-size:24px;font-weight:bold;letter-spacing:4px;\">{code}</p>
+            <p>Il expire dans {settings.OTP_TTL_MIN} minutes.</p>
+        </body>
+    </html>
     """
     asyncio.create_task(send_email_async(subject, email, html_body, f"Code: {code}"))
     response = {"ok": True, "expires_at": expires_at.isoformat()}

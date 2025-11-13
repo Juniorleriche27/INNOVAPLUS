@@ -165,19 +165,22 @@ export default function Headbar() {
           {/* Left: Brand */}
           <div className="flex items-center gap-4 min-w-0">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
-                  <span className="text-white font-semibold text-xs">AI</span>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
+                    <span className="text-white font-semibold text-xs">AI</span>
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-              </div>
-              <div className="leading-tight hidden sm:block">
-                <p className="text-base font-semibold text-slate-900 group-hover:text-sky-700 transition-colors">
-                  KORYXA
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Intelligence Artificielle • Transparence • Équité
-                </p>
+                <div className="leading-tight hidden sm:block">
+                  <p className="text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
+                    KORYXA
+                  </p>
+                  <p className="text-[11px] rounded-full bg-slate-100/70 text-slate-500 px-2 py-0.5 font-medium flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Intelligence Artificielle • Transparence • Équité
+                  </p>
+                </div>
               </div>
             </Link>
           </div>

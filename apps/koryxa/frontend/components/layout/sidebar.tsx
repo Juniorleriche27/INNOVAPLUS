@@ -48,6 +48,13 @@ function IconStore(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconBriefcase(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m4 0h-14a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-8a2 2 0 00-2-2z" />
+    </svg>
+  );
+}
 function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -64,11 +71,12 @@ function IconChevronRight(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const WORKSPACE_LINKS = [
-  { href: "/opportunities", label: "Opportunités", description: "Pipeline et statut", icon: IconTarget },
+  { href: "/opportunities", label: "Opportunités", description: "Pipeline & statut", icon: IconTarget },
   { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique", icon: IconLayers },
   { href: "/talents", label: "Talents", description: "Profils et disponibilité", icon: IconUsers },
   { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité", icon: IconChip },
   { href: "/meet", label: "INNOVA-MEET", description: "Réseau social intégré", icon: IconChat },
+  { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
 ];
 
@@ -118,11 +126,11 @@ export default function Sidebar({ className, style }: { className?: string; styl
           {isExpanded && (
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AI</span>
+                <span className="text-white font-semibold text-xs">AI</span>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">WORKSPACE</h2>
-                <p className="text-xs text-slate-500">Intelligence Artificielle</p>
+                <h2 className="text-base font-semibold text-slate-900">WORKSPACE</h2>
+                <p className="text-[11px] text-slate-500">Intelligence Artificielle</p>
               </div>
             </div>
           )}
@@ -151,7 +159,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200",
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
                   "hover:bg-slate-50 hover:shadow-sm",
                   active
                     ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60"
@@ -172,12 +180,12 @@ export default function Sidebar({ className, style }: { className?: string; styl
                 {isExpanded && (
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium truncate">{link.label}</span>
+                      <span className="text-[13px] font-semibold truncate">{link.label}</span>
                       {active && (
                         <div className="w-2 h-2 rounded-full bg-sky-500" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 truncate">{link.description}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{link.description}</p>
                   </div>
                 )}
 
@@ -199,14 +207,14 @@ export default function Sidebar({ className, style }: { className?: string; styl
               <div className="rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-medium text-slate-700">Système actif</span>
+                  <span className="text-[11px] font-medium text-slate-700">Système actif</span>
                 </div>
-                <p className="text-xs text-slate-600">
+                <p className="text-[11px] text-slate-600">
                   IA en temps réel • Matching intelligent
                 </p>
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-[11px] text-slate-500">
                 <span>v2.1.0</span>
                 <span>•</span>
                 <span>Dernière mise à jour</span>

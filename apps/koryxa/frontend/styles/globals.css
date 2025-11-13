@@ -41,7 +41,7 @@ body {
 }
 
 html {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 a {
@@ -60,7 +60,7 @@ a {
   border: 1px solid var(--border);
   border-radius: 28px;
   box-shadow: var(--shadow-soft);
-  padding: 28px;
+  padding: 24px;
 }
 
 .btn-primary {
@@ -154,13 +154,13 @@ a {
 }
 
 .kpi-value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--accent);
 }
 
 .section-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 12px;
@@ -168,7 +168,7 @@ a {
 
 .section-subtitle {
   color: var(--muted);
-  font-size: 16px;
+  font-size: 14px;
   margin-bottom: 24px;
 }
 

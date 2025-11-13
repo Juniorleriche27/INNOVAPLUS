@@ -10,11 +10,15 @@ import { useAuth } from "@/components/auth/AuthProvider";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
-  { href: "/missions/new", label: "Poster un besoin" },
-  { href: "/missions/offers", label: "Mes offres" },
   { href: "/opportunities", label: "Opportunités" },
   { href: "/resources", label: "Ressources" },
   { href: "/about", label: "À propos" }
+];
+
+const PRODUCT_LINKS = [
+  { href: "/missions/new", label: "Poster un besoin", hint: "Publier un besoin client ou mission" },
+  { href: "/opportunities/create", label: "Créer une opportunité", hint: "Déposer une offre côté prestataire" },
+  { href: "/chatlaya", label: "CHATLAYA", hint: "Cocopilote IA & support" },
 ];
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
@@ -77,6 +81,7 @@ export default function Headbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [productMenuOpen, setProductMenuOpen] = useState(false);
   const [notifCount, setNotifCount] = useState<number>(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: Record<string, unknown> | null; created_at: string; read_at?: string }>>([]);
@@ -102,11 +107,16 @@ export default function Headbar() {
         setAccountOpen(false);
         setDrawerOpen(false);
         setNotifOpen(false);
+        setProductMenuOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    setProductMenuOpen(false);
+  }, [pathname]);
 
   // Try to fetch notifications count if backend exposes it
   useEffect(() => {
@@ -151,21 +161,21 @@ export default function Headbar() {
       )}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4 py-4">
+        <div className="flex items-center justify-between gap-4 py-3">
           {/* Left: Brand */}
           <div className="flex items-center gap-4 min-w-0">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
-                  <span className="text-white font-bold text-sm">AI</span>
+                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
+                  <span className="text-white font-semibold text-xs">AI</span>
                 </div>
                 <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <div className="leading-tight hidden sm:block">
-                <p className="text-lg font-semibold text-slate-900 group-hover:text-sky-700 transition-colors">
+                <p className="text-base font-semibold text-slate-900 group-hover:text-sky-700 transition-colors">
                   KORYXA
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-[11px] text-slate-500">
                   Intelligence Artificielle • Transparence • Équité
                 </p>
               </div>
@@ -173,7 +183,7 @@ export default function Headbar() {
           </div>
 
           {/* Center: Nav */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 ml-8">
+          <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6">
             {NAV_LINKS.map((link) => {
               const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -181,7 +191,7 @@ export default function Headbar() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                    "relative px-3 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200",
                     "hover:bg-slate-50 hover:text-slate-900",
                     active 
                       ? "text-sky-700 bg-sky-50 shadow-sm" 
@@ -198,15 +208,15 @@ export default function Headbar() {
           </nav>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Recherche"
-              className="group relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+              className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
             >
               <IconSearch className="h-4 w-4" />
-              <div className="absolute -bottom-1 -right-1 text-xs text-slate-400 font-mono">/</div>
+              <div className="absolute -bottom-1 -right-1 text-[10px] text-slate-400 font-mono">/</div>
             </button>
 
             {/* Notifications */}
@@ -214,7 +224,7 @@ export default function Headbar() {
               <button
                 onClick={() => setNotifOpen((v) => !v)}
                 aria-label="Notifications"
-                className="group relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+                className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
               >
                 <IconBell className="h-4 w-4" />
                 {notifCount > 0 && (
@@ -274,7 +284,7 @@ export default function Headbar() {
                   onClick={() => setAccountOpen((v) => !v)}
                   aria-haspopup="menu"
                   aria-expanded={accountOpen}
-                  className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-all duration-200"
+                  className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all duration-200"
                 >
                   <div className="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-xs font-bold">
                     {userInitial}
@@ -316,7 +326,7 @@ export default function Headbar() {
                           location.href = '/'; 
                         } 
                       }} 
-                      className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <IconClose className="h-4 w-4" />
                       Déconnexion
@@ -329,14 +339,14 @@ export default function Headbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200"
+                  className="hidden sm:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200"
                 >
                   Se connecter
                 </Link>
                 <Link
                   href="/signup"
                   prefetch={false}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <IconSparkles className="h-4 w-4" />
                   Créer un compte
@@ -348,32 +358,45 @@ export default function Headbar() {
             <div className="hidden lg:flex items-center gap-2">
               <Link 
                 href="/missions/new" 
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 hover:border-emerald-300 transition-all duration-200"
+                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 hover:border-emerald-300 transition-all duration-200"
               >
                 <IconSparkles className="h-4 w-4" />
                 Poster un besoin
               </Link>
-              <Link 
-                href="/opportunities/create" 
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-xl border border-sky-200 hover:border-sky-300 transition-all duration-200"
-              >
-                <IconSparkles className="h-4 w-4" />
-                Créer une opportunité
-              </Link>
-              <Link 
-                href="/chatlaya" 
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 hover:border-slate-300 transition-all duration-200"
-              >
-                <IconSparkles className="h-4 w-4" />
-                CHATLAYA
-              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setProductMenuOpen((v) => !v)}
+                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                >
+                  Produits
+                  <IconChevronDown className={clsx("h-3 w-3 transition-transform", productMenuOpen && "rotate-180")} />
+                </button>
+                {productMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xl p-3 shadow-xl shadow-slate-900/10">
+                    <p className="px-2 pb-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Portefeuille</p>
+                    <div className="space-y-2">
+                      {PRODUCT_LINKS.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setProductMenuOpen(false)}
+                          className="block rounded-xl px-3 py-2 hover:bg-slate-50 transition-colors"
+                        >
+                          <p className="text-xs font-semibold text-slate-800">{item.label}</p>
+                          <p className="text-[11px] text-slate-500">{item.hint}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Mobile menu */}
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Ouvrir le menu"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200 lg:hidden"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200 lg:hidden"
             >
               <IconMenu className="h-5 w-5" />
             </button>
@@ -395,7 +418,7 @@ export default function Headbar() {
                   autoFocus
                   type="search"
                   placeholder="Rechercher des opportunités, compétences, pays..."
-                  className="h-12 w-full rounded-xl border-none text-base text-slate-700 outline-none placeholder:text-slate-400 bg-transparent"
+                  className="h-11 w-full rounded-xl border-none text-sm text-slate-700 outline-none placeholder:text-slate-400 bg-transparent"
                 />
                 <button 
                   onClick={() => setSearchOpen(false)} 

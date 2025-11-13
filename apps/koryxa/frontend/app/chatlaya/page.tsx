@@ -638,9 +638,9 @@ export default function ChatlayaPage(): JSX.Element {
   }
 
   // ---- Message bubbles ----
-  const bubbleBaseClass = "w-full max-w-3xl rounded-2xl px-5 py-4 text-sm leading-relaxed shadow-sm";
-  const userBubbleClass = `${bubbleBaseClass} bg-sky-600 text-white`;
-  const assistantBubbleClass = `${bubbleBaseClass} bg-slate-50 text-slate-900 border border-slate-100`;
+  const bubbleBaseClass = "rounded-3xl px-5 py-4 text-sm leading-relaxed shadow-sm transition";
+  const userBubbleClass = `${bubbleBaseClass} max-w-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-sky-500 text-white shadow-sky-500/30`;
+  const assistantBubbleClass = `${bubbleBaseClass} max-w-3xl bg-white text-slate-900 border border-slate-200 shadow-slate-900/5`;
 
   // ---- Rendu ----
   const containerClasses = fullScreen
@@ -733,7 +733,7 @@ export default function ChatlayaPage(): JSX.Element {
               {messages.map((m) => {
                 const isUser = m.role === "user";
                 return (
-                  <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-center"}`}>
+                  <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
                     <div className={isUser ? userBubbleClass : assistantBubbleClass}>
                       {m.pending && !m.content ? (
                         <span className="inline-flex items-center gap-2 text-slate-400">

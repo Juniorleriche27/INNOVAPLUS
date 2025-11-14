@@ -77,6 +77,15 @@ function parseStructuredSections(content: string): StructuredSection[] {
   return sections;
 }
 
+function IconCopy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  );
+}
+
 type ContentBlock =
   | {
       type: "paragraph";
@@ -638,21 +647,34 @@ export default function ChatlayaPage(): JSX.Element {
   }
 
   // ---- Message bubbles ----
-  const bubbleBaseClass = "rounded-3xl px-5 py-4 text-sm leading-relaxed shadow-sm transition";
-  const userBubbleClass = `${bubbleBaseClass} max-w-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-sky-500 text-white shadow-sky-500/30`;
-  const assistantBubbleClass = `${bubbleBaseClass} max-w-3xl bg-white text-slate-900 border border-slate-200 shadow-slate-900/5`;
+  const bubbleBaseClass = "rounded-3xl px-5 py-4 text-sm leading-relaxed shadow transition";
+  const userBubbleClass =
+    `${bubbleBaseClass} max-w-2xl bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-sky-500/20 border border-sky-500/40`;
+  const assistantBubbleClass =
+    `${bubbleBaseClass} max-w-3xl bg-white text-slate-900 border border-slate-200/70 shadow-slate-900/5`;
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+  async function handleCopy(content: string, id: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(id);
+      setTimeout(() => setCopiedMessageId((current) => (current === id ? null : current)), 2000);
+    } catch {
+      setCopiedMessageId(null);
+    }
+  }
 
   // ---- Rendu ----
   const containerClasses = fullScreen
     ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-[#f7f7f8]"
-    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
+    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-xl";
 
   return (
     <div className={containerClasses}>
-      <aside className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-r border-slate-100 bg-slate-50/60 md:flex">
+      <aside className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-r border-slate-200/60 bg-[#f3f4f8] md:flex">
         <SidebarContent />
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col bg-white">
+      <main className="flex min-w-0 flex-1 flex-col bg-[#f7f7f8]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
@@ -729,12 +751,12 @@ export default function ChatlayaPage(): JSX.Element {
               </div>
             </div>
           ) : (
-            <div className="space-y-4 pb-10">
+            <div className="space-y-4 pb-16 mx-auto w-full max-w-4xl">
               {messages.map((m) => {
                 const isUser = m.role === "user";
                 return (
                   <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
-                    <div className={isUser ? userBubbleClass : assistantBubbleClass}>
+                    <div className={`${isUser ? userBubbleClass : assistantBubbleClass} w-full`}>
                       {m.pending && !m.content ? (
                         <span className="inline-flex items-center gap-2 text-slate-400">
                           <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
@@ -743,7 +765,21 @@ export default function ChatlayaPage(): JSX.Element {
                       ) : isUser ? (
                         m.content
                       ) : (
-                        <AssistantMessageContent content={m.content} />
+                        <div className="space-y-3">
+                          <AssistantMessageContent content={m.content} />
+                          <div className="flex justify-end text-xs text-slate-500">
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(m.content, m.id)}
+                              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 transition hover:border-slate-300 hover:text-slate-700"
+                            >
+                              <IconCopy className="h-3.5 w-3.5" />
+                              <span className="text-[11px] font-medium">
+                                {copiedMessageId === m.id ? "Copié" : "Copier"}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -752,8 +788,8 @@ export default function ChatlayaPage(): JSX.Element {
             </div>
           )}
         </div>
-        <form onSubmit={onSubmit} className="border-t border-slate-100 bg-white px-4 py-4 sm:px-6 lg:px-10">
-          <div className="mx-auto flex w-full max-w-3xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
+        <form onSubmit={onSubmit} className="border-t border-slate-100 bg-[#f7f7f8] px-4 py-4 sm:px-6 lg:px-10">
+          <div className="mx-auto flex w-full max-w-4xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
             <textarea
               ref={composerRef}
               value={input}

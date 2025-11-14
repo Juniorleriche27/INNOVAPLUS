@@ -225,7 +225,12 @@ async def login_with_otp(
     email = normalize_email(payload.email)
     now = datetime.now(timezone.utc)
     otp_doc = await db[OTP_COLLECTION].find_one({"email": email})
-    if not otp_doc or otp_doc.get("expires_at") <= now:
+
+    expires_at = otp_doc.get("expires_at") if otp_doc else None
+    if isinstance(expires_at, datetime) and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if not otp_doc or not isinstance(expires_at, datetime) or expires_at <= now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expiré. Merci de renvoyer un OTP.")
 
     if not verify_password(payload.code, otp_doc.get("code_hash") or ""):

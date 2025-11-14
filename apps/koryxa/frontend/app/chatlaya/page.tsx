@@ -649,7 +649,7 @@ export default function ChatlayaPage(): JSX.Element {
   // ---- Message bubbles ----
   const bubbleBaseClass = "rounded-3xl px-5 py-4 text-sm leading-relaxed shadow transition";
   const userBubbleClass =
-    `${bubbleBaseClass} max-w-2xl bg-gradient-to-r from-sky-600 to-sky-500 text-white shadow-sky-500/20 border border-sky-500/40`;
+    `${bubbleBaseClass} max-w-2xl bg-[#edf0f5] text-slate-900 border border-slate-200 shadow-slate-900/5`;
   const assistantBubbleClass =
     `${bubbleBaseClass} max-w-3xl bg-white text-slate-900 border border-slate-200/70 shadow-slate-900/5`;
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);

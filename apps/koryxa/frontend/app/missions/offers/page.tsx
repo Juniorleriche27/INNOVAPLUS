@@ -46,60 +46,91 @@ export default function OffersCenterPage() {
     }
   }
 
-  if (!loading && !user) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <p className="text-lg text-slate-600">Connecte-toi comme prestataire pour voir les offres reçues.</p>
-      </main>
-    );
-  }
+  const unauthenticated = !loading && !user;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Bloc 3 — Centre des offres</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Offres disponibles</h1>
-        <p className="text-sm text-slate-600">Réponds dans les temps. Le compteur indique le délai avant passage en Vague 2.</p>
-      </div>
-      {error && <p className="mb-4 rounded-2xl bg-rose-50 px-4 py-2 text-sm text-rose-600">{error}</p>}
-      <div className="space-y-4">
-        {offers.length === 0 ? (
-          <p className="rounded-3xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">Aucune offre pour le moment.</p>
+    <main className="min-h-[calc(100vh-80px)] bg-[#f7f7f8] px-4 py-10">
+      <div className="mx-auto w-full max-w-6xl space-y-8">
+        <header className="rounded-[32px] border border-slate-200/70 bg-white p-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Bloc 3</p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Centre des offres</h1>
+              <p className="mt-2 text-sm text-slate-600 max-w-2xl">
+                Consultez vos invitations prestataires, acceptez dans les temps et suivez l&apos;avancement de chaque
+                mission jusqu&apos;à la signature.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-600">
+              <p className="font-semibold text-slate-900">Vague 1 → Vague 2</p>
+              <p className="text-xs text-slate-500">Les offres non répondues basculent automatiquement après expiration.</p>
+            </div>
+          </div>
+        </header>
+
+        {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
+
+        {unauthenticated ? (
+          <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center text-slate-600 shadow-sm">
+            Connectez-vous en tant que prestataire pour voir les offres qui vous sont attribuées.
+          </div>
         ) : (
-          offers.map((offer) => {
-            const expires = offer.expires_at ? new Date(offer.expires_at).getTime() : null;
-            const remaining = expires ? Math.max(0, Math.floor((expires - Date.now()) / 60000)) : null;
-            return (
-              <div key={offer.offer_id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{offer.title}</h2>
-                    <p className="text-xs text-slate-500">Vague {offer.wave ?? 1} · expiration {remaining !== null ? `${remaining} min` : "--"}</p>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{offer.status}</span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => respond(offer, "accept")}
-                    disabled={busyOffer === offer.offer_id || offer.status !== "pending"}
-                    className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                  >
-                    Accepter
-                  </button>
-                  <button
-                    onClick={() => respond(offer, "refuse")}
-                    disabled={busyOffer === offer.offer_id || offer.status !== "pending"}
-                    className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
-                  >
-                    Refuser
-                  </button>
-                  <Link href={`/missions/track/${offer.mission_id}`} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-                    Voir le brief
-                  </Link>
-                </div>
+          <section className="space-y-4">
+            {offers.length === 0 ? (
+              <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center text-slate-500 shadow-sm">
+                Aucune offre pour le moment. Revenez un peu plus tard ou contactez le support pour rejoindre la
+                prochaine vague.
               </div>
-            );
-          })
+            ) : (
+              offers.map((offer) => {
+                const expires = offer.expires_at ? new Date(offer.expires_at).getTime() : null;
+                const remaining = expires ? Math.max(0, Math.floor((expires - Date.now()) / 60000)) : null;
+                return (
+                  <article
+                    key={offer.offer_id}
+                    className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          Mission {offer.mission_id} · Vague {offer.wave ?? 1}
+                        </p>
+                        <h2 className="text-xl font-semibold text-slate-900">{offer.title || "Opportunité sans titre"}</h2>
+                        <p className="text-xs text-slate-500">
+                          Expiration {remaining !== null ? `dans ${remaining} min` : "non définie"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-600">
+                        {offer.status}
+                      </span>
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => respond(offer, "accept")}
+                        disabled={busyOffer === offer.offer_id || offer.status !== "pending"}
+                        className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition disabled:opacity-50"
+                      >
+                        Accepter
+                      </button>
+                      <button
+                        onClick={() => respond(offer, "refuse")}
+                        disabled={busyOffer === offer.offer_id || offer.status !== "pending"}
+                        className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 disabled:opacity-50"
+                      >
+                        Refuser
+                      </button>
+                      <Link
+                        href={`/missions/track/${offer.mission_id}`}
+                        className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300"
+                      >
+                        Voir le brief
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </section>
         )}
       </div>
     </main>

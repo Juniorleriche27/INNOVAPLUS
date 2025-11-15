@@ -1,519 +1,587 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useMemo } from "react";
+import clsx from "clsx";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TelemetryPing from "@/components/util/TelemetryPing";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 type Offer = {
-  id: string;
+  offer_id: string;
   title: string;
   description: string;
+  category: string;
   skills: string[];
-  country: string;
-  price: number;
-  currency: string;
-  duration: string;
-  owner: string;
-  matchScore: number;
-  postedAt: number;
-  type: "talent" | "service" | "offer";
-  status: "active" | "completed" | "paused";
+  tags?: string[];
+  country?: string;
+  price?: number;
+  currency?: string;
+  owner_id: string;
+  owner_name?: string;
+  owner_avatar?: string;
+  cover_image?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  status: string;
+  created_at: string;
 };
 
-type Filter = {
+type Filters = {
   country: string;
-  skills: string[];
-  priceRange: [number, number];
-  sort: "recent" | "match" | "price";
+  sort: "recent" | "price" | "alpha";
+};
+
+const CATEGORY_TABS = [
+  { key: "all", label: "Fil d'actualité" },
+  { key: "talent", label: "Talents" },
+  { key: "service", label: "Services" },
+  { key: "product", label: "Produits" },
+  { key: "mission", label: "Missions" },
+  { key: "bundle", label: "Bundles" },
+];
+
+const COUNTRY_OPTIONS = [
+  { code: "all", name: "Tous les pays" },
+  { code: "SN", name: "Sénégal" },
+  { code: "CI", name: "Côte d'Ivoire" },
+  { code: "TG", name: "Togo" },
+  { code: "BF", name: "Burkina Faso" },
+  { code: "BJ", name: "Bénin" },
+  { code: "ML", name: "Mali" },
+  { code: "NE", name: "Niger" },
+];
+
+const CURRENCY_OPTIONS = ["USD", "EUR", "XOF", "XAF"];
+
+const INITIAL_FORM = {
+  ownerName: "",
+  title: "",
+  description: "",
+  category: "service",
+  country: "SN",
+  price: "",
+  currency: "USD",
+  tags: "",
+  coverImage: "",
+  contactEmail: "",
+  contactPhone: "",
+};
+
+const formatPrice = (price?: number, currency?: string) => {
+  if (!price) return "À discuter";
+  try {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 0,
+    }).format(price);
+  } catch {
+    return `${price} ${currency || "USD"}`;
+  }
+};
+
+const formatTime = (iso: string) => {
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return "il y a peu";
+  const diff = Date.now() - ts;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  if (days > 0) return `il y a ${days}j`;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  if (hours > 0) return `il y a ${hours}h`;
+  const minutes = Math.floor(diff / (1000 * 60));
+  if (minutes > 0) return `il y a ${minutes}min`;
+  return "à l'instant";
+};
+
+const initials = (label?: string) => {
+  if (!label) return "MK";
+  const parts = label.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
 export default function MarketplacePage() {
-  const pathname = usePathname();
-  const [filters, setFilters] = useState<Filter>({
-    country: "all",
-    skills: [],
-    priceRange: [0, 10000],
-    sort: "recent"
-  });
-  const [showFilters, setShowFilters] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [filters, setFilters] = useState<Filters>({ country: "all", sort: "recent" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [publishing, setPublishing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Mock data
-  const offers = useMemo<Offer[]>(() => [
-    {
-      id: "1",
-      title: "Développeur Full-Stack React/Node.js",
-      description: "Mission 10 jours · développement d'une plateforme de gestion des stocks avec IA prédictive, API REST, dashboard React, intégration MongoDB.",
-      skills: ["React", "Node.js", "MongoDB", "IA"],
-      country: "SN",
-      price: 2500,
-      currency: "USD",
-      duration: "10 jours",
-      owner: "TechCorp Dakar",
-      matchScore: 0.92,
-      postedAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
-      type: "talent",
-      status: "active"
-    },
-    {
-      id: "2",
-      title: "Consultant en Transformation Digitale",
-      description: "Accompagnement stratégique pour la digitalisation des processus métier, audit technologique, roadmap de transformation.",
-      skills: ["Stratégie", "Digital", "Processus", "Audit"],
-      country: "CI",
-      price: 5000,
-      currency: "USD",
-      duration: "3 mois",
-      owner: "Digital Solutions",
-      matchScore: 0.87,
-      postedAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
-      type: "service",
-      status: "active"
-    },
-    {
-      id: "3",
-      title: "Solution E-commerce Complète",
-      description: "Plateforme e-commerce clé en main avec paiement mobile, gestion des stocks, analytics avancés, support multilingue.",
-      skills: ["E-commerce", "Mobile", "Analytics", "Multilingue"],
-      country: "BF",
-      price: 15000,
-      currency: "USD",
-      duration: "6 mois",
-      owner: "EcomTech",
-      matchScore: 0.78,
-      postedAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
-      type: "offer",
-      status: "active"
-    },
-    {
-      id: "4",
-      title: "Data Analyst - Tableaux de Bord",
-      description: "Création de tableaux de bord pricing régional, exploration des ventes, recommandations actionnables, livrables Power BI.",
-      skills: ["Data Analysis", "Power BI", "Pricing", "Excel"],
-      country: "SN",
-      price: 1800,
-      currency: "USD",
-      duration: "2 semaines",
-      owner: "Data Insights",
-      matchScore: 0.85,
-      postedAt: Date.now() - 3 * 24 * 60 * 60 * 1000,
-      type: "talent",
-      status: "active"
-    },
-    {
-      id: "5",
-      title: "Formation Agile pour Startups",
-      description: "Formation complète aux méthodologies agiles, ateliers pratiques, certification Scrum Master, suivi personnalisé.",
-      skills: ["Agile", "Scrum", "Formation", "Startup"],
-      country: "BJ",
-      price: 3200,
-      currency: "USD",
-      duration: "1 mois",
-      owner: "Agile Academy",
-      matchScore: 0.73,
-      postedAt: Date.now() - 7 * 24 * 60 * 60 * 1000,
-      type: "service",
-      status: "active"
+  const fetchOffers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${INNOVA_API_BASE}/marketplace/offers?status=live`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(`API marketplace: ${res.status}`);
+      const data = await res.json();
+      setOffers(data.items || []);
+      setError(null);
+    } catch (err) {
+      setError("Impossible de charger le marketplace pour le moment.");
+    } finally {
+      setLoading(false);
     }
-  ], []);
+  }, []);
 
-  const countries = [
-    { code: "all", name: "Tous les pays" },
-    { code: "CI", name: "Côte d'Ivoire" },
-    { code: "SN", name: "Sénégal" },
-    { code: "BJ", name: "Bénin" },
-    { code: "BF", name: "Burkina Faso" },
-    { code: "ML", name: "Mali" },
-    { code: "NE", name: "Niger" },
-    { code: "TG", name: "Togo" }
-  ];
-
-  const allSkills = [
-    "React", "Node.js", "Python", "Data Analysis", "IA", "Mobile", "E-commerce",
-    "Digital", "Agile", "Scrum", "Power BI", "MongoDB", "Stratégie", "Formation"
-  ];
+  useEffect(() => {
+    fetchOffers();
+  }, [fetchOffers]);
 
   const filteredOffers = useMemo(() => {
-    let filtered = offers;
-
-    // Search query
-    if (searchQuery) {
-      filtered = filtered.filter(offer => 
-        offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.skills.some(skill => skill.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+    let data = [...offers];
+    if (activeCategory !== "all") {
+      data = data.filter((offer) => offer.category === activeCategory);
     }
-
-    // Country filter
     if (filters.country !== "all") {
-      filtered = filtered.filter(offer => offer.country === filters.country);
+      data = data.filter((o) => (o.country || "").toUpperCase() === filters.country);
     }
-
-    // Skills filter
-    if (filters.skills.length > 0) {
-      filtered = filtered.filter(offer => 
-        filters.skills.some(skill => offer.skills.includes(skill))
-      );
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      data = data.filter((offer) => {
+        const bag = [offer.title, offer.description, ...(offer.tags || []), ...(offer.skills || [])]
+          .join(" ")
+          .toLowerCase();
+        return bag.includes(q);
+      });
     }
-
-    // Price range filter
-    filtered = filtered.filter(offer => 
-      offer.price >= filters.priceRange[0] && offer.price <= filters.priceRange[1]
-    );
-
-    // Sort
     switch (filters.sort) {
-      case "match":
-        filtered.sort((a, b) => b.matchScore - a.matchScore);
-        break;
       case "price":
-        filtered.sort((a, b) => a.price - b.price);
+        data.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+      case "alpha":
+        data.sort((a, b) => a.title.localeCompare(b.title));
         break;
       case "recent":
       default:
-        filtered.sort((a, b) => b.postedAt - a.postedAt);
+        data.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
         break;
     }
+    return data;
+  }, [offers, activeCategory, filters.country, filters.sort, searchQuery]);
 
-    return filtered;
-  }, [offers, filters, searchQuery]);
+  const stats = useMemo(() => {
+    const active = offers.filter((o) => o.status === "live").length;
+    const filled = offers.filter((o) => o.status === "filled").length;
+    const medianDelay = "48h";
+    return { active, filled, medianDelay };
+  }, [offers]);
 
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0
-    }).format(price);
-  };
+  const canPublish =
+    form.ownerName.trim().length > 2 &&
+    form.title.trim().length > 3 &&
+    form.description.trim().length > 20;
 
-  const formatTime = (timestamp: number) => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-    const hours = Math.floor(diff / (60 * 60 * 1000));
-    
-    if (days > 0) return `il y a ${days}j`;
-    if (hours > 0) return `il y a ${hours}h`;
-    return "à l'instant";
-  };
-
-  const getMatchColor = (score: number) => {
-    if (score >= 0.8) return "text-emerald-600 bg-emerald-50";
-    if (score >= 0.6) return "text-amber-600 bg-amber-50";
-    return "text-slate-600 bg-slate-50";
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "talent": return "Talent";
-      case "service": return "Service";
-      case "offer": return "Offre";
-      default: return type;
+  const handlePublish = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canPublish || publishing) return;
+    setPublishing(true);
+    setSuccessMessage(null);
+    try {
+      const tags = form.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        skills: tags,
+        tags,
+        country: form.country === "all" ? undefined : form.country,
+        price: form.price ? Number(form.price) : undefined,
+        currency: form.currency,
+        owner_id:
+          `${form.ownerName}-${Date.now()}`
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "") || `public-${Date.now()}`,
+        owner_name: form.ownerName.trim(),
+        cover_image: form.coverImage.trim() || undefined,
+        contact_email: form.contactEmail.trim() || undefined,
+        contact_phone: form.contactPhone.trim() || undefined,
+      };
+      const res = await fetch(`${INNOVA_API_BASE}/marketplace/offers/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Echec de publication");
+      }
+      setForm(INITIAL_FORM);
+      setComposerOpen(false);
+      setSuccessMessage("Offre publiée. Elle s'affiche maintenant dans le fil !");
+      fetchOffers();
+    } catch (err) {
+      setError("Publication impossible. Vérifiez les champs et réessayez.");
+    } finally {
+      setPublishing(false);
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "talent": return "bg-blue-50 text-blue-700";
-      case "service": return "bg-purple-50 text-purple-700";
-      case "offer": return "bg-green-50 text-green-700";
-      default: return "bg-slate-50 text-slate-700";
-    }
-  };
+  const renderComposer = () => (
+    <div className="mb-6 rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+          {initials(form.ownerName || "Marketplace")}
+        </div>
+        <button
+          type="button"
+          onClick={() => setComposerOpen((v) => !v)}
+          className="flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-left text-sm text-slate-500 hover:border-sky-200"
+        >
+          Partager un talent, un service ou un produit...
+        </button>
+      </div>
+      {composerOpen && (
+        <form onSubmit={handlePublish} className="space-y-4 px-5 py-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Votre nom public *</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.ownerName}
+                onChange={(e) => setForm({ ...form, ownerName: e.target.value })}
+                placeholder="Association, entreprise, pseudo..."
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Catégorie *</label>
+              <select
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              >
+                {CATEGORY_TABS.filter((tab) => tab.key !== "all").map((tab) => (
+                  <option key={tab.key} value={tab.key}>
+                    {tab.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700">Titre *</label>
+            <input
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Développeur React, Pack marketing, Boutique textile..."
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700">Description *</label>
+            <textarea
+              className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              rows={4}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Détaillez la proposition de valeur, le format, les livrables, le contexte local..."
+              required
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Pays</label>
+              <select
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+              >
+                {COUNTRY_OPTIONS.filter((opt) => opt.code !== "all").map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Budget indicatif</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                type="number"
+                min={0}
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                placeholder="Ex: 2500"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Devise</label>
+              <select
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+              >
+                {CURRENCY_OPTIONS.map((cur) => (
+                  <option key={cur} value={cur}>
+                    {cur}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Mots-clés (séparés par des virgules)</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.tags}
+                onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                placeholder="React, mobile money, textile..."
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Image ou visuel (URL)</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.coverImage}
+                onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Email de contact</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.contactEmail}
+                onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
+                placeholder="contact@exemple.org"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-slate-700">Téléphone / WhatsApp</label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={form.contactPhone}
+                onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+                placeholder="+221..."
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+            <button
+              type="button"
+              className="rounded-full px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700"
+              onClick={() => setComposerOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={!canPublish || publishing}
+              className="rounded-full bg-sky-600 px-6 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {publishing ? "Publication..." : "Publier"}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-[#f7f7f8]">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
         <TelemetryPing name="view_marketplace" />
-        
-        {/* Header */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Marketplace</h1>
-            <p className="text-sm text-slate-500">Découvrez talents, services et offres packagées</p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Communauté</p>
+            <h1 className="text-3xl font-semibold text-slate-900">Marketplace social</h1>
+            <p className="text-sm text-slate-500">
+              Diffusez vos talents, services, produits ou missions et activez la communauté KORYXA.
+            </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-300 hover:text-sky-700 transition-colors"
+              onClick={fetchOffers}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-200 hover:text-sky-700"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filtres
+              Actualiser
             </button>
-            <Link 
-              href="/marketplace/new" 
-              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
+            <button
+              onClick={() => setComposerOpen(true)}
+              className="rounded-full bg-sky-600 px-6 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
               Publier une offre
-            </Link>
+            </button>
           </div>
         </header>
 
-        {/* KPIs */}
+        {successMessage && (
+          <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {successMessage}
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
+
+        {/* KPI */}
         <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: "Offres actives", value: "56", icon: "📊" },
-            { label: "Missions remplies", value: "212", icon: "✅" },
-            { label: "Délai médian", value: "48h", icon: "⏱️" },
+            { label: "Offres actives", value: stats.active, accent: "text-sky-600" },
+            { label: "Missions / ventes confirmées", value: stats.filled, accent: "text-emerald-600" },
+            { label: "Délai médian", value: stats.medianDelay, accent: "text-indigo-600" },
           ].map((kpi) => (
-            <div key={kpi.label} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{kpi.icon}</span>
-                <div>
-                  <p className="text-sm text-slate-500">{kpi.label}</p>
-                  <p className="text-2xl font-bold text-sky-600">{kpi.value}</p>
-                </div>
-              </div>
+            <div key={kpi.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-400">{kpi.label}</p>
+              <p className={clsx("mt-2 text-3xl font-semibold", kpi.accent)}>{kpi.value}</p>
             </div>
           ))}
         </section>
 
-        {/* Search and Filters */}
-        <section className="sticky top-20 z-10 mb-6 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Rechercher par titre, compétences, description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
-              />
-            </div>
+        {renderComposer()}
 
-            {/* Filters */}
-            {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Pays</label>
-                  <select
-                    value={filters.country}
-                    onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                  >
-                    {countries.map(country => (
-                      <option key={country.code} value={country.code}>
-                        {country.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Compétences</label>
-                  <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto">
-                    {allSkills.map(skill => (
-                      <button
-                        key={skill}
-                        onClick={() => setFilters(prev => ({
-                          ...prev,
-                          skills: prev.skills.includes(skill)
-                            ? prev.skills.filter(s => s !== skill)
-                            : [...prev.skills, skill]
-                        }))}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          filters.skills.includes(skill)
-                            ? 'bg-sky-600 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        {skill}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Prix (USD)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      placeholder="Min"
-                      value={filters.priceRange[0]}
-                      onChange={(e) => setFilters(prev => ({ 
-                        ...prev, 
-                        priceRange: [parseInt(e.target.value) || 0, prev.priceRange[1]] 
-                      }))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                    />
-                    <span className="text-slate-400">-</span>
-                    <input
-                      type="number"
-                      placeholder="Max"
-                      value={filters.priceRange[1]}
-                      onChange={(e) => setFilters(prev => ({ 
-                        ...prev, 
-                        priceRange: [prev.priceRange[0], parseInt(e.target.value) || 10000] 
-                      }))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Tri</label>
-                  <select
-                    value={filters.sort}
-                    onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value as "recent" | "match" | "price" }))}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                  >
-                    <option value="recent">Plus récents</option>
-                    <option value="match">Meilleur match</option>
-                    <option value="price">Prix croissant</option>
-                  </select>
-                </div>
+        {/* Filters */}
+        <section className="mb-6 rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap gap-3">
+            {CATEGORY_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveCategory(tab.key)}
+                className={clsx(
+                  "rounded-full border px-4 py-2 text-sm font-medium",
+                  activeCategory === tab.key
+                    ? "border-sky-300 bg-sky-50 text-sky-700"
+                    : "border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <div className="relative">
+                <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 103.6 3.6a7.5 7.5 0 0013.05 13.05z" />
+                </svg>
+                <input
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  placeholder="Rechercher un titre, un secteur, une compétence..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-            )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:flex md:items-center md:justify-end">
+              <select
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={filters.country}
+                onChange={(e) => setFilters((prev) => ({ ...prev, country: e.target.value }))}
+              >
+                {COUNTRY_OPTIONS.map((opt) => (
+                  <option key={opt.code} value={opt.code}>
+                    {opt.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                value={filters.sort}
+                onChange={(e) => setFilters((prev) => ({ ...prev, sort: e.target.value as Filters["sort"] }))}
+              >
+                <option value="recent">Les plus récents</option>
+                <option value="price">Budget croissant</option>
+                <option value="alpha">A → Z</option>
+              </select>
+            </div>
           </div>
         </section>
 
-        {/* Tabs */}
-        <nav className="mb-6 flex flex-wrap gap-2">
-          {[
-            { href: "/marketplace/talents", label: "Talents", count: 23 },
-            { href: "/marketplace/services", label: "Services", count: 15 },
-            { href: "/marketplace/offers", label: "Offres", count: 18 },
-          ].map((tab) => {
-            const active = pathname?.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-sky-600 text-white"
-                    : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-                }`}
-              >
-                {tab.label}
-                <span className={`rounded-full px-2 py-0.5 text-xs ${
-                  active ? "bg-white/20" : "bg-slate-100"
-                }`}>
-                  {tab.count}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Offers Grid */}
+        {/* Feed */}
         <section className="space-y-4">
-          {filteredOffers.map((offer) => (
-            <article key={offer.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-              <header className="mb-4 flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getTypeColor(offer.type)}`}>
-                      {getTypeLabel(offer.type)}
-                    </span>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                      {offer.country}
-                    </span>
-                    <span className="text-xs text-slate-500">{formatTime(offer.postedAt)}</span>
+          {loading && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              Chargement du fil communautaire...
+            </div>
+          )}
+          {!loading && filteredOffers.length === 0 && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              Aucune publication pour l'instant. Soyez le premier à partager un talent, un service ou un produit !
+            </div>
+          )}
+          {filteredOffers.map((offer) => {
+            const tags = offer.tags && offer.tags.length ? offer.tags : offer.skills;
+            return (
+              <article key={offer.offer_id} className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-start gap-3 px-5 py-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                    {initials(offer.owner_name)}
                   </div>
-                  
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{offer.title}</h3>
-                  
-                  <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg font-semibold text-slate-900">{offer.title}</h2>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                        {CATEGORY_TABS.find((tab) => tab.key === offer.category)?.label || offer.category}
+                      </span>
+                      {offer.country && (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          {offer.country}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {offer.owner_name || "Communauté KORYXA"} · {formatTime(offer.created_at)}
+                    </p>
+                  </div>
+                  <div className="text-right text-sm font-semibold text-slate-700">
+                    {formatPrice(offer.price, offer.currency)}
+                  </div>
+                </div>
+                {offer.cover_image && (
+                  <div className="relative h-64 w-full overflow-hidden">
+                    <img src={offer.cover_image} alt="visuel" className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <div className="space-y-4 px-5 py-4">
+                  <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
                     {offer.description}
                   </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {offer.skills.slice(0, 4).map(skill => (
-                      <span
-                        key={skill}
-                        className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700"
+                  {tags && tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => (
+                        <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 text-sm">
+                    {offer.contact_email && (
+                      <a
+                        href={`mailto:${offer.contact_email}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-200 hover:text-sky-700"
                       >
-                        {skill}
-                      </span>
-                    ))}
-                    {offer.skills.length > 4 && (
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                        +{offer.skills.length - 4} autres
-                      </span>
+                        Contacter par email
+                      </a>
+                    )}
+                    {offer.contact_phone && (
+                      <a
+                        href={`tel:${offer.contact_phone}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      >
+                        Appeler / WhatsApp
+                      </a>
                     )}
                   </div>
                 </div>
-                
-                <div className="ml-4 flex flex-col items-end gap-3">
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-slate-900">
-                      {formatPrice(offer.price, offer.currency)}
-                    </div>
-                    <div className="text-xs text-slate-500">{offer.duration}</div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${getMatchColor(offer.matchScore)}`}>
-                      Match {(offer.matchScore * 100).toFixed(0)}%
-                    </div>
-                    <div className="w-16 bg-slate-200 rounded-full h-2">
-                      <div 
-                        className="bg-sky-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${offer.matchScore * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </header>
-              
-              <footer className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-xs">
-                    {offer.owner.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">{offer.owner}</div>
-                    <div className="text-xs text-slate-500">Propriétaire</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-300 hover:text-sky-700 transition-colors">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    Favoris
-                  </button>
-                  <Link 
-                    href={`/marketplace/offers/${offer.id}`}
-                    className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
-                  >
-                    Voir / Postuler
-                  </Link>
-                </div>
-              </footer>
-            </article>
-          ))}
-
-          {filteredOffers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <svg className="h-8 w-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">Aucune offre trouvée</h3>
-              <p className="text-slate-500 mb-6">Essayez de modifier vos filtres ou votre recherche</p>
-              <Link 
-                href="/marketplace/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
-              >
-                Publier la première offre
-              </Link>
-            </div>
-          )}
+              </article>
+            );
+          })}
         </section>
       </main>
     </div>

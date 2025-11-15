@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, validator
@@ -36,27 +36,56 @@ def rate_limiter(request: Request):
 # --- Models ---
 class OfferCreate(BaseModel):
     title: str = Field(min_length=3, max_length=160)
+    description: str = Field(min_length=10, max_length=4000)
+    category: Literal["talent", "service", "product", "mission", "bundle"] = "service"
     skills: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
     country: Optional[str] = None
     price: Optional[float] = Field(default=None, ge=0)
     currency: Optional[str] = Field(default="USD", max_length=8)
     owner_id: str
+    owner_name: Optional[str] = None
+    owner_avatar: Optional[str] = None
+    cover_image: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
 
-    @validator("skills")
+    @validator("skills", "tags")
     def _max_skills(cls, v: List[str]):
         if len(v) > 20:
-            raise ValueError("max 20 skills")
-        return v
+            raise ValueError("max 20 items")
+        return [item.strip() for item in v if item.strip()]
+
+    @validator("country")
+    def _normalize_country(cls, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        clean = value.strip().upper()
+        return clean or None
+
+    @validator("cover_image")
+    def _sanitize_cover(cls, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return None
+        return value.strip()
 
 
 class Offer(BaseModel):
     offer_id: str
     title: str
+    description: str = ""
+    category: str = "service"
     skills: List[str] = []
+    tags: List[str] = []
     country: Optional[str] = None
     price: Optional[float] = None
     currency: Optional[str] = "USD"
     owner_id: str
+    owner_name: Optional[str] = None
+    owner_avatar: Optional[str] = None
+    cover_image: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     status: str = "draft"  # draft|live|filled|archived
     created_at: str
 
@@ -101,11 +130,19 @@ async def create_offer(body: OfferCreate, db: AsyncIOMotorDatabase = Depends(get
     doc = Offer(
         offer_id=offer_id,
         title=body.title,
+        description=body.description.strip(),
+        category=body.category,
         skills=[s.strip() for s in (body.skills or []) if s.strip()],
-        country=(body.country or "").strip() or None,
+        tags=[t.strip() for t in (body.tags or body.skills or []) if t.strip()],
+        country=body.country,
         price=body.price,
         currency=body.currency or "USD",
         owner_id=body.owner_id,
+        owner_name=(body.owner_name or "").strip() or None,
+        owner_avatar=body.owner_avatar,
+        cover_image=body.cover_image,
+        contact_email=(body.contact_email or "").strip() or None,
+        contact_phone=(body.contact_phone or "").strip() or None,
         status="live",
         created_at=now,
     ).dict()
@@ -137,12 +174,22 @@ def _epoch(iso: str) -> float:
 
 
 @router.get("/offers", dependencies=[Depends(rate_limiter)])
-async def list_offers(status: Optional[str] = None, country: Optional[str] = None, skills: Optional[str] = None, limit: int = 20, offset: int = 0, db: AsyncIOMotorDatabase = Depends(get_db)):
+async def list_offers(
+    status: Optional[str] = None,
+    country: Optional[str] = None,
+    skills: Optional[str] = None,
+    category: Optional[str] = None,
+    limit: int = 20,
+    offset: int = 0,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
     q: Dict = {}
     if status:
         q["status"] = status
     if country:
         q["country"] = country.upper()
+    if category and category != "all":
+        q["category"] = category
     cur = db[COLL_OFFERS].find(q).sort("created_at", -1).skip(offset).limit(limit)
     items = [Offer(**doc) async for doc in cur]
     # skills filter in-memory for simplicity

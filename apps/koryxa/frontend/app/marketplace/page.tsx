@@ -32,11 +32,13 @@ type Filters = {
 
 const CATEGORY_TABS = [
   { key: "all", label: "Fil d'actualité" },
-  { key: "talent", label: "Talents" },
-  { key: "service", label: "Services" },
-  { key: "product", label: "Produits" },
-  { key: "mission", label: "Missions" },
-  { key: "bundle", label: "Bundles" },
+  { key: "talent", label: "Talents & experts" },
+  { key: "service", label: "Services locaux" },
+  { key: "product", label: "Produits physiques" },
+  { key: "mission", label: "Missions en ligne" },
+  { key: "agri", label: "Agriculture & agro" },
+  { key: "education", label: "Éducation & mentoring" },
+  { key: "bundle", label: "Bundles / packs" },
 ];
 
 const COUNTRY_OPTIONS = [
@@ -51,6 +53,12 @@ const COUNTRY_OPTIONS = [
 ];
 
 const CURRENCY_OPTIONS = ["USD", "EUR", "XOF", "XAF"];
+
+const STEP_ITEMS = [
+  { key: "basic", label: "1. Infos de base" },
+  { key: "description", label: "2. Description" },
+  { key: "pricing", label: "3. Prix & disponibilité" },
+];
 
 const INITIAL_FORM = {
   ownerName: "",
@@ -110,6 +118,8 @@ export default function MarketplacePage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [publishing, setPublishing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState<string>(STEP_ITEMS[0].key);
+  const [showFaq, setShowFaq] = useState(false);
 
   const fetchOffers = useCallback(async () => {
     try {
@@ -131,6 +141,18 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("marketplaceDraft");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setForm({ ...INITIAL_FORM, ...parsed });
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const filteredOffers = useMemo(() => {
     let data = [...offers];
@@ -175,6 +197,11 @@ export default function MarketplacePage() {
     form.ownerName.trim().length > 2 &&
     form.title.trim().length > 3 &&
     form.description.trim().length > 20;
+
+  const handleSaveDraft = () => {
+    localStorage.setItem("marketplaceDraft", JSON.stringify(form));
+    setSuccessMessage("Brouillon enregistré localement. Vous pourrez le reprendre plus tard.");
+  };
 
   const handlePublish = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -225,6 +252,35 @@ export default function MarketplacePage() {
     }
   };
 
+  const renderStatusBanner = () => {
+    if (!error) return null;
+    return (
+      <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            {error.includes("charger")
+              ? "Aucune offre disponible pour le moment ou le serveur répond lentement."
+              : error}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={fetchOffers}
+              className="rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+            >
+              Réessayer
+            </button>
+            <a
+              className="rounded-full border border-transparent px-3 py-1 text-xs font-semibold text-amber-700 hover:underline"
+              href="mailto:support@innovaplus.africa"
+            >
+              Écrire au support
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderComposer = () => (
     <div className="mb-6 rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
@@ -241,6 +297,22 @@ export default function MarketplacePage() {
       </div>
       {composerOpen && (
         <form onSubmit={handlePublish} className="space-y-4 px-5 py-4">
+          <div className="flex items-center gap-3 pb-1">
+            {STEP_ITEMS.map((step, index) => (
+              <div key={step.key} className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <div
+                  className={clsx(
+                    "flex h-6 w-6 items-center justify-center rounded-full border",
+                    activeStep === step.key ? "border-sky-500 text-sky-600" : "border-slate-200"
+                  )}
+                >
+                  {index + 1}
+                </div>
+                <span className={activeStep === step.key ? "text-slate-800" : "text-slate-400"}>{step.label}</span>
+                {index < STEP_ITEMS.length - 1 && <div className="h-px w-6 bg-slate-200" />}
+              </div>
+            ))}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-semibold text-slate-700">Votre nom public *</label>
@@ -248,9 +320,11 @@ export default function MarketplacePage() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 value={form.ownerName}
                 onChange={(e) => setForm({ ...form, ownerName: e.target.value })}
-                placeholder="Association, entreprise, pseudo..."
+                onFocus={() => setActiveStep("basic")}
+                placeholder="Ex. : Collectif de jeunes, Nom de la boutique..."
                 required
               />
+              <p className="mt-1 text-xs text-slate-500">Votre nom ou celui de votre structure sera visible publiquement.</p>
             </div>
             <div>
               <label className="text-sm font-semibold text-slate-700">Catégorie *</label>
@@ -258,6 +332,7 @@ export default function MarketplacePage() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
+                onFocus={() => setActiveStep("basic")}
               >
                 {CATEGORY_TABS.filter((tab) => tab.key !== "all").map((tab) => (
                   <option key={tab.key} value={tab.key}>
@@ -273,9 +348,11 @@ export default function MarketplacePage() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Développeur React, Pack marketing, Boutique textile..."
+              onFocus={() => setActiveStep("basic")}
+              placeholder="Ex. : Développeur React, Pack marketing, Atelier couture, Solution mobile money..."
               required
             />
+            <p className="mt-1 text-xs text-slate-500">Un titre clair aide les membres à comprendre rapidement votre proposition.</p>
           </div>
           <div>
             <label className="text-sm font-semibold text-slate-700">Description *</label>
@@ -284,9 +361,11 @@ export default function MarketplacePage() {
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onFocus={() => setActiveStep("description")}
               placeholder="Détaillez la proposition de valeur, le format, les livrables, le contexte local..."
               required
             />
+            <p className="mt-1 text-xs text-slate-500">Décrivez les besoins, les ressources mobilisées et le mode de collaboration.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div>
@@ -295,6 +374,7 @@ export default function MarketplacePage() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
+                onFocus={() => setActiveStep("pricing")}
               >
                 {COUNTRY_OPTIONS.filter((opt) => opt.code !== "all").map((opt) => (
                   <option key={opt.code} value={opt.code}>
@@ -311,7 +391,8 @@ export default function MarketplacePage() {
                 min={0}
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="Ex: 2500"
+                onFocus={() => setActiveStep("pricing")}
+                placeholder="Ex : 2500"
               />
             </div>
             <div>
@@ -320,6 +401,7 @@ export default function MarketplacePage() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                onFocus={() => setActiveStep("pricing")}
               >
                 {CURRENCY_OPTIONS.map((cur) => (
                   <option key={cur} value={cur}>
@@ -336,7 +418,7 @@ export default function MarketplacePage() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 value={form.tags}
                 onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                placeholder="React, mobile money, textile..."
+                placeholder="Ex. : mobile money, fablab, couture, maraîchage..."
               />
             </div>
             <div>
@@ -353,21 +435,21 @@ export default function MarketplacePage() {
             <div>
               <label className="text-sm font-semibold text-slate-700">Email de contact</label>
               <input
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                value={form.contactEmail}
-                onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
-                placeholder="contact@exemple.org"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-slate-700">Téléphone / WhatsApp</label>
-              <input
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-                value={form.contactPhone}
-                onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
-                placeholder="+221..."
-              />
-            </div>
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              value={form.contactEmail}
+              onChange={(e) => setForm({ ...form, contactEmail: e.target.value })}
+              placeholder="contact@exemple.org"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700">Téléphone / WhatsApp</label>
+            <input
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              value={form.contactPhone}
+              onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+              placeholder="+221..."
+            />
+          </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <button
@@ -376,6 +458,13 @@ export default function MarketplacePage() {
               onClick={() => setComposerOpen(false)}
             >
               Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-200 hover:text-sky-700"
+            >
+              Enregistrer comme brouillon
             </button>
             <button
               type="submit"
@@ -394,7 +483,7 @@ export default function MarketplacePage() {
     <div className="min-h-screen bg-[#f7f7f8]">
       <main className="mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:px-6 lg:px-8">
         <TelemetryPing name="view_marketplace" />
-        <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-500">Communauté</p>
             <h1 className="text-3xl font-semibold text-slate-900">Marketplace social</h1>
@@ -412,36 +501,63 @@ export default function MarketplacePage() {
             <button
               onClick={() => setComposerOpen(true)}
               className="rounded-full bg-sky-600 px-6 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700"
-            >
+            > 
               Publier une offre
             </button>
           </div>
         </header>
 
+        <section className="mb-4 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-sm font-semibold text-slate-700">Comment ça marche ?</p>
+          <div className="mt-2 grid gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50/80 p-3">
+              <p className="font-semibold text-slate-800">1 · Publier</p>
+              <p className="text-slate-600">Ajoutez un talent, service ou produit en quelques champs.</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50/80 p-3">
+              <p className="font-semibold text-slate-800">2 · KORYXA recommande</p>
+              <p className="text-slate-600">Le fil met en avant votre offre auprès des membres pertinents.</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50/80 p-3">
+              <p className="font-semibold text-slate-800">3 · Mission confirmée</p>
+              <p className="text-slate-600">Les contacts intéressés vous écrivent, vous concluez la mission.</p>
+            </div>
+          </div>
+        </section>
+
+        {renderStatusBanner()}
         {successMessage && (
           <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             {successMessage}
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
           </div>
         )}
 
         {/* KPI */}
         <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { label: "Offres actives", value: stats.active, accent: "text-sky-600" },
-            { label: "Missions / ventes confirmées", value: stats.filled, accent: "text-emerald-600" },
-            { label: "Délai médian", value: stats.medianDelay, accent: "text-indigo-600" },
+            { label: "Offres actives", value: stats.active, accent: "text-sky-600", tooltip: "Nombre d'annonces visibles actuellement." },
+            { label: "Missions / ventes confirmées", value: stats.filled, accent: "text-emerald-600", tooltip: "Nombre d'opportunités qui se sont conclues via KORYXA (30 derniers jours)." },
+            { label: "Délai médian", value: stats.medianDelay, accent: "text-indigo-600", tooltip: "Durée typique avant qu'une opportunité reçoive un premier contact." },
           ].map((kpi) => (
-            <div key={kpi.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <button
+              key={kpi.label}
+              type="button"
+              title={kpi.tooltip}
+              className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-sky-200"
+            >
               <p className="text-xs uppercase tracking-wide text-slate-400">{kpi.label}</p>
               <p className={clsx("mt-2 text-3xl font-semibold", kpi.accent)}>{kpi.value}</p>
-            </div>
+            </button>
           ))}
         </section>
+
+        {offers.length > 0 && (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+            <p>
+              {stats.active} opportunité(s) publiées aujourd&apos;hui · {stats.filled} mission(s) confirmées ce mois.
+            </p>
+          </div>
+        )}
 
         {renderComposer()}
 
@@ -511,7 +627,13 @@ export default function MarketplacePage() {
           )}
           {!loading && filteredOffers.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-              Aucune publication pour l'instant. Soyez le premier à partager un talent, un service ou un produit !
+              <p>Aucune offre encore. Soyez le premier à publier une opportunité pour la communauté KORYXA.</p>
+              <button
+                onClick={() => setComposerOpen(true)}
+                className="mt-4 rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+              >
+                Publier maintenant
+              </button>
             </div>
           )}
           {filteredOffers.map((offer) => {
@@ -582,6 +704,22 @@ export default function MarketplacePage() {
               </article>
             );
           })}
+        </section>
+        <section className="mt-10 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
+          <button
+            type="button"
+            onClick={() => setShowFaq((v) => !v)}
+            className="font-semibold text-slate-700 hover:text-sky-600"
+          >
+            Pourquoi le marketplace est vide ?
+          </button>
+          {showFaq && (
+            <ul className="mt-3 list-disc space-y-1 pl-5">
+              <li>Il n'y a pas encore d'offres publiées (n'hésitez pas à lancer la première !).</li>
+              <li>Vos filtres sont peut-être trop restrictifs (réinitialisez-les).</li>
+              <li>Un incident technique peut survenir : utilisez le bouton “Réessayer” ou contactez support@innovaplus.africa.</li>
+            </ul>
+          )}
         </section>
       </main>
     </div>

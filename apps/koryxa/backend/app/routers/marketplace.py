@@ -37,7 +37,7 @@ def rate_limiter(request: Request):
 class OfferCreate(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     description: str = Field(min_length=10, max_length=4000)
-    category: Literal["talent", "service", "product", "mission", "bundle"] = "service"
+    category: Literal["talent", "service", "product", "mission", "bundle", "agri", "education"] = "service"
     skills: List[str] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
     country: Optional[str] = None

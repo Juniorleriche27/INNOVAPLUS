@@ -16,9 +16,11 @@ const NAV_LINKS = [
 ];
 
 const PRODUCT_LINKS = [
-  { href: "/missions/new", label: "Poster un besoin", hint: "Publier un besoin client ou mission" },
-  { href: "/opportunities/create", label: "Créer une opportunité", hint: "Déposer une offre côté prestataire" },
-  { href: "/chatlaya", label: "CHATLAYA", hint: "Cocopilote IA & support" },
+  { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
+  { href: "/products/pie-agency", label: "PieAgency", hint: "Chatbot marketing & admissions" },
+  { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
+  { href: "/marketplace", label: "Marketplace social", hint: "Publier talents, services, produits" },
+  { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },
 ];
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {

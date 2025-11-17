@@ -267,6 +267,13 @@ def _classify_message_kind(message: str) -> str:
         return "greeting"
     if stripped in IDENTITY_PHRASES:
         return "identity"
+    # Also consider short sentences that start with a known phrase
+    for phrase in GREETING_PHRASES:
+        if stripped.startswith(phrase) and len(stripped) <= len(phrase) + 12:
+            return "greeting"
+    for phrase in IDENTITY_PHRASES:
+        if stripped.startswith(phrase):
+            return "identity"
     return "default"
 
 

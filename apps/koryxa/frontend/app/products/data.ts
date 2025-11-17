@@ -13,6 +13,37 @@ export type ProductInfo = {
 };
 
 export const productCatalog: Record<string, ProductInfo> = {
+  "myplanning": {
+    slug: "myplanning",
+    name: "MyPlanning",
+    tagline: "Assistant temps & priorités pour équipes africaines.",
+    summary:
+      "MyPlanning orchestre Eisenhower, MoSCoW, Kanban, Pomodoro et suggestions IA Llama pour aider étudiants, entrepreneurs et équipes à structurer leurs journées.",
+    heroImage:
+      "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1200&q=60",
+    highlights: [
+      "Kanban 3 colonnes + vues Aujourd'hui / Semaine",
+      "Mode simple vs avancé (objectifs, énergie, Pomodoro, collaborateurs)",
+      "Boutons IA : génération de tâches, plan du jour, replanification express",
+      "Connecté au backend KORYXA (auth, profils, Llama interne)",
+    ],
+    stats: [
+      { label: "Méthodes couvertes", value: "5" },
+      { label: "IA intégrée", value: "Llama" },
+      { label: "Temps de prise en main", value: "<10 min" },
+    ],
+    primaryCta: { label: "Ouvrir MyPlanning", href: "/myplanning" },
+    secondaryCta: {
+      label: "Documentation produit",
+      href: "https://github.com/innovaplus/KORYXA/tree/main/products",
+    },
+    contact: "myplanning@koryxa.africa",
+    useCases: [
+      "Incubateurs souhaitant coacher leurs cohortes",
+      "Equipes projet cherchant un cockpit frugal",
+      "Entrepreneurs solos voulant ritualiser leurs semaines",
+    ],
+  },
   "koryxa-sante": {
     slug: "koryxa-sante",
     name: "KORYXA Santé & Bien-être",

@@ -46,6 +46,8 @@ async def connect_to_mongo() -> None:
             await _db["assignments"].create_index("user_id")
             await _db["fairness_windows"].create_index("period_start")
             await _db["decisions_audit"].create_index("created_at")
+            await _db["myplanning_tasks"].create_index([("user_id", 1), ("due_datetime", 1)])
+            await _db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1)])
 
             # Auth & Chatlaya collections
             await _db["sessions"].create_index("token_hash", unique=True)

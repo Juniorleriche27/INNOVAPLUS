@@ -32,6 +32,7 @@ from app.routers.meet_api import router as meet_router
 from app.routers.smollm import router as smollm_router
 from app.routers.profiles import router as profiles_router
 from app.routers.missions import router as missions_router
+from app.routers.myplanning import router as myplanning_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
@@ -178,6 +179,7 @@ innova_api.include_router(invite_router)
 innova_api.include_router(smollm_router)
 innova_api.include_router(profiles_router)
 innova_api.include_router(missions_router)
+innova_api.include_router(myplanning_router)
 innova_api.include_router(auth_router)
 app.include_router(innova_api)
 

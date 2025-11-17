@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
@@ -188,17 +188,17 @@ async def update_task(
     return _serialize_task(doc)
 
 
-@router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_task(
     task_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
-) -> None:
+) -> Response:
     oid = to_object_id(task_id)
     result = await db[COLLECTION].delete_one({"_id": oid, "user_id": current["_id"]})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/ai/suggest-tasks", response_model=AiSuggestTasksResponse)

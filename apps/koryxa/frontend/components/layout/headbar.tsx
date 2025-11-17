@@ -19,7 +19,7 @@ const PRODUCT_LINKS = [
   { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
   { href: "/products/pie-agency", label: "PieAgency", hint: "Chatbot marketing & admissions" },
   { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
-  { href: "/myplanning", label: "MyPlanning", hint: "Planification temps & IA Llama" },
+  { href: "/myplanning", label: "MyPlanning", hint: "Planification temps & IA Llama (beta)" },
   { href: "/marketplace", label: "Marketplace social", hint: "Publier talents, services, produits" },
   { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },
 ];

@@ -51,6 +51,13 @@ type AiReplanResult = {
   recommendations: { task_id: string; suggested_minutes?: number | null; reason?: string | null }[];
 };
 
+const PRIORITY_LABEL: Record<Priority, string> = {
+  urgent_important: "Urgent & important",
+  important_not_urgent: "Important mais pas urgent",
+  urgent_not_important: "Urgent mais moins important",
+  not_urgent_not_important: "Ni urgent ni important",
+};
+
 const PRIORITY_COLORS: Record<Priority, string> = {
   urgent_important: "bg-red-100 text-red-700",
   important_not_urgent: "bg-amber-100 text-amber-800",
@@ -68,56 +75,64 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!response.ok) {
-    let message = "Impossible de contacter MyPlanning";
     const raw = await response.text();
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (typeof parsed === "string") message = parsed;
-        else message = parsed.detail || parsed.message || parsed.error || message;
-      } catch (err) {
-        message = raw;
+    try {
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === "object") {
+        throw new Error(parsed.detail || parsed.message || parsed.error || "Erreur inconnue");
       }
+      throw new Error(parsed || raw || "Impossible de contacter MyPlanning");
+    } catch (err) {
+      if (err instanceof Error && err.message !== "Unexpected token") {
+        throw err;
+      }
+      throw new Error(raw || "Impossible de contacter MyPlanning");
     }
-    throw new Error(message);
   }
-  if (response.status === 204) {
-    return {} as T;
-  }
+  if (response.status === 204) return {} as T;
   return (await response.json()) as T;
 }
 
-function formatPriority(value: Priority): string {
-  switch (value) {
-    case "urgent_important":
-      return "Urgent & important";
-    case "important_not_urgent":
-      return "Important mais pas urgent";
-    case "urgent_not_important":
-      return "Urgent mais moins important";
-    default:
-      return "Ni urgent ni important";
-  }
+function parseDate(value?: string | null): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
 }
 
-function formatDate(iso?: string | null): string | null {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function startOfWeek(date: Date): Date {
+  const day = date.getDay();
+  const monday = new Date(date);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(date.getDate() - ((day + 6) % 7));
+  return monday;
+}
+
+function sameWeek(a: Date, reference: Date): boolean {
+  const monday = startOfWeek(reference);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return a >= monday && a <= sunday;
+}
+
+function formatDateLabel(date?: Date | null): string {
+  if (!date) return "—";
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
+function formatTimeLabel(date?: Date | null): string {
+  if (!date) return "Libre";
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "short" });
+const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
 
-function AlertBanner({
-  tone,
-  text,
-  onClose,
-}: {
-  tone: "info" | "error";
-  text: string;
-  onClose: () => void;
-}) {
+function AlertBanner({ text, tone, onClose }: { text: string; tone: "info" | "error"; onClose: () => void }) {
   const base = tone === "error" ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700";
   return (
     <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm ${base}`}>
@@ -129,225 +144,11 @@ function AlertBanner({
   );
 }
 
-function EmptyState({
-  title,
-  message,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  message: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
+function EmptyState({ title, message }: { title: string; message: string }) {
   return (
-    <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-8 text-center">
+    <div className="rounded-3xl border border-dashed border-slate-200 bg-white/80 px-4 py-10 text-center">
       <p className="text-base font-semibold text-slate-900">{title}</p>
       <p className="mt-2 text-sm text-slate-500">{message}</p>
-      {actionLabel && onAction && (
-        <button onClick={onAction} className="mt-4 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
-          {actionLabel}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function TaskCard({
-  task,
-  advanced,
-  onStateChange,
-  recentlyCompleted,
-}: {
-  task: Task;
-  advanced: boolean;
-  onStateChange?: (id: string, state: KanbanState) => void;
-  recentlyCompleted?: boolean;
-}) {
-  const stateLabel = task.kanban_state === "todo" ? "À faire" : task.kanban_state === "in_progress" ? "En cours" : "Terminé";
-  const stateColor =
-    task.kanban_state === "done"
-      ? "bg-emerald-50 text-emerald-700"
-      : task.kanban_state === "in_progress"
-        ? "bg-sky-50 text-sky-700"
-        : "bg-slate-100 text-slate-600";
-  return (
-    <div
-      className={`rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm transition-all duration-200 ${
-        recentlyCompleted ? "ring-2 ring-emerald-200" : ""
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">{task.title}</p>
-          {task.category && <p className="text-xs text-slate-500">{task.category}</p>}
-        </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${stateColor}`}>{stateLabel}</span>
-      </div>
-      {task.description && <p className="mt-2 text-sm text-slate-600">{task.description}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-        <span className={`rounded-full px-3 py-1 font-semibold ${PRIORITY_COLORS[task.priority_eisenhower]}`}>
-          {formatPriority(task.priority_eisenhower)}
-        </span>
-        {task.high_impact && <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">Impact 20 %</span>}
-        {task.estimated_duration_minutes && <span className="rounded-full bg-slate-100 px-2 py-1">{task.estimated_duration_minutes} min</span>}
-        {formatDate(task.due_datetime) && <span className="rounded-full bg-slate-100 px-2 py-1">Échéance {formatDate(task.due_datetime)}</span>}
-      </div>
-      {advanced && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          {task.energy_level && (
-            <span className="flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-1 text-indigo-700">
-              ⚡ Énergie {task.energy_level}
-            </span>
-          )}
-          {task.moscow && <span className="rounded-full bg-fuchsia-50 px-2 py-1 text-fuchsia-700">MoSCoW : {task.moscow}</span>}
-          {typeof task.pomodoro_estimated === "number" && (
-            <span className="rounded-full bg-orange-50 px-2 py-1 text-orange-600">
-              Pomodoro : {task.pomodoro_done ?? 0}/{task.pomodoro_estimated}
-            </span>
-          )}
-        </div>
-      )}
-      {onStateChange && (
-        <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          {(["todo", "in_progress", "done"] as KanbanState[]).map((state) => (
-            <button
-              key={state}
-              onClick={() => onStateChange(task.id, state)}
-              className={`rounded-full border px-3 py-1 transition ${
-                task.kanban_state === state ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 text-slate-600"
-              }`}
-            >
-              {state === "todo" ? "À faire" : state === "in_progress" ? "En cours" : "Terminé"}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TaskList({
-  tasks,
-  advanced,
-  emptyMessage,
-  onStateChange,
-  recentlyCompleted,
-}: {
-  tasks: Task[];
-  advanced: boolean;
-  emptyMessage: string;
-  onStateChange?: (id: string, state: KanbanState) => void;
-  recentlyCompleted?: string | null;
-}) {
-  if (tasks.length === 0) {
-    return <EmptyState title="Journée disponible" message={emptyMessage} />;
-  }
-  return (
-    <div className="space-y-3">
-      {tasks.map((task) => (
-        <TaskCard
-          key={task.id}
-          task={task}
-          advanced={advanced}
-          onStateChange={onStateChange}
-          recentlyCompleted={recentlyCompleted === task.id}
-        />
-      ))}
-    </div>
-  );
-}
-
-function WeekView({
-  tasks,
-  advanced,
-  onStateChange,
-  recentlyCompleted,
-}: {
-  tasks: Task[];
-  advanced: boolean;
-  onStateChange?: (id: string, state: KanbanState) => void;
-  recentlyCompleted?: string | null;
-}) {
-  const buckets = tasks.reduce<Record<string, Task[]>>((acc, task) => {
-    const refDate = task.start_datetime || task.due_datetime;
-    const key = refDate ? dayFormatter.format(new Date(refDate)) : "Sans date";
-    acc[key] = acc[key] || [];
-    acc[key].push(task);
-    return acc;
-  }, {});
-  const entries = Object.entries(buckets);
-  if (!entries.length) {
-    return <EmptyState title="Semaine libre" message="Aucune tâche planifiée cette semaine." />;
-  }
-  return (
-    <div className="space-y-4">
-      {entries.map(([label, list]) => (
-        <div key={label} className="rounded-3xl border border-slate-100 bg-white/80 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-900 capitalize">{label}</p>
-            <span className="text-xs text-slate-500">{list.length} tâche{list.length > 1 ? "s" : ""}</span>
-          </div>
-          <div className="mt-3 space-y-3">
-            {list.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                advanced={advanced}
-                onStateChange={onStateChange}
-                recentlyCompleted={recentlyCompleted === task.id}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function TaskKanbanBoard({
-  tasks,
-  advanced,
-  onStateChange,
-  recentlyCompleted,
-}: {
-  tasks: Task[];
-  advanced: boolean;
-  onStateChange: (id: string, state: KanbanState) => void;
-  recentlyCompleted?: string | null;
-}) {
-  const columns: Record<KanbanState, Task[]> = { todo: [], in_progress: [], done: [] };
-  tasks.forEach((task) => columns[task.kanban_state].push(task));
-  const order: { key: KanbanState; label: string }[] = [
-    { key: "todo", label: "À faire" },
-    { key: "in_progress", label: "En cours" },
-    { key: "done", label: "Terminé" },
-  ];
-  return (
-    <div className="grid gap-3 lg:grid-cols-3">
-      {order.map(({ key, label }) => (
-        <div key={key} className="rounded-3xl border border-slate-100 bg-slate-50/60 p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-900">{label}</p>
-            <span className="text-xs text-slate-500">{columns[key].length}</span>
-          </div>
-          <div className="mt-3 space-y-3">
-            {columns[key].length === 0 ? (
-              <p className="text-xs text-slate-400">Aucune tâche</p>
-            ) : (
-              columns[key].map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  advanced={advanced}
-                  onStateChange={onStateChange}
-                  recentlyCompleted={recentlyCompleted === task.id}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -426,7 +227,7 @@ function TaskDrawer({
             <input
               required
               value={form.title}
-              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
               className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
           </label>
@@ -434,7 +235,7 @@ function TaskDrawer({
             <span className="text-slate-600">Description</span>
             <textarea
               value={form.description}
-              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
               className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
           </label>
@@ -442,7 +243,7 @@ function TaskDrawer({
             <span className="text-slate-600">Priorité (Eisenhower)</span>
             <select
               value={form.priority_eisenhower}
-              onChange={(e) => setForm((prev) => ({ ...prev, priority_eisenhower: e.target.value as Priority }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, priority_eisenhower: event.target.value as Priority }))}
               className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             >
               <option value="urgent_important">Urgent & important</option>
@@ -455,7 +256,7 @@ function TaskDrawer({
             <input
               type="checkbox"
               checked={form.high_impact}
-              onChange={(e) => setForm((prev) => ({ ...prev, high_impact: e.target.checked }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, high_impact: event.target.checked }))}
             />
             Impact élevé (Pareto 20 %)
           </label>
@@ -466,8 +267,8 @@ function TaskDrawer({
               min={15}
               step={15}
               value={form.estimated_duration_minutes ?? ""}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, estimated_duration_minutes: Number(e.target.value) || 0 }))
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, estimated_duration_minutes: Number(event.target.value) || 0 }))
               }
               className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
@@ -477,7 +278,7 @@ function TaskDrawer({
             <input
               type="datetime-local"
               value={form.due_datetime}
-              onChange={(e) => setForm((prev) => ({ ...prev, due_datetime: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, due_datetime: event.target.value }))}
               className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
           </label>
@@ -495,13 +296,100 @@ function TaskDrawer({
   );
 }
 
+function TaskDetailDrawer({
+  task,
+  open,
+  onClose,
+  onStateChange,
+}: {
+  task: Task | null;
+  open: boolean;
+  onClose: () => void;
+  onStateChange: (taskId: string, state: KanbanState) => void;
+}) {
+  if (!task || !open) return null;
+  return (
+    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md border-l border-slate-200 bg-white shadow-2xl">
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Tâche</p>
+          <h3 className="text-lg font-semibold text-slate-900">{task.title}</h3>
+        </div>
+        <button onClick={onClose} className="text-sm text-slate-500 hover:text-slate-700">
+          Fermer
+        </button>
+      </div>
+      <div className="space-y-4 overflow-y-auto px-5 py-4 text-sm">
+        <p className="text-slate-600">{task.description || "Aucune description"}</p>
+        <div className="grid grid-cols-2 gap-3 text-xs text-slate-500">
+          <div>
+            <p className="font-semibold text-slate-700">Catégorie</p>
+            <p>{task.category || "-"}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-700">Priorité</p>
+            <p>{PRIORITY_LABEL[task.priority_eisenhower]}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-700">Impact</p>
+            <p>{task.high_impact ? "Top 20 %" : "Standard"}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-700">Durée</p>
+            <p>{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "Libre"}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-slate-700">Deadline</p>
+            <p>{formatDateLabel(parseDate(task.due_datetime))}</p>
+          </div>
+          {task.energy_level && (
+            <div>
+              <p className="font-semibold text-slate-700">Énergie</p>
+              <p>{task.energy_level}</p>
+            </div>
+          )}
+          {task.moscow && (
+            <div>
+              <p className="font-semibold text-slate-700">MoSCoW</p>
+              <p>{task.moscow}</p>
+            </div>
+          )}
+          {typeof task.pomodoro_estimated === "number" && (
+            <div>
+              <p className="font-semibold text-slate-700">Pomodoro</p>
+              <p>
+                {task.pomodoro_done ?? 0}/{task.pomodoro_estimated}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <button
+            onClick={() => onStateChange(task.id, "in_progress")}
+            className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:border-slate-300"
+          >
+            Passer en cours
+          </button>
+          <button
+            onClick={() => onStateChange(task.id, "done")}
+            className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 hover:border-emerald-400"
+          >
+            Terminer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function MyPlanningPage() {
   const [mode, setMode] = useState<"simple" | "advanced">("simple");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeView, setActiveView] = useState<"today" | "week" | "kanban">("today");
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [scope, setScope] = useState<"day" | "week">("day");
   const [aiText, setAiText] = useState("");
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
   const [planResult, setPlanResult] = useState<AiPlanResult | null>(null);
@@ -512,14 +400,18 @@ export default function MyPlanningPage() {
   const [replanLoading, setReplanLoading] = useState(false);
   const [draftSaving, setDraftSaving] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ text: string; tone: "info" | "error" } | null>(null);
-  const [recentlyCompleted, setRecentlyCompleted] = useState<string | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [impactOnly, setImpactOnly] = useState(false);
+  const [showLate, setShowLate] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const showBanner = (text: string, tone: "info" | "error" = "info") => setBanner({ text, tone });
 
   useEffect(() => {
     if (!banner) return;
-    const id = window.setTimeout(() => setBanner(null), 5000);
-    return () => window.clearTimeout(id);
+    const timer = window.setTimeout(() => setBanner(null), 5000);
+    return () => window.clearTimeout(timer);
   }, [banner]);
 
   const refreshTasks = async () => {
@@ -529,8 +421,7 @@ export default function MyPlanningPage() {
       const data = await apiFetch<{ items: Task[] }>("/tasks");
       setTasks(data.items);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Impossible de charger les tâches";
-      setTasksError(message);
+      setTasksError(err instanceof Error ? err.message : "Impossible de charger les tâches");
     } finally {
       setLoading(false);
     }
@@ -540,17 +431,80 @@ export default function MyPlanningPage() {
     void refreshTasks();
   }, []);
 
-  const todayTasks = useMemo(
-    () => tasks.filter((task) => task.kanban_state !== "done" && (isSameDay(task.start_datetime) || isSameDay(task.due_datetime))),
-    [tasks],
-  );
-  const weekTasks = useMemo(
-    () => tasks.filter((task) => task.kanban_state !== "done" && (isSameWeek(task.start_datetime) || isSameWeek(task.due_datetime))),
-    [tasks],
-  );
-  const completedCount = tasks.filter((task) => task.kanban_state === "done").length;
-  const highImpactCount = tasks.filter((task) => task.high_impact).length;
-  const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const dayTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
+      if (!ref) return false;
+      return sameDay(ref, selectedDate);
+    });
+  }, [tasks, selectedDate]);
+
+  const weekTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
+      if (!ref) return false;
+      return sameWeek(ref, selectedDate);
+    });
+  }, [tasks, selectedDate]);
+
+  const scopedTasks = scope === "day" ? dayTasks : weekTasks;
+  const completedCount = scopedTasks.filter((task) => task.kanban_state === "done").length;
+  const highImpactCount = scopedTasks.filter((task) => task.high_impact).length;
+  const progress = scopedTasks.length ? Math.round((completedCount / scopedTasks.length) * 100) : 0;
+
+  const categories = useMemo(() => {
+    const uniques = new Set(tasks.map((task) => task.category).filter(Boolean) as string[]);
+    return Array.from(uniques);
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    let base = [...scopedTasks];
+    if (priorityFilter !== "all") base = base.filter((task) => task.priority_eisenhower === priorityFilter);
+    if (categoryFilter !== "all") base = base.filter((task) => (task.category || "") === categoryFilter);
+    if (impactOnly) base = base.filter((task) => task.high_impact);
+    if (showLate) {
+      base = base.filter((task) => {
+        const due = parseDate(task.due_datetime);
+        return due ? due < new Date() && task.kanban_state !== "done" : false;
+      });
+    }
+    return base.sort((a, b) => {
+      const dueA = parseDate(a.due_datetime)?.getTime() ?? Number.POSITIVE_INFINITY;
+      const dueB = parseDate(b.due_datetime)?.getTime() ?? Number.POSITIVE_INFINITY;
+      return dueA - dueB;
+    });
+  }, [scopedTasks, priorityFilter, impactOnly, showLate, categoryFilter]);
+
+  const timelineSlots = useMemo(() => {
+    const slots = Array.from({ length: 13 }).map((_, idx) => 8 + idx);
+    return slots.map((hour) => {
+      const start = new Date(selectedDate);
+      start.setHours(hour, 0, 0, 0);
+      const end = new Date(start);
+      end.setHours(hour + 1, 0, 0, 0);
+      const entries = dayTasks.filter((task) => {
+        const ref = parseDate(task.start_datetime);
+        if (!ref) return false;
+        return ref >= start && ref < end;
+      });
+      return { hour, entries };
+    });
+  }, [dayTasks, selectedDate]);
+
+  const weeklySnapshot = useMemo(() => {
+    const monday = startOfWeek(selectedDate);
+    return Array.from({ length: 7 }).map((_, idx) => {
+      const current = new Date(monday);
+      current.setDate(monday.getDate() + idx);
+      const items = tasks.filter((task) => {
+        const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
+        return ref ? sameDay(ref, current) : false;
+      });
+      const done = items.filter((task) => task.kanban_state === "done").length;
+      const percentage = items.length ? Math.round((done / items.length) * 100) : 0;
+      return { label: shortDayFormatter.format(current), value: percentage };
+    });
+  }, [tasks, selectedDate]);
 
   const handleStateChange = async (taskId: string, state: KanbanState) => {
     try {
@@ -559,12 +513,7 @@ export default function MyPlanningPage() {
         body: JSON.stringify({ kanban_state: state }),
       });
       setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, kanban_state: state } : task)));
-      if (state === "done") {
-        setRecentlyCompleted(taskId);
-        window.setTimeout(() => setRecentlyCompleted((prev) => (prev === taskId ? null : prev)), 1200);
-      } else {
-        setRecentlyCompleted(null);
-      }
+      showBanner(state === "done" ? "Tâche complétée" : "Tâche mise à jour");
     } catch (err) {
       showBanner(err instanceof Error ? err.message : "Action impossible", "error");
     }
@@ -575,7 +524,7 @@ export default function MyPlanningPage() {
     try {
       await apiFetch(`/tasks/${taskId}`, { method: "DELETE" });
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
-      showBanner("Tâche supprimée", "info");
+      showBanner("Tâche supprimée");
     } catch (err) {
       showBanner(err instanceof Error ? err.message : "Suppression impossible", "error");
     }
@@ -602,7 +551,7 @@ export default function MyPlanningPage() {
     try {
       const data = await apiFetch<AiPlanResult>("/ai/plan-day", { method: "POST", body: JSON.stringify({}) });
       setPlanResult(data);
-      showBanner("Ordre prioritaire mis à jour", "info");
+      showBanner("Ordre prioritaire mis à jour");
     } catch (err) {
       showBanner(err instanceof Error ? err.message : "Échec de la planification IA", "error");
     } finally {
@@ -618,9 +567,9 @@ export default function MyPlanningPage() {
         body: JSON.stringify({ available_minutes: replanMinutes }),
       });
       setReplanResult(data);
-      showBanner("Plan express mis à jour", "info");
+      showBanner("Plan express mis à jour");
     } catch (err) {
-      showBanner(err instanceof Error ? err.message : "Échec du recalcul", "error");
+      showBanner(err instanceof Error ? err.message : "Échec du plan express", "error");
     } finally {
       setReplanLoading(false);
     }
@@ -642,7 +591,7 @@ export default function MyPlanningPage() {
       });
       setTasks((prev) => [data, ...prev]);
       setAiDrafts((prev) => prev.filter((_, idx) => idx !== index));
-      showBanner("Tâche ajoutée depuis l'IA", "info");
+      showBanner("Tâche ajoutée depuis l'IA");
     } catch (err) {
       showBanner(err instanceof Error ? err.message : "Impossible d'ajouter cette tâche", "error");
     } finally {
@@ -650,219 +599,403 @@ export default function MyPlanningPage() {
     }
   };
 
-  const currentTasks = activeView === "today" ? todayTasks : activeView === "week" ? weekTasks : tasks;
+  const handleDateChange = (delta: number) => {
+    setSelectedDate((prev) => {
+      const next = new Date(prev);
+      next.setDate(prev.getDate() + delta);
+      return next;
+    });
+  };
 
-  const renderTasks = () => {
+  const renderTaskTable = () => {
     if (loading) {
       return (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, idx) => (
-            <div key={idx} className="h-20 animate-pulse rounded-3xl bg-white/70" />
+        <div className="space-y-2">
+          {[...Array(6)].map((_, idx) => (
+            <div key={idx} className="h-12 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
       );
     }
     if (tasksError) {
       return (
-        <EmptyState
-          title="Impossible de charger les tâches"
-          message={tasksError}
-          actionLabel="Réessayer"
-          onAction={refreshTasks}
-        />
+        <div className="rounded-2xl border border-red-200 bg-red-50/70 px-4 py-3 text-sm text-red-700">
+          <div className="flex items-center justify-between">
+            <p>{tasksError}</p>
+            <button onClick={refreshTasks} className="text-xs font-semibold underline">
+              Réessayer
+            </button>
+          </div>
+        </div>
       );
     }
-    if (activeView === "kanban") {
-      return (
-        <TaskKanbanBoard
-          tasks={tasks}
-          advanced={mode === "advanced"}
-          onStateChange={handleStateChange}
-          recentlyCompleted={recentlyCompleted}
-        />
-      );
+    if (!filteredTasks.length) {
+      return <EmptyState title="Aucune tâche" message="Activez un filtre ou ajoutez vos premières tâches." />;
     }
-    if (activeView === "week") {
-      return (
-        <WeekView
-          tasks={weekTasks}
-          advanced={mode === "advanced"}
-          onStateChange={handleStateChange}
-          recentlyCompleted={recentlyCompleted}
-        />
-      );
-    }
+
+    const columns = [
+      "Titre",
+      "Catégorie",
+      "Priorité",
+      "Impact",
+      "Durée",
+      "Deadline",
+      ...(mode === "advanced" ? ["Énergie", "MoSCoW", "Pomodoro"] : []),
+      "État",
+      "",
+    ];
+
     return (
-      <TaskList
-        tasks={todayTasks}
-        advanced={mode === "advanced"}
-        emptyMessage="Aucune tâche pour aujourd'hui. Créez votre première tâche ou décrivez votre journée à l'IA."
-        onStateChange={handleStateChange}
-        recentlyCompleted={recentlyCompleted}
-      />
+      <div className="rounded-3xl border border-slate-200 bg-white">
+        <div className="max-h-[420px] overflow-y-auto">
+          <table className="min-w-full text-sm">
+            <thead className="sticky top-0 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3 text-left">✔</th>
+                {columns.map((col) => (
+                  <th key={col} className="px-4 py-3 text-left">
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white text-slate-700">
+              {filteredTasks.map((task) => {
+                const deadline = formatDateLabel(parseDate(task.due_datetime));
+                return (
+                  <tr
+                    key={task.id}
+                    className="border-b border-slate-100 text-sm transition hover:bg-slate-50"
+                    onClick={() => setSelectedTask(task)}
+                  >
+                    <td className="px-4 py-2">
+                      <input
+                        type="checkbox"
+                        checked={task.kanban_state === "done"}
+                        onChange={(event) => {
+                          event.stopPropagation();
+                          handleStateChange(task.id, event.target.checked ? "done" : "todo");
+                        }}
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <p className="font-semibold">{task.title}</p>
+                      {task.description && (
+                        <p className="text-xs text-slate-500 line-clamp-1">{task.description}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {task.category ? (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{task.category}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${PRIORITY_COLORS[task.priority_eisenhower]}`}>
+                        {PRIORITY_LABEL[task.priority_eisenhower]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-xs">
+                      {task.high_impact ? (
+                        <span className="flex items-center gap-1 text-amber-600">
+                          <span className="text-lg">⚡</span> Pareto 20 %
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
+                    <td className="px-4 py-2">{deadline}</td>
+                    {mode === "advanced" && (
+                      <>
+                        <td className="px-4 py-2 text-xs text-slate-500">{task.energy_level || "—"}</td>
+                        <td className="px-4 py-2 text-xs text-slate-500">{task.moscow || "—"}</td>
+                        <td className="px-4 py-2 text-xs text-slate-500">
+                          {typeof task.pomodoro_estimated === "number"
+                            ? `${task.pomodoro_done ?? 0}/${task.pomodoro_estimated}`
+                            : "—"}
+                        </td>
+                      </>
+                    )}
+                    <td className="px-4 py-2 text-xs text-slate-500">
+                      {task.kanban_state === "todo" ? "À faire" : task.kanban_state === "in_progress" ? "En cours" : "Terminé"}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex justify-end gap-2 text-xs">
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleStateChange(task.id, "in_progress");
+                          }}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:border-slate-300"
+                        >
+                          Démarrer
+                        </button>
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleStateChange(task.id, "done");
+                          }}
+                          className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-600 hover:border-emerald-400"
+                        >
+                          Terminer
+                        </button>
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDelete(task.id);
+                          }}
+                          className="rounded-full border border-red-200 px-3 py-1 text-red-500 hover:border-red-400"
+                        >
+                          Suppr.
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#eef6ff,_#f6fbff,_#fdfdfd)] px-4 py-10 sm:px-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-gradient-to-r from-sky-50 via-white to-emerald-50 p-8 shadow-sm">
-          <div className="flex flex-col gap-8 md:flex-row md:items-center">
-            <div className="flex-1 space-y-4">
-              <span className="inline-flex items-center rounded-full bg-white/70 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">
-                Productivité
-              </span>
-              <div>
-                <h1 className="text-3xl font-semibold text-slate-900">MyPlanning</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-600">
-                  Votre coach de temps intelligent pour orchestrer Eisenhower, MoSCoW, Pareto, Kanban et Pomodoro. Passez en mode avancé pour piloter l'énergie et les objectifs stratégiques.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => setDrawerOpen(true)}
-                  className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-                >
-                  Nouvelle tâche
-                </button>
-                <button
-                  onClick={() => setMode((prev) => (prev === "simple" ? "advanced" : "simple"))}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  Mode {mode === "simple" ? "avancé" : "simple"}
-                </button>
-                <button
-                  onClick={handlePlanDay}
-                  disabled={planLoading}
-                  className="inline-flex items-center rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {planLoading ? "Organisation..." : "Organiser ma journée (IA)"}
-                </button>
-              </div>
-              {planResult?.focus?.length ? (
-                <p className="text-xs text-emerald-800">
-                  {planResult.focus.length} tâche{planResult.focus.length > 1 ? "s" : ""} focus proposées pour aujourd'hui.
-                </p>
-              ) : (
-                <p className="text-xs text-slate-500">Cliquez sur "Organiser ma journée" pour recevoir 3 à 5 tâches phares.</p>
-              )}
+    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-5 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-4">
+        <section className="rounded-[26px] border border-slate-200 bg-gradient-to-r from-slate-50 to-emerald-50/60 p-5 shadow-sm">
+          <div className="grid gap-4 lg:grid-cols-[1.4fr,1.2fr,1.2fr]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
+              <h1 className="text-2xl font-semibold text-slate-900">Tableau de bord de votre temps</h1>
             </div>
-            <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border border-white/60 bg-white/50 p-6 text-center shadow-inner">
-              <span className="text-xs uppercase tracking-wide text-slate-400">Discipline</span>
-              <span className="text-3xl font-semibold text-slate-900">{progress}%</span>
-              <span className="text-xs text-slate-500">tâches complétées</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleDateChange(-1)}
+                className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:border-slate-300"
+              >
+                ←
+              </button>
+              <input
+                type="date"
+                value={new Date(selectedDate).toISOString().slice(0, 10)}
+                onChange={(event) => {
+                  const next = new Date(event.target.value);
+                  if (!Number.isNaN(next.getTime())) setSelectedDate(next);
+                }}
+                className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-700 focus:border-sky-500 focus:outline-none"
+              />
+              <button
+                onClick={() => handleDateChange(1)}
+                className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 hover:border-slate-300"
+              >
+                →
+              </button>
+              <div className="ml-2 flex gap-2">
+                <button
+                  onClick={() => setScope("day")}
+                  className={`rounded-full px-4 py-1 text-xs font-semibold ${
+                    scope === "day" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Aujourd'hui
+                </button>
+                <button
+                  onClick={() => setScope("week")}
+                  className={`rounded-full px-4 py-1 text-xs font-semibold ${
+                    scope === "week" ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Semaine
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+              >
+                Nouvelle tâche
+              </button>
+              <button
+                onClick={handlePlanDay}
+                disabled={planLoading}
+                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {planLoading ? "Organisation..." : "Organiser ma journée (IA)"}
+              </button>
+              <button
+                onClick={() => setMode((prev) => (prev === "simple" ? "advanced" : "simple"))}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                Mode {mode === "simple" ? "avancé" : "simple"}
+              </button>
             </div>
           </div>
         </section>
 
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Tâches actives</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{scopedTasks.length}</p>
+            <p className="text-xs text-slate-500">{dayFormatter.format(selectedDate)}</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">% complétées</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{progress}%</p>
+            <div className="mt-2 h-2 rounded-full bg-slate-100">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Impact élevé</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{highImpactCount}</p>
+            <p className="text-xs text-slate-500">Pareto 20 %</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Focus IA</p>
+            <p className="mt-2 text-base text-slate-700">
+              {planResult?.focus?.length ? `${planResult.focus.length} tâches focus proposées` : "Cliquez sur Organiser"}
+            </p>
+          </div>
+        </div>
+
         {banner && <AlertBanner tone={banner.tone} text={banner.text} onClose={() => setBanner(null)} />}
 
-        <div className="grid gap-6 lg:grid-cols-[3fr,2fr]">
-          <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <div className="flex flex-wrap items-center gap-3">
-              {["today", "week", "kanban"].map((view) => (
-                <button
-                  key={view}
-                  onClick={() => setActiveView(view as "today" | "week" | "kanban")}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    activeView === view ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600"
-                  }`}
-                >
-                  {view === "today" ? "Aujourd'hui" : view === "week" ? "Semaine" : "Kanban"}
-                </button>
-              ))}
-              <span className="ml-auto text-xs text-slate-500">
-                {mode === "advanced" ? "Mode avancé : énergie, MoSCoW, Pomodoro" : "Mode simple : focus sur l'essentiel"}
-              </span>
-            </div>
-            {suggestLoading && (
-              <div className="mt-4 rounded-2xl border border-dashed border-sky-200 bg-sky-50/60 p-3 text-xs font-semibold text-sky-700">
-                L'IA prépare une proposition de tâches…
-              </div>
-            )}
-            <div className="mt-4" key={activeView}>{renderTasks()}</div>
-          </section>
-
+        <div className="grid gap-4 lg:grid-cols-[3fr,2fr]">
           <div className="space-y-4">
-            <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">Stats du jour</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 text-center">
-                  <p className="text-2xl font-semibold text-slate-900">{tasks.length}</p>
-                  <p className="text-xs text-slate-500">tâches actives</p>
+            <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Planning du jour</p>
+                  <h2 className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</h2>
                 </div>
-                <div className="rounded-2xl border border-slate-100 bg-emerald-50/70 p-4 text-center">
-                  <p className="text-2xl font-semibold text-emerald-700">{progress}%</p>
-                  <p className="text-xs text-emerald-600">complétées</p>
-                </div>
-                <div className="rounded-2xl border border-slate-100 bg-orange-50/70 p-4 text-center">
-                  <p className="text-2xl font-semibold text-orange-600">{highImpactCount}</p>
-                  <p className="text-xs text-orange-500">impact élevé</p>
-                </div>
+                <span className="text-xs text-slate-500">Nous sommes ici : {formatTimeLabel(new Date())}</span>
+              </div>
+              <div className="mt-4 max-h-[260px] space-y-3 overflow-y-auto pr-2">
+                {timelineSlots.every((slot) => slot.entries.length === 0) ? (
+                  <EmptyState
+                    title="Aucune tâche planifiée"
+                    message="Utilisez Organiser ma journée (IA) ou ajoutez une tâche depuis la liste."
+                  />
+                ) : (
+                  timelineSlots.map((slot) => (
+                    <div key={slot.hour} className="flex gap-3 text-xs text-slate-500">
+                      <div className="w-16 text-right font-semibold text-slate-700">{`${slot.hour}h`}</div>
+                      <div className="flex-1 rounded-3xl border border-slate-100 bg-slate-50/60 p-3">
+                        {slot.entries.length === 0 ? (
+                          <p className="text-[11px] text-slate-400">Créneau libre</p>
+                        ) : (
+                          slot.entries.map((task) => (
+                            <div key={task.id} className="rounded-2xl border border-slate-100 bg-white px-3 py-2 shadow-sm">
+                              <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                              <div className="mt-1 flex gap-2 text-[11px] text-slate-500">
+                                <span>{formatTimeLabel(parseDate(task.start_datetime))}</span>
+                                <span>·</span>
+                                <span>{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "Libre"}</span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </section>
 
-            <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm">
-              <div className="flex items-center justify-between">
+            <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">Assisté par IA</p>
-                  <h2 className="text-lg font-semibold text-slate-900">Coaching MyPlanning</h2>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Pilotage des tâches</p>
+                  <h2 className="text-lg font-semibold text-slate-900">{scope === "day" ? "Journée" : "Semaine"}</h2>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span>Temps restant (min)</span>
-                  <input
-                    type="number"
-                    min={15}
-                    step={5}
-                    value={replanMinutes}
-                    onChange={(e) => setReplanMinutes(Number(e.target.value) || 15)}
-                    className="w-16 rounded-full border border-slate-200 px-3 py-1 focus:border-sky-500 focus:outline-none"
-                  />
-                  <button
-                    onClick={handleReplan}
-                    disabled={replanLoading}
-                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-300 disabled:opacity-60"
+                <div className="ml-auto flex flex-wrap gap-2 text-xs">
+                  <select
+                    value={categoryFilter}
+                    onChange={(event) => setCategoryFilter(event.target.value)}
+                    className="rounded-full border border-slate-200 px-3 py-1"
                   >
-                    {replanLoading ? "Calcul..." : "Plan express"}
+                    <option value="all">Toutes catégories</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={priorityFilter}
+                    onChange={(event) => setPriorityFilter(event.target.value as typeof priorityFilter)}
+                    className="rounded-full border border-slate-200 px-3 py-1"
+                  >
+                    <option value="all">Toutes priorités</option>
+                    <option value="urgent_important">Urgent & important</option>
+                    <option value="important_not_urgent">Important mais pas urgent</option>
+                    <option value="urgent_not_important">Urgent moins important</option>
+                    <option value="not_urgent_not_important">Moins prioritaires</option>
+                  </select>
+                  <button
+                    onClick={() => setImpactOnly((prev) => !prev)}
+                    className={`rounded-full px-3 py-1 font-semibold ${
+                      impactOnly ? "bg-amber-500 text-white" : "border border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    Impact élevé
+                  </button>
+                  <button
+                    onClick={() => setShowLate((prev) => !prev)}
+                    className={`rounded-full px-3 py-1 font-semibold ${
+                      showLate ? "bg-red-500 text-white" : "border border-slate-200 text-slate-600"
+                    }`}
+                  >
+                    En retard
                   </button>
                 </div>
               </div>
-              <label className="mt-4 block text-sm text-slate-600">
-                Décrivez votre journée
-                <textarea
-                  value={aiText}
-                  onChange={(e) => setAiText(e.target.value)}
-                  className="mt-2 h-32 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
-                  placeholder="Ex: préparer présentation, appeler la coopérative, finaliser dossier..."
-                />
-              </label>
+              <div className="mt-4">{renderTaskTable()}</div>
+            </section>
+          </div>
+
+          <div className="space-y-4">
+            <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Assisté par IA</p>
+                  <h2 className="text-lg font-semibold text-slate-900">Coaching MyPlanning</h2>
+                </div>
+                <span className="text-xs text-slate-500">Décrivez votre journée</span>
+              </div>
+              <textarea
+                value={aiText}
+                onChange={(event) => setAiText(event.target.value)}
+                className="mt-3 h-28 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
+                placeholder="Ex: préparer présentation, appeler la coopérative, finaliser dossier..."
+              />
               <button
                 onClick={handleAiSuggest}
                 disabled={suggestLoading}
-                className="mt-3 inline-flex items-center rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                className="mt-3 w-full rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
               >
-                {suggestLoading ? "Analyse en cours..." : "Générer des tâches"}
+                {suggestLoading ? "Analyse..." : "Générer des tâches"}
               </button>
-
               {aiDrafts.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Brouillons IA</p>
                   {aiDrafts.map((draft, idx) => (
-                    <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>{draft.priority_eisenhower ? formatPriority(draft.priority_eisenhower) : "Priorité à confirmer"}</span>
+                    <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité à confirmer"}</span>
                         {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
                       </div>
-                      <p className="text-sm font-semibold text-slate-900">{draft.title}</p>
+                      <p className="font-semibold text-slate-900">{draft.title}</p>
                       {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
-                      <div className="mt-2 flex items-center justify-between">
-                        {draft.estimated_duration_minutes && (
-                          <span className="text-xs text-slate-500">Durée estimée : {draft.estimated_duration_minutes} min</span>
-                        )}
+                      <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                        <span>{draft.estimated_duration_minutes ? `${draft.estimated_duration_minutes} min` : "Libre"}</span>
                         <button
                           onClick={() => handleAdoptDraft(draft, idx)}
                           disabled={draftSaving === `${draft.title}-${idx}`}
-                          className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                          className="rounded-full bg-emerald-600 px-3 py-1 text-white"
                         >
                           {draftSaving === `${draft.title}-${idx}` ? "Ajout..." : "Ajouter"}
                         </button>
@@ -871,118 +1004,110 @@ export default function MyPlanningPage() {
                   ))}
                 </div>
               )}
+            </section>
 
-              {planResult && planResult.order.length > 0 && (
-                <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm text-emerald-800">
-                  <p className="font-semibold">Ordre suggéré</p>
-                  <ol className="mt-2 list-decimal pl-5">
-                    {planResult.order.map((taskId) => {
-                      const task = tasks.find((t) => t.id === taskId);
-                      return <li key={taskId}>{task ? task.title : taskId}</li>;
-                    })}
-                  </ol>
-                  {planResult.focus.length > 0 && (
-                    <div className="mt-3 space-y-1 text-xs">
-                      <p className="font-semibold uppercase tracking-wide">Focus du jour</p>
-                      {planResult.focus.map((item) => {
-                        const task = tasks.find((t) => t.id === item.task_id);
-                        return (
-                          <div key={item.task_id} className="flex items-center justify-between">
-                            <span>{task ? task.title : item.task_id}</span>
-                            {item.reason && <span className="text-emerald-900">{item.reason}</span>}
-                          </div>
-                        );
-                      })}
+            <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Plan express</p>
+                  <h2 className="text-lg font-semibold text-slate-900">Optimiser un créneau</h2>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span>Temps restant</span>
+                  <input
+                    type="number"
+                    min={15}
+                    step={5}
+                    value={replanMinutes}
+                    onChange={(event) => setReplanMinutes(Number(event.target.value) || 15)}
+                    className="w-16 rounded-full border border-slate-200 px-3 py-1 focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleReplan}
+                disabled={replanLoading}
+                className="mt-3 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 disabled:opacity-50"
+              >
+                {replanLoading ? "Calcul..." : "Lancer"}
+              </button>
+              <div className="mt-4 space-y-2 text-sm text-slate-700">
+                {replanResult?.recommendations?.length ? (
+                  replanResult.recommendations.map((item) => {
+                    const task = tasks.find((t) => t.id === item.task_id);
+                    return (
+                      <div key={item.task_id} className="rounded-2xl border border-amber-100 bg-amber-50/60 px-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-amber-900">{task ? task.title : item.task_id}</span>
+                          {item.suggested_minutes && <span>{item.suggested_minutes} min</span>}
+                        </div>
+                        {item.reason && <p className="text-xs text-amber-800">{item.reason}</p>}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-500">Lancez un plan express pour prioriser un créneau.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Discipline semaine</p>
+              <div className="mt-4 space-y-3">
+                {weeklySnapshot.map((entry) => (
+                  <div key={entry.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{entry.label}</span>
+                      <span>{entry.value}%</span>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {replanResult && (
-                <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
-                  <p className="font-semibold">Plan express</p>
-                  <ul className="mt-2 space-y-2">
-                    {replanResult.recommendations.map((item) => {
-                      const task = tasks.find((t) => t.id === item.task_id);
-                      return (
-                        <li key={item.task_id} className="rounded-xl bg-white/70 px-3 py-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-amber-900">{task ? task.title : item.task_id}</span>
-                            {item.suggested_minutes && <span>{item.suggested_minutes} min</span>}
-                          </div>
-                          {item.reason && <p className="text-xs">{item.reason}</p>}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-sky-500" style={{ width: `${entry.value}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
           </div>
         </div>
 
-        <section className="rounded-[32px] border border-slate-200 bg-white/90 p-6 shadow-sm">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">Maintenance rapide</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Maintenance rapide</p>
               <h3 className="text-lg font-semibold text-slate-900">Gardez votre cockpit propre</h3>
             </div>
-            <button
-              onClick={refreshTasks}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-700"
-            >
+            <button onClick={refreshTasks} className="text-xs font-semibold text-slate-500 hover:text-slate-700">
               Rafraîchir
             </button>
           </div>
           {tasks.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">Aucune action de nettoyage nécessaire.</p>
+            <p className="mt-2 text-sm text-slate-500">Aucune action à mener pour l'instant.</p>
           ) : (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {tasks.slice(0, 3).map((task) => (
                 <button
-                  key={`del-${task.id}`}
+                  key={task.id}
                   onClick={() => handleDelete(task.id)}
-                  className="flex flex-col items-start gap-1 rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3 text-left text-sm text-red-700 transition hover:border-red-200"
+                  className="rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3 text-left text-sm text-red-700 transition hover:border-red-200"
                 >
                   <span className="text-xs uppercase tracking-wide text-red-500">Supprimer</span>
-                  <span className="font-semibold">{task.title.slice(0, 40)}</span>
+                  <p className="font-semibold">{task.title.slice(0, 50)}</p>
                 </button>
               ))}
             </div>
           )}
         </section>
       </div>
+
       <TaskDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         onCreated={(task) => {
           setTasks((prev) => [task, ...prev]);
-          showBanner("Nouvelle tâche ajoutée", "info");
+          showBanner("Nouvelle tâche ajoutée");
         }}
       />
+      <TaskDetailDrawer task={selectedTask} open={Boolean(selectedTask)} onClose={() => setSelectedTask(null)} onStateChange={handleStateChange} />
     </div>
   );
-}
-
-function isSameDay(iso?: string | null): boolean {
-  if (!iso) return false;
-  const target = new Date(iso);
-  const today = new Date();
-  return (
-    target.getFullYear() === today.getFullYear() &&
-    target.getMonth() === today.getMonth() &&
-    target.getDate() === today.getDate()
-  );
-}
-
-function isSameWeek(iso?: string | null): boolean {
-  if (!iso) return false;
-  const target = new Date(iso);
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day + 6) % 7));
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return target >= monday && target <= sunday;
 }

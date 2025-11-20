@@ -205,6 +205,31 @@ export default function MyPlanningPage(): JSX.Element {
     });
   }, [tasks, filterCategory, filterPriority, filterStatus]);
 
+  const sortedTasks = useMemo(() => {
+    const copy = [...filteredTasks];
+    copy.sort((a, b) => {
+      // High impact first
+      if (a.high_impact !== b.high_impact) return a.high_impact ? -1 : 1;
+      // Earlier due date first
+      const aDate = parseDate(a.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
+      const bDate = parseDate(b.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
+      if (aDate !== bDate) return aDate - bDate;
+      // Keep stable-ish by creation order (already sorted server-side; fallback title)
+      return a.title.localeCompare(b.title);
+    });
+    return copy;
+  }, [filteredTasks]);
+
+  const managerStats = useMemo(() => {
+    const done = filteredTasks.filter((task) => task.kanban_state === "done").length;
+    const highImpact = filteredTasks.filter((task) => task.high_impact).length;
+    const late = filteredTasks.filter((task) => {
+      const due = parseDate(task.due_datetime);
+      return due ? due.getTime() < Date.now() && task.kanban_state !== "done" : false;
+    }).length;
+    return { total: filteredTasks.length, done, highImpact, late };
+  }, [filteredTasks]);
+
   const dateInputValue = useMemo(() => formatDateInputValue(selectedDate), [selectedDate]);
 
   const shiftSelectedDate = (delta: number) => {
@@ -378,8 +403,44 @@ export default function MyPlanningPage(): JSX.Element {
   );
 
   const renderTaskTable = () => {
+    const Filters = (
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Toutes catégories</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+        <select value={filterPriority} onChange={(event) => setFilterPriority(event.target.value as typeof filterPriority)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Toutes priorités</option>
+          <option value="urgent_important">Urgent & important</option>
+          <option value="important_not_urgent">Important mais pas urgent</option>
+          <option value="urgent_not_important">Urgent moins important</option>
+          <option value="not_urgent_not_important">Secondaire</option>
+        </select>
+        <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Tous statuts</option>
+          <option value="todo">À faire</option>
+          <option value="in_progress">En cours</option>
+          <option value="done">Terminé</option>
+        </select>
+        <button onClick={() => void loadTasks()} className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-600">
+          Recharger
+        </button>
+      </div>
+    );
+
     if (loading) {
-      return <p className="text-sm text-slate-500">Chargement des tâches…</p>;
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white px-5 py-6 shadow-sm">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Chargement des tâches…</span>
+            {Filters}
+          </div>
+        </div>
+      );
     }
     if (taskLoadError) {
       return (
@@ -393,41 +454,29 @@ export default function MyPlanningPage(): JSX.Element {
         </div>
       );
     }
-    if (!filteredTasks.length) {
+    if (!sortedTasks.length) {
       return (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/60 px-5 py-8 text-center text-sm text-slate-500">
-          Aucune tâche pour ce filtre. Créez une nouvelle tâche ou ajustez vos filtres.
+          <div className="flex flex-col gap-2 text-center">
+            <p>Aucune tâche pour ce filtre. Créez une nouvelle tâche ou ajustez vos filtres.</p>
+            <div className="flex justify-center gap-2 text-xs">{Filters}</div>
+          </div>
         </div>
       );
     }
     return (
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 text-xs">
-          <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-full border border-slate-200 px-3 py-1">
-            <option value="all">Toutes catégories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          <select value={filterPriority} onChange={(event) => setFilterPriority(event.target.value as typeof filterPriority)} className="rounded-full border border-slate-200 px-3 py-1">
-            <option value="all">Toutes priorités</option>
-            <option value="urgent_important">Urgent & important</option>
-            <option value="important_not_urgent">Important mais pas urgent</option>
-            <option value="urgent_not_important">Urgent moins important</option>
-            <option value="not_urgent_not_important">Secondaire</option>
-          </select>
-          <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)} className="rounded-full border border-slate-200 px-3 py-1">
-            <option value="all">Tous statuts</option>
-            <option value="todo">À faire</option>
-            <option value="in_progress">En cours</option>
-            <option value="done">Terminé</option>
-          </select>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-xs">
+          <div className="flex items-center gap-2 font-semibold text-slate-700">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{sortedTasks.length} tâches</span>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{managerStats.done} terminées</span>
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">{managerStats.late} en retard</span>
+          </div>
+          {Filters}
         </div>
-        <div className="max-h-[520px] overflow-auto">
+        <div className="max-h-[580px] overflow-auto">
           <table className="min-w-full text-sm text-slate-600">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-400">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] uppercase text-slate-400 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
                 <th className="px-4 py-3 text-left">✓</th>
                 <th className="px-4 py-3 text-left">Titre</th>
@@ -435,62 +484,123 @@ export default function MyPlanningPage(): JSX.Element {
                 <th className="px-4 py-3 text-left">Priorité</th>
                 <th className="px-4 py-3 text-left">Impact</th>
                 <th className="px-4 py-3 text-left">Durée</th>
-                <th className="px-4 py-3 text-left">Deadline</th>
+                <th className="px-4 py-3 text-left">Échéance</th>
                 <th className="px-4 py-3 text-left">État</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredTasks.map((task) => (
-                <tr key={task.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={task.kanban_state === "done"}
-                      onChange={(event) => handleStateChange(task.id, event.target.checked ? "done" : "todo")}
-                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{task.title}</td>
-                  <td className="px-4 py-3 text-xs">
-                    {task.category ? <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{task.category}</span> : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                      {task.high_impact ? "Oui" : "Non"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
-                  <td className="px-4 py-3">{task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—"}</td>
-                  <td className="px-4 py-3 text-xs font-semibold text-slate-500">{KANBAN_LABEL[task.kanban_state]}</td>
-                  <td className="px-4 py-3 text-right text-xs">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingId(task.id);
-                          setFormValues(task);
-                          setActiveSection("create");
-                        }}
-                        className="rounded-full border border-slate-200 px-3 py-1 text-slate-600"
+              {sortedTasks.map((task) => {
+                const due = task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—";
+                const dueMs = parseDate(task.due_datetime)?.getTime();
+                const late = dueMs ? dueMs < Date.now() && task.kanban_state !== "done" : false;
+                return (
+                  <tr key={task.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={task.kanban_state === "done"}
+                        onChange={(event) => handleStateChange(task.id, event.target.checked ? "done" : "todo")}
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      <div className="flex flex-col">
+                        <span>{task.title}</span>
+                        {task.description && <span className="text-[11px] text-slate-500 line-clamp-2">{task.description}</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {task.category ? <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{task.category}</span> : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                        {task.high_impact ? "Oui" : "Non"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
+                    <td className={`px-4 py-3 text-xs ${late ? "font-semibold text-amber-600" : "text-slate-500"}`}>{due}</td>
+                    <td className="px-4 py-3 text-xs font-semibold text-slate-500">
+                      <select
+                        value={task.kanban_state}
+                        onChange={(event) => handleStateChange(task.id, event.target.value as KanbanState)}
+                        className="rounded-full border border-slate-200 px-2 py-1 text-xs"
                       >
-                        Modifier
-                      </button>
-                      <button onClick={() => handleComplete(task.id)} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700">
-                        Terminer
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <option value="todo">À faire</option>
+                        <option value="in_progress">En cours</option>
+                        <option value="done">Terminé</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingId(task.id);
+                            setFormValues(task);
+                            setActiveSection("create");
+                          }}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                        >
+                          Modifier
+                        </button>
+                        <button onClick={() => handleComplete(task.id)} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300">
+                          Terminer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
     );
   };
+
+  const renderManage = () => (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase text-slate-400">Total</p>
+          <p className="mt-1 text-2xl font-semibold text-slate-900">{managerStats.total}</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-sm">
+          <p className="text-xs uppercase text-emerald-700">Terminées</p>
+          <p className="mt-1 text-2xl font-semibold text-emerald-800">{managerStats.done}</p>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
+          <p className="text-xs uppercase text-amber-700">En retard</p>
+          <p className="mt-1 text-2xl font-semibold text-amber-800">{managerStats.late}</p>
+        </div>
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 shadow-sm">
+          <p className="text-xs uppercase text-sky-700">Impact élevé</p>
+          <p className="mt-1 text-2xl font-semibold text-sky-800">{managerStats.highImpact}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setActiveSection("create")}
+            className="rounded-full bg-slate-900 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800"
+          >
+            + Nouvelle tâche
+          </button>
+          <button
+            onClick={() => void loadTasks()}
+            className="rounded-full border border-slate-200 px-3 py-2 text-slate-600 hover:border-sky-200 hover:text-sky-700"
+          >
+            Rafraîchir la liste
+          </button>
+        </div>
+        <p className="text-xs text-slate-500">Vue tableau — optimisée pour la saisie rapide</p>
+      </div>
+      {renderTaskTable()}
+    </div>
+  );
 
   const renderCreateForm = () => (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -648,7 +758,7 @@ export default function MyPlanningPage(): JSX.Element {
       case "create":
         return renderCreateForm();
       case "manage":
-        return renderTaskTable();
+        return renderManage();
       case "coaching":
         return renderCoaching();
       default:

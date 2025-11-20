@@ -104,6 +104,7 @@ class Settings(BaseSettings):
     WHATSAPP_API_URL: str | None = os.getenv("WHATSAPP_API_URL")
     WHATSAPP_API_TOKEN: str | None = os.getenv("WHATSAPP_API_TOKEN")
     WHATSAPP_SENDER: str | None = os.getenv("WHATSAPP_SENDER")
+    MYPLANNING_ALLOW_GUEST: bool = os.getenv("MYPLANNING_ALLOW_GUEST", "true").lower() in {"1", "true", "yes"}
 
     class Config:
         env_file = ".env"

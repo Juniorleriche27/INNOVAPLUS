@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
 
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user
+from app.core.config import settings
 from app.schemas.myplanning import (
     AiPlanDayRequest,
     AiPlanDayResponse,
@@ -105,6 +107,34 @@ def _parse_date_filter(date_str: Optional[str]) -> Optional[tuple[datetime, date
     return start, end
 
 
+async def get_myplanning_user(
+    request: Request,
+    response: Response,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    """
+    Retrieve the authenticated user; if unauthenticated and guest is allowed, mint a guest ID.
+    This keeps MyPlanning usable even without a full login (demo mode).
+    """
+    try:
+        return await get_current_user(request, db)
+    except HTTPException as exc:
+        if exc.status_code != status.HTTP_401_UNAUTHORIZED or not settings.MYPLANNING_ALLOW_GUEST:
+            raise
+    guest_id = request.cookies.get("myplanning_guest_id") or f"guest-{secrets.token_hex(10)}"
+    if not request.cookies.get("myplanning_guest_id"):
+        response.set_cookie(
+            key="myplanning_guest_id",
+            value=guest_id,
+            httponly=False,
+            secure=True,
+            samesite="lax",
+            max_age=60 * 60 * 24 * 30,
+            path="/",
+        )
+    return {"_id": guest_id, "guest": True}
+
+
 @router.get("/tasks", response_model=TaskListResponse)
 async def list_tasks(
     kanban_state: Optional[str] = Query(default=None),
@@ -112,7 +142,7 @@ async def list_tasks(
     date: Optional[str] = Query(default=None, description="ISO date filter for today view"),
     week_start: Optional[str] = Query(default=None, description="ISO date for the starting Monday"),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> TaskListResponse:
     criteria: Dict[str, Any] = {"user_id": current["_id"]}
     if kanban_state:
@@ -149,7 +179,7 @@ async def list_tasks(
 async def create_task(
     payload: TaskCreatePayload,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> TaskResponse:
     now = datetime.utcnow()
     doc = payload.dict()
@@ -167,7 +197,7 @@ async def update_task(
     task_id: str,
     payload: TaskUpdatePayload,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> TaskResponse:
     oid = to_object_id(task_id)
     updates = payload.dict(exclude_unset=True)
@@ -192,7 +222,7 @@ async def update_task(
 async def delete_task(
     task_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> Response:
     oid = to_object_id(task_id)
     result = await db[COLLECTION].delete_one({"_id": oid, "user_id": current["_id"]})
@@ -205,7 +235,7 @@ async def delete_task(
 async def ai_suggest_tasks(
     payload: AiSuggestTasksRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),  # noqa: ARG001
-    current: dict = Depends(get_current_user),  # noqa: ARG001
+    current: dict = Depends(get_myplanning_user),  # noqa: ARG001
 ) -> AiSuggestTasksResponse:
     drafts = await suggest_tasks_from_text(payload.free_text, payload.language, payload.preferred_duration_block)
     return AiSuggestTasksResponse(drafts=drafts)
@@ -238,7 +268,7 @@ async def _load_open_tasks(
 async def ai_plan_day(
     payload: AiPlanDayRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> AiPlanDayResponse:
     tasks = await _load_open_tasks(db, current["_id"])
     order, focus = await plan_day_with_llama(tasks, payload.date, payload.available_minutes)
@@ -252,7 +282,7 @@ async def ai_plan_day(
 async def ai_replan_with_time(
     payload: AiReplanRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current: dict = Depends(get_current_user),
+    current: dict = Depends(get_myplanning_user),
 ) -> AiReplanResponse:
     tasks = await _load_open_tasks(db, current["_id"], payload.task_ids)
     recs = await replan_with_time_limit(tasks, payload.available_minutes)

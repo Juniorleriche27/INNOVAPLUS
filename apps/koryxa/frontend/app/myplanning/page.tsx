@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 
 const API_BASE = `${INNOVA_API_BASE}/myplanning`;
@@ -30,8 +30,6 @@ type Task = {
   pomodoro_estimated?: number | null;
   pomodoro_done?: number | null;
   comments?: string | null;
-  assignee_user_id?: string | null;
-  collaborator_ids?: string[] | null;
 };
 
 type AiDraft = {
@@ -42,14 +40,24 @@ type AiDraft = {
   high_impact?: boolean | null;
 };
 
-type AiPlanResult = {
-  order: string[];
-  focus: { task_id: string; reason?: string | null }[];
+type SidebarItem = {
+  id: string;
+  label: string;
 };
 
-type AiReplanResult = {
-  recommendations: { task_id: string; suggested_minutes?: number | null; reason?: string | null }[];
-};
+const VIEWS: SidebarItem[] = [
+  { id: "dashboard", label: "Dashboard quotidien" },
+  { id: "weekly", label: "Vue hebdomadaire" },
+  { id: "matrix", label: "Matrice temps / tâches" },
+  { id: "stats", label: "Stats & graphiques" },
+];
+
+const ACTIONS: SidebarItem[] = [
+  { id: "create", label: "Nouvelle tâche" },
+  { id: "manage", label: "Gérer les tâches" },
+  { id: "coaching", label: "Coaching IA" },
+  { id: "settings", label: "Paramètres IA" },
+];
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent_important: "Urgent & important",
@@ -58,11 +66,10 @@ const PRIORITY_LABEL: Record<Priority, string> = {
   not_urgent_not_important: "Ni urgent ni important",
 };
 
-const PRIORITY_COLORS: Record<Priority, string> = {
-  urgent_important: "bg-red-100 text-red-700",
-  important_not_urgent: "bg-amber-100 text-amber-800",
-  urgent_not_important: "bg-orange-100 text-orange-700",
-  not_urgent_not_important: "bg-slate-100 text-slate-700",
+const KANBAN_LABEL: Record<KanbanState, string> = {
+  todo: "À faire",
+  in_progress: "En cours",
+  done: "Terminé",
 };
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -76,9 +83,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     try {
       const parsed = message ? JSON.parse(message) : null;
       if (parsed && typeof parsed === "object") message = parsed.detail || parsed.message || message;
-    } catch (err) {
-      if (!message) message = "Impossible de contacter MyPlanning";
-    }
+    } catch {}
     throw new Error(message || "Impossible de contacter MyPlanning");
   }
   if (response.status === 204) return {} as T;
@@ -97,293 +102,387 @@ function sameDay(a: Date, b: Date): boolean {
 }
 
 function startOfWeek(date: Date): Date {
-  const day = date.getDay();
   const monday = new Date(date);
+  const day = monday.getDay();
   monday.setHours(0, 0, 0, 0);
-  monday.setDate(date.getDate() - ((day + 6) % 7));
+  monday.setDate(monday.getDate() - ((day + 6) % 7));
   return monday;
 }
 
-function sameWeek(a: Date, reference: Date): boolean {
-  const monday = startOfWeek(reference);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return a >= monday && a <= sunday;
+function formatDateInputValue(date: Date): string {
+  const copy = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return copy.toISOString().split("T")[0];
+}
+
+function formatDateTimeLocal(value?: string | null): string {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value.length > 16 ? value.slice(0, 16) : value;
+  }
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function friendlyError(message: string): string {
+  if (/not found/i.test(message)) return "Aucune donnée disponible pour l'instant.";
+  return message;
 }
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "short" });
 const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
+const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-export default function MyPlanningPage() {
+export default function MyPlanningPage(): JSX.Element {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [section, setSection] = useState("daily");
+  const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
+  const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
+  const [activeSection, setActiveSection] = useState<string>("dashboard");
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterPriority, setFilterPriority] = useState<"all" | Priority>("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | KanbanState>("all");
   const [aiText, setAiText] = useState("");
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
-  const [planResult, setPlanResult] = useState<AiPlanResult | null>(null);
-  const [replanMinutes, setReplanMinutes] = useState(45);
-  const [replanResult, setReplanResult] = useState<AiReplanResult | null>(null);
-  const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
-  const [impactOnly, setImpactOnly] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const loadTasks = async () => {
+    setLoading(true);
+    setTaskLoadError(null);
+    try {
+      const data = await apiFetch<{ items: Task[] }>("/tasks");
+      setTasks(data.items);
+    } catch (err) {
+      const message = err instanceof Error ? friendlyError(err.message) : "Impossible de charger les tâches";
+      setTaskLoadError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await apiFetch<{ items: Task[] }>("/tasks");
-        setTasks(data.items);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Impossible de charger les tâches");
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
+    void loadTasks();
   }, []);
 
   const categories = useMemo(() => {
     const set = new Set(tasks.map((task) => task.category).filter(Boolean) as string[]);
-    const base = ["Travail", "Études", "Perso", "Santé"];
-    return set.size ? Array.from(set) : base;
+    return Array.from(set);
   }, [tasks]);
 
-  const filteredTasks = useMemo(() => {
-    let base = [...tasks];
-    if (priorityFilter !== "all") base = base.filter((task) => task.priority_eisenhower === priorityFilter);
-    if (impactOnly) base = base.filter((task) => task.high_impact);
-    if (categoryFilter !== "all") base = base.filter((task) => (task.category || "") === categoryFilter);
-    return base;
-  }, [tasks, priorityFilter, impactOnly, categoryFilter]);
-
   const dayTasks = useMemo(() => {
-    return filteredTasks.filter((task) => {
+    return tasks.filter((task) => {
       const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
       return ref ? sameDay(ref, selectedDate) : false;
     });
-  }, [filteredTasks, selectedDate]);
+  }, [tasks, selectedDate]);
 
-  const weekTasks = useMemo(() => {
-    return filteredTasks.filter((task) => {
-      const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
-      return ref ? sameWeek(ref, selectedDate) : false;
+  const weeklyDiscipline = useMemo(() => {
+    const base = startOfWeek(selectedDate);
+    return Array.from({ length: 7 }).map((_, idx) => {
+      const day = new Date(base);
+      day.setDate(base.getDate() + idx);
+      const list = tasks.filter((task) => {
+        const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
+        return ref ? sameDay(ref, day) : false;
+      });
+      const done = list.filter((task) => task.kanban_state === "done").length;
+      const completion = list.length ? Math.round((done / list.length) * 100) : 0;
+      return { dayLabel: shortDayFormatter.format(day), completion };
     });
-  }, [filteredTasks, selectedDate]);
+  }, [tasks, selectedDate]);
 
-  const weekDays = Array.from({ length: 7 }).map((_, idx) => {
-    const date = new Date(startOfWeek(selectedDate));
-    date.setDate(date.getDate() + idx);
-    return date;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (filterCategory !== "all" && (task.category || "") !== filterCategory) return false;
+      if (filterPriority !== "all" && task.priority_eisenhower !== filterPriority) return false;
+      if (filterStatus !== "all" && task.kanban_state !== filterStatus) return false;
+      return true;
+    });
+  }, [tasks, filterCategory, filterPriority, filterStatus]);
 
-  const timelineSlots = Array.from({ length: 12 }).map((_, idx) => 8 + idx);
+  const dateInputValue = useMemo(() => formatDateInputValue(selectedDate), [selectedDate]);
 
-  const renderTable = () => {
-    if (loading) return (<div className="space-y-2">{[...Array(6)].map((_, idx) => (<div key={idx} className="h-12 animate-pulse rounded-xl bg-slate-100" />))}</div>);
-    if (error)
-      return (
-        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50/70 px-4 py-3 text-sm text-red-700">
-          <span>{error}</span>
-          <button
-            onClick={() => {
-              setError(null);
-              setLoading(true);
-              void apiFetch<{ items: Task[] }>("/tasks")
-                .then((data) => setTasks(data.items))
-                .catch((err) => setError(err instanceof Error ? err.message : "Erreur inconnue"))
-                .finally(() => setLoading(false));
-            }}
-            className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold"
-          >
-            Réessayer
-          </button>
-        </div>
-      );
-    if (!dayTasks.length)
-      return (
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
-          Aucune tâche pour cette journée. Créez une nouvelle tâche ou utilisez Organiser ma journée (IA).
-        </div>
-      );
+  const shiftSelectedDate = (delta: number) => {
+    setSelectedDate((prev) => {
+      const next = new Date(prev);
+      next.setDate(prev.getDate() + delta);
+      return next;
+    });
+  };
 
-    const columns = ["Titre", "Catégorie", "Priorité", "Impact", "Durée", "Deadline", "État"];
-    return (
-      <div className="rounded-3xl border border-slate-200 bg-white">
-        <div className="max-h-[360px] overflow-y-auto">
-          <table className="min-w-full text-sm">
-            <thead className="sticky top-0 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="w-10 px-4 py-3">
-                  <input type="checkbox" disabled />
-                </th>
-                {columns.map((col) => (
-                  <th key={col} className="px-4 py-3 text-left">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white text-slate-700">
-              {dayTasks.map((task) => (
-                <tr key={task.id} className="border-b border-slate-100">
-                  <td className="px-4 py-2">
-                    <input
-                      type="checkbox"
-                      checked={task.kanban_state === "done"}
-                      onChange={(event) => handleStateChange(task.id, event.target.checked ? "done" : "todo")}
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <p className="font-semibold">{task.title}</p>
-                    {task.description && <p className="text-xs text-slate-500">{task.description}</p>}
-                  </td>
-                  <td className="px-4 py-2">
-                    {task.category ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{task.category}</span>
-                    ) : (
-                      <span className="text-xs text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${PRIORITY_COLORS[task.priority_eisenhower]}`}>
-                      {PRIORITY_LABEL[task.priority_eisenhower]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-xs">
-                    {task.high_impact ? <span className="text-amber-600">⚡ Impact</span> : <span className="text-slate-400">—</span>}
-                  </td>
-                  <td className="px-4 py-2">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
-                  <td className="px-4 py-2">{formatDateLabel(parseDate(task.due_datetime))}</td>
-                  <td className="px-4 py-2 text-xs text-slate-500">
-                    {task.kanban_state === "todo" ? "À faire" : task.kanban_state === "in_progress" ? "En cours" : "Terminé"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
+  const resetForm = () => {
+    setFormValues({ priority_eisenhower: "important_not_urgent", high_impact: false });
+    setEditingId(null);
+  };
+
+  const submitForm = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!formValues.title) {
+      setBanner({ type: "error", message: "Le titre est obligatoire." });
+      return;
+    }
+    const payload = { ...formValues };
+    try {
+      if (editingId) {
+        await apiFetch(`/tasks/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
+        setTasks((prev) => prev.map((task) => (task.id === editingId ? { ...task, ...payload } : task)));
+        setBanner({ type: "success", message: "Tâche mise à jour." });
+      } else {
+        const task = await apiFetch<Task>("/tasks", { method: "POST", body: JSON.stringify(payload) });
+        setTasks((prev) => [task, ...prev]);
+        setBanner({ type: "success", message: "Tâche créée." });
+      }
+      resetForm();
+      setActiveSection("dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? friendlyError(err.message) : "Impossible d'enregistrer la tâche";
+      setBanner({ type: "error", message });
+    }
   };
 
   const handleStateChange = async (taskId: string, state: KanbanState) => {
     try {
-      await apiFetch(`/tasks/${taskId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ kanban_state: state }),
-      });
+      await apiFetch(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify({ kanban_state: state }) });
       setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, kanban_state: state } : task)));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action impossible");
+      const message = err instanceof Error ? friendlyError(err.message) : "Action impossible";
+      setBanner({ type: "error", message });
     }
   };
 
-  const handlePlanDay = async () => {
-    try {
-      const data = await apiFetch<AiPlanResult>("/ai/plan-day", { method: "POST", body: JSON.stringify({}) });
-      setPlanResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec planification IA");
-    }
+  const handleComplete = async (taskId: string) => {
+    await handleStateChange(taskId, "done");
   };
 
   const handleAiSuggest = async () => {
     if (!aiText.trim()) return;
+    setAiLoading(true);
+    setBanner(null);
     try {
-      const data = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", {
-        method: "POST",
-        body: JSON.stringify({ free_text: aiText }),
-      });
-      setAiDrafts(data.drafts);
+      const res = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
+      setAiDrafts(res.drafts);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec IA");
+      const message = err instanceof Error ? friendlyError(err.message) : "Échec de l'assistant";
+      setBanner({ type: "error", message });
+    } finally {
+      setAiLoading(false);
     }
   };
 
-  const handleReplan = async () => {
+  const handleAddDraft = async (draft: AiDraft, index: number) => {
+    if (!draft.title) return;
+    setAddingDraftIndex(index);
     try {
-      const data = await apiFetch<AiReplanResult>("/ai/replan-with-time", {
-        method: "POST",
-        body: JSON.stringify({ available_minutes: replanMinutes }),
-      });
-      setReplanResult(data);
+      const payload = {
+        title: draft.title,
+        description: draft.description || "",
+        priority_eisenhower: draft.priority_eisenhower || "important_not_urgent",
+        high_impact: Boolean(draft.high_impact),
+        estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
+        kanban_state: "todo",
+      };
+      const task = await apiFetch<Task>("/tasks", { method: "POST", body: JSON.stringify(payload) });
+      setTasks((prev) => [task, ...prev]);
+      setBanner({ type: "success", message: "Tâche ajoutée depuis l'IA." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec plan express");
+      const message = err instanceof Error ? friendlyError(err.message) : "Impossible d'ajouter cette tâche";
+      setBanner({ type: "error", message });
+    } finally {
+      setAddingDraftIndex(null);
     }
   };
 
-  const weekMatrix = () => {
-    return (
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between text-xs">
-          <div>
-            <p className="uppercase tracking-[0.4em] text-slate-400">Vue hebdomadaire</p>
-            <p className="text-sm text-slate-600">{dayFormatter.format(weekDays[0])} – {dayFormatter.format(weekDays[6])}</p>
+  const renderDashboard = () => (
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase text-slate-400">Tâches actives</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.length}</p>
+          <p className="text-xs text-slate-500">Aujourd'hui</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase text-slate-400">Complétées</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">
+            {dayTasks.length ? Math.round((dayTasks.filter((task) => task.kanban_state === "done").length / dayTasks.length) * 100) : 0}%
+          </p>
+          <p className="text-xs text-slate-500">Progression</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase text-slate-400">Impact élevé</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.filter((task) => task.high_impact).length}</p>
+          <p className="text-xs text-slate-500">Pareto 20 %</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase text-slate-400">Pomodoro estimés</p>
+          <p className="mt-2 text-3xl font-semibold text-slate-900">
+            {dayTasks.reduce((sum, task) => sum + (task.pomodoro_estimated || 0), 0)}
+          </p>
+          <p className="text-xs text-slate-500">Sessions prévues</p>
+        </div>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
+            <span>Planning du jour</span>
+            <span>Nous sommes ici · {timeFormatter.format(new Date())}</span>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setSelectedDate((prev) => new Date(prev.setDate(prev.getDate() - 7)))} className="rounded-full border border-slate-200 px-3 py-1">
-              Semaine -
-            </button>
-            <button onClick={() => setSelectedDate((prev) => new Date(prev.setDate(prev.getDate() + 7)))} className="rounded-full border border-slate-200 px-3 py-1">
-              Semaine +
+          <div className="mt-4 space-y-3 text-xs text-slate-500">
+            {Array.from({ length: 12 }).map((_, idx) => 8 + idx).map((hour) => {
+              const slot = dayTasks.filter((task) => {
+                const ref = parseDate(task.start_datetime);
+                return ref ? ref.getHours() === hour : false;
+              });
+              return (
+                <div key={hour} className="flex gap-3">
+                  <div className="w-16 text-right text-[11px] font-semibold text-slate-400">{hour}h</div>
+                  <div className="flex-1 rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+                    {slot.length === 0 ? (
+                      <p className="text-[11px] text-slate-400">Créneau libre</p>
+                    ) : (
+                      slot.map((task) => (
+                        <div key={task.id} className="mb-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-700 last:mb-0">
+                          <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                          <p className="text-[11px] text-slate-500">{task.estimated_duration_minutes || 0} min</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Discipline semaine</p>
+          <div className="mt-4 space-y-3">
+            {weeklyDiscipline.map((entry) => (
+              <div key={entry.dayLabel}>
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                  <span>{entry.dayLabel}</span>
+                  <span>{entry.completion}%</span>
+                </div>
+                <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
+                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${entry.completion}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderTaskTable = () => {
+    if (loading) {
+      return <p className="text-sm text-slate-500">Chargement des tâches…</p>;
+    }
+    if (taskLoadError) {
+      return (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{taskLoadError}</span>
+            <button onClick={() => void loadTasks()} className="rounded-full border border-rose-300 px-3 py-1 text-xs font-semibold text-rose-700">
+              Réessayer
             </button>
           </div>
         </div>
-        <div className="mt-4 overflow-auto">
-          <table className="min-w-full text-xs">
-            <thead>
+      );
+    }
+    if (!filteredTasks.length) {
+      return (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/60 px-5 py-8 text-center text-sm text-slate-500">
+          Aucune tâche pour ce filtre. Créez une nouvelle tâche ou ajustez vos filtres.
+        </div>
+      );
+    }
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-4 py-3 text-xs">
+          <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-full border border-slate-200 px-3 py-1">
+            <option value="all">Toutes catégories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+          <select value={filterPriority} onChange={(event) => setFilterPriority(event.target.value as typeof filterPriority)} className="rounded-full border border-slate-200 px-3 py-1">
+            <option value="all">Toutes priorités</option>
+            <option value="urgent_important">Urgent & important</option>
+            <option value="important_not_urgent">Important mais pas urgent</option>
+            <option value="urgent_not_important">Urgent moins important</option>
+            <option value="not_urgent_not_important">Secondaire</option>
+          </select>
+          <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)} className="rounded-full border border-slate-200 px-3 py-1">
+            <option value="all">Tous statuts</option>
+            <option value="todo">À faire</option>
+            <option value="in_progress">En cours</option>
+            <option value="done">Terminé</option>
+          </select>
+        </div>
+        <div className="max-h-[520px] overflow-auto">
+          <table className="min-w-full text-sm text-slate-600">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-400">
               <tr>
-                <th className="w-40 px-3 py-2 text-left text-[11px] uppercase tracking-wide text-slate-500">Catégorie</th>
-                {weekDays.map((date) => (
-                  <th key={date.toISOString()} className="px-3 py-2 text-center text-[11px] uppercase text-slate-500">
-                    {shortDayFormatter.format(date)}
-                  </th>
-                ))}
+                <th className="px-4 py-3 text-left">✓</th>
+                <th className="px-4 py-3 text-left">Titre</th>
+                <th className="px-4 py-3 text-left">Catégorie</th>
+                <th className="px-4 py-3 text-left">Priorité</th>
+                <th className="px-4 py-3 text-left">Impact</th>
+                <th className="px-4 py-3 text-left">Durée</th>
+                <th className="px-4 py-3 text-left">Deadline</th>
+                <th className="px-4 py-3 text-left">État</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {categories.map((category) => (
-                <tr key={category} className="border-t border-slate-100">
-                  <td className="px-3 py-2 text-sm font-semibold text-slate-900">{category}</td>
-                  {weekDays.map((date) => {
-                    const tasksForCell = weekTasks.filter((task) => {
-                      const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
-                      return ref ? sameDay(ref, date) && (task.category || "") === category : false;
-                    });
-                    const cellState = tasksForCell.some((task) => task.kanban_state === "done")
-                      ? "done"
-                      : tasksForCell.some((task) => task.kanban_state === "in_progress")
-                        ? "progress"
-                        : tasksForCell.length
-                          ? "late"
-                          : "empty";
-                    const stateColor =
-                      cellState === "done"
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                        : cellState === "progress"
-                          ? "bg-sky-50 border-sky-200 text-sky-700"
-                          : cellState === "late"
-                            ? "bg-red-50 border-red-200 text-red-600"
-                            : "bg-slate-50 border-slate-200 text-slate-400";
-                    return (
-                      <td key={date.toISOString()} className="px-3 py-2">
-                        <div className={`min-h-[60px] rounded-2xl border px-2 py-1 text-xs ${stateColor}`}>
-                          {tasksForCell.length === 0 ? (
-                            <span>—</span>
-                          ) : (
-                            tasksForCell.slice(0, 2).map((task) => (
-                              <p key={task.id} className="truncate">
-                                {task.title}
-                              </p>
-                            ))
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
+            <tbody className="divide-y divide-slate-100">
+              {filteredTasks.map((task) => (
+                <tr key={task.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={task.kanban_state === "done"}
+                      onChange={(event) => handleStateChange(task.id, event.target.checked ? "done" : "todo")}
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{task.title}</td>
+                  <td className="px-4 py-3 text-xs">
+                    {task.category ? <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{task.category}</span> : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                      {task.high_impact ? "Oui" : "Non"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
+                  <td className="px-4 py-3">{task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—"}</td>
+                  <td className="px-4 py-3 text-xs font-semibold text-slate-500">{KANBAN_LABEL[task.kanban_state]}</td>
+                  <td className="px-4 py-3 text-right text-xs">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingId(task.id);
+                          setFormValues(task);
+                          setActiveSection("create");
+                        }}
+                        className="rounded-full border border-slate-200 px-3 py-1 text-slate-600"
+                      >
+                        Modifier
+                      </button>
+                      <button onClick={() => handleComplete(task.id)} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700">
+                        Terminer
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -393,300 +492,273 @@ export default function MyPlanningPage() {
     );
   };
 
-  const timesheetMatrix = () => {
-    return (
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Matrice temps / tâches</p>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, idx) => {
-            const label = idx === 0 ? "Matin" : idx === 1 ? "Après-midi" : "Soir";
-            const tasksForSlot = dayTasks.filter((task) => {
-              const ref = parseDate(task.start_datetime);
-              if (!ref) return false;
-              return idx === 0 ? ref.getHours() < 12 : idx === 1 ? ref.getHours() < 18 : ref.getHours() >= 18;
-            });
-            return (
-              <div key={label} className="rounded-3xl border border-slate-200 bg-slate-50/60 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-                  <span className="text-xs text-slate-400">{tasksForSlot.length} tâche(s)</span>
-                </div>
-                {tasksForSlot.length === 0 ? (
-                  <p className="mt-3 text-sm text-slate-500">Temps libre</p>
-                ) : (
-                  <div className="mt-3 space-y-2 text-sm">
-                    {tasksForSlot.map((task) => (
-                      <div key={task.id} className="rounded-2xl bg-white px-3 py-2 shadow-sm">
-                        <p className="font-semibold text-slate-900">{task.title}</p>
-                        <p className="text-xs text-slate-500">{task.estimated_duration_minutes || 0} min</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+  const renderCreateForm = () => (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-slate-900">{editingId ? "Modifier la tâche" : "Nouvelle tâche"}</h2>
+      <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={submitForm}>
+        <label className="text-sm text-slate-600">
+          Titre
+          <input
+            required
+            value={formValues.title || ""}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, title: event.target.value }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          />
+        </label>
+        <label className="text-sm text-slate-600">
+          Catégorie
+          <input
+            value={formValues.category || ""}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, category: event.target.value }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          />
+        </label>
+        <label className="text-sm text-slate-600">
+          Priorité (Eisenhower)
+          <select
+            value={formValues.priority_eisenhower || "important_not_urgent"}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, priority_eisenhower: event.target.value as Priority }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          >
+            <option value="urgent_important">Urgent & important</option>
+            <option value="important_not_urgent">Important mais pas urgent</option>
+            <option value="urgent_not_important">Urgent moins important</option>
+            <option value="not_urgent_not_important">Ni urgent ni important</option>
+          </select>
+        </label>
+        <label className="text-sm text-slate-600">
+          Impact élevé
+          <select
+            value={formValues.high_impact ? "oui" : "non"}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, high_impact: event.target.value === "oui" }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          >
+            <option value="non">Non</option>
+            <option value="oui">Oui</option>
+          </select>
+        </label>
+        <label className="text-sm text-slate-600">
+          Durée estimée (min)
+          <input
+            type="number"
+            min={0}
+            value={formValues.estimated_duration_minutes ?? ""}
+            onChange={(event) =>
+              setFormValues((prev) => ({
+                ...prev,
+                estimated_duration_minutes: event.target.value ? Number(event.target.value) : undefined,
+              }))
+            }
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          />
+        </label>
+        <label className="text-sm text-slate-600">
+          Deadline
+          <input
+            type="datetime-local"
+            value={formatDateTimeLocal(formValues.due_datetime)}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, due_datetime: event.target.value }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          />
+        </label>
+        <label className="text-sm text-slate-600 md:col-span-2">
+          Commentaires
+          <textarea
+            rows={4}
+            value={formValues.comments || ""}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, comments: event.target.value }))}
+            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          />
+        </label>
+        <div className="flex gap-3 md:col-span-2">
+          <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 font-semibold text-white">
+            Enregistrer
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              setActiveSection("dashboard");
+            }}
+            className="rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-500"
+          >
+            Annuler
+          </button>
         </div>
+      </form>
+    </div>
+  );
+
+  const renderCoaching = () => (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-xl font-semibold text-slate-900">Coaching MyPlanning</h2>
+      <textarea
+        value={aiText}
+        onChange={(event) => setAiText(event.target.value)}
+        placeholder="Décrivez votre journée..."
+        className="mt-3 h-32 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
+      />
+      <button
+        onClick={handleAiSuggest}
+        disabled={aiLoading}
+        className="mt-3 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
+      </button>
+      {aiDrafts.length > 0 && (
+        <div className="mt-4 space-y-2 text-sm">
+          {aiDrafts.map((draft, idx) => (
+            <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
+                {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
+              </div>
+              <p className="font-semibold text-slate-900">{draft.title}</p>
+              {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
+              <div className="mt-2 text-right">
+                <button
+                  onClick={() => void handleAddDraft(draft, idx)}
+                  disabled={addingDraftIndex === idx}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 disabled:opacity-60"
+                >
+                  {addingDraftIndex === idx ? "Ajout..." : "Ajouter à mes tâches"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderPlaceholder = () => {
+    const label = VIEWS.concat(ACTIONS).find((item) => item.id === activeSection)?.label || "Section";
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-center text-sm text-slate-500">
+        <h2 className="text-lg font-semibold text-slate-900">{label}</h2>
+        <p className="mt-2">Disponible prochainement.</p>
       </div>
     );
   };
 
-  const statsView = () => {
-    const histogram = weekDays.map((date) => {
-      const completed = tasks.filter((task) => {
-        const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
-        return ref ? sameDay(ref, date) && task.kanban_state === "done" : false;
-      }).length;
-      return { label: shortDayFormatter.format(date), value: completed };
-    });
-    const categoriesData = categories.map((category) => {
-      const total = tasks
-        .filter((task) => (task.category || "") === category)
-        .reduce((sum, task) => sum + (task.estimated_duration_minutes || 0), 0);
-      return { label: category, value: total };
-    });
-    const impactHigh = tasks.filter((task) => task.high_impact).reduce((sum, task) => sum + (task.estimated_duration_minutes || 0), 0);
-    const impactNormal = tasks.filter((task) => !task.high_impact).reduce((sum, task) => sum + (task.estimated_duration_minutes || 0), 0);
+  const renderSection = () => {
+    switch (activeSection) {
+      case "dashboard":
+        return renderDashboard();
+      case "create":
+        return renderCreateForm();
+      case "manage":
+        return renderTaskTable();
+      case "coaching":
+        return renderCoaching();
+      default:
+        return renderPlaceholder();
+    }
+  };
 
-    return (
-      <div className="space-y-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Tâches complétées</p>
-          <div className="mt-4 flex gap-2">
-            {histogram.map((bar) => (
-              <div key={bar.label} className="flex-1 text-center">
-                <div className="mx-auto flex h-32 max-w-[40px] items-end rounded-b-xl bg-slate-100">
-                  <div className="w-full rounded-t-xl bg-sky-500" style={{ height: `${Math.min(bar.value * 20, 120)}px` }} />
-                </div>
-                <p className="mt-1 text-xs text-slate-500">{bar.label}</p>
-              </div>
+  const sidebar = (
+    <aside className="flex h-full w-64 min-w-[240px] flex-col gap-6 border-r border-slate-200 bg-white/95 p-5">
+      <div>
+        <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
+        <p className="text-lg font-semibold text-slate-900">Cockpit</p>
+      </div>
+      <nav className="space-y-6 text-sm font-semibold">
+        <div>
+          <p className="text-xs uppercase text-slate-400">Vues</p>
+          <div className="mt-2 space-y-2">
+            {VIEWS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full rounded-2xl px-4 py-2 text-left transition ${activeSection === item.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              >
+                {item.label}
+              </button>
             ))}
           </div>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Répartition du temps</p>
-            <div className="mt-3 space-y-2">
-              {categoriesData.map((slice) => (
-                <div key={slice.label} className="text-xs text-slate-500">
-                  <div className="flex items-center justify-between">
-                    <span>{slice.label}</span>
-                    <span>{slice.value} min</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500" style={{ width: `${Math.min(slice.value / 5, 100)}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Impact élevé vs normal</p>
-            <div className="mt-3 space-y-4 text-xs text-slate-500">
-              <div>
-                <p className="font-semibold text-emerald-600">High impact</p>
-                <div className="mt-1 h-2 rounded-full bg-emerald-100">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${impactHigh ? Math.min((impactHigh / (impactHigh + impactNormal || 1)) * 100, 100) : 0}%` }} />
-                </div>
-                <p>{impactHigh} min</p>
-              </div>
-              <div>
-                <p className="font-semibold text-amber-600">Normal</p>
-                <div className="mt-1 h-2 rounded-full bg-amber-100">
-                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${impactNormal ? Math.min((impactNormal / (impactHigh + impactNormal || 1)) * 100, 100) : 0}%` }} />
-                </div>
-                <p>{impactNormal} min</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderMain = () => {
-    if (section === "daily")
-      return (
-        <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Planning du jour</p>
-                <h2 className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</h2>
-              </div>
-              <span className="text-xs text-slate-500">Nous sommes ici : {new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
-            </div>
-            <div className="mt-4 grid gap-2 text-xs text-slate-500">
-              {timelineSlots.map((hour) => {
-                const slotTasks = dayTasks.filter((task) => {
-                  const ref = parseDate(task.start_datetime);
-                  if (!ref) return false;
-                  return ref.getHours() === hour;
-                });
-                return (
-                  <div key={hour} className="flex gap-3">
-                    <div className="w-12 text-right font-semibold text-slate-700">{`${hour}h`}</div>
-                    <div className="flex-1 rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
-                      {slotTasks.length === 0 ? (
-                        <p className="text-[11px] text-slate-400">Créneau libre</p>
-                      ) : (
-                        slotTasks.map((task) => (
-                          <div key={task.id} className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                            <p className="text-sm font-semibold text-slate-900">{task.title}</p>
-                            <p className="text-[11px] text-slate-500">{task.estimated_duration_minutes || 0} min</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex gap-2">
-                <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as typeof priorityFilter)} className="rounded-full border border-slate-200 px-3 py-1">
-                  <option value="all">Toutes priorités</option>
-                  <option value="urgent_important">Urgent & important</option>
-                  <option value="important_not_urgent">Important mais pas urgent</option>
-                  <option value="urgent_not_important">Urgent secondaire</option>
-                  <option value="not_urgent_not_important">Secondaire</option>
-                </select>
-                <button onClick={() => setImpactOnly((prev) => !prev)} className={`rounded-full px-3 py-1 font-semibold ${impactOnly ? "bg-amber-500 text-white" : "border border-slate-200 text-slate-600"}`}>
-                  Impact élevé
-                </button>
-                <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="rounded-full border border-slate-200 px-3 py-1">
-                  <option value="all">Toutes catégories</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button onClick={() => setSelectedDate(new Date())} className="rounded-full border border-slate-200 px-4 py-1 font-semibold">
-                Aujourd'hui
+        <div>
+          <p className="text-xs uppercase text-slate-400">Actions</p>
+          <div className="mt-2 space-y-2">
+            {ACTIONS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full rounded-2xl px-4 py-2 text-left transition ${activeSection === item.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              >
+                {item.label}
               </button>
-            </div>
-            <div className="mt-3">{renderTable()}</div>
+            ))}
           </div>
         </div>
-      );
-    if (section === "week") return weekMatrix();
-    if (section === "matrix") return timesheetMatrix();
-    if (section === "stats") return statsView();
-    return (
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-sm text-slate-500">Paramétrage IA disponible prochainement.</p>
-      </div>
-    );
-  };
+      </nav>
+    </aside>
+  );
+
+  const containerClasses = isFullscreen
+    ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-slate-100"
+    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-4">
-        <section className="rounded-[26px] border border-slate-200 bg-gradient-to-r from-slate-50 to-emerald-50/60 p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
-              <h1 className="text-2xl font-semibold text-slate-900">Tableau de bord temps réel</h1>
-            </div>
-            <div className="flex gap-2 text-xs">
-              <button onClick={() => setSelectedDate((prev) => new Date(prev.setDate(prev.getDate() - 1)))} className="rounded-full border border-slate-200 px-3 py-1">
-                ←
-              </button>
-              <input type="date" value={new Date(selectedDate).toISOString().slice(0, 10)} onChange={(event) => { const next = new Date(event.target.value); if (!Number.isNaN(next.getTime())) setSelectedDate(next); }} className="rounded-full border border-slate-200 px-3 py-1" />
-              <button onClick={() => setSelectedDate((prev) => new Date(prev.setDate(prev.getDate() + 1)))} className="rounded-full border border-slate-200 px-3 py-1">
-                →
-              </button>
-              <button onClick={handlePlanDay} className="rounded-full bg-emerald-600 px-4 py-2 font-semibold text-white">
-                Organiser ma journée (IA)
-              </button>
-            </div>
+    <div className={containerClasses}>
+      {sidebar}
+      <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{VIEWS.find((item) => item.id === activeSection)?.label || "MyPlanning"}</p>
+            <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
           </div>
-        </section>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm"><p className="text-xs uppercase text-slate-400">Tâches actives</p><p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.length}</p><p className="text-xs text-slate-500">aujourd'hui</p></div>
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm"><p className="text-xs uppercase text-slate-400">Tâches semaine</p><p className="mt-2 text-3xl font-semibold text-slate-900">{weekTasks.length}</p><p className="text-xs text-slate-500">semaine courante</p></div>
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm"><p className="text-xs uppercase text-slate-400">Impact élevé</p><p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.filter((task) => task.high_impact).length}</p><p className="text-xs text-slate-500">Pareto 20 %</p></div>
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm"><p className="text-xs uppercase text-slate-400">Focus IA</p><p className="mt-2 text-base text-slate-700">{planResult?.focus?.length ? `${planResult.focus.length} tâches focus` : "Lancez l'organisation"}</p></div>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
-          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4 lg:h-fit">
-            <nav className="space-y-2 text-sm font-semibold">
-              {[
-                { id: "daily", label: "Vue quotidienne" },
-                { id: "week", label: "Vue hebdomadaire" },
-                { id: "matrix", label: "Matrice temps / tâches" },
-                { id: "stats", label: "Stats & graphiques" },
-                { id: "settings", label: "Paramètres IA" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setSection(item.id)}
-                  className={`w-full rounded-2xl px-4 py-2 text-left transition ${section === item.id ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"}`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-
-          <main>{renderMain()}</main>
-
-          <div className="space-y-4">
-            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between"><p className="text-xs uppercase tracking-[0.4em] text-slate-400">Coaching IA</p><input type="number" min={15} step={5} value={replanMinutes} onChange={(event) => setReplanMinutes(Number(event.target.value) || 15)} className="w-16 rounded-full border border-slate-200 px-3 py-1 text-xs" /></div>
-              <textarea value={aiText} onChange={(event) => setAiText(event.target.value)} className="mt-3 h-28 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none" placeholder="Décrivez votre journée..." />
-              <div className="mt-3 flex gap-2 text-xs"><button onClick={handleAiSuggest} className="flex-1 rounded-full bg-slate-900 px-4 py-2 font-semibold text-white">Générer des tâches</button><button onClick={handleReplan} className="rounded-full border border-slate-200 px-4 py-2 font-semibold">Plan express</button></div>
-              {aiDrafts.length > 0 && (
-                <div className="mt-4 space-y-2 text-sm text-slate-700">
-                  {aiDrafts.map((draft, idx) => (
-                    <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2">
-                      <div className="flex items-center justify-between text-[11px] text-slate-500">
-                        <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
-                        {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
-                      </div>
-                      <p className="font-semibold text-slate-900">{draft.title}</p>
-                      {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              {replanResult?.recommendations && (
-                <div className="mt-4 space-y-2 text-xs text-slate-600">
-                  {replanResult.recommendations.map((item) => (
-                    <div key={item.task_id} className="rounded-2xl border border-amber-100 bg-amber-50/70 px-3 py-2">
-                      <p className="font-semibold text-amber-900">{item.task_id}</p>
-                      {item.reason && <p>{item.reason}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Discipline semaine</p>
-              <div className="mt-4 space-y-3 text-xs text-slate-500">
-                {weekDays.map((date) => {
-                  const completed = tasks.filter((task) => {
-                    const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
-                    return ref ? sameDay(ref, date) && task.kanban_state === "done" : false;
-                  }).length;
-                  return (
-                    <div key={date.toISOString()}>
-                      <div className="flex items-center justify-between"><span>{shortDayFormatter.format(date)}</span><span>{completed} tâches</span></div>
-                      <div className="h-2 rounded-full bg-slate-100"><div className="h-full rounded-full bg-sky-500" style={{ width: `${Math.min(completed * 20, 100)}%` }} /></div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => shiftSelectedDate(-1)}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+            >
+              ← Jour précédent
+            </button>
+            <input
+              type="date"
+              value={dateInputValue}
+              onChange={(event) => {
+                const next = new Date(event.target.value);
+                if (!Number.isNaN(next.getTime())) setSelectedDate(next);
+              }}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs"
+            />
+            <button
+              onClick={() => shiftSelectedDate(1)}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+            >
+              Jour suivant →
+            </button>
+            <button
+              onClick={() => setActiveSection("coaching")}
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
+            >
+              Organiser ma journée (IA)
+            </button>
+            <button
+              onClick={() => setIsFullscreen((value) => !value)}
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
+            >
+              {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+            </button>
           </div>
         </div>
-      </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          {banner && (
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                banner.type === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+              }`}
+            >
+              {banner.message}
+            </div>
+          )}
+          {renderSection()}
+        </div>
+      </main>
     </div>
   );
 }

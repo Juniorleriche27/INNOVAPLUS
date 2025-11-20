@@ -9,7 +9,10 @@ export const AUTH_API_BASE = normalize(
   DEFAULT_API_BASE,
 );
 
-export const INNOVA_API_BASE = `${AUTH_API_BASE}/innova/api`;
+// Avoid duplicating the path when NEXT_PUBLIC_API_URL already includes /innova/api
+export const INNOVA_API_BASE = AUTH_API_BASE.endsWith("/innova/api")
+  ? AUTH_API_BASE
+  : `${AUTH_API_BASE}/innova/api`;
 
 export const CHATLAYA_API_BASE = normalize(
   process.env.NEXT_PUBLIC_CHATLAYA_URL,

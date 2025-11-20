@@ -614,8 +614,8 @@ export default function MyPlanningPage() {
           <div className="rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm"><p className="text-xs uppercase text-slate-400">Focus IA</p><p className="mt-2 text-base text-slate-700">{planResult?.focus?.length ? `${planResult.focus.length} tâches focus` : "Lancez l'organisation"}</p></div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[220px,1fr,320px]">
-          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
+          <aside className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-4 lg:h-fit">
             <nav className="space-y-2 text-sm font-semibold">
               {[
                 { id: "daily", label: "Vue quotidienne" },

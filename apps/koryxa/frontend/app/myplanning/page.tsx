@@ -84,7 +84,15 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     let message = await response.text();
     try {
       const parsed = message ? JSON.parse(message) : null;
-      if (parsed && typeof parsed === "object") message = parsed.detail || parsed.message || message;
+      if (parsed && typeof parsed === "object") {
+        if (Array.isArray((parsed as any).detail)) {
+          message = (parsed as any).detail
+            .map((item: any) => item.msg || item.message || item.detail || JSON.stringify(item))
+            .join(" / ");
+        } else {
+          message = (parsed as any).detail || (parsed as any).message || message;
+        }
+      }
     } catch {}
     throw new Error(message || "Impossible de contacter MyPlanning");
   }
@@ -129,6 +137,20 @@ function formatDateTimeLocal(value?: string | null): string {
 function friendlyError(message: string): string {
   if (/not found/i.test(message)) return "Aucune donnée disponible pour l'instant.";
   return message;
+}
+
+function normalizeTaskPayload(values: Partial<Task>): Record<string, unknown> {
+  const payload: Record<string, unknown> = { ...values };
+  const optionalStrings = ["category", "description", "comments", "linked_goal", "moscow", "status", "energy_level"];
+  for (const key of optionalStrings) {
+    if (typeof payload[key] === "string" && (payload[key] as string).trim() === "") {
+      delete payload[key];
+    }
+  }
+  if (!payload.due_datetime) delete payload.due_datetime;
+  if (!payload.start_datetime) delete payload.start_datetime;
+  if (!payload.estimated_duration_minutes) delete payload.estimated_duration_minutes;
+  return payload;
 }
 
 const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "short" });
@@ -253,7 +275,7 @@ export default function MyPlanningPage(): JSX.Element {
       setBanner({ type: "error", message: "Le titre est obligatoire." });
       return;
     }
-    const payload = { ...formValues };
+    const payload = normalizeTaskPayload(formValues);
     try {
       if (editingId) {
         await apiFetch(`/tasks/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
@@ -653,7 +675,7 @@ export default function MyPlanningPage(): JSX.Element {
           Durée estimée (min)
           <input
             type="number"
-            min={0}
+            min={5}
             value={formValues.estimated_duration_minutes ?? ""}
             onChange={(event) =>
               setFormValues((prev) => ({
@@ -669,7 +691,7 @@ export default function MyPlanningPage(): JSX.Element {
           <input
             type="datetime-local"
             value={formatDateTimeLocal(formValues.due_datetime)}
-            onChange={(event) => setFormValues((prev) => ({ ...prev, due_datetime: event.target.value }))}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, due_datetime: event.target.value || undefined }))}
             className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
           />
         </label>

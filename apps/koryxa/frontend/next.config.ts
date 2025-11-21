@@ -55,6 +55,11 @@ const nextConfig: NextConfig = {
         source: "/api/chatlaya/:path*",
         destination: `${API_BASE}/chatlaya/:path*`,
       },
+      // Guardrail: if a stale bundle calls /innova/api/innova/api/*, collapse to a single segment
+      {
+        source: "/innova/api/innova/api/:path*",
+        destination: "https://api.innovaplus.africa/innova/api/:path*",
+      },
     ];
   },
 

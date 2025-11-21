@@ -3,7 +3,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 
-const API_BASE = `${INNOVA_API_BASE}/myplanning`;
+// Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
+const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api");
+const API_BASE = `${CLEAN_API_BASE}/myplanning`;
 
 type KanbanState = "todo" | "in_progress" | "done";
 type Priority =

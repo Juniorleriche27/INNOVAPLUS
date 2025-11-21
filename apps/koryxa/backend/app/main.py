@@ -182,6 +182,9 @@ innova_api.include_router(missions_router)
 innova_api.include_router(myplanning_router)
 innova_api.include_router(auth_router)
 app.include_router(innova_api)
+# Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
+# by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
+app.include_router(innova_api, prefix="/innova/api")
 
 innova_rag = APIRouter(prefix="/innova")
 innova_rag.include_router(rag_router)

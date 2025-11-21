@@ -9,10 +9,17 @@ export const AUTH_API_BASE = normalize(
   DEFAULT_API_BASE,
 );
 
-// Avoid duplicating the path when NEXT_PUBLIC_API_URL already includes /innova/api
-export const INNOVA_API_BASE = AUTH_API_BASE.endsWith("/innova/api")
-  ? AUTH_API_BASE
-  : `${AUTH_API_BASE}/innova/api`;
+function normalizeInnovaBase(authBase: string): string {
+  let base = authBase.replace(/\/+$/, "");
+  // If the env already contains multiple /innova/api segments, reduce to a single occurrence.
+  base = base.replace(/(\/innova\/api)+$/, "/innova/api");
+  if (!base.endsWith("/innova/api")) {
+    base = `${base}/innova/api`;
+  }
+  return base;
+}
+
+export const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
 
 export const CHATLAYA_API_BASE = normalize(
   process.env.NEXT_PUBLIC_CHATLAYA_URL,

@@ -46,6 +46,8 @@ type AiDraft = {
   estimated_duration_minutes?: number | null;
   priority_eisenhower?: Priority | null;
   high_impact?: boolean | null;
+  category?: string | null;
+  due_datetime?: string | null;
 };
 
 type SidebarItem = { id: string; label: string; icon?: string };
@@ -75,6 +77,28 @@ const SOURCE_LABEL: Record<TaskSource, string> = {
   manual: "Manuel",
   ia: "IA",
 };
+
+function hasHour(text: string): boolean {
+  return /\b([01]?\d|2[0-3])h/.test(text);
+}
+
+function computePriority(title: string, description?: string | null): Priority {
+  const txt = `${title} ${description || ""}`.toLowerCase();
+  const hour = hasHour(txt);
+  const urgentKeywords = ["rendez", "rdv", "réunion", "formation", "cours", "examen", "entretien", "médec", "facture", "payer", "deadline"];
+  const importantKeywords = ["projet", "koryxa", "travail", "réviser", "étude", "budget", "finance", "sport", "santé", "dormir", "préparer", "organisation"];
+
+  if (hour and urgentKeywords.some((k) => txt.includes(k))) return "urgent_important";
+  if (hour) return "urgent_not_important";
+  if (importantKeywords.some((k) => txt.includes(k))) return "important_not_urgent";
+  return "not_urgent_not_important";
+}
+
+function computeImpact(title: string, description?: string | null): boolean {
+  const txt = `${title} ${description || ""}`.toLowerCase();
+  const impactKeywords = ["projet", "koryxa", "travail", "réviser", "étude", "formation", "certification", "budget", "finance", "sport", "santé", "préparer", "objectif", "dlci", "d-clic"];
+  return impactKeywords.some((k) => txt.includes(k));
+}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -193,6 +217,8 @@ export default function MyPlanningClient(): JSX.Element {
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
+  const [bulkAdding, setBulkAdding] = useState(false);
+  const [addedDrafts, setAddedDrafts] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showCoachingGuide, setShowCoachingGuide] = useState(true);
@@ -389,6 +415,7 @@ export default function MyPlanningClient(): JSX.Element {
     setBanner(null);
     setAiSummary(null);
     setAiSummaryError(null);
+    setAddedDrafts(new Set());
     try {
       const res = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
       setAiDrafts(res.drafts);
@@ -421,20 +448,24 @@ export default function MyPlanningClient(): JSX.Element {
     if (!draft.title) return;
     setAddingDraftIndex(index);
     try {
+      const priority = draft.priority_eisenhower || computePriority(draft.title, draft.description);
+      const impact = typeof draft.high_impact === "boolean" ? draft.high_impact : computeImpact(draft.title, draft.description);
       const payload = {
         title: draft.title,
         description: draft.description || "",
         comments: draft.description || "",
-        priority_eisenhower: draft.priority_eisenhower || "important_not_urgent",
-        high_impact: Boolean(draft.high_impact),
+        priority_eisenhower: priority,
+        high_impact: impact,
         estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
         kanban_state: "todo" as KanbanState,
-        due_datetime: toIsoDate(selectedDate),
+        due_datetime: draft.due_datetime || toIsoDate(selectedDate),
         source: "ia" as TaskSource,
+        category: draft.category || undefined,
       };
       const task = await apiFetch<Task>("/tasks", { method: "POST", body: JSON.stringify(payload) });
       setTasks((prev) => [task, ...prev]);
       setBanner({ type: "success", message: "Tâche ajoutée à votre planning d'aujourd'hui" });
+      setAddedDrafts((prev) => new Set([...Array.from(prev), draft.title]));
       void loadTasks();
     } catch (err) {
       const message = err instanceof Error ? friendlyError(err.message) : "Impossible d'ajouter cette tâche";
@@ -1048,6 +1079,50 @@ export default function MyPlanningClient(): JSX.Element {
         {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
       </button>
       {aiDrafts.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+          <span>{aiDrafts.length} tâche(s) proposées</span>
+          <button
+            onClick={async () => {
+              const notAdded = aiDrafts.filter((d) => !addedDrafts.has(d.title));
+              if (!notAdded.length) return;
+              setBulkAdding(true);
+              try {
+                const payload = notAdded.map((draft) => {
+                  const priority = draft.priority_eisenhower || computePriority(draft.title, draft.description);
+                  const impact = typeof draft.high_impact === "boolean" ? draft.high_impact : computeImpact(draft.title, draft.description);
+                  return {
+                    title: draft.title,
+                    description: draft.description || "",
+                    comments: draft.description || "",
+                    priority_eisenhower: priority,
+                    high_impact: impact,
+                    estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
+                    kanban_state: "todo" as KanbanState,
+                    due_datetime: draft.due_datetime || toIsoDate(selectedDate),
+                    source: "ia" as TaskSource,
+                    category: draft.category || undefined,
+                  };
+                });
+                const res = await apiFetch<{ items: Task[] }>("/tasks/bulk_create", { method: "POST", body: JSON.stringify(payload) });
+                setTasks((prev) => [...res.items, ...prev]);
+                setAddedDrafts(new Set([...Array.from(addedDrafts), ...notAdded.map((d) => d.title)]));
+                setBanner({ type: "success", message: `${res.items.length} tâche(s) ajoutée(s) à votre planning d'aujourd'hui` });
+                void loadTasks();
+              } catch (err) {
+                const message = err instanceof Error ? friendlyError(err.message) : "Impossible d'ajouter ces tâches";
+                setBanner({ type: "error", message });
+              } finally {
+                setBulkAdding(false);
+              }
+            }}
+            disabled={bulkAdding || aiDrafts.every((d) => addedDrafts.has(d.title))}
+            className="rounded-full bg-emerald-600 px-3 py-1 font-semibold text-white disabled:opacity-50"
+          >
+            {bulkAdding ? "Ajout..." : "Ajouter toutes les tâches à MyPlanning"}
+          </button>
+        </div>
+      )}
+      {aiDrafts.length > 0 && (
         <div className="mt-2 space-y-2 text-sm">
           {aiDrafts.map((draft, idx) => (
             <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
@@ -1068,7 +1143,7 @@ export default function MyPlanningClient(): JSX.Element {
                       high_impact: Boolean(draft.high_impact),
                       estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
                       source: "ia",
-                      due_datetime: toIsoDate(selectedDate),
+                      due_datetime: draft.due_datetime || toIsoDate(selectedDate),
                     });
                     setEditingId(null);
                     setActiveSection("create");
@@ -1079,10 +1154,10 @@ export default function MyPlanningClient(): JSX.Element {
                 </button>
                 <button
                   onClick={() => void handleAddDraft(draft, idx)}
-                  disabled={addingDraftIndex === idx}
+                  disabled={addingDraftIndex === idx || addedDrafts.has(draft.title)}
                   className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 disabled:opacity-60"
                 >
-                  {addingDraftIndex === idx ? "Ajout..." : "Ajouter à mes tâches"}
+                  {addedDrafts.has(draft.title) ? "Ajoutée" : addingDraftIndex === idx ? "Ajout..." : "Ajouter à mes tâches"}
                 </button>
               </div>
             </div>

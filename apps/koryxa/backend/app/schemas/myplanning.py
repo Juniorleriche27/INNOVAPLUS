@@ -85,6 +85,8 @@ class AiTaskDraft(BaseModel):
     estimated_duration_minutes: Optional[int] = None
     priority_eisenhower: Optional[PriorityEisenhower] = None
     high_impact: Optional[bool] = None
+    category: Optional[str] = None
+    due_datetime: Optional[datetime] = None
 
 
 class AiSuggestTasksRequest(BaseModel):

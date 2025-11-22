@@ -218,6 +218,57 @@ async def delete_task(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post("/tasks/bulk_create", response_model=TaskListResponse)
+async def bulk_create_tasks(
+    payload: List[TaskCreatePayload],
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> TaskListResponse:
+    now = datetime.utcnow()
+    if not payload:
+        return TaskListResponse(items=[])
+    docs = []
+    for item in payload:
+        doc = item.dict()
+        doc = _prepare_task_payload(doc)
+        doc["user_id"] = current["_id"]
+        doc["created_at"] = now
+        doc["updated_at"] = now
+        doc["source"] = doc.get("source") or "manual"
+        docs.append(doc)
+    # deduplicate by (title, due_date, source) for this user
+    titles = [d.get("title") for d in docs]
+    due_dates = [
+        _serialize_datetime(d.get("due_datetime")).date() if _serialize_datetime(d.get("due_datetime")) else None
+        for d in docs
+    ]
+    existing = db[COLLECTION].find(
+        {
+            "user_id": current["_id"],
+            "title": {"$in": titles},
+            "source": "ia",
+        }
+    )
+    skip_keys: set[tuple[str, datetime.date | None]] = set()
+    async for doc in existing:
+        ddate = _serialize_datetime(doc.get("due_datetime")).date() if _serialize_datetime(doc.get("due_datetime")) else None
+        skip_keys.add((doc.get("title"), ddate))
+
+    to_insert = []
+    for doc, ddate in zip(docs, due_dates):
+        key = (doc.get("title"), ddate)
+        if doc.get("source") == "ia" and key in skip_keys:
+            continue
+        to_insert.append(doc)
+    inserted: List[TaskResponse] = []
+    if to_insert:
+        res = await db[COLLECTION].insert_many(to_insert)
+        for oid, doc in zip(res.inserted_ids, to_insert):
+            doc["_id"] = oid
+            inserted.append(_serialize_task(doc))
+    return TaskListResponse(items=inserted)
+
+
 @router.post("/ai/suggest-tasks", response_model=AiSuggestTasksResponse)
 async def ai_suggest_tasks(
     payload: AiSuggestTasksRequest,

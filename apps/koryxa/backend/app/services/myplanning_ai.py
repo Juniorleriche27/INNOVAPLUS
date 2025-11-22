@@ -69,12 +69,17 @@ async def suggest_tasks_from_text(
     preferred_duration_block: int | None,
 ) -> List[Dict[str, Any]]:
     prompt = (
-        "Tu es un assistant KORYXA qui structure une journée en tâches. "
-        "Analyse le texte utilisateur et propose des tâches concrètes. "
-        "Retourne uniquement un JSON valide de la forme "
+        "Tu es un assistant KORYXA qui structure une journée en tâches actionnables. "
+        "Retourne UNIQUEMENT un JSON valide de la forme "
         "{\"tasks\":[{\"title\":str,\"description\":str,\"estimated_duration_minutes\":int,"
         "\"priority_eisenhower\":\"urgent_important|important_not_urgent|urgent_not_important|not_urgent_not_important\","
-        "\"high_impact\":true|false}]}. "
+        "\"high_impact\":true|false,\"category\":str|optional,\"due_datetime\":ISO8601|optional}]}. "
+        "Règles de priorité (Eisenhower) : "
+        "Rendez-vous / cours / formation / santé / examen / réunion à heure fixe aujourd'hui ou deadline aujourd'hui -> urgent_important. "
+        "Progrès long terme (études, projet stratégique, santé, finances, préparation du lendemain) sans heure stricte -> important_not_urgent. "
+        "Petites urgences logistiques à heure fixe sans enjeu majeur -> urgent_not_important. "
+        "Loisirs/distractions sans enjeu -> not_urgent_not_important. "
+        "Impact élevé = true si la tâche contribue à un objectif prioritaire (études, projet, santé, finances) ou réduit un risque important. Sinon false. "
         "Ne crée pas plus de 8 tâches et n'invente pas d'informations non présentes."
     )
     payload: Dict[str, Any] = {"texte": free_text}

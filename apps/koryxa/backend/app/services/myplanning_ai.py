@@ -37,6 +37,72 @@ def _extract_json(raw: str) -> Any:
     return None
 
 
+def _has_hour(text: str) -> bool:
+    return bool(re.search(r"\b([01]?\d|2[0-3])h", text))
+
+
+def _compute_priority(title: str, description: str | None) -> str:
+    txt = f"{title} {description or ''}".lower()
+    hour = _has_hour(txt)
+    urgent_keywords = ["rendez", "rdv", "réunion", "formation", "cours", "examen", "entretien", "médec", "facture", "payer", "deadline"]
+    important_keywords = ["projet", "koryxa", "travail", "réviser", "étude", "budget", "finance", "sport", "santé", "dormir", "préparer", "organisation"]
+    if hour and any(k in txt for k in urgent_keywords):
+        return "urgent_important"
+    if hour:
+        return "urgent_not_important"
+    if any(k in txt for k in important_keywords):
+        return "important_not_urgent"
+    return "not_urgent_not_important"
+
+
+def _compute_impact(title: str, description: str | None) -> bool:
+    txt = f"{title} {description or ''}".lower()
+    impact_keywords = [
+        "projet",
+        "koryxa",
+        "travail",
+        "réviser",
+        "étude",
+        "formation",
+        "certification",
+        "budget",
+        "finance",
+        "sport",
+        "santé",
+        "préparer",
+        "objectif",
+        "dlci",
+        "d-clic",
+    ]
+    return any(k in txt for k in impact_keywords)
+
+
+def _fallback_tasks(free_text: str) -> list[dict]:
+    chunks = re.split(r"[\\.;\\n]+", free_text)
+    tasks: list[dict] = []
+    for chunk in chunks:
+        title = chunk.strip()
+        if len(title) < 6:
+            continue
+        desc = None
+        priority = _compute_priority(title, desc)
+        impact = _compute_impact(title, desc)
+        tasks.append(
+            {
+                "title": title[:260],
+                "description": desc,
+                "estimated_duration_minutes": None,
+                "priority_eisenhower": priority,
+                "high_impact": impact,
+                "category": None,
+                "due_datetime": None,
+            }
+        )
+        if len(tasks) >= 8:
+            break
+    return tasks
+
+
 async def _call_llama(prompt: str) -> str:
     # Try local SmolLM first when available, then fall back to configured provider, then echo
     provider_candidates = []
@@ -93,7 +159,9 @@ async def suggest_tasks_from_text(
     tasks = data.get("tasks") if isinstance(data, dict) else None
     if not isinstance(tasks, list):
         logger.warning("AI suggest tasks returned unexpected payload: %s", raw)
-        return []
+        tasks = []
+    if not tasks:
+        tasks = _fallback_tasks(free_text)
     cleaned: List[Dict[str, Any]] = []
     for item in tasks:
         if not isinstance(item, dict):
@@ -101,13 +169,20 @@ async def suggest_tasks_from_text(
         title = str(item.get("title") or "").strip()
         if not title:
             continue
+        description = (item.get("description") or "").strip() or None
+        priority = item.get("priority_eisenhower") or _compute_priority(title, description)
+        impact = item.get("high_impact")
+        if impact is None:
+            impact = _compute_impact(title, description)
         cleaned.append(
             {
                 "title": title[:260],
-                "description": (item.get("description") or "").strip() or None,
+                "description": description,
                 "estimated_duration_minutes": item.get("estimated_duration_minutes"),
-                "priority_eisenhower": item.get("priority_eisenhower"),
-                "high_impact": item.get("high_impact"),
+                "priority_eisenhower": priority,
+                "high_impact": impact,
+                "category": item.get("category"),
+                "due_datetime": item.get("due_datetime"),
             }
         )
     return cleaned[:8]

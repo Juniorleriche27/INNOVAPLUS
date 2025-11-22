@@ -88,7 +88,7 @@ function computePriority(title: string, description?: string | null): Priority {
   const urgentKeywords = ["rendez", "rdv", "réunion", "formation", "cours", "examen", "entretien", "médec", "facture", "payer", "deadline"];
   const importantKeywords = ["projet", "koryxa", "travail", "réviser", "étude", "budget", "finance", "sport", "santé", "dormir", "préparer", "organisation"];
 
-  if (hour and urgentKeywords.some((k) => txt.includes(k))) return "urgent_important";
+  if (hour && urgentKeywords.some((k) => txt.includes(k))) return "urgent_important";
   if (hour) return "urgent_not_important";
   if (importantKeywords.some((k) => txt.includes(k))) return "important_not_urgent";
   return "not_urgent_not_important";

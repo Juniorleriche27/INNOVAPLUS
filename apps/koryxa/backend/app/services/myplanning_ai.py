@@ -5,10 +5,11 @@ import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
+import os
 
 from fastapi.concurrency import run_in_threadpool
 
-from app.core.ai import generate_answer
+from app.core.ai import FALLBACK_REPLY, generate_answer
 from app.core.config import settings
 
 
@@ -37,8 +38,29 @@ def _extract_json(raw: str) -> Any:
 
 
 async def _call_llama(prompt: str) -> str:
-    provider = settings.CHAT_PROVIDER or settings.LLM_PROVIDER or "local"
-    return await run_in_threadpool(generate_answer, prompt, provider)
+    # Try local SmolLM first when available, then fall back to configured provider, then echo
+    provider_candidates = []
+    enable_smollm = os.getenv("ENABLE_SMOLLM", "false").lower() == "true"
+    if enable_smollm or settings.SMOLLM_MODEL_PATH:
+        provider_candidates.extend(["smollm", "local"])
+    provider_candidates.extend([settings.CHAT_PROVIDER, settings.LLM_PROVIDER, "echo"])
+
+    seen = set()
+    for provider in provider_candidates:
+        if not provider:
+            continue
+        name = str(provider).lower()
+        if name in seen:
+            continue
+        seen.add(name)
+        try:
+            response = await run_in_threadpool(generate_answer, prompt, name)
+            if response and response != FALLBACK_REPLY:
+                return response
+        except Exception:
+            logger.warning("LLM provider %s failed, trying next fallback", name, exc_info=True)
+            continue
+    return FALLBACK_REPLY
 
 
 async def suggest_tasks_from_text(

@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import Headbar from "@/components/layout/headbar";
 import Sidebar from "@/components/layout/sidebar";
 import Footer from "@/components/layout/footer";
-import PWARegister from "@/components/util/PWARegister";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
@@ -28,6 +27,9 @@ export const metadata: Metadata = {
     description: "Moteur IA d’opportunités. Transparence · Équité · Impact."
   }
 };
+
+// Désactivation PWA globale pour éviter un cache SW qui fige MyPlanning en prod.
+const ENABLE_PWA = false;
 
 export default function RootLayout(props: { children: ReactNode }) {
   const { children } = props;
@@ -61,7 +63,7 @@ export default function RootLayout(props: { children: ReactNode }) {
             </div>
           </AuthProvider>
         </div>
-        <PWARegister />
+        {ENABLE_PWA && <PWARegister />}
       </body>
     </html>
   );

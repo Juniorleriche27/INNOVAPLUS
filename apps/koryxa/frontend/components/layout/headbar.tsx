@@ -345,10 +345,6 @@ export default function Headbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = "/login";
-                  }}
                   className="hidden sm:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200"
                 >
                   Se connecter
@@ -356,10 +352,6 @@ export default function Headbar() {
                 <Link
                   href="/signup"
                   prefetch={false}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.href = "/signup";
-                  }}
                   className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <IconSparkles className="h-4 w-4" />

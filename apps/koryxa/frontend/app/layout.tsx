@@ -28,9 +28,6 @@ export const metadata: Metadata = {
   }
 };
 
-// Désactivation PWA globale pour éviter un cache SW qui fige MyPlanning en prod.
-const ENABLE_PWA = false;
-
 export default function RootLayout(props: { children: ReactNode }) {
   const { children } = props;
 
@@ -63,7 +60,6 @@ export default function RootLayout(props: { children: ReactNode }) {
             </div>
           </AuthProvider>
         </div>
-        {ENABLE_PWA && <PWARegister />}
       </body>
     </html>
   );

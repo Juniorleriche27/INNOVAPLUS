@@ -71,12 +71,6 @@ const PRIORITY_LABEL: Record<Priority, string> = {
   not_urgent_not_important: "Ni urgent ni important",
 };
 
-const KANBAN_LABEL: Record<KanbanState, string> = {
-  todo: "À faire",
-  in_progress: "En cours",
-  done: "Terminé",
-};
-
 const SOURCE_LABEL: Record<TaskSource, string> = {
   manual: "Manuel",
   ia: "IA",
@@ -91,14 +85,22 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let message = await response.text();
     try {
-      const parsed = message ? JSON.parse(message) : null;
+      const parsed: unknown = message ? JSON.parse(message) : null;
       if (parsed && typeof parsed === "object") {
-        if (Array.isArray((parsed as any).detail)) {
-          message = (parsed as any).detail
-            .map((item: any) => item.msg || item.message || item.detail || JSON.stringify(item))
+        const detail = (parsed as { detail?: unknown; message?: string }).detail;
+        if (Array.isArray(detail)) {
+          message = detail
+            .map((item) => {
+              if (typeof item === "object" && item) {
+                const entry = item as { msg?: string; message?: string; detail?: string };
+                return entry.msg || entry.message || entry.detail || JSON.stringify(entry);
+              }
+              return String(item);
+            })
             .join(" / ");
         } else {
-          message = (parsed as any).detail || (parsed as any).message || message;
+          const entry = parsed as { detail?: string; message?: string };
+          message = entry.detail || entry.message || message;
         }
       }
     } catch {}
@@ -193,6 +195,9 @@ export default function MyPlanningClient(): JSX.Element {
   const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showCoachingGuide, setShowCoachingGuide] = useState(true);
+  const [aiSummary, setAiSummary] = useState<{ total: number; counts: Record<Priority, number>; highImpact: number } | null>(null);
+  const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -222,6 +227,13 @@ export default function MyPlanningClient(): JSX.Element {
       window.localStorage.setItem("myplanning.sidebar", isSidebarCollapsed ? "collapsed" : "open");
     }
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hideGuide = window.localStorage.getItem("myplanning.coaching.guide");
+      if (hideGuide === "hidden") setShowCoachingGuide(false);
+    }
+  }, []);
 
   const categories = useMemo(() => {
     const set = new Set(tasks.map((task) => task.category).filter(Boolean) as string[]);
@@ -375,12 +387,27 @@ export default function MyPlanningClient(): JSX.Element {
     if (!aiText.trim()) return;
     setAiLoading(true);
     setBanner(null);
+    setAiSummary(null);
+    setAiSummaryError(null);
     try {
       const res = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
       setAiDrafts(res.drafts);
+      const counts: Record<Priority, number> = {
+        urgent_important: 0,
+        important_not_urgent: 0,
+        urgent_not_important: 0,
+        not_urgent_not_important: 0,
+      };
+      let highImpact = 0;
+      res.drafts.forEach((d) => {
+        if (d.priority_eisenhower && counts[d.priority_eisenhower] !== undefined) counts[d.priority_eisenhower] += 1;
+        if (d.high_impact) highImpact += 1;
+      });
+      setAiSummary({ total: res.drafts.length, counts, highImpact });
     } catch (err) {
       const message = err instanceof Error ? friendlyError(err.message) : "Échec de l'assistant";
       setBanner({ type: "error", message });
+      setAiSummaryError(message);
     } finally {
       setAiLoading(false);
     }
@@ -487,11 +514,18 @@ export default function MyPlanningClient(): JSX.Element {
 
   const renderWeekly = () => {
     const hasTasks = weeklyTasks.some((d) => d.list.length);
+    const monday = startOfWeek(selectedDate);
     if (!hasTasks) {
       return (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
           <p className="font-semibold text-slate-800">Vous n’avez pas encore de tâches pour cette semaine.</p>
-          <button onClick={() => setActiveSection("coaching")} className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white">
+          <button
+            onClick={() => {
+              setSelectedDate(monday);
+              setActiveSection("coaching");
+            }}
+            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white"
+          >
             Organiser ma semaine avec l’IA
           </button>
         </div>
@@ -499,28 +533,31 @@ export default function MyPlanningClient(): JSX.Element {
     }
     return (
       <div className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {weeklyTasks.map(({ day, list }) => (
             <div
               key={day.toISOString()}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-sky-200"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-sky-200 cursor-pointer"
               onClick={() => {
                 setSelectedDate(day);
                 setActiveSection("dashboard");
               }}
             >
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <span>{dayFormatter.format(day)}</span>
+                <span>{shortDayFormatter.format(day)} {day.getDate()}</span>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{list.length} tâche(s)</span>
               </div>
               <div className="mt-2 space-y-2">
                 {list.slice(0, 5).map((task) => (
                   <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                     <div className="text-xs text-slate-800">
-                      <p className="font-semibold">{task.title}</p>
+                      <p className="font-semibold line-clamp-1">{task.title}</p>
                       <p className="text-[11px] text-slate-500">{PRIORITY_LABEL[task.priority_eisenhower]}</p>
                     </div>
-                    {task.kanban_state === "done" ? <span className="text-emerald-600 text-lg">✓</span> : <span className="text-slate-400 text-lg">•</span>}
+                    <div className="flex items-center gap-1 text-[11px]">
+                      {task.high_impact && <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">Impact</span>}
+                      {task.kanban_state === "done" ? <span className="text-emerald-600 text-lg">✓</span> : <span className="text-slate-400 text-lg">•</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -937,23 +974,77 @@ export default function MyPlanningClient(): JSX.Element {
   );
 
   const renderCoaching = () => (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
       <h2 className="text-xl font-semibold text-slate-900">Coaching MyPlanning</h2>
+      {showCoachingGuide && (
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-slate-900">Comment ça marche ?</p>
+              <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">
+                <li>Décrivez votre journée dans la zone de texte.</li>
+                <li>Cliquez sur “Générer des tâches”.</li>
+                <li>L’IA propose des tâches classées par priorité.</li>
+                <li>“Ajouter à mes tâches” pour les envoyer dans votre planning.</li>
+              </ol>
+            </div>
+            <button
+              className="text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => {
+                setShowCoachingGuide(false);
+                if (typeof window !== "undefined") window.localStorage.setItem("myplanning.coaching.guide", "hidden");
+              }}
+            >
+              Masquer ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {aiSummary && (
+        <div className="flex items-start justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div>
+            <p className="font-semibold">
+              {aiSummary.total} tâche{aiSummary.total > 1 ? "s" : ""} générée{aiSummary.total > 1 ? "s" : ""} pour aujourd’hui
+            </p>
+            <p className="text-[13px]">
+              {aiSummary.counts.important_not_urgent} importantes, {aiSummary.counts.urgent_important} urgentes & importantes,{" "}
+              {aiSummary.counts.urgent_not_important} urgentes moins importantes, {aiSummary.counts.not_urgent_not_important} autres.{" "}
+              {aiSummary.highImpact} tâche{aiSummary.highImpact > 1 ? "s" : ""} à impact élevé.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActiveSection("manage")} className="text-xs font-semibold text-emerald-800 underline">
+              Voir dans Gérer les tâches
+            </button>
+            <button className="text-xs text-emerald-700 hover:text-emerald-900" onClick={() => setAiSummary(null)}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {aiSummaryError && (
+        <div className="flex items-start justify-between rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <span>{aiSummaryError}</span>
+          <button className="text-xs text-rose-700 hover:text-rose-900" onClick={() => setAiSummaryError(null)}>
+            ✕
+          </button>
+        </div>
+      )}
       <textarea
         value={aiText}
         onChange={(event) => setAiText(event.target.value)}
         placeholder="Décrivez votre journée..."
-        className="mt-3 h-32 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
+        className="mt-1 h-32 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
       />
       <button
         onClick={handleAiSuggest}
         disabled={aiLoading}
-        className="mt-3 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
       </button>
       {aiDrafts.length > 0 && (
-        <div className="mt-4 space-y-2 text-sm">
+        <div className="mt-2 space-y-2 text-sm">
           {aiDrafts.map((draft, idx) => (
             <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
               <div className="flex items-center justify-between text-[11px] text-slate-500">

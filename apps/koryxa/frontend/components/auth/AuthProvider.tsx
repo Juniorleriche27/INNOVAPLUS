@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { AUTH_API_BASE } from "@/lib/env";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 type WorkspaceRole = "demandeur" | "prestataire";
 
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+      const res = await fetch(`${INNOVA_API_BASE}/auth/me`, {
         cache: "no-store",
         credentials: "include",
         signal: controller.signal,

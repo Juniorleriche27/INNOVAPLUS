@@ -3,6 +3,11 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 
+// Force dynamic rendering to avoid stale cached HTML on MyPlanning
+export const revalidate = 0;
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 // Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
 const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api");
 const API_BASE = `${CLEAN_API_BASE}/myplanning`;

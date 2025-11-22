@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { AUTH_API_BASE } from "@/lib/env";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 export default function SignupClient() {
   const { refresh } = useAuth();
@@ -27,7 +27,7 @@ export default function SignupClient() {
       const [firstRaw, ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
       const first_name = firstRaw || email.split("@")[0];
       const last_name = (rest.join(" ") || first_name).slice(0, 120);
-      const resp = await fetch(`${AUTH_API_BASE}/auth/register`, {
+      const resp = await fetch(`${INNOVA_API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

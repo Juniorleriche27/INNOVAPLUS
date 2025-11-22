@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { AUTH_API_BASE } from "@/lib/env";
+import { INNOVA_API_BASE } from "@/lib/env";
 import { FormEvent, useState } from "react";
 
 type Step = "request" | "verify";
@@ -31,7 +31,7 @@ export default function LoginClient() {
     setInfo(null);
     setDebugCode(null);
     try {
-      const resp = await fetch(`${AUTH_API_BASE}/auth/request-otp`, {
+      const resp = await fetch(`${INNOVA_API_BASE}/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -53,7 +53,7 @@ export default function LoginClient() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch(`${AUTH_API_BASE}/auth/login-otp`, {
+      const resp = await fetch(`${INNOVA_API_BASE}/auth/login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

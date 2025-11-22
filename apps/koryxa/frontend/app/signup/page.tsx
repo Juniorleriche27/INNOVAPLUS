@@ -4,13 +4,13 @@ export const revalidate = 0;
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import SignupClient from "./SignupClient";
-import { AUTH_API_BASE } from "@/lib/env";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 async function hasValidSession(): Promise<boolean> {
   const session = cookies().get("innova_session");
   if (!session?.value) return false;
   try {
-    const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+    const res = await fetch(`${INNOVA_API_BASE}/auth/me`, {
       cache: "no-store",
       headers: {
         cookie: `${session.name}=${session.value}`,

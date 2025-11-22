@@ -60,6 +60,7 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "estimated_duration_minutes": doc.get("estimated_duration_minutes"),
         "start_datetime": _serialize_datetime(doc.get("start_datetime")),
         "due_datetime": _serialize_datetime(doc.get("due_datetime")),
+        "completed_at": _serialize_datetime(doc.get("completed_at")),
         "linked_goal": doc.get("linked_goal"),
         "moscow": doc.get("moscow"),
         "status": doc.get("status"),
@@ -69,6 +70,7 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "comments": doc.get("comments"),
         "assignee_user_id": str(doc.get("assignee_user_id")) if doc.get("assignee_user_id") else None,
         "collaborator_ids": collaborators,
+        "source": doc.get("source") or "manual",
         "created_at": _serialize_datetime(doc.get("created_at")),
         "updated_at": _serialize_datetime(doc.get("updated_at")),
     }
@@ -155,6 +157,9 @@ async def create_task(
     doc = payload.dict()
     doc = _prepare_task_payload(doc)
     doc["user_id"] = current["_id"]
+    doc["source"] = doc.get("source") or "manual"
+    if doc.get("kanban_state") == "done" and not doc.get("completed_at"):
+        doc["completed_at"] = now
     doc["created_at"] = now
     doc["updated_at"] = now
     result = await db[COLLECTION].insert_one(doc)
@@ -176,8 +181,20 @@ async def update_task(
         if not doc:
             raise HTTPException(status_code=404, detail="Tâche introuvable")
         return _serialize_task(doc)
+    existing = await db[COLLECTION].find_one({"_id": oid, "user_id": current["_id"]})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
     updates = _prepare_task_payload(updates)
-    updates["updated_at"] = datetime.utcnow()
+    now = datetime.utcnow()
+    if "kanban_state" in updates:
+        new_state = updates["kanban_state"]
+        prev_state = existing.get("kanban_state")
+        if new_state == "done" and not existing.get("completed_at"):
+            updates["completed_at"] = now
+        elif new_state != "done":
+            updates["completed_at"] = None
+        # retain previous completed_at if staying done without explicit reset
+    updates["updated_at"] = now
     doc = await db[COLLECTION].find_one_and_update(
         {"_id": oid, "user_id": current["_id"]},
         {"$set": updates},

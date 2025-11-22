@@ -15,6 +15,7 @@ PriorityEisenhower = Literal[
 KanbanState = Literal["todo", "in_progress", "done"]
 MoSCoWOption = Literal["must", "should", "could", "wont"]
 EnergyLevel = Literal["low", "medium", "high"]
+TaskSource = Literal["manual", "ia"]
 
 
 class TaskBase(BaseModel):
@@ -36,6 +37,8 @@ class TaskBase(BaseModel):
     comments: Optional[str] = Field(default=None, max_length=2000)
     assignee_user_id: Optional[str] = Field(default=None, max_length=50)
     collaborator_ids: Optional[List[str]] = None
+    source: TaskSource = "manual"
+    completed_at: Optional[datetime] = None
 
 
 class TaskCreatePayload(TaskBase):
@@ -61,6 +64,8 @@ class TaskUpdatePayload(BaseModel):
     comments: Optional[str] = Field(default=None, max_length=2000)
     assignee_user_id: Optional[str] = Field(default=None, max_length=50)
     collaborator_ids: Optional[List[str]] = None
+    source: Optional[TaskSource] = None
+    completed_at: Optional[datetime] = None
 
 
 class TaskResponse(TaskBase):

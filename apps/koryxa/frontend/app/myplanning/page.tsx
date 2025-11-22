@@ -13,6 +13,8 @@ type Priority =
   | "important_not_urgent"
   | "urgent_not_important"
   | "not_urgent_not_important";
+type TaskSource = "manual" | "ia";
+type PeriodFilter = "all" | "today" | "last7" | "last30";
 
 type Task = {
   id: string;
@@ -25,6 +27,7 @@ type Task = {
   estimated_duration_minutes?: number | null;
   start_datetime?: string | null;
   due_datetime?: string | null;
+  completed_at?: string | null;
   linked_goal?: string | null;
   moscow?: string | null;
   status?: string | null;
@@ -32,6 +35,9 @@ type Task = {
   pomodoro_estimated?: number | null;
   pomodoro_done?: number | null;
   comments?: string | null;
+  source?: TaskSource | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 type AiDraft = {
@@ -42,23 +48,20 @@ type AiDraft = {
   high_impact?: boolean | null;
 };
 
-type SidebarItem = {
-  id: string;
-  label: string;
-};
+type SidebarItem = { id: string; label: string; icon?: string };
 
 const VIEWS: SidebarItem[] = [
-  { id: "dashboard", label: "Dashboard quotidien" },
-  { id: "weekly", label: "Vue hebdomadaire" },
-  { id: "matrix", label: "Matrice temps / tâches" },
-  { id: "stats", label: "Stats & graphiques" },
+  { id: "dashboard", label: "Dashboard quotidien", icon: "📅" },
+  { id: "weekly", label: "Vue hebdomadaire", icon: "🗓️" },
+  { id: "matrix", label: "Matrice temps / tâches", icon: "🪧" },
+  { id: "stats", label: "Stats & graphiques", icon: "📈" },
 ];
 
 const ACTIONS: SidebarItem[] = [
-  { id: "create", label: "Nouvelle tâche" },
-  { id: "manage", label: "Gérer les tâches" },
-  { id: "coaching", label: "Coaching IA" },
-  { id: "settings", label: "Paramètres IA" },
+  { id: "create", label: "Nouvelle tâche", icon: "➕" },
+  { id: "manage", label: "Gérer les tâches", icon: "📋" },
+  { id: "coaching", label: "Coaching IA", icon: "🤖" },
+  { id: "settings", label: "Paramètres IA", icon: "⚙️" },
 ];
 
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -72,6 +75,11 @@ const KANBAN_LABEL: Record<KanbanState, string> = {
   todo: "À faire",
   in_progress: "En cours",
   done: "Terminé",
+};
+
+const SOURCE_LABEL: Record<TaskSource, string> = {
+  manual: "Manuel",
+  ia: "IA",
 };
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -134,6 +142,12 @@ function formatDateTimeLocal(value?: string | null): string {
   return local.toISOString().slice(0, 16);
 }
 
+function toIsoDate(date: Date): string {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy.toISOString();
+}
+
 function friendlyError(message: string): string {
   if (/not found/i.test(message)) return "Aucune donnée disponible pour l'instant.";
   return message;
@@ -150,6 +164,8 @@ function normalizeTaskPayload(values: Partial<Task>): Record<string, unknown> {
   if (!payload.due_datetime) delete payload.due_datetime;
   if (!payload.start_datetime) delete payload.start_datetime;
   if (!payload.estimated_duration_minutes) delete payload.estimated_duration_minutes;
+  if (!payload.completed_at) delete payload.completed_at;
+  if (!payload.source) delete payload.source;
   return payload;
 }
 
@@ -164,16 +180,19 @@ export default function MyPlanningPage(): JSX.Element {
   const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
   const [activeSection, setActiveSection] = useState<string>("dashboard");
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false });
+  const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterPriority, setFilterPriority] = useState<"all" | Priority>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | KanbanState>("all");
+  const [filterSource, setFilterSource] = useState<"all" | TaskSource>("all");
+  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>("all");
   const [aiText, setAiText] = useState("");
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -193,6 +212,17 @@ export default function MyPlanningPage(): JSX.Element {
     void loadTasks();
   }, []);
 
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem("myplanning.sidebar") : null;
+    if (saved) setIsSidebarCollapsed(saved === "collapsed");
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("myplanning.sidebar", isSidebarCollapsed ? "collapsed" : "open");
+    }
+  }, [isSidebarCollapsed]);
+
   const categories = useMemo(() => {
     const set = new Set(tasks.map((task) => task.category).filter(Boolean) as string[]);
     return Array.from(set);
@@ -205,7 +235,7 @@ export default function MyPlanningPage(): JSX.Element {
     });
   }, [tasks, selectedDate]);
 
-  const weeklyDiscipline = useMemo(() => {
+  const weeklyTasks = useMemo(() => {
     const base = startOfWeek(selectedDate);
     return Array.from({ length: 7 }).map((_, idx) => {
       const day = new Date(base);
@@ -214,31 +244,49 @@ export default function MyPlanningPage(): JSX.Element {
         const ref = parseDate(task.start_datetime) || parseDate(task.due_datetime);
         return ref ? sameDay(ref, day) : false;
       });
-      const done = list.filter((task) => task.kanban_state === "done").length;
-      const completion = list.length ? Math.round((done / list.length) * 100) : 0;
-      return { dayLabel: shortDayFormatter.format(day), completion };
+      return { day, list };
     });
   }, [tasks, selectedDate]);
 
+  const dateInputValue = useMemo(() => formatDateInputValue(selectedDate), [selectedDate]);
+
+  const shiftSelectedDate = (delta: number) => {
+    setSelectedDate((prev) => {
+      const next = new Date(prev);
+      next.setDate(prev.getDate() + delta);
+      return next;
+    });
+  };
+
   const filteredTasks = useMemo(() => {
+    const now = new Date();
+    const isInPeriod = (task: Task) => {
+      if (filterPeriod === "all") return true;
+      const ref = parseDate(task.due_datetime) || parseDate(task.start_datetime) || parseDate(task.created_at);
+      if (!ref) return false;
+      if (filterPeriod === "today") return sameDay(ref, selectedDate);
+      const diffDays = (now.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24);
+      if (filterPeriod === "last7") return diffDays <= 7;
+      if (filterPeriod === "last30") return diffDays <= 30;
+      return true;
+    };
     return tasks.filter((task) => {
       if (filterCategory !== "all" && (task.category || "") !== filterCategory) return false;
       if (filterPriority !== "all" && task.priority_eisenhower !== filterPriority) return false;
       if (filterStatus !== "all" && task.kanban_state !== filterStatus) return false;
+      if (filterSource !== "all" && (task.source || "manual") !== filterSource) return false;
+      if (!isInPeriod(task)) return false;
       return true;
     });
-  }, [tasks, filterCategory, filterPriority, filterStatus]);
+  }, [tasks, filterCategory, filterPriority, filterStatus, filterSource, filterPeriod, selectedDate]);
 
   const sortedTasks = useMemo(() => {
     const copy = [...filteredTasks];
     copy.sort((a, b) => {
-      // High impact first
       if (a.high_impact !== b.high_impact) return a.high_impact ? -1 : 1;
-      // Earlier due date first
       const aDate = parseDate(a.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
       const bDate = parseDate(b.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
       if (aDate !== bDate) return aDate - bDate;
-      // Keep stable-ish by creation order (already sorted server-side; fallback title)
       return a.title.localeCompare(b.title);
     });
     return copy;
@@ -254,18 +302,37 @@ export default function MyPlanningPage(): JSX.Element {
     return { total: filteredTasks.length, done, highImpact, late };
   }, [filteredTasks]);
 
-  const dateInputValue = useMemo(() => formatDateInputValue(selectedDate), [selectedDate]);
+  const completionDate = (task: Task): Date | null => parseDate(task.completed_at) || (task.kanban_state === "done" ? parseDate(task.updated_at) : null);
 
-  const shiftSelectedDate = (delta: number) => {
-    setSelectedDate((prev) => {
-      const next = new Date(prev);
-      next.setDate(prev.getDate() + delta);
-      return next;
+  const statsLast7 = useMemo(() => {
+    const today = new Date();
+    const start = new Date();
+    start.setDate(today.getDate() - 6);
+    const createdCount = tasks.filter((t) => {
+      const created = parseDate(t.created_at);
+      return created && created >= start && created <= today;
+    }).length;
+    const completed = tasks.filter((t) => {
+      const doneAt = completionDate(t);
+      return t.kanban_state === "done" && doneAt && doneAt >= start && doneAt <= today;
     });
-  };
+    const doneCount = completed.length;
+    const days = Array.from({ length: 7 }).map((_, idx) => {
+      const day = new Date(start);
+      day.setDate(start.getDate() + idx);
+      const count = completed.filter((t) => {
+        const d = completionDate(t);
+        return d ? sameDay(d, day) : false;
+      }).length;
+      return { label: shortDayFormatter.format(day), count };
+    });
+    const avgPerDay = Math.round((doneCount / 7) * 10) / 10;
+    const completionRate = filteredTasks.length ? Math.round((managerStats.done / filteredTasks.length) * 100) : 0;
+    return { createdCount, doneCount, avgPerDay, completionRate, days };
+  }, [tasks, filteredTasks.length, managerStats.done]);
 
   const resetForm = () => {
-    setFormValues({ priority_eisenhower: "important_not_urgent", high_impact: false });
+    setFormValues({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
     setEditingId(null);
   };
 
@@ -278,8 +345,8 @@ export default function MyPlanningPage(): JSX.Element {
     const payload = normalizeTaskPayload(formValues);
     try {
       if (editingId) {
-        await apiFetch(`/tasks/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
-        setTasks((prev) => prev.map((task) => (task.id === editingId ? { ...task, ...payload } : task)));
+        const task = await apiFetch<Task>(`/tasks/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
+        setTasks((prev) => prev.map((t) => (t.id === editingId ? task : t)));
         setBanner({ type: "success", message: "Tâche mise à jour." });
       } else {
         const task = await apiFetch<Task>("/tasks", { method: "POST", body: JSON.stringify(payload) });
@@ -296,16 +363,12 @@ export default function MyPlanningPage(): JSX.Element {
 
   const handleStateChange = async (taskId: string, state: KanbanState) => {
     try {
-      await apiFetch(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify({ kanban_state: state }) });
-      setTasks((prev) => prev.map((task) => (task.id === taskId ? { ...task, kanban_state: state } : task)));
+      const task = await apiFetch<Task>(`/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify({ kanban_state: state }) });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? task : t)));
     } catch (err) {
       const message = err instanceof Error ? friendlyError(err.message) : "Action impossible";
       setBanner({ type: "error", message });
     }
-  };
-
-  const handleComplete = async (taskId: string) => {
-    await handleStateChange(taskId, "done");
   };
 
   const handleAiSuggest = async () => {
@@ -330,14 +393,18 @@ export default function MyPlanningPage(): JSX.Element {
       const payload = {
         title: draft.title,
         description: draft.description || "",
+        comments: draft.description || "",
         priority_eisenhower: draft.priority_eisenhower || "important_not_urgent",
         high_impact: Boolean(draft.high_impact),
         estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
-        kanban_state: "todo",
+        kanban_state: "todo" as KanbanState,
+        due_datetime: toIsoDate(selectedDate),
+        source: "ia" as TaskSource,
       };
       const task = await apiFetch<Task>("/tasks", { method: "POST", body: JSON.stringify(payload) });
       setTasks((prev) => [task, ...prev]);
-      setBanner({ type: "success", message: "Tâche ajoutée depuis l'IA." });
+      setBanner({ type: "success", message: "Tâche ajoutée à votre planning d'aujourd'hui" });
+      void loadTasks();
     } catch (err) {
       const message = err instanceof Error ? friendlyError(err.message) : "Impossible d'ajouter cette tâche";
       setBanner({ type: "error", message });
@@ -346,89 +413,258 @@ export default function MyPlanningPage(): JSX.Element {
     }
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-5">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase text-slate-400">Tâches actives</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.length}</p>
-          <p className="text-xs text-slate-500">Aujourd'hui</p>
+  const renderDashboard = () => {
+    const emptyDay = dayTasks.length === 0;
+    return (
+      <div className="space-y-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Tâches actives</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.length}</p>
+            <p className="text-xs text-slate-500">Aujourd'hui</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Complétées</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">
+              {dayTasks.length ? Math.round((dayTasks.filter((task) => task.kanban_state === "done").length / dayTasks.length) * 100) : 0}%
+            </p>
+            <p className="text-xs text-slate-500">Progression</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Impact élevé</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.filter((task) => task.high_impact).length}</p>
+            <p className="text-xs text-slate-500">Pareto 20 %</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Pomodoro estimés</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">
+              {dayTasks.reduce((sum, task) => sum + (task.pomodoro_estimated || 0), 0)}
+            </p>
+            <p className="text-xs text-slate-500">Sessions prévues</p>
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase text-slate-400">Complétées</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">
-            {dayTasks.length ? Math.round((dayTasks.filter((task) => task.kanban_state === "done").length / dayTasks.length) * 100) : 0}%
-          </p>
-          <p className="text-xs text-slate-500">Progression</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase text-slate-400">Impact élevé</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{dayTasks.filter((task) => task.high_impact).length}</p>
-          <p className="text-xs text-slate-500">Pareto 20 %</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase text-slate-400">Pomodoro estimés</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">
-            {dayTasks.reduce((sum, task) => sum + (task.pomodoro_estimated || 0), 0)}
-          </p>
-          <p className="text-xs text-slate-500">Sessions prévues</p>
-        </div>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
+
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
             <span>Planning du jour</span>
-            <span>Nous sommes ici · {timeFormatter.format(new Date())}</span>
+            <span>{timeFormatter.format(new Date())}</span>
           </div>
-          <div className="mt-4 space-y-3 text-xs text-slate-500">
-            {Array.from({ length: 12 }).map((_, idx) => 8 + idx).map((hour) => {
-              const slot = dayTasks.filter((task) => {
-                const ref = parseDate(task.start_datetime);
-                return ref ? ref.getHours() === hour : false;
-              });
-              return (
-                <div key={hour} className="flex gap-3">
-                  <div className="w-16 text-right text-[11px] font-semibold text-slate-400">{hour}h</div>
-                  <div className="flex-1 rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
-                    {slot.length === 0 ? (
-                      <p className="text-[11px] text-slate-400">Créneau libre</p>
-                    ) : (
-                      slot.map((task) => (
-                        <div key={task.id} className="mb-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-slate-700 last:mb-0">
-                          <p className="text-sm font-semibold text-slate-900">{task.title}</p>
-                          <p className="text-[11px] text-slate-500">{task.estimated_duration_minutes || 0} min</p>
-                        </div>
-                      ))
-                    )}
+          {emptyDay ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
+              <p className="font-semibold text-slate-800">Aucune tâche planifiée pour aujourd’hui.</p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                <button onClick={() => setActiveSection("create")} className="rounded-full bg-slate-900 px-4 py-2 text-white">Créer une nouvelle tâche</button>
+                <button onClick={() => setActiveSection("coaching")} className="rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50">
+                  Organiser ma journée avec l’IA
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {dayTasks
+                .sort((a, b) => {
+                  const ap = a.priority_eisenhower === "urgent_important" ? 0 : a.priority_eisenhower === "important_not_urgent" ? 1 : 2;
+                  const bp = b.priority_eisenhower === "urgent_important" ? 0 : b.priority_eisenhower === "important_not_urgent" ? 1 : 2;
+                  return ap - bp;
+                })
+                .map((task) => (
+                  <div key={task.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                        {task.description && <p className="text-xs text-slate-500">{task.description}</p>}
+                      </div>
+                      <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
+                    </div>
                   </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekly = () => {
+    const hasTasks = weeklyTasks.some((d) => d.list.length);
+    if (!hasTasks) {
+      const monday = startOfWeek(selectedDate);
+      return (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
+          <p className="font-semibold text-slate-800">Vous n’avez pas encore de tâches pour cette semaine.</p>
+          <button onClick={() => setActiveSection("coaching")} className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white">
+            Organiser ma semaine avec l’IA
+          </button>
+          <p className="mt-1 text-xs text-slate-500">Semaine du {formatDateInputValue(monday)}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {weeklyTasks.map(({ day, list }) => (
+            <div
+              key={day.toISOString()}
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-sky-200"
+              onClick={() => {
+                setSelectedDate(day);
+                setActiveSection("dashboard");
+              }}
+            >
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                <span>{dayFormatter.format(day)}</span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{list.length} tâche(s)</span>
+              </div>
+              <div className="mt-2 space-y-2">
+                {list.slice(0, 5).map((task) => (
+                  <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                    <div className="text-xs text-slate-800">
+                      <p className="font-semibold">{task.title}</p>
+                      <p className="text-[11px] text-slate-500">{PRIORITY_LABEL[task.priority_eisenhower]}</p>
+                    </div>
+                    {task.kanban_state === "done" ? <span className="text-emerald-600 text-lg">✓</span> : <span className="text-slate-400 text-lg">•</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderMatrix = () => {
+    const quadrants: Record<Priority, Task[]> = {
+      urgent_important: [],
+      important_not_urgent: [],
+      urgent_not_important: [],
+      not_urgent_not_important: [],
+    };
+    dayTasks.forEach((task) => quadrants[task.priority_eisenhower].push(task));
+
+    const Empty = (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
+        <p>Créez ou générez des tâches pour voir votre matrice de priorités.</p>
+        <button onClick={() => setActiveSection("coaching")} className="mt-3 rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50">
+          Générer des tâches avec l’IA
+        </button>
+      </div>
+    );
+
+    return (
+      <div className="space-y-3">
+        {!dayTasks.length ? (
+          Empty
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {(Object.keys(quadrants) as Priority[]).map((prio) => (
+              <div key={prio} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <span>{PRIORITY_LABEL[prio]}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{quadrants[prio].length}</span>
                 </div>
-              );
-            })}
+                <div className="mt-2 space-y-1">
+                  {quadrants[prio].slice(0, 5).map((task) => (
+                    <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-800">
+                      <span>{task.title}</span>
+                      {task.high_impact && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Impact élevé</span>}
+                    </div>
+                  ))}
+                  {quadrants[prio].length > 5 && (
+                    <button
+                      onClick={() => {
+                        setFilterPriority(prio);
+                        setActiveSection("manage");
+                      }}
+                      className="text-xs font-semibold text-sky-700"
+                    >
+                      Voir toutes les tâches →
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderStats = () => {
+    if (!tasks.length) {
+      return (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
+          <p className="font-semibold text-slate-800">Nous afficherons vos statistiques dès que vous aurez commencé à utiliser votre planning.</p>
+          <button onClick={() => setActiveSection("create")} className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white">
+            Créer ma première tâche
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Tâches créées (7 j)</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.createdCount}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Tâches complétées (7 j)</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.doneCount}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Taux de complétion</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.completionRate}%</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase text-slate-400">Moyenne / jour (7 j)</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.avgPerDay}</p>
           </div>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Discipline semaine</p>
-          <div className="mt-4 space-y-3">
-            {weeklyDiscipline.map((entry) => (
-              <div key={entry.dayLabel}>
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>{entry.dayLabel}</span>
-                  <span>{entry.completion}%</span>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Complétées sur 7 jours</p>
+          <div className="mt-4 grid grid-cols-7 gap-2">
+            {statsLast7.days.map((day) => (
+              <div key={day.label} className="flex flex-col items-center gap-2">
+                <div className="h-32 w-full rounded-lg bg-slate-100">
+                  <div className="h-full w-full rounded-lg bg-sky-500" style={{ height: `${Math.min(day.count * 15, 128)}px` }} />
                 </div>
-                <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${entry.completion}%` }} />
-                </div>
+                <span className="text-[11px] text-slate-500">{day.label}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderTaskTable = () => {
     const Filters = (
       <div className="flex flex-wrap items-center gap-2 text-xs">
+        <select value={filterPeriod} onChange={(event) => setFilterPeriod(event.target.value as PeriodFilter)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Toutes périodes</option>
+          <option value="today">Aujourd’hui</option>
+          <option value="last7">7 derniers jours</option>
+          <option value="last30">30 derniers jours</option>
+        </select>
+        <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Tous statuts</option>
+          <option value="todo">À faire</option>
+          <option value="in_progress">En cours</option>
+          <option value="done">Terminé</option>
+        </select>
+        <select value={filterPriority} onChange={(event) => setFilterPriority(event.target.value as typeof filterPriority)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Toutes priorités</option>
+          <option value="urgent_important">Urgent & important</option>
+          <option value="important_not_urgent">Important mais pas urgent</option>
+          <option value="urgent_not_important">Urgent moins important</option>
+          <option value="not_urgent_not_important">Ni urgent ni important</option>
+        </select>
+        <select value={filterSource} onChange={(event) => setFilterSource(event.target.value as typeof filterSource)} className="rounded-full border border-slate-200 px-3 py-1">
+          <option value="all">Toutes origines</option>
+          <option value="manual">Créées manuellement</option>
+          <option value="ia">Générées par l’IA</option>
+        </select>
         <select value={filterCategory} onChange={(event) => setFilterCategory(event.target.value)} className="rounded-full border border-slate-200 px-3 py-1">
           <option value="all">Toutes catégories</option>
           {categories.map((category) => (
@@ -436,19 +672,6 @@ export default function MyPlanningPage(): JSX.Element {
               {category}
             </option>
           ))}
-        </select>
-        <select value={filterPriority} onChange={(event) => setFilterPriority(event.target.value as typeof filterPriority)} className="rounded-full border border-slate-200 px-3 py-1">
-          <option value="all">Toutes priorités</option>
-          <option value="urgent_important">Urgent & important</option>
-          <option value="important_not_urgent">Important mais pas urgent</option>
-          <option value="urgent_not_important">Urgent moins important</option>
-          <option value="not_urgent_not_important">Secondaire</option>
-        </select>
-        <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)} className="rounded-full border border-slate-200 px-3 py-1">
-          <option value="all">Tous statuts</option>
-          <option value="todo">À faire</option>
-          <option value="in_progress">En cours</option>
-          <option value="done">Terminé</option>
         </select>
         <button onClick={() => void loadTasks()} className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-600">
           Recharger
@@ -504,27 +727,25 @@ export default function MyPlanningPage(): JSX.Element {
               <tr>
                 <th className="px-4 py-3 text-left">✓</th>
                 <th className="px-4 py-3 text-left">Titre</th>
-                <th className="px-4 py-3 text-left">Catégorie</th>
+                <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Priorité</th>
                 <th className="px-4 py-3 text-left">Impact</th>
-                <th className="px-4 py-3 text-left">Durée</th>
-                <th className="px-4 py-3 text-left">Échéance</th>
-                <th className="px-4 py-3 text-left">État</th>
+                <th className="px-4 py-3 text-left">Source</th>
+                <th className="px-4 py-3 text-left">Statut</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {sortedTasks.map((task) => {
                 const due = task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—";
-                const dueMs = parseDate(task.due_datetime)?.getTime();
-                const late = dueMs ? dueMs < Date.now() && task.kanban_state !== "done" : false;
+                const late = parseDate(task.due_datetime)?.getTime() && parseDate(task.due_datetime)!.getTime() < Date.now() && task.kanban_state !== "done";
                 return (
                   <tr key={task.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         checked={task.kanban_state === "done"}
-                        onChange={(event) => handleStateChange(task.id, event.target.checked ? "done" : "todo")}
+                        onChange={(event) => void handleStateChange(task.id, event.target.checked ? "done" : "todo")}
                         className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                       />
                     </td>
@@ -534,9 +755,7 @@ export default function MyPlanningPage(): JSX.Element {
                         {task.description && <span className="text-[11px] text-slate-500 line-clamp-2">{task.description}</span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs">
-                      {task.category ? <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{task.category}</span> : "—"}
-                    </td>
+                    <td className={`px-4 py-3 text-xs ${late ? "font-semibold text-amber-600" : "text-slate-500"}`}>{due}</td>
                     <td className="px-4 py-3 text-xs">
                       <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
                     </td>
@@ -545,12 +764,13 @@ export default function MyPlanningPage(): JSX.Element {
                         {task.high_impact ? "Oui" : "Non"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{task.estimated_duration_minutes ? `${task.estimated_duration_minutes} min` : "—"}</td>
-                    <td className={`px-4 py-3 text-xs ${late ? "font-semibold text-amber-600" : "text-slate-500"}`}>{due}</td>
+                    <td className="px-4 py-3 text-xs">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{SOURCE_LABEL[(task.source as TaskSource) || "manual"]}</span>
+                    </td>
                     <td className="px-4 py-3 text-xs font-semibold text-slate-500">
                       <select
                         value={task.kanban_state}
-                        onChange={(event) => handleStateChange(task.id, event.target.value as KanbanState)}
+                        onChange={(event) => void handleStateChange(task.id, event.target.value as KanbanState)}
                         className="rounded-full border border-slate-200 px-2 py-1 text-xs"
                       >
                         <option value="todo">À faire</option>
@@ -563,15 +783,15 @@ export default function MyPlanningPage(): JSX.Element {
                         <button
                           onClick={() => {
                             setEditingId(task.id);
-                            setFormValues(task);
+                            setFormValues({ ...task, source: (task.source as TaskSource) || "manual" });
                             setActiveSection("create");
                           }}
                           className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:border-sky-200 hover:text-sky-700"
                         >
-                          Modifier
+                          Éditer
                         </button>
-                        <button onClick={() => handleComplete(task.id)} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300">
-                          Terminer
+                        <button onClick={() => void handleStateChange(task.id, task.kanban_state === "done" ? "todo" : "done")} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300">
+                          {task.kanban_state === "done" ? "Marquer en cours" : "Terminer"}
                         </button>
                       </div>
                     </td>
@@ -607,16 +827,10 @@ export default function MyPlanningPage(): JSX.Element {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setActiveSection("create")}
-            className="rounded-full bg-slate-900 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800"
-          >
+          <button onClick={() => setActiveSection("create")} className="rounded-full bg-slate-900 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800">
             + Nouvelle tâche
           </button>
-          <button
-            onClick={() => void loadTasks()}
-            className="rounded-full border border-slate-200 px-3 py-2 text-slate-600 hover:border-sky-200 hover:text-sky-700"
-          >
+          <button onClick={() => void loadTasks()} className="rounded-full border border-slate-200 px-3 py-2 text-slate-600 hover:border-sky-200 hover:text-sky-700">
             Rafraîchir la liste
           </button>
         </div>
@@ -684,10 +898,11 @@ export default function MyPlanningPage(): JSX.Element {
               }))
             }
             className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            placeholder="Ex : 25, 45, 60"
           />
         </label>
         <label className="text-sm text-slate-600">
-          Deadline
+          Échéance
           <input
             type="datetime-local"
             value={formatDateTimeLocal(formValues.due_datetime)}
@@ -749,7 +964,26 @@ export default function MyPlanningPage(): JSX.Element {
               </div>
               <p className="font-semibold text-slate-900">{draft.title}</p>
               {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
-              <div className="mt-2 text-right">
+              <div className="mt-2 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setFormValues({
+                      title: draft.title,
+                      comments: draft.description || "",
+                      description: draft.description || "",
+                      priority_eisenhower: draft.priority_eisenhower || "important_not_urgent",
+                      high_impact: Boolean(draft.high_impact),
+                      estimated_duration_minutes: draft.estimated_duration_minutes || undefined,
+                      source: "ia",
+                      due_datetime: toIsoDate(selectedDate),
+                    });
+                    setEditingId(null);
+                    setActiveSection("create");
+                  }}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                >
+                  Pré-remplir
+                </button>
                 <button
                   onClick={() => void handleAddDraft(draft, idx)}
                   disabled={addingDraftIndex === idx}
@@ -765,88 +999,120 @@ export default function MyPlanningPage(): JSX.Element {
     </div>
   );
 
-  const renderPlaceholder = () => {
-    const label = VIEWS.concat(ACTIONS).find((item) => item.id === activeSection)?.label || "Section";
-    return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm text-center text-sm text-slate-500">
-        <h2 className="text-lg font-semibold text-slate-900">{label}</h2>
-        <p className="mt-2">Disponible prochainement.</p>
+  const renderSettings = () => (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+      <h2 className="text-xl font-semibold text-slate-900">Paramètres IA</h2>
+      <p className="text-sm text-slate-600">
+        Configurez le niveau d’autonomie, le style de coaching et les plages horaires où l’IA peut proposer des tâches. Ces options seront activées prochainement.
+      </p>
+      <div className="space-y-2">
+        {["Niveau d’autonomie", "Style de coaching", "Plages horaires", "Notifications"].map((label) => (
+          <label key={label} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <span>{label}</span>
+            <input type="checkbox" disabled className="h-4 w-4" />
+          </label>
+        ))}
+        <p className="text-xs text-slate-500">Bientôt disponible.</p>
       </div>
-    );
-  };
+    </div>
+  );
 
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
         return renderDashboard();
+      case "weekly":
+        return renderWeekly();
+      case "matrix":
+        return renderMatrix();
+      case "stats":
+        return renderStats();
       case "create":
         return renderCreateForm();
       case "manage":
         return renderManage();
       case "coaching":
         return renderCoaching();
+      case "settings":
+        return renderSettings();
       default:
-        return renderPlaceholder();
+        return renderDashboard();
     }
   };
 
-  const sidebar = (
-    <aside className="flex h-full w-64 min-w-[240px] flex-col gap-6 border-r border-slate-200 bg-white/95 p-5">
-      <div>
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
-        <p className="text-lg font-semibold text-slate-900">Cockpit</p>
-      </div>
-      <nav className="space-y-6 text-sm font-semibold">
-        <div>
-          <p className="text-xs uppercase text-slate-400">Vues</p>
-          <div className="mt-2 space-y-2">
-            {VIEWS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full rounded-2xl px-4 py-2 text-left transition ${activeSection === item.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <p className="text-xs uppercase text-slate-400">Actions</p>
-          <div className="mt-2 space-y-2">
-            {ACTIONS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full rounded-2xl px-4 py-2 text-left transition ${activeSection === item.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-    </aside>
-  );
-
+  const sidebarWidth = isSidebarCollapsed ? "72px" : "260px";
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-slate-100"
     : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
 
   return (
     <div className={containerClasses}>
-      {sidebar}
+      <aside
+        className="flex h-full flex-col gap-6 border-r border-slate-200 bg-white/95 p-4 transition-[width] duration-200"
+        style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+      >
+        <div className="flex items-center justify-between">
+          {!isSidebarCollapsed && (
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
+              <p className="text-lg font-semibold text-slate-900">Cockpit</p>
+            </div>
+          )}
+          <button
+            onClick={() => setIsSidebarCollapsed((v) => !v)}
+            className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+            title={isSidebarCollapsed ? "Déployer" : "Réduire"}
+          >
+            {isSidebarCollapsed ? "»" : "«"}
+          </button>
+        </div>
+        <nav className="space-y-6 text-sm font-semibold">
+          <div>
+            <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Vues</p>
+            <div className="mt-2 space-y-2">
+              {VIEWS.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
+                    activeSection === item.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                  title={item.label}
+                >
+                  <span>{item.icon}</span>
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Actions</p>
+            <div className="mt-2 space-y-2">
+              {ACTIONS.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
+                    activeSection === item.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                  title={item.label}
+                >
+                  <span>{item.icon}</span>
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </aside>
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{VIEWS.find((item) => item.id === activeSection)?.label || "MyPlanning"}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{VIEWS.concat(ACTIONS).find((item) => item.id === activeSection)?.label || "MyPlanning"}</p>
             <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => shiftSelectedDate(-1)}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
-            >
+            <button onClick={() => shiftSelectedDate(-1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
               ← Jour précédent
             </button>
             <input
@@ -858,15 +1124,12 @@ export default function MyPlanningPage(): JSX.Element {
               }}
               className="rounded-full border border-slate-200 px-3 py-1 text-xs"
             />
-            <button
-              onClick={() => shiftSelectedDate(1)}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
-            >
+            <button onClick={() => shiftSelectedDate(1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
               Jour suivant →
             </button>
             <button
               onClick={() => setActiveSection("coaching")}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50"
+              className="rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500"
             >
               Organiser ma journée (IA)
             </button>
@@ -882,9 +1145,7 @@ export default function MyPlanningPage(): JSX.Element {
           {banner && (
             <div
               className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
-                banner.type === "error"
-                  ? "border-rose-200 bg-rose-50 text-rose-700"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                banner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
               }`}
             >
               {banner.message}

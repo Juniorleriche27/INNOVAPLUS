@@ -392,6 +392,10 @@ export default function MyPlanningClient(): JSX.Element {
     try {
       const res = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
       setAiDrafts(res.drafts);
+      if (!res.drafts || res.drafts.length === 0) {
+        setAiSummaryError("L'IA n'a pas généré de tâches. Ajustez votre description et réessayez.");
+        return;
+      }
       const counts: Record<Priority, number> = {
         urgent_important: 0,
         important_not_urgent: 0,

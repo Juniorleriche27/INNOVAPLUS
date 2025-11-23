@@ -110,6 +110,7 @@ async def _call_llama(prompt: str) -> str:
     if enable_smollm or settings.SMOLLM_MODEL_PATH:
         provider_candidates.extend(["smollm", "local"])
     provider_candidates.extend([settings.CHAT_PROVIDER, settings.LLM_PROVIDER, "echo"])
+    timeout = getattr(settings, "LLM_TIMEOUT", 30)
 
     seen = set()
     for provider in provider_candidates:
@@ -120,7 +121,7 @@ async def _call_llama(prompt: str) -> str:
             continue
         seen.add(name)
         try:
-            response = await run_in_threadpool(generate_answer, prompt, name)
+            response = await run_in_threadpool(generate_answer, prompt, name, None, timeout)
             if response and response != FALLBACK_REPLY:
                 return response
         except Exception:

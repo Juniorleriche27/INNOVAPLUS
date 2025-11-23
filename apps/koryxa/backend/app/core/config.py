@@ -68,7 +68,8 @@ class Settings(BaseSettings):
     EMBED_DIM: int = int(os.getenv("EMBED_DIM", "384"))
     LLM_PROVIDER: str | None = os.getenv("LLM_PROVIDER")
     LLM_MODEL: str | None = os.getenv("LLM_MODEL")
-    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "30"))
+    # LLM calls for MyPlanning can take longer; default to 5 minutes unless overridden
+    LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "300"))
     SMOLLM_MODEL_PATH: str = os.getenv(
         "SMOLLM_MODEL_PATH",
         "models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",

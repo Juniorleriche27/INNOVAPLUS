@@ -160,8 +160,6 @@ async def suggest_tasks_from_text(
     if not isinstance(tasks, list):
         logger.warning("AI suggest tasks returned unexpected payload: %s", raw)
         tasks = []
-    if not tasks:
-        tasks = _fallback_tasks(free_text)
     cleaned: List[Dict[str, Any]] = []
     for item in tasks:
         if not isinstance(item, dict):

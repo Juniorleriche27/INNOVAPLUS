@@ -8,11 +8,13 @@ const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api
 const API_BASE = `${CLEAN_API_BASE}/myplanning`;
 
 type KanbanState = "todo" | "in_progress" | "done";
+type AdvancedKanban = "backlog" | "a_faire" | "en_cours" | "termine" | "bloque";
 type Priority =
   | "urgent_important"
   | "important_not_urgent"
   | "urgent_not_important"
   | "not_urgent_not_important";
+type TaskStatus = "todo" | "done";
 type TaskSource = "manual" | "ia";
 type PeriodFilter = "all" | "today" | "last7" | "last30";
 
@@ -36,6 +38,11 @@ type Task = {
   pomodoro_done?: number | null;
   comments?: string | null;
   source?: TaskSource | null;
+  linked_goal?: string | null;
+  moscow?: string | null;
+  status?: TaskStatus | null;
+  kanban_state_extended?: AdvancedKanban | null;
+  assignee_user_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -73,9 +80,24 @@ const PRIORITY_LABEL: Record<Priority, string> = {
   not_urgent_not_important: "Ni urgent ni important",
 };
 
+const MOSCOW_LABEL: Record<Priority, string> = {
+  urgent_important: "must",
+  important_not_urgent: "should",
+  urgent_not_important: "could",
+  not_urgent_not_important: "wont",
+};
+
 const SOURCE_LABEL: Record<TaskSource, string> = {
   manual: "Manuel",
   ia: "IA",
+};
+
+const KANBAN_LABEL_EXTENDED: Record<AdvancedKanban, string> = {
+  backlog: "Backlog",
+  a_faire: "À faire",
+  en_cours: "En cours",
+  termine: "Terminé",
+  bloque: "Bloqué",
 };
 
 function hasHour(text: string): boolean {
@@ -179,6 +201,11 @@ function friendlyError(message: string): string {
   return message;
 }
 
+function formatPomodoroEstimate(duration?: number | null): number | undefined {
+  if (!duration) return undefined;
+  return Math.max(1, Math.ceil(duration / 25));
+}
+
 function normalizeTaskPayload(values: Partial<Task>): Record<string, unknown> {
   const payload: Record<string, unknown> = { ...values };
   const optionalStrings = ["category", "description", "comments", "linked_goal", "moscow", "status", "energy_level"];
@@ -224,6 +251,8 @@ export default function MyPlanningClient(): JSX.Element {
   const [showCoachingGuide, setShowCoachingGuide] = useState(true);
   const [aiSummary, setAiSummary] = useState<{ total: number; counts: Record<Priority, number>; highImpact: number } | null>(null);
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
+  const [showAdvancedForm, setShowAdvancedForm] = useState(false);
+  const [advancedTable, setAdvancedTable] = useState(false);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -789,7 +818,15 @@ export default function MyPlanningClient(): JSX.Element {
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{managerStats.done} terminées</span>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-700">{managerStats.late} en retard</span>
           </div>
-          {Filters}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setAdvancedTable((v) => !v)}
+              className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-600"
+            >
+              {advancedTable ? "Vue simple" : "Vue avancée"}
+            </button>
+            {Filters}
+          </div>
         </div>
         <div className="max-h-[580px] overflow-auto">
           <table className="min-w-full text-sm text-slate-600">
@@ -799,8 +836,14 @@ export default function MyPlanningClient(): JSX.Element {
                 <th className="px-4 py-3 text-left">Titre</th>
                 <th className="px-4 py-3 text-left">Date</th>
                 <th className="px-4 py-3 text-left">Priorité</th>
+                {advancedTable && <th className="px-4 py-3 text-left">Catégorie</th>}
+                {advancedTable && <th className="px-4 py-3 text-left">Objectif</th>}
+                {advancedTable && <th className="px-4 py-3 text-left">MoSCoW</th>}
+                {advancedTable && <th className="px-4 py-3 text-left">Kanban</th>}
+                {advancedTable && <th className="px-4 py-3 text-left">Énergie</th>}
+                {advancedTable && <th className="px-4 py-3 text-left">Pomodoro</th>}
                 <th className="px-4 py-3 text-left">Impact</th>
-                <th className="px-4 py-3 text-left">Source</th>
+                {advancedTable && <th className="px-4 py-3 text-left">Source</th>}
                 <th className="px-4 py-3 text-left">Statut</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -829,14 +872,30 @@ export default function MyPlanningClient(): JSX.Element {
                     <td className="px-4 py-3 text-xs">
                       <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
                     </td>
+                    {advancedTable && (
+                      <td className="px-4 py-3 text-xs">
+                        {task.category ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{task.category}</span> : "—"}
+                      </td>
+                    )}
+                    {advancedTable && <td className="px-4 py-3 text-xs">{task.linked_goal || "—"}</td>}
+                    {advancedTable && <td className="px-4 py-3 text-xs">{MOSCOW_LABEL[task.priority_eisenhower]}</td>}
+                    {advancedTable && <td className="px-4 py-3 text-xs">{task.kanban_state || task.kanban_state_extended || "—"}</td>}
+                    {advancedTable && <td className="px-4 py-3 text-xs">{task.energy_level || "—"}</td>}
+                    {advancedTable && (
+                      <td className="px-4 py-3 text-xs">
+                        {task.pomodoro_estimated || 0} / {task.pomodoro_done || 0}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-xs">
                       <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                         {task.high_impact ? "Oui" : "Non"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{SOURCE_LABEL[(task.source as TaskSource) || "manual"]}</span>
-                    </td>
+                    {advancedTable && (
+                      <td className="px-4 py-3 text-xs">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{SOURCE_LABEL[(task.source as TaskSource) || "manual"]}</span>
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-xs font-semibold text-slate-500">
                       <select
                         value={task.kanban_state}
@@ -965,6 +1024,7 @@ export default function MyPlanningClient(): JSX.Element {
               setFormValues((prev) => ({
                 ...prev,
                 estimated_duration_minutes: event.target.value ? Number(event.target.value) : undefined,
+                pomodoro_estimated: event.target.value ? formatPomodoroEstimate(Number(event.target.value)) : undefined,
               }))
             }
             className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
@@ -989,6 +1049,101 @@ export default function MyPlanningClient(): JSX.Element {
             className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
           />
         </label>
+        <div className="md:col-span-2">
+          <button
+            type="button"
+            onClick={() => setShowAdvancedForm((v) => !v)}
+            className="text-sm font-semibold text-sky-700 hover:underline"
+          >
+            {showAdvancedForm ? "Replier les options avancées" : "Afficher plus d’options"}
+          </button>
+        </div>
+        {showAdvancedForm && (
+          <div className="md:col-span-2 grid gap-4 md:grid-cols-2 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <label className="text-sm text-slate-600">
+              Objectif lié
+              <input
+                value={formValues.linked_goal || ""}
+                onChange={(event) => setFormValues((prev) => ({ ...prev, linked_goal: event.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              />
+            </label>
+            <label className="text-sm text-slate-600">
+              MoSCoW (auto)
+              <input readOnly value={MOSCOW_LABEL[(formValues.priority_eisenhower as Priority) || "important_not_urgent"]} className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-slate-600">
+              Statut
+              <select
+                value={formValues.status || "todo"}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, status: e.target.value as TaskStatus }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="todo">À faire</option>
+                <option value="done">Terminée</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-600">
+              État Kanban
+              <select
+                value={(formValues.kanban_state_extended as AdvancedKanban) || "a_faire"}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, kanban_state_extended: e.target.value as AdvancedKanban }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="backlog">Backlog</option>
+                <option value="a_faire">À faire</option>
+                <option value="en_cours">En cours</option>
+                <option value="termine">Terminé</option>
+                <option value="bloque">Bloqué</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-600">
+              Niveau d’énergie
+              <select
+                value={formValues.energy_level || ""}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, energy_level: e.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">—</option>
+                <option value="low">Basse</option>
+                <option value="medium">Moyenne</option>
+                <option value="high">Haute</option>
+              </select>
+            </label>
+            <label className="text-sm text-slate-600">
+              Pomodoro estimés
+              <input
+                type="number"
+                min={0}
+                value={formValues.pomodoro_estimated ?? ""}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, pomodoro_estimated: e.target.value ? Number(e.target.value) : undefined }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              />
+              <p className="text-[11px] text-slate-500">Nombre de blocs de 25 minutes prévus.</p>
+            </label>
+            <label className="text-sm text-slate-600">
+              Pomodoro réalisés
+              <input
+                type="number"
+                min={0}
+                value={formValues.pomodoro_done ?? ""}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, pomodoro_done: e.target.value ? Number(e.target.value) : undefined }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              />
+              <p className="text-[11px] text-slate-500">Nombre de blocs de 25 minutes réalisés.</p>
+            </label>
+            <label className="text-sm text-slate-600">
+              Responsable
+              <select
+                value={formValues.assignee_user_id || "me"}
+                onChange={(e) => setFormValues((prev) => ({ ...prev, assignee_user_id: e.target.value === "me" ? null : e.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="me">Moi</option>
+              </select>
+            </label>
+          </div>
+        )}
         <div className="flex gap-3 md:col-span-2">
           <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 font-semibold text-white">
             Enregistrer

@@ -103,6 +103,64 @@ def _fallback_tasks(free_text: str) -> list[dict]:
     return tasks
 
 
+def _extract_time_label(text: str) -> str | None:
+    """Return a human-readable hour label like '06h' or '20h' if present."""
+    match = re.search(r"\b([01]?\d|2[0-3])h", text)
+    if match:
+        return match.group(0)
+    if "midi" in text.lower():
+        return "12h"
+    return None
+
+
+def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
+    """Rule-based enrichment to avoid truncated or missing tasks when LLM fails."""
+    txt = free_text.lower()
+    tasks: list[dict[str, Any]] = []
+
+    def add_task(title: str, description: str | None, duration: int | None, priority: str | None, impact: bool) -> None:
+        tasks.append(
+            {
+                "title": title[:260],
+                "description": description,
+                "estimated_duration_minutes": duration,
+                "priority_eisenhower": priority,
+                "high_impact": impact,
+                "category": None,
+                "due_datetime": None,
+            }
+        )
+
+    # Wake-up / breakfast
+    if "réveil" in txt or "réveiller" in txt:
+        label = _extract_time_label(txt) or "6h"
+        add_task(f"Réveil {label} + petit-déjeuner", None, 30, "urgent_not_important", True)
+    # Formation / cours
+    if "formation" in txt or "d-clic" in txt or "dclic" in txt or "cours" in txt:
+        hour = _extract_time_label(txt) or "9h"
+        add_task(f"Partir pour la formation D-CLIC ({hour})", "Trajet + installation en salle", 60, "urgent_important", True)
+    # Lunch break
+    if "midi" in txt or "pause" in txt or "déjeuner" in txt or "manger" in txt:
+        add_task("Pause déjeuner + repos (12h)", "Couper 45-60 min pour manger et souffler", 60, "important_not_urgent", True)
+    # Project work
+    if "projet" in txt or "koryxa" in txt or "travail" in txt:
+        add_task("Bloc projet KORYXA", "Avancer sur le livrable prioritaire de l'après-midi", 120, "important_not_urgent", True)
+    # Messages
+    if "message" in txt or "mail" in txt or "répond" in txt:
+        add_task("Répondre aux messages importants", "Trier et répondre aux priorités", 30, "urgent_not_important", False)
+    # Revision
+    if "réviser" in txt or "cours d'ia" in txt or "ia" in txt:
+        add_task("Révision cours IA (soir)", "Relire le chapitre / exercices clés", 45, "important_not_urgent", True)
+    # Prepare next day
+    if "préparer" in txt or "affaires" in txt or "demain" in txt:
+        add_task("Préparer les affaires pour demain", "Sac, tenue, documents", 20, "important_not_urgent", True)
+    # Sport
+    if "sport" in txt or "gym" in txt:
+        add_task("Sport 20h (30-45 min)", "Séance courte : cardio ou renfo léger", 40, "important_not_urgent", True)
+
+    return tasks
+
+
 async def _call_llama(prompt: str) -> str:
     # Try local SmolLM first when available, then fall back to configured provider, then echo
     provider_candidates = []
@@ -137,6 +195,7 @@ async def suggest_tasks_from_text(
 ) -> List[Dict[str, Any]]:
     prompt = (
         "Tu es un assistant KORYXA qui structure une journée en tâches actionnables. "
+        "Ne tronque pas les mots. "
         "Retourne UNIQUEMENT un JSON valide de la forme "
         "{\"tasks\":[{\"title\":str,\"description\":str,\"estimated_duration_minutes\":int,"
         "\"priority_eisenhower\":\"urgent_important|important_not_urgent|urgent_not_important|not_urgent_not_important\","
@@ -147,6 +206,8 @@ async def suggest_tasks_from_text(
         "Petites urgences logistiques à heure fixe sans enjeu majeur -> urgent_not_important. "
         "Loisirs/distractions sans enjeu -> not_urgent_not_important. "
         "Impact élevé = true si la tâche contribue à un objectif prioritaire (études, projet, santé, finances) ou réduit un risque important. Sinon false. "
+        "Inclure l'heure ou le créneau dans le titre quand il existe (ex: 'Réveil 6h', 'Formation 9h', 'Sport 20h'). "
+        "Ne retourne pas de texte hors JSON. "
         "Ne crée pas plus de 8 tâches et n'invente pas d'informations non présentes."
     )
     payload: Dict[str, Any] = {"texte": free_text}
@@ -168,11 +229,35 @@ async def suggest_tasks_from_text(
         logger.warning("AI suggest tasks returned empty list; using heuristic tasks.")
         tasks = _fallback_tasks(free_text)
     cleaned: List[Dict[str, Any]] = []
+    heuristic = _heuristic_enrich(free_text)
     for item in tasks:
         if not isinstance(item, dict):
             continue
         title = str(item.get("title") or "").strip()
         if not title:
+            continue
+        description = (item.get("description") or "").strip() or None
+        priority = item.get("priority_eisenhower") or _compute_priority(title, description)
+        impact = item.get("high_impact")
+        if impact is None:
+            impact = _compute_impact(title, description)
+        cleaned.append(
+            {
+                "title": title[:260],
+                "description": description,
+                "estimated_duration_minutes": item.get("estimated_duration_minutes"),
+                "priority_eisenhower": priority,
+                "high_impact": impact,
+                "category": item.get("category"),
+                "due_datetime": item.get("due_datetime"),
+            }
+        )
+    for item in heuristic:
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        # Avoid duplicates by title
+        if any(existing["title"].lower() == title.lower() for existing in cleaned):
             continue
         description = (item.get("description") or "").strip() or None
         priority = item.get("priority_eisenhower") or _compute_priority(title, description)

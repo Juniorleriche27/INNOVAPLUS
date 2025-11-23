@@ -156,12 +156,16 @@ async def suggest_tasks_from_text(
     prompt += f"\n\nContexte:\n{json.dumps(payload, ensure_ascii=False)}"
     raw = await _call_llama(prompt)
     if raw == FALLBACK_REPLY:
+        logger.warning("LLM returned fallback reply; using heuristic tasks.")
         return _fallback_tasks(free_text)[:8]
     data = _extract_json(raw) or {}
     tasks = data.get("tasks") if isinstance(data, dict) else None
     if not isinstance(tasks, list):
         logger.warning("AI suggest tasks returned unexpected payload: %s", raw)
         tasks = []
+    if not tasks:
+        logger.warning("AI suggest tasks returned empty list; using heuristic tasks.")
+        tasks = _fallback_tasks(free_text)
     cleaned: List[Dict[str, Any]] = []
     for item in tasks:
         if not isinstance(item, dict):

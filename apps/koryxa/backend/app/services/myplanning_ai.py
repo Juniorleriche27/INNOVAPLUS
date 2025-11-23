@@ -78,11 +78,11 @@ def _compute_impact(title: str, description: str | None) -> bool:
 
 
 def _fallback_tasks(free_text: str) -> list[dict]:
-    chunks = re.split(r"[\\.;\\n]+", free_text)
+    chunks = re.split(r"[\\.?!;\\n]+", free_text)
     tasks: list[dict] = []
     for chunk in chunks:
-        title = chunk.strip()
-        if len(title) < 6:
+        title = " ".join(chunk.strip().split())
+        if len(title) < 12:
             continue
         desc = None
         priority = _compute_priority(title, desc)
@@ -155,6 +155,8 @@ async def suggest_tasks_from_text(
         payload["duree_bloc_minutes"] = preferred_duration_block
     prompt += f"\n\nContexte:\n{json.dumps(payload, ensure_ascii=False)}"
     raw = await _call_llama(prompt)
+    if raw == FALLBACK_REPLY:
+        return _fallback_tasks(free_text)[:8]
     data = _extract_json(raw) or {}
     tasks = data.get("tasks") if isinstance(data, dict) else None
     if not isinstance(tasks, list):

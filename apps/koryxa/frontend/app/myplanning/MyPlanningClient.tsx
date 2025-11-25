@@ -840,10 +840,23 @@ export default function MyPlanningClient(): JSX.Element {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => setAdvancedTable((v) => !v)}
+              onClick={() =>
+                setAdvancedTable((v) => {
+                  const next = !v;
+                  if (next) setShowAdvancedForm(true);
+                  return next;
+                })
+              }
               className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-600"
             >
               {advancedTable ? "Vue simple" : "Vue avancée"}
+            </button>
+            <button
+              onClick={() => setShowAdvancedForm(true)}
+              className="rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-600"
+              title="Afficher les champs avancés dans le formulaire"
+            >
+              Formulaire avancé
             </button>
             {Filters}
           </div>

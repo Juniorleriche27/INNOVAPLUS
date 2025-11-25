@@ -939,9 +939,26 @@ export default function MyPlanningClient(): JSX.Element {
                         >
                           Éditer
                         </button>
-                        <button onClick={() => void handleStateChange(task.id, task.kanban_state === "done" ? "todo" : "done")} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300">
-                          {task.kanban_state === "done" ? "Marquer en cours" : "Terminer"}
-                        </button>
+                        {task.kanban_state === "done" ? (
+                          <>
+                            <span className="inline-flex items-center rounded-full border border-emerald-200 px-3 py-1 text-emerald-700">
+                              Terminé ✓
+                            </span>
+                            <button
+                              onClick={() => void handleStateChange(task.id, "todo")}
+                              className="rounded-full border border-slate-200 px-3 py-1 text-slate-600 hover:border-slate-300"
+                            >
+                              Reprendre
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => void handleStateChange(task.id, "done")}
+                            className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300"
+                          >
+                            Terminer
+                          </button>
+                        )}
                         <button
                           onClick={() => void handleDeleteTask(task.id)}
                           className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 hover:border-rose-300"

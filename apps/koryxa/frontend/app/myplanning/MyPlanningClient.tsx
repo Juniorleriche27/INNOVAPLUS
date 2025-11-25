@@ -1396,6 +1396,7 @@ export default function MyPlanningClient(): JSX.Element {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 

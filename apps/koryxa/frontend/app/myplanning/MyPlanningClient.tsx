@@ -1220,47 +1220,48 @@ export default function MyPlanningClient(): JSX.Element {
   );
 
   const renderCoaching = () => (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-      <div className="rounded-3xl bg-gradient-to-br from-sky-600 via-sky-500 to-slate-900 px-6 py-5 text-white shadow-lg shadow-sky-300/40">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/70">Coaching MyPlanning</p>
-        <h2 className="mt-1 text-2xl font-semibold leading-tight">Organise ta journée en 1 clic</h2>
-        <p className="mt-2 text-sm text-white/85">
-          Décris ton flow, l’IA propose des tâches classées et tu envoies tout dans ton planning.
-        </p>
-      </div>
-      {showCoachingGuide && (
-        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-700 shadow-inner">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mode d’emploi</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {[
-                  "Décris ta journée dans la zone de texte.",
-                  "Clique sur “Générer des tâches”.",
-                  "L’IA classe par priorité (Eisenhower).",
-                  "Ajoute en 1 clic dans ton planning.",
-                ].map((step, idx) => (
-                  <div key={step} className="flex items-start gap-2 rounded-xl bg-white/70 px-3 py-2 shadow-sm">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
-                      {idx + 1}
-                    </span>
-                    <span className="text-sm text-slate-700">{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              className="text-xs text-slate-500 hover:text-slate-700"
-              onClick={() => {
-                setShowCoachingGuide(false);
-                if (typeof window !== "undefined") window.localStorage.setItem("myplanning.coaching.guide", "hidden");
-              }}
-            >
-              Masquer ✕
-            </button>
-          </div>
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <div className="rounded-3xl bg-gradient-to-br from-sky-600 via-sky-500 to-slate-900 px-8 py-6 text-white shadow-lg shadow-sky-300/40">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/70">Coaching MyPlanning</p>
+          <h2 className="mt-1 text-2xl font-semibold leading-tight">Organise ta journée en 1 clic</h2>
+          <p className="mt-2 text-sm text-white/85">
+            Décris ton flow, l’IA propose des tâches classées et tu envoies tout dans ton planning.
+          </p>
         </div>
-      )}
+        {showCoachingGuide && (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm text-slate-700 shadow-inner">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-3 w-full lg:w-auto">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Mode d’emploi</p>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    "Décris ta journée dans la zone de texte.",
+                    "Clique sur “Générer des tâches”.",
+                    "L’IA classe par priorité (Eisenhower).",
+                    "Ajoute en 1 clic dans ton planning.",
+                  ].map((step, idx) => (
+                    <div key={step} className="flex items-start gap-2 rounded-xl bg-white/70 px-3 py-2 shadow-sm">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm text-slate-700">{step}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button
+                className="text-xs text-slate-500 hover:text-slate-700"
+                onClick={() => {
+                  setShowCoachingGuide(false);
+                  if (typeof window !== "undefined") window.localStorage.setItem("myplanning.coaching.guide", "hidden");
+                }}
+              >
+                Masquer ✕
+              </button>
+            </div>
+          </div>
+        )}
       {aiSummary && (
         <div className="flex items-start justify-between rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           <div>
@@ -1291,20 +1292,24 @@ export default function MyPlanningClient(): JSX.Element {
           </button>
         </div>
       )}
-      <textarea
-        value={aiText}
-        onChange={(event) => setAiText(event.target.value)}
-        placeholder="Décrivez votre journée... (horaires, focus, pauses, messages à traiter, sport, etc.)"
-        className="mt-2 h-36 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm shadow-inner focus:border-sky-500 focus:outline-none"
-      />
-      <button
-        onClick={handleAiSuggest}
-        disabled={aiLoading}
-        className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-400/20 transition hover:-translate-y-[1px] hover:bg-slate-800 disabled:opacity-60"
-      >
-        {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
-        {!aiLoading && <span aria-hidden>→</span>}
-      </button>
+      <div className="mx-auto mt-3 flex max-w-5xl flex-col gap-3">
+        <textarea
+          value={aiText}
+          onChange={(event) => setAiText(event.target.value)}
+          placeholder="Décrivez votre journée... (horaires, focus, pauses, messages à traiter, sport, etc.)"
+          className="h-36 w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm shadow-inner focus:border-sky-500 focus:outline-none"
+        />
+        <div className="flex justify-center">
+          <button
+            onClick={handleAiSuggest}
+            disabled={aiLoading}
+            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-400/20 transition hover:-translate-y-[1px] hover:bg-slate-800 disabled:opacity-60"
+          >
+            {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
+            {!aiLoading && <span aria-hidden>→</span>}
+          </button>
+        </div>
+      </div>
       {aiDrafts.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
           <span>{aiDrafts.length} tâche(s) proposées</span>

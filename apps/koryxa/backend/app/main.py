@@ -61,7 +61,8 @@ app.add_middleware(
     allow_origins=sorted(cors_origins),
     allow_origin_regex=r"https://.*\.vercel\.app$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    # Include PATCH/PUT/DELETE for task updates (MyPlanning) and other mutations
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 

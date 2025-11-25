@@ -239,7 +239,7 @@ export default function MyPlanningClient(): JSX.Element {
   const [filterPriority, setFilterPriority] = useState<"all" | Priority>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | KanbanState>("all");
   const [filterSource, setFilterSource] = useState<"all" | TaskSource>("all");
-  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>("all");
+  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>("today");
   const [aiText, setAiText] = useState("");
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -317,12 +317,19 @@ export default function MyPlanningClient(): JSX.Element {
 
   const dateInputValue = useMemo(() => formatDateInputValue(selectedDate), [selectedDate]);
 
+  const setSelectedDateAndFocus = (next: Date) => {
+    setSelectedDate(next);
+    setFilterPeriod("today");
+  };
+
   const shiftSelectedDate = (delta: number) => {
-    setSelectedDate((prev) => {
-      const next = new Date(prev);
-      next.setDate(prev.getDate() + delta);
-      return next;
-    });
+    setSelectedDateAndFocus(
+      (() => {
+        const next = new Date(selectedDate);
+        next.setDate(selectedDate.getDate() + delta);
+        return next;
+      })(),
+    );
   };
 
   const filteredTasks = useMemo(() => {
@@ -501,6 +508,19 @@ export default function MyPlanningClient(): JSX.Element {
       setBanner({ type: "error", message });
     } finally {
       setAddingDraftIndex(null);
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const confirmDelete = typeof window === "undefined" ? true : window.confirm("Supprimer cette tâche ?");
+    if (!confirmDelete) return;
+    try {
+      await apiFetch(`/tasks/${taskId}`, { method: "DELETE" });
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setBanner({ type: "success", message: "Tâche supprimée." });
+    } catch (err) {
+      const message = err instanceof Error ? friendlyError(err.message) : "Impossible de supprimer la tâche";
+      setBanner({ type: "error", message });
     }
   };
 
@@ -921,6 +941,12 @@ export default function MyPlanningClient(): JSX.Element {
                         </button>
                         <button onClick={() => void handleStateChange(task.id, task.kanban_state === "done" ? "todo" : "done")} className="rounded-full border border-emerald-200 px-3 py-1 text-emerald-700 hover:border-emerald-300">
                           {task.kanban_state === "done" ? "Marquer en cours" : "Terminer"}
+                        </button>
+                        <button
+                          onClick={() => void handleDeleteTask(task.id)}
+                          className="rounded-full border border-rose-200 px-3 py-1 text-rose-600 hover:border-rose-300"
+                        >
+                          Supprimer
                         </button>
                       </div>
                     </td>
@@ -1443,7 +1469,7 @@ export default function MyPlanningClient(): JSX.Element {
               value={dateInputValue}
               onChange={(event) => {
                 const next = new Date(event.target.value);
-                if (!Number.isNaN(next.getTime())) setSelectedDate(next);
+                if (!Number.isNaN(next.getTime())) setSelectedDateAndFocus(next);
               }}
               className="rounded-full border border-slate-200 px-3 py-1 text-xs"
             />

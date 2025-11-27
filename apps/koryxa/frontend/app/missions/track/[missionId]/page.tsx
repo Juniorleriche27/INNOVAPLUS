@@ -156,25 +156,54 @@ export default function MissionTrackPage({ params }: Props) {
             </div>
           </div>
 
-          <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">Offres</p>
-            <div className="mt-3 space-y-3">
-              {(mission.offers ?? []).map((offer) => (
-                <div key={offer.offer_id} className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">Wave {offer.wave}</p>
-                      <p className="text-xs text-slate-500">Score match : {(offer.scores?.match ?? 0).toFixed(2)}</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-500">Matching & offres</p>
+                <p className="text-sm text-slate-600">Classement par score, statut et vague envoyée.</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                {(mission.offers ?? []).length} prestataires
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {(mission.offers ?? [])
+                .sort((a, b) => (b.scores?.match ?? 0) - (a.scores?.match ?? 0))
+                .map((offer) => (
+                  <div key={offer.offer_id} className="rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">Wave {offer.wave}</p>
+                        <p className="text-xs text-slate-500">Score match : {(offer.scores?.match ?? 0).toFixed(2)}</p>
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{offer.message || "Proposition reçue"}</p>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                          offer.status === "accepted"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : offer.status === "pending"
+                              ? "bg-amber-50 text-amber-700"
+                              : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {offer.status}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{offer.status}</span>
+                    {offer.status === "accepted" && mission.status !== "confirmed" && (
+                      <button
+                        onClick={() => confirm(offer.offer_id)}
+                        className="mt-3 w-full rounded-2xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                      >
+                        Confirmer ce prestataire
+                      </button>
+                    )}
                   </div>
-                  {offer.status === "accepted" && mission.status !== "confirmed" && (
-                    <button onClick={() => confirm(offer.offer_id)} className="mt-3 rounded-2xl bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-                      Confirmer ce prestataire
-                    </button>
-                  )}
+                ))}
+              {(mission.offers ?? []).length === 0 && (
+                <div className="col-span-full rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+                  Aucune offre pour l’instant. Envoie une vague pour lancer le matching.
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

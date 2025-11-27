@@ -270,7 +270,13 @@ async def _mission_detail(
         }
         async for doc in db[COLL_MILESTONES].find({"mission_id": mission_id}).sort("created_at", 1)
     ]
-    events = [doc async for doc in db[COLL_EVENTS].find({"mission_id": mission_id}).sort("ts", 1)]
+    events = [
+        {
+            **doc,
+            "_id": str(doc.get("_id")),
+        }
+        async for doc in db[COLL_EVENTS].find({"mission_id": mission_id}).sort("ts", 1)
+    ]
     mission.update({
         "offers": offers,
         "messages": messages[::-1],

@@ -356,11 +356,33 @@ export default function MyPlanningClient(): JSX.Element {
 
   const sortedTasks = useMemo(() => {
     const copy = [...filteredTasks];
+    const priorityRank: Record<Priority, number> = {
+      urgent_important: 0,
+      important_not_urgent: 1,
+      urgent_not_important: 2,
+      not_urgent_not_important: 3,
+    };
     copy.sort((a, b) => {
+      // 1) Tâches non terminées avant les terminées
+      const statusOrder = (t: Task) => (t.kanban_state === "done" ? 1 : 0);
+      const statusDiff = statusOrder(a) - statusOrder(b);
+      if (statusDiff !== 0) return statusDiff;
+
+      // 2) Chronologique : start_datetime puis due_datetime
+      const refA = parseDate(a.start_datetime) || parseDate(a.due_datetime);
+      const refB = parseDate(b.start_datetime) || parseDate(b.due_datetime);
+      const timeA = refA?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const timeB = refB?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (timeA !== timeB) return timeA - timeB;
+
+      // 3) Priorité Eisenhower
+      const prioA = priorityRank[a.priority_eisenhower];
+      const prioB = priorityRank[b.priority_eisenhower];
+      if (prioA !== prioB) return prioA - prioB;
+
+      // 4) Impact
       if (a.high_impact !== b.high_impact) return a.high_impact ? -1 : 1;
-      const aDate = parseDate(a.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
-      const bDate = parseDate(b.due_datetime)?.getTime() || Number.MAX_SAFE_INTEGER;
-      if (aDate !== bDate) return aDate - bDate;
+
       return a.title.localeCompare(b.title);
     });
     return copy;

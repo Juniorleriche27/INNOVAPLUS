@@ -162,8 +162,10 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
 
 
 async def _call_llama(prompt: str) -> str:
-    # Try local SmolLM first when available, then fall back to configured provider, then echo
+    # Try Cohere first (cloud) for MyPlanning, then local SmolLM if enabled, puis fallback
     provider_candidates = []
+    if settings.COHERE_API_KEY:
+        provider_candidates.append("cohere")
     enable_smollm = os.getenv("ENABLE_SMOLLM", "false").lower() == "true"
     if enable_smollm or settings.SMOLLM_MODEL_PATH:
         provider_candidates.extend(["smollm", "local"])

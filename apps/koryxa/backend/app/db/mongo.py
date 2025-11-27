@@ -48,6 +48,10 @@ async def connect_to_mongo() -> None:
             await _db["decisions_audit"].create_index("created_at")
             await _db["myplanning_tasks"].create_index([("user_id", 1), ("due_datetime", 1)])
             await _db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1)])
+            # Data reservoir collections
+            await _db["ai_interactions"].create_index([("user_id_anon", 1), ("ts", -1)])
+            await _db["social_messages"].create_index([("thread_id", 1), ("ts", 1)])
+            await _db["planning_events"].create_index([("user_id_anon", 1), ("ts", -1)])
 
             # Auth & Chatlaya collections
             await _db["sessions"].create_index("token_hash", unique=True)

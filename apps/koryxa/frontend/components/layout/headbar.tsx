@@ -10,9 +10,10 @@ import { useAuth } from "@/components/auth/AuthProvider";
 
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
-  { href: "/opportunities", label: "Opportunités" },
-  { href: "/resources", label: "Ressources" },
-  { href: "/about", label: "À propos" }
+  { href: "/opportunities", label: "Opportunités IA" },
+  { href: "/resources", label: "Ressources & docs" },
+  { href: "/about", label: "À propos" },
+  { href: "/missions/match", label: "Matching express" },
 ];
 
 const PRODUCT_LINKS = [

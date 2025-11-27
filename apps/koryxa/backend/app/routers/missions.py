@@ -149,7 +149,8 @@ async def _summarize_need(payload: MissionCreatePayload) -> Dict[str, Any]:
         f"Description:\n{payload.description}\nLivrables attendus:\n{payload.deliverables}\n"
         f"Délai souhaité: {payload.deadline or 'N/A'}\nBudget: {payload.budget.dict()}"
     )
-    raw = await run_in_threadpool(generate_answer, prompt, "local")
+    # Utiliser Cohere en priorité pour la reformulation (fallback local)
+    raw = await run_in_threadpool(generate_answer, prompt, "cohere")
     summary = raw.strip()
     keywords: List[str] = []
     deliverables: List[str] = []

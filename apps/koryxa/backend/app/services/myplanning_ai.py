@@ -209,6 +209,7 @@ async def suggest_tasks_from_text(
         "Loisirs/distractions sans enjeu -> not_urgent_not_important. "
         "Impact élevé = true si la tâche contribue à un objectif prioritaire (études, projet, santé, finances) ou réduit un risque important. Sinon false. "
         "Inclure l'heure ou le créneau dans le titre quand il existe (ex: 'Réveil 6h', 'Formation 9h', 'Sport 20h'). "
+        "Réponds uniquement par un JSON compact sans préambule ni commentaire. "
         "Ne retourne pas de texte hors JSON. "
         "Ne crée pas plus de 8 tâches et n'invente pas d'informations non présentes."
     )
@@ -236,7 +237,8 @@ async def suggest_tasks_from_text(
         if not isinstance(item, dict):
             continue
         title = str(item.get("title") or "").strip()
-        if not title:
+        # Filtrer les titres trop courts/inexploitables
+        if not title or len(title) < 8:
             continue
         description = (item.get("description") or "").strip() or None
         priority = item.get("priority_eisenhower") or _compute_priority(title, description)
@@ -254,29 +256,30 @@ async def suggest_tasks_from_text(
                 "due_datetime": item.get("due_datetime"),
             }
         )
-    for item in heuristic:
-        title = str(item.get("title") or "").strip()
-        if not title:
-            continue
-        # Avoid duplicates by title
-        if any(existing["title"].lower() == title.lower() for existing in cleaned):
-            continue
-        description = (item.get("description") or "").strip() or None
-        priority = item.get("priority_eisenhower") or _compute_priority(title, description)
-        impact = item.get("high_impact")
-        if impact is None:
-            impact = _compute_impact(title, description)
-        cleaned.append(
-            {
-                "title": title[:260],
-                "description": description,
-                "estimated_duration_minutes": item.get("estimated_duration_minutes"),
-                "priority_eisenhower": priority,
-                "high_impact": impact,
-                "category": item.get("category"),
-                "due_datetime": item.get("due_datetime"),
-            }
-        )
+    # Si l'IA retourne trop peu d'items ou des titres faibles, compléter par l'heuristique
+    if len(cleaned) < 3 or any(len(t["title"]) < 12 for t in cleaned):
+        for item in heuristic:
+            title = str(item.get("title") or "").strip()
+            if not title:
+                continue
+            if any(existing["title"].lower() == title.lower() for existing in cleaned):
+                continue
+            description = (item.get("description") or "").strip() or None
+            priority = item.get("priority_eisenhower") or _compute_priority(title, description)
+            impact = item.get("high_impact")
+            if impact is None:
+                impact = _compute_impact(title, description)
+            cleaned.append(
+                {
+                    "title": title[:260],
+                    "description": description,
+                    "estimated_duration_minutes": item.get("estimated_duration_minutes"),
+                    "priority_eisenhower": priority,
+                    "high_impact": impact,
+                    "category": item.get("category"),
+                    "due_datetime": item.get("due_datetime"),
+                }
+            )
     return cleaned[:8]
 
 

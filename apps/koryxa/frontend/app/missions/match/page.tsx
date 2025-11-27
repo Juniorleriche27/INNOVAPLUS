@@ -80,7 +80,19 @@ export default function MissionMatchPage() {
     setError(null);
     setStage("pending");
     try {
-      const created = await missionsApi.create(payload);
+      const safeDescription =
+        payload.description.length >= 60
+          ? payload.description
+          : `${payload.description.trim()} Contexte: précisez le volume, l'exigence qualité, le délai et le format de rendu.`;
+      const safeDeliverables =
+        payload.deliverables && payload.deliverables.length >= 20
+          ? payload.deliverables
+          : `Livrable principal: ${payload.title || "résultat attendu"} (rapport + fichier).`;
+      const created = await missionsApi.create({
+        ...payload,
+        description: safeDescription,
+        deliverables: safeDeliverables,
+      });
       setMissionId(created.mission_id);
       await missionsApi.dispatch(created.mission_id, { wave_size: 5, timeout_minutes: 5 });
       setStage("matching");

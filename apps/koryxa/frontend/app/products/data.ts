@@ -75,37 +75,6 @@ export const productCatalog: Record<string, ProductInfo> = {
       "Laboratoires et ONG santé publique",
     ],
   },
-  "pie-agency": {
-    slug: "pie-agency",
-    name: "PieAgency",
-    tagline: "Chatbot marketing RAG pour convertir les prospects étudiants et partenaires.",
-    summary:
-      "Stack complète pour construire un assistant commercial multicanal : backend FastAPI orchestrant RAG + CTA, intégrations Groq/Mistral et CRM, expérience front intégrée dans KORYXA.",
-    heroImage:
-      "https://images.unsplash.com/photo-1529333166-07dea310048f?auto=format&fit=crop&w=1200&q=60",
-    highlights: [
-      "Backend FastAPI avec pipelines marketing, gestion CTA et paiements",
-      "Corpus marketing/FAQ structuré, évaluations conversationnelles et monitoring Groq/Mistral",
-      "Parcours front intégré dans KORYXA pour les offres & partenaires",
-      "CI/CD, intégrations Qdrant, scripts d'ingestion et données nettoyées",
-    ],
-    stats: [
-      { label: "Sources RAG", value: "50+" },
-      { label: "Intégrations LLM", value: "Groq · Mistral" },
-      { label: "Objectif conversion", value: "+30%" },
-    ],
-    primaryCta: { label: "Demander une présentation", href: "/contact?product=pieagency" },
-    secondaryCta: {
-      label: "Voir l'architecture",
-      href: "https://github.com/innovaplus/KORYXA/tree/main/products/pie-agency",
-    },
-    contact: "pieagency@koryxa.africa",
-    useCases: [
-      "Universités et écoles voulant automatiser l'orientation",
-      "Agences marketing cherchant un RAG pour leurs offres internes",
-      "Programmes d'incubation souhaitant suivre les prospects",
-    ],
-  },
   plusbook: {
     slug: "plusbook",
     name: "PlusBooks",

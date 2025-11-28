@@ -16,28 +16,15 @@ Variables backend (fichier `/etc/innovaplus/backend.env`)
 - `MONGO_URI`, `DB_NAME=innova_db`, `JWT_SECRET`, `JWT_EXPIRES_MINUTES`
 - RAG: `LLM_PROVIDER`, `COHERE_API_KEY` (si Cohere), `LLM_MODEL`, `EMBED_MODEL`, `EMBED_DIM`, `VECTOR_INDEX_NAME`
 
-PlusBook (Vite)
----------------
-- Dossier: `products/plusbook/frontend`
-- Env (local et Vercel):
-  - `VITE_API_BASE=https://api.innovaplus.africa/plusbook`
-- Ajouter le domaine Vercel à `ALLOWED_ORIGINS` côté backend.
-
-INNOVA (Next.js)
-----------------
+Frontend unique (Next.js, portefeuille Koryxa)
+----------------------------------------------
 - Dossier: `apps/koryxa/frontend`
+- Couvre les modules Opportunités IA, PieAgency, PlusBook, Marketplace, MyPlanning, Chatlaya, etc.
 - Env (local et Vercel):
   - `NEXT_PUBLIC_API_URL=https://api.innovaplus.africa/innova/api`
   - (RAG): appeler `/innova/ingest`, `/innova/chat`, `/innova/feedback`
 - Rewrites: `next.config.ts` créera un proxy `/api/*` → `NEXT_PUBLIC_API_URL` si défini.
 - Ajouter le domaine Vercel à `ALLOWED_ORIGINS` côté backend.
-
-PieAgency (Vite)
-----------------
-- Dossier: `products/pie-agency/frontend`
-- Env (local et Vercel):
-  - `VITE_API_BASE=https://api.innovaplus.africa/pieagency`
-- Ajouter le domaine Vercel à `ALLOWED_ORIGINS`.
 
 FarmLink (Streamlit)
 --------------------
@@ -57,7 +44,7 @@ Checklist Vercel par projet
 1) Créer un projet Vercel pointant sur le bon sous-dossier (monorepo):
    - Root Directory = chemin du frontend (ex: `apps/koryxa/frontend`)
 2) Ajouter les variables d’environnement listées ci-dessus (Production + Preview).
-3) Build: par défaut (Next: `next build`, Vite: `npm run build`).
+3) Build: Next par défaut (`next build`).
 4) Vérifier CORS côté backend (`ALLOWED_ORIGINS`).
 5) Déployer.
 

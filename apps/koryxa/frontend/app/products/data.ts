@@ -80,13 +80,13 @@ export const productCatalog: Record<string, ProductInfo> = {
     name: "PieAgency",
     tagline: "Chatbot marketing RAG pour convertir les prospects étudiants et partenaires.",
     summary:
-      "Stack complète pour construire un assistant commercial multicanal : backend FastAPI orchestrant RAG + CTA, frontend React orienté conversion, intégrations Groq/Mistral et CRM.",
+      "Stack complète pour construire un assistant commercial multicanal : backend FastAPI orchestrant RAG + CTA, intégrations Groq/Mistral et CRM, expérience front intégrée dans KORYXA.",
     heroImage:
       "https://images.unsplash.com/photo-1529333166-07dea310048f?auto=format&fit=crop&w=1200&q=60",
     highlights: [
       "Backend FastAPI avec pipelines marketing, gestion CTA et paiements",
       "Corpus marketing/FAQ structuré, évaluations conversationnelles et monitoring Groq/Mistral",
-      "Frontend React/Vite prêt pour des vitrines offres & partenaires",
+      "Parcours front intégré dans KORYXA pour les offres & partenaires",
       "CI/CD, intégrations Qdrant, scripts d'ingestion et données nettoyées",
     ],
     stats: [
@@ -111,11 +111,11 @@ export const productCatalog: Record<string, ProductInfo> = {
     name: "PlusBooks",
     tagline: "Plateforme numérique pour publier, lire et partager des e-books locaux.",
     summary:
-      "Frontend Vite + API FastAPI pour créer une bibliothèque numérique communautaire : publication d'ebooks, recommandations IA, communauté de lecteurs et créateurs.",
+      "Expérience livrée dans le frontend KORYXA + API FastAPI pour créer une bibliothèque numérique communautaire : publication d'ebooks, recommandations IA, communauté de lecteurs et créateurs.",
     heroImage:
       "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=60",
     highlights: [
-      "Interface moderne (React/Vite) avec pages Home, Explorer, Publication, communauté",
+      "Interface Next intégrée (Home, Explorer, Publication, communauté)",
       "Backend PlusBook (FastAPI) déjà intégré à l'API KORYXA",
       "Compatibilité mobile, dark mode, SEO optimisé",
       "Idéal pour bibliothèques numériques, écoles, éditeurs indépendants",
@@ -126,10 +126,7 @@ export const productCatalog: Record<string, ProductInfo> = {
       { label: "Déploiement", value: "On-premise ou cloud" },
     ],
     primaryCta: { label: "Découvrir la démo", href: "/contact?product=plusbook" },
-    secondaryCta: {
-      label: "Repo frontend",
-      href: "https://github.com/innovaplus/KORYXA/tree/main/products/plusbook/frontend",
-    },
+    // Pas de repo frontend dédié : parcours intégré dans le Next KORYXA
     contact: "plusbook@koryxa.africa",
     useCases: [
       "Bibliothèques numériques africaines",

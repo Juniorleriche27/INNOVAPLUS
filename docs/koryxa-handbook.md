@@ -5,10 +5,9 @@ Structure
 ---------
 
 - `apps/koryxa/backend` — passerelle FastAPI (MongoDB, auth, modules PlusBook, PieAgency, Farmlink, Santé, etc.).
-- `apps/koryxa/frontend` — interface Next.js (app Chatlaya/Koryxa).
+- `apps/koryxa/frontend` — interface Next.js (app Chatlaya/Koryxa) qui sert désormais tout le portefeuille.
 - `apps/koryxa/training` — scripts de fine-tuning / conversion des modèles (SmolLM, Llama, GGUF).
-- `products/plusbook` — frontend Vite dédié PlusBook.
-- `products/pie-agency` — frontend Vite PieAgency.
+- `products/pie-agency` — prompts/docs/données PieAgency (pas de frontend dédié, intégré dans le Next).
 - `products/farmlink` — assets FarmLink (Streamlit + données).
 - `products/koryxa-sante` — stack Streamlit Koryxa Santé & Bien-être.
 
@@ -46,8 +45,7 @@ Endpoints principaux : `/innova/health`, `/plusbook/health`, `/farmlink/health`
 
 ### Frontends produits
 
-- PlusBook : `cd products/plusbook/frontend && npm install && npm run dev` (`VITE_API_BASE=https://api.innovaplus.africa/plusbook`).
-- PieAgency : `cd products/pie-agency/frontend && npm install && npm run dev` (`VITE_API_BASE=https://api.innovaplus.africa/pieagency`).
+- PlusBook / PieAgency : frontends Vite retirés — tout est servi depuis `apps/koryxa/frontend`.
 - FarmLink : `cd products/farmlink/farmlink/frontend && streamlit run ...` (`API_URL=https://api.innovaplus.africa/farmlink`).
 - Koryxa Santé : `cd products/koryxa-sante/streamlit_app && streamlit run simple_main.py` (`API_URL=https://api.innovaplus.africa/sante`).
 

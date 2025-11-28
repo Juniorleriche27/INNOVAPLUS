@@ -119,17 +119,23 @@ function priorityRank(priority: Priority): number {
 
 function extractHour(task: Pick<Task, "title" | "start_datetime" | "due_datetime">): number | null {
   const fromDate = (value?: string | null) => {
+    if (!value) return null;
+    const hasExplicitTime = /T(?!00:00:00)/.test(value);
     const parsed = parseDate(value);
-    return parsed ? parsed.getHours() * 60 + parsed.getMinutes() : null;
+    if (!parsed) return null;
+    const minutes = parsed.getHours() * 60 + parsed.getMinutes();
+    // Si l'heure est à minuit (valeur par défaut) et qu'on n'a pas de time explicite, on laissera la chance au titre de fournir une heure.
+    return hasExplicitTime || minutes !== 0 ? minutes : null;
   };
+  const matchTitle = task.title.match(/\b([01]?\d|2[0-3])h/);
+  const titleMinutes = matchTitle ? parseInt(matchTitle[1], 10) * 60 : null;
   const dateScore = fromDate(task.start_datetime) ?? fromDate(task.due_datetime);
   if (dateScore !== null) return dateScore;
-  const match = task.title.match(/\b([01]?\d|2[0-3])h/);
-  if (match) return parseInt(match[1], 10) * 60;
+  if (titleMinutes !== null) return titleMinutes;
   return null;
 }
 
-function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "title" | "start_datetime" | "due_datetime">>(items: T[]): T[] {
+function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "title" | "start_datetime" | "due_datetime" | "high_impact">>(items: T[]): T[] {
   return [...items].sort((a, b) => {
     const pa = priorityRank(a.priority_eisenhower);
     const pb = priorityRank(b.priority_eisenhower);
@@ -139,6 +145,7 @@ function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "ti
     if (ha !== null && hb !== null) return ha - hb;
     if (ha !== null) return -1;
     if (hb !== null) return 1;
+    if (a.high_impact !== b.high_impact) return a.high_impact ? -1 : 1;
     return a.title.localeCompare(b.title);
   });
 }
@@ -934,25 +941,25 @@ export default function MyPlanningClient(): JSX.Element {
                 <th className="px-4 py-3 text-left">✓</th>
                 <th className="px-4 py-3 text-left">Titre</th>
                 <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Priorité</th>
+                <th className="px-4 py-3 text-center">Priorité</th>
                 {advancedTable && <th className="px-4 py-3 text-left">Catégorie</th>}
                 {advancedTable && <th className="px-4 py-3 text-left">Objectif</th>}
                 {advancedTable && <th className="px-4 py-3 text-left">MoSCoW</th>}
                 {advancedTable && <th className="px-4 py-3 text-left">Kanban</th>}
                 {advancedTable && <th className="px-4 py-3 text-left">Énergie</th>}
                 {advancedTable && <th className="px-4 py-3 text-left">Pomodoro</th>}
-                <th className="px-4 py-3 text-left">Impact</th>
+                <th className="px-4 py-3 text-center">Impact</th>
                 {advancedTable && <th className="px-4 py-3 text-left">Source</th>}
                 <th className="px-4 py-3 text-left">Statut</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedTasks.map((task) => {
-                const due = task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—";
-                const late = parseDate(task.due_datetime)?.getTime() && parseDate(task.due_datetime)!.getTime() < Date.now() && task.kanban_state !== "done";
-                return (
-                  <tr key={task.id} className="hover:bg-slate-50">
+                {sortedTasks.map((task) => {
+                  const due = task.due_datetime ? dayFormatter.format(new Date(task.due_datetime)) : "—";
+                  const late = parseDate(task.due_datetime)?.getTime() && parseDate(task.due_datetime)!.getTime() < Date.now() && task.kanban_state !== "done";
+                  return (
+                    <tr key={task.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
@@ -968,8 +975,8 @@ export default function MyPlanningClient(): JSX.Element {
                       </div>
                     </td>
                     <td className={`px-4 py-3 text-xs ${late ? "font-semibold text-amber-600" : "text-slate-500"}`}>{due}</td>
-                    <td className="px-4 py-3 text-xs">
-                      <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
+                    <td className="px-4 py-3 text-xs text-center">
+                      <span className="inline-flex rounded-full bg-sky-50 px-3 py-0.5 font-medium text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
                     </td>
                     {advancedTable && (
                       <td className="px-4 py-3 text-xs">
@@ -985,8 +992,8 @@ export default function MyPlanningClient(): JSX.Element {
                         {task.pomodoro_estimated || 0} / {task.pomodoro_done || 0}
                       </td>
                     )}
-                    <td className="px-4 py-3 text-xs">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                    <td className="px-4 py-3 text-xs text-center">
+                      <span className={`inline-flex rounded-full px-3 py-0.5 font-semibold ${task.high_impact ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
                         {task.high_impact ? "Oui" : "Non"}
                       </span>
                     </td>

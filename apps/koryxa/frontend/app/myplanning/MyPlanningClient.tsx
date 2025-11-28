@@ -104,6 +104,45 @@ function hasHour(text: string): boolean {
   return /\b([01]?\d|2[0-3])h/.test(text);
 }
 
+function priorityRank(priority: Priority): number {
+  switch (priority) {
+    case "urgent_important":
+      return 0;
+    case "important_not_urgent":
+      return 1;
+    case "urgent_not_important":
+      return 2;
+    default:
+      return 3;
+  }
+}
+
+function extractHour(task: Pick<Task, "title" | "start_datetime" | "due_datetime">): number | null {
+  const fromDate = (value?: string | null) => {
+    const parsed = parseDate(value);
+    return parsed ? parsed.getHours() * 60 + parsed.getMinutes() : null;
+  };
+  const dateScore = fromDate(task.start_datetime) ?? fromDate(task.due_datetime);
+  if (dateScore !== null) return dateScore;
+  const match = task.title.match(/\b([01]?\d|2[0-3])h/);
+  if (match) return parseInt(match[1], 10) * 60;
+  return null;
+}
+
+function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "title" | "start_datetime" | "due_datetime">>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const pa = priorityRank(a.priority_eisenhower);
+    const pb = priorityRank(b.priority_eisenhower);
+    if (pa !== pb) return pa - pb;
+    const ha = extractHour(a);
+    const hb = extractHour(b);
+    if (ha !== null && hb !== null) return ha - hb;
+    if (ha !== null) return -1;
+    if (hb !== null) return 1;
+    return a.title.localeCompare(b.title);
+  });
+}
+
 function computePriority(title: string, description?: string | null): Priority {
   const txt = `${title} ${description || ""}`.toLowerCase();
   const hour = hasHour(txt);
@@ -594,23 +633,23 @@ export default function MyPlanningClient(): JSX.Element {
             </div>
           ) : (
             <div className="mt-4 space-y-2">
-              {dayTasks
-                .sort((a, b) => {
-                  const ap = a.priority_eisenhower === "urgent_important" ? 0 : a.priority_eisenhower === "important_not_urgent" ? 1 : 2;
-                  const bp = b.priority_eisenhower === "urgent_important" ? 0 : b.priority_eisenhower === "important_not_urgent" ? 1 : 2;
-                  return ap - bp;
-                })
-                .map((task) => (
-                  <div key={task.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{task.title}</p>
-                        {task.description && <p className="text-xs text-slate-500">{task.description}</p>}
-                      </div>
+              {sortByPriorityThenHour(dayTasks).map((task) => (
+                <div key={task.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {task.title}
+                        {extractHour(task) !== null && <span className="ml-2 text-xs font-normal text-slate-500">({timeFormatter.format(parseDate(task.due_datetime || task.start_datetime || "") || new Date())})</span>}
+                      </p>
+                      {task.description && <p className="text-xs text-slate-500">{task.description}</p>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {task.high_impact && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Impact élevé</span>}
                       <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -654,7 +693,7 @@ export default function MyPlanningClient(): JSX.Element {
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{list.length} tâche(s)</span>
               </div>
               <div className="mt-2 space-y-2">
-                {list.slice(0, 5).map((task) => (
+                {sortByPriorityThenHour(list).slice(0, 5).map((task) => (
                   <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
                     <div className="text-xs text-slate-800">
                       <p className="font-semibold line-clamp-1">{task.title}</p>
@@ -705,7 +744,7 @@ export default function MyPlanningClient(): JSX.Element {
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px]">{quadrants[prio].length}</span>
                 </div>
                 <div className="mt-2 space-y-1">
-                  {quadrants[prio].slice(0, 5).map((task) => (
+                  {sortByPriorityThenHour(quadrants[prio]).slice(0, 5).map((task) => (
                     <div key={task.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-800">
                       <span>{task.title}</span>
                       {task.high_impact && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Impact élevé</span>}
@@ -748,22 +787,27 @@ export default function MyPlanningClient(): JSX.Element {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs uppercase text-slate-400">Tâches créées (7 j)</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.createdCount}</p>
+            <p className="text-xs text-slate-500">Total de tâches ajoutées sur les 7 derniers jours.</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs uppercase text-slate-400">Tâches complétées (7 j)</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.doneCount}</p>
+            <p className="text-xs text-slate-500">Volume terminé sur 7 jours.</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs uppercase text-slate-400">Taux de complétion</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.completionRate}%</p>
+            <p className="text-xs text-slate-500">Tâches terminées / créées (7 j).</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-xs uppercase text-slate-400">Moyenne / jour (7 j)</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{statsLast7.avgPerDay}</p>
+            <p className="text-xs text-slate-500">Tâches terminées par jour en moyenne.</p>
           </div>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Complétées sur 7 jours</p>
+          <p className="text-xs text-slate-500">Chaque barre = tâches terminées ce jour. Objectif : garder la cadence ou lisser la charge.</p>
           <div className="mt-4 grid grid-cols-7 gap-2">
             {statsLast7.days.map((day) => (
               <div key={day.label} className="flex flex-col items-center gap-2">
@@ -1378,12 +1422,12 @@ export default function MyPlanningClient(): JSX.Element {
       )}
       {aiDrafts.length > 0 && (
         <div className="mt-2 space-y-2 text-sm">
-          {aiDrafts.map((draft, idx) => (
-            <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-              <div className="flex items-center justify-between text-[11px] text-slate-500">
-                <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
-                {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
-              </div>
+              {sortByPriorityThenHour(aiDrafts).map((draft, idx) => (
+                <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
+                    {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
+                  </div>
               <p className="font-semibold text-slate-900">{draft.title}</p>
               {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
               <div className="mt-2 flex justify-end gap-2">

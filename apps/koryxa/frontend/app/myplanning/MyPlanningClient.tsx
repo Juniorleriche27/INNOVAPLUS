@@ -150,6 +150,27 @@ function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "ti
   });
 }
 
+function formatDisplayTime(task: Pick<Task, "title" | "start_datetime" | "due_datetime">): string | null {
+  // 1) Si une heure explicite est dans start/due, l'utiliser.
+  const pick = (value?: string | null) => {
+    if (!value) return null;
+    const parsed = parseDate(value);
+    if (!parsed) return null;
+    const hasExplicitTime = /T(?!00:00:00)/.test(value);
+    if (!hasExplicitTime && parsed.getHours() === 0 && parsed.getMinutes() === 0) return null;
+    return timeFormatter.format(parsed);
+  };
+  const fromDate = pick(task.start_datetime) || pick(task.due_datetime);
+  if (fromDate) return fromDate;
+  // 2) Sinon, tenter de lire l'heure dans le titre (ex: "Réveil 6h").
+  const match = task.title.match(/\b([01]?\d|2[0-3])h/);
+  if (match) {
+    const hour = match[1].padStart(2, "0");
+    return `${hour}:00`;
+  }
+  return null;
+}
+
 function computePriority(title: string, description?: string | null): Priority {
   const txt = `${title} ${description || ""}`.toLowerCase();
   const hour = hasHour(txt);
@@ -642,15 +663,15 @@ export default function MyPlanningClient(): JSX.Element {
             <div className="mt-4 space-y-2">
               {sortByPriorityThenHour(dayTasks).map((task) => (
                 <div key={task.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="grid grid-cols-[1fr,auto] items-start gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {task.title}
-                        {extractHour(task) !== null && <span className="ml-2 text-xs font-normal text-slate-500">({timeFormatter.format(parseDate(task.due_datetime || task.start_datetime || "") || new Date())})</span>}
+                      <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <span>{task.title}</span>
+                        {formatDisplayTime(task) && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{formatDisplayTime(task)}</span>}
                       </p>
                       {task.description && <p className="text-xs text-slate-500">{task.description}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-1 text-right">
                       {task.high_impact && <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Impact élevé</span>}
                       <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">{PRIORITY_LABEL[task.priority_eisenhower]}</span>
                     </div>

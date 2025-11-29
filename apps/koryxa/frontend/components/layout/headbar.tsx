@@ -17,6 +17,7 @@ const NAV_LINKS = [
 ];
 
 const PRODUCT_LINKS = [
+  { href: "/studio", label: "CHATLAYA Studio", hint: "Rédaction, missions contenu, académie IA" },
   { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
   { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
   { href: "/myplanning", label: "MyPlanning", hint: "Planification temps & IA Llama (beta)" },

@@ -6,10 +6,10 @@ import { INNOVA_API_BASE } from "@/lib/env";
 const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio`;
 
 type GenResult = {
-  plan: string[];
-  body: string;
-  titles: string[];
-  keywords: string[];
+  plan: string;
+  texte: string;
+  titres: string[];
+  mots_cles: string[];
 };
 
 export default function StudioAssistantPage() {
@@ -34,8 +34,7 @@ export default function StudioAssistantPage() {
     setError(null);
     setResult(null);
     try {
-      // 1) Créer le brief
-      const briefRes = await fetch(`${API}/briefs`, {
+      const genRes = await fetch(`${API}/assistant/generate`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -49,23 +48,13 @@ export default function StudioAssistantPage() {
           length_hint: form.length_hint,
         }),
       });
-      if (!briefRes.ok) throw new Error(await briefRes.text());
-      const brief = await briefRes.json();
-
-      // 2) Générer avec CHATLAYA
-      const genRes = await fetch(`${API}/generate`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brief_id: brief._id }),
-      });
       if (!genRes.ok) throw new Error(await genRes.text());
       const data = await genRes.json();
       setResult({
-        plan: data.plan || [],
-        body: data.body || "",
-        titles: data.titles || [],
-        keywords: data.keywords || [],
+        plan: data.plan || "",
+        texte: data.texte || "",
+        titres: data.titres || [],
+        mots_cles: data.mots_cles || [],
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur inattendue";
@@ -174,11 +163,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
           {result ? (
-            <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
-              {result.plan.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.plan}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Le plan apparaîtra ici après la génération.</p>
           )}
@@ -186,7 +171,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Texte généré</p>
           {result ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.body}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.texte}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Le texte complet apparaîtra ici après la génération.</p>
           )}
@@ -195,7 +180,7 @@ export default function StudioAssistantPage() {
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Titres possibles</p>
           {result ? (
             <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
-              {result.titles.map((item, idx) => (
+              {result.titres.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>
@@ -206,7 +191,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Mots-clés suggérés</p>
           {result ? (
-            <p className="mt-2 text-sm text-slate-700">{result.keywords.join(", ")}</p>
+            <p className="mt-2 text-sm text-slate-700">{result.mots_cles.join(", ")}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Les mots-clés apparaîtront ici.</p>
           )}

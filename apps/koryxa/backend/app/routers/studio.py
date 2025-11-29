@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -106,6 +107,57 @@ def _build_redaction_prompt(brief: dict) -> str:
         "Réponds en JSON compact: {\"plan\":[...],\"body\":str,\"titles\":[...],\"keywords\":[...]}",
     ]
     return "\n".join(parts)
+
+@router.post("/assistant/generate")
+async def assistant_generate(
+    payload: dict,
+    db: AsyncIOMotorDatabase = Depends(get_db),  # noqa: ARG001
+    current: dict = Depends(get_current_user),  # noqa: ARG001
+):
+    """
+    Endpoint dédié pour l'assistant de rédaction : reçoit un brief et renvoie plan/texte/titres/mots-clés.
+    """
+    # Construire le prompt systématique
+    system_msg = (
+        "Tu es CHATLAYA, assistant IA spécialisé dans la rédaction de contenus pour la plateforme KORYXA.\n"
+        "Tu reçois un brief avec : type de contenu, contexte, public cible, objectif, ton, longueur approximative.\n"
+        "Tu dois répondre STRICTEMENT au format JSON suivant, sans aucun texte en dehors du JSON :\n"
+        '{ "plan": "...", "texte": "...", "titres": ["...", "...", "..."], "mots_cles": ["...", "...", "..."] }\n'
+        "plan : plan détaillé avec sections/sous-sections.\n"
+        "texte : texte complet prêt à l’emploi.\n"
+        "titres : 2 ou 3 propositions de titres.\n"
+        "mots_cles : 5 à 10 mots-clés adaptés.\n"
+        "N’ajoute ni explication, ni commentaire, ni balises Markdown. Retourne uniquement le JSON valide."
+    )
+    brief_text = (
+        f"Type de contenu : {payload.get('content_type')}\n"
+        f"Titre (optionnel) : {payload.get('title') or 'N/A'}\n"
+        f"Contexte / activité : {payload.get('context')}\n"
+        f"Public cible : {payload.get('target_audience')}\n"
+        f"Objectif : {payload.get('objective')}\n"
+        f"Ton : {payload.get('tone')}\n"
+        f"Longueur approximative : {payload.get('length_hint') or 'standard'}"
+    )
+    prompt = f"{system_msg}\n\n{brief_text}"
+    try:
+        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90)
+        parsed = json.loads(raw) if isinstance(raw, str) else {}
+        plan = parsed.get("plan") or ""
+        texte = parsed.get("texte") or ""
+        titres = parsed.get("titres") or []
+        mots_cles = parsed.get("mots_cles") or []
+        if not isinstance(titres, list):
+            titres = [str(titres)]
+        if not isinstance(mots_cles, list):
+            mots_cles = [str(mots_cles)]
+        return {
+            "plan": plan,
+            "texte": texte,
+            "titres": [str(t).strip() for t in titres if str(t).strip()],
+            "mots_cles": [str(m).strip() for m in mots_cles if str(m).strip()],
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Génération échouée: {exc}") from exc
 
 
 @router.post("/generate", response_model=GeneratedContent)

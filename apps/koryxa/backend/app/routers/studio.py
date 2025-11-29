@@ -145,6 +145,23 @@ def _parse_blocks(raw: str) -> dict:
         "mots_cles": mots_cles,
     }
 
+
+def _build_json_prompt(brief: dict) -> str:
+    return "\n".join(
+        [
+            "Tu es CHATLAYA, assistant spécialisé en rédaction & opportunités pour KORYXA.",
+            "Retourne un plan (liste de titres), un texte structuré, 3 titres alternatifs et 5 mots-clés.",
+            f"Type de contenu: {brief.get('content_type')}",
+            f"Public cible: {brief.get('target_audience')}",
+            f"Objectif: {brief.get('objective')}",
+            f"Ton: {brief.get('tone')}",
+            f"Longueur: {brief.get('length_hint') or 'standard'}",
+            f"Contexte/activité: {brief.get('context')}",
+            f"Titre proposé: {brief.get('title') or 'N/A'}",
+            'Réponds en JSON compact: {"plan":[...],"body":str,"titles":[...],"keywords":[...]}',
+        ]
+    )
+
 @router.post("/assistant/generate")
 async def assistant_generate(
     payload: dict,
@@ -156,15 +173,18 @@ async def assistant_generate(
     """
     # Construire le prompt systématique
     system_msg = (
-        "Tu es CHATLAYA, assistant IA spécialisé dans la rédaction de contenus pour la plateforme KORYXA.\n"
-        "Tu reçois un brief avec : type de contenu, contexte, public cible, objectif, ton, longueur approximative.\n"
-        "Tu dois répondre STRICTEMENT au format JSON suivant, sans aucun texte en dehors du JSON :\n"
-        '{ "plan": "...", "texte": "...", "titres": ["...", "...", "..."], "mots_cles": ["...", "...", "..."] }\n'
-        "plan : plan détaillé avec sections/sous-sections.\n"
-        "texte : texte complet prêt à l’emploi.\n"
-        "titres : 2 ou 3 propositions de titres.\n"
-        "mots_cles : 5 à 10 mots-clés adaptés.\n"
-        "N’ajoute ni explication, ni commentaire, ni balises Markdown. Retourne uniquement le JSON valide."
+        "Tu es CHATLAYA, assistant IA de la plateforme KORYXA, spécialisé dans la rédaction de contenus (articles, fiches, pages de site, posts, emails, annonces d’opportunités).\n"
+        "Tu reçois un brief avec : type de contenu, contexte/activité, public cible, objectif, ton souhaité, longueur approximative (en mots).\n"
+        "Tu dois répondre en français et retourner exactement les 4 éléments suivants, sans JSON, sans dictionnaire technique :\n"
+        "Plan : un plan lisible sur plusieurs lignes, numéroté (Introduction, Partie 1, Partie 2, Conclusion…).\n"
+        "Texte : le texte complet, structuré en plusieurs paragraphes, adapté au type de contenu et au public cible. Vise une longueur proche de la demande.\n"
+        "Titres possibles : 3 propositions de titres, chacune sur une ligne.\n"
+        "Mots-clés suggérés : une liste de mots-clés séparés par des virgules.\n"
+        "Tu ne dois pas renvoyer de JSON ni de balises Markdown, uniquement ces 4 blocs dans cet ordre :\n"
+        "Plan : ...\n"
+        "Texte : ...\n"
+        "Titres : ...\n"
+        "Mots-clés : ..."
     )
     brief_text = (
         f"Type de contenu : {payload.get('content_type')}\n"
@@ -181,9 +201,46 @@ async def assistant_generate(
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)
-        if not any(parsed.values()):
+        if any(parsed.values()):
+            return parsed
+        # Fallback JSON si l'IA n'a pas respecté le format blocs
+        legacy_prompt = _build_json_prompt(
+            {
+                "content_type": payload.get("content_type"),
+                "target_audience": payload.get("target_audience"),
+                "objective": payload.get("objective"),
+                "tone": payload.get("tone"),
+                "length_hint": payload.get("length_hint"),
+                "context": payload.get("context"),
+                "title": payload.get("title"),
+            }
+        )
+        raw_json = await run_in_threadpool(generate_answer, legacy_prompt, "local", None, 90)
+        if isinstance(raw_json, str):
+            try:
+                parsed_json = json.loads(raw_json)
+            except Exception:
+                match = re.search(r"\{.*\}", raw_json, re.DOTALL)
+                parsed_json = json.loads(match.group(0)) if match else {}
+        else:
+            parsed_json = {}
+        plan = parsed_json.get("plan") or ""
+        texte = parsed_json.get("body") or parsed_json.get("texte") or ""
+        titres = parsed_json.get("titles") or parsed_json.get("titres") or []
+        mots_cles = parsed_json.get("keywords") or parsed_json.get("mots_cles") or []
+        if not isinstance(titres, list):
+            titres = [str(titres)]
+        if not isinstance(mots_cles, list):
+            mots_cles = [str(mots_cles)]
+        cleaned = {
+            "plan": str(plan),
+            "texte": str(texte),
+            "titres": [str(t).strip() for t in titres if str(t).strip()],
+            "mots_cles": [str(m).strip() for m in mots_cles if str(m).strip()],
+        }
+        if not any(cleaned.values()):
             raise ValueError("Réponse IA vide ou illisible")
-        return parsed
+        return cleaned
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Génération échouée: {exc}") from exc
 

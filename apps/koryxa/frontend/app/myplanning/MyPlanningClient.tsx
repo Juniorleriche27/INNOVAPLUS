@@ -1403,6 +1403,7 @@ export default function MyPlanningClient(): JSX.Element {
             {!aiLoading && <span aria-hidden>→</span>}
           </button>
         </div>
+        {aiLoading && <p className="text-center text-xs text-slate-500">Cohere peut prendre jusqu’à ~30 s. Merci de patienter...</p>}
       </div>
       {aiDrafts.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">

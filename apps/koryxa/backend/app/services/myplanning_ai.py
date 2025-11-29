@@ -161,6 +161,20 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
     return tasks
 
 
+def _normalize_due_datetime(value: Any) -> str | None:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return parsed.isoformat()
+        except Exception:
+            return None
+    return None
+
+
 async def _call_llama(prompt: str) -> str:
     # Try Cohere first (cloud) for MyPlanning, then local SmolLM if enabled, puis fallback
     provider_candidates = []
@@ -245,6 +259,7 @@ async def suggest_tasks_from_text(
         impact = item.get("high_impact")
         if impact is None:
             impact = _compute_impact(title, description)
+        due_dt = _normalize_due_datetime(item.get("due_datetime"))
         cleaned.append(
             {
                 "title": title[:260],
@@ -253,7 +268,7 @@ async def suggest_tasks_from_text(
                 "priority_eisenhower": priority,
                 "high_impact": impact,
                 "category": item.get("category"),
-                "due_datetime": item.get("due_datetime"),
+                "due_datetime": due_dt,
             }
         )
     # Si l'IA retourne trop peu d'items ou des titres faibles, compléter par l'heuristique

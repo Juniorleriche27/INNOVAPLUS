@@ -320,6 +320,12 @@ export default function MyPlanningClient(): JSX.Element {
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
   const [showAdvancedForm, setShowAdvancedForm] = useState(false);
   const [advancedTable, setAdvancedTable] = useState(false);
+  const [iaSettings, setIaSettings] = useState<{
+    autonomy: "low" | "medium" | "high";
+    tone: "concise" | "coach" | "strict";
+    quietHours: string;
+    notifications: boolean;
+  }>({ autonomy: "medium", tone: "coach", quietHours: "06:00-22:00", notifications: true });
 
   const loadTasks = async () => {
     setLoading(true);
@@ -354,6 +360,20 @@ export default function MyPlanningClient(): JSX.Element {
     if (typeof window !== "undefined") {
       const hideGuide = window.localStorage.getItem("myplanning.coaching.guide");
       if (hideGuide === "hidden") setShowCoachingGuide(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const raw = window.localStorage.getItem("myplanning.ia.settings");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          setIaSettings((prev) => ({ ...prev, ...parsed }));
+        } catch {
+          // ignore invalid
+        }
+      }
     }
   }, []);
 
@@ -1499,16 +1519,95 @@ export default function MyPlanningClient(): JSX.Element {
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
       <h2 className="text-xl font-semibold text-slate-900">Paramètres IA</h2>
       <p className="text-sm text-slate-600">
-        Configurez le niveau d’autonomie, le style de coaching et les plages horaires où l’IA peut proposer des tâches. Ces options seront activées prochainement.
+        Ajustez l’autonomie, le style de coaching et les horaires silencieux. Ces préférences sont stockées sur votre appareil.
       </p>
-      <div className="space-y-2">
-        {["Niveau d’autonomie", "Style de coaching", "Plages horaires", "Notifications"].map((label) => (
-          <label key={label} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <span>{label}</span>
-            <input type="checkbox" disabled className="h-4 w-4" />
-          </label>
-        ))}
-        <p className="text-xs text-slate-500">Bientôt disponible.</p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">Niveau d’autonomie</span>
+          <select
+            value={iaSettings.autonomy}
+            onChange={(e) =>
+              setIaSettings((prev) => {
+                const next = { ...prev, autonomy: e.target.value as typeof prev.autonomy };
+                if (typeof window !== "undefined") window.localStorage.setItem("myplanning.ia.settings", JSON.stringify(next));
+                return next;
+              })
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          >
+            <option value="low">Bas (tu proposes, je choisis)</option>
+            <option value="medium">Moyen (suggestions & classement)</option>
+            <option value="high">Élevé (propositions + actions rapides)</option>
+          </select>
+          <span className="text-[11px] text-slate-500">Impacte la densité des suggestions et l’auto-classement.</span>
+        </label>
+        <label className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">Style de coaching</span>
+          <select
+            value={iaSettings.tone}
+            onChange={(e) =>
+              setIaSettings((prev) => {
+                const next = { ...prev, tone: e.target.value as typeof prev.tone };
+                if (typeof window !== "undefined") window.localStorage.setItem("myplanning.ia.settings", JSON.stringify(next));
+                return next;
+              })
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          >
+            <option value="concise">Concise</option>
+            <option value="coach">Coach (motivation & explications)</option>
+            <option value="strict">Strict (court et directif)</option>
+          </select>
+          <span className="text-[11px] text-slate-500">Ajuste le ton des messages IA.</span>
+        </label>
+        <label className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">Plage horaire active</span>
+          <input
+            type="text"
+            value={iaSettings.quietHours}
+            onChange={(e) =>
+              setIaSettings((prev) => {
+                const next = { ...prev, quietHours: e.target.value };
+                if (typeof window !== "undefined") window.localStorage.setItem("myplanning.ia.settings", JSON.stringify(next));
+                return next;
+              })
+            }
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            placeholder="Ex: 06:00-22:00"
+          />
+          <span className="text-[11px] text-slate-500">Période où l’IA peut proposer/relancer.</span>
+        </label>
+        <label className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="font-semibold text-slate-900">Notifications IA</span>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={iaSettings.notifications}
+              onChange={(e) =>
+                setIaSettings((prev) => {
+                  const next = { ...prev, notifications: e.target.checked };
+                  if (typeof window !== "undefined") window.localStorage.setItem("myplanning.ia.settings", JSON.stringify(next));
+                  return next;
+                })
+              }
+              className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm text-slate-600">Autoriser les alertes IA (rappels, focus du jour).</span>
+          </div>
+        </label>
+      </div>
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("myplanning.ia.settings", JSON.stringify(iaSettings));
+            }
+            setBanner({ type: "success", message: "Paramètres IA mis à jour (stockés localement)." });
+          }}
+          className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+        >
+          Enregistrer les paramètres
+        </button>
       </div>
     </div>
   );

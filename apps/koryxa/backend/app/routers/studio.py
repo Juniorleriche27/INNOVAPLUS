@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import re
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -94,19 +95,55 @@ async def get_brief(
 
 
 def _build_redaction_prompt(brief: dict) -> str:
+    """Prompt système pour le mode rédaction assistée (réponse en blocs lisibles)."""
     parts = [
-        "Tu es CHATLAYA, assistant spécialisé en rédaction & opportunités pour KORYXA.",
-        "Retourne un plan (liste de titres), un texte structuré, 3 titres alternatifs et 5 mots-clés.",
-        f"Type de contenu: {brief.get('content_type')}",
-        f"Public cible: {brief.get('target_audience')}",
-        f"Objectif: {brief.get('objective')}",
-        f"Ton: {brief.get('tone')}",
-        f"Longueur: {brief.get('length_hint') or 'standard'}",
-        f"Contexte/activité: {brief.get('context')}",
-        f"Titre proposé: {brief.get('title') or 'N/A'}",
-        "Réponds en JSON compact: {\"plan\":[...],\"body\":str,\"titles\":[...],\"keywords\":[...]}",
+        "Tu es CHATLAYA, assistant IA de la plateforme KORYXA, spécialisé dans la rédaction de contenus (articles, fiches, pages de site, posts, emails, annonces d’opportunités).",
+        "Tu reçois un brief avec : type de contenu, contexte/activité, public cible, objectif, ton souhaité, longueur approximative (en mots).",
+        "Tu dois répondre en français et retourner exactement les 4 éléments suivants, sans JSON, sans dictionnaire technique :",
+        "Plan : un plan lisible sur plusieurs lignes, numéroté (Introduction, Partie 1, Partie 2, Conclusion…).",
+        "Texte : le texte complet, structuré en plusieurs paragraphes, adapté au type de contenu et au public cible. Vise une longueur proche de la demande.",
+        "Titres possibles : 3 propositions de titres, chacune sur une ligne.",
+        "Mots-clés suggérés : une liste de mots-clés séparés par des virgules.",
+        "Tu ne dois pas renvoyer de JSON ni de balises Markdown, uniquement ces 4 blocs dans cet ordre :",
+        "Plan : ...",
+        "Texte : ...",
+        "Titres : ...",
+        "Mots-clés : ...",
+        "",
+        f"Type de contenu : {brief.get('content_type')}",
+        f"Titre (optionnel) : {brief.get('title') or 'N/A'}",
+        f"Contexte / activité : {brief.get('context')}",
+        f"Public cible : {brief.get('target_audience')}",
+        f"Objectif : {brief.get('objective')}",
+        f"Ton : {brief.get('tone')}",
+        f"Longueur approximative : {brief.get('length_hint') or 'standard'}",
     ]
     return "\n".join(parts)
+
+
+def _extract_block(raw: str, label: str) -> str:
+    pattern = rf"{label}\s*:\s*(.*?)(?=\n[A-ZÉÈÎÔÂÙÇ].*?:|\Z)"
+    match = re.search(pattern, raw, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return ""
+    return match.group(1).strip()
+
+
+def _parse_blocks(raw: str) -> dict:
+    plan = _extract_block(raw, "Plan")
+    texte = _extract_block(raw, "Texte")
+    titres_block = _extract_block(raw, "Titres")
+    keywords_block = _extract_block(raw, "Mots[- ]?cl[eé]s|Mots[- ]?clés suggérés")
+
+    titres = [line.strip("-•— ").strip() for line in titres_block.splitlines() if line.strip()]
+    mots_cles = [kw.strip() for kw in re.split(r"[;,]", keywords_block) if kw.strip()]
+
+    return {
+        "plan": plan,
+        "texte": texte,
+        "titres": titres,
+        "mots_cles": mots_cles,
+    }
 
 @router.post("/assistant/generate")
 async def assistant_generate(
@@ -141,38 +178,12 @@ async def assistant_generate(
     prompt = f"{system_msg}\n\n{brief_text}"
     try:
         raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90)
-        parsed = {}
-        if isinstance(raw, str):
-            try:
-                parsed = json.loads(raw)
-            except Exception:
-                # tenter d'extraire un JSON entre accolades
-                import re
-
-                match = re.search(r"\{.*\}", raw, re.DOTALL)
-                if match:
-                    try:
-                        parsed = json.loads(match.group(0))
-                    except Exception:
-                        parsed = {}
-        plan = parsed.get("plan") or ""
-        texte = parsed.get("texte") or ""
-        titres = parsed.get("titres") or []
-        mots_cles = parsed.get("mots_cles") or []
-        if not isinstance(titres, list):
-            titres = [str(titres)]
-        if not isinstance(mots_cles, list):
-            mots_cles = [str(mots_cles)]
-        cleaned = {
-            "plan": str(plan),
-            "texte": str(texte),
-            "titres": [str(t).strip() for t in titres if str(t).strip()],
-            "mots_cles": [str(m).strip() for m in mots_cles if str(m).strip()],
-        }
-        # si tout est vide, remonter une erreur explicite
-        if not any(cleaned.values()):
+        if not isinstance(raw, str):
+            raw = str(raw)
+        parsed = _parse_blocks(raw)
+        if not any(parsed.values()):
             raise ValueError("Réponse IA vide ou illisible")
-        return cleaned
+        return parsed
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Génération échouée: {exc}") from exc
 

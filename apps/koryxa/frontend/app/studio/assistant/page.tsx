@@ -170,34 +170,48 @@ export default function StudioAssistantPage() {
         {error && <p className="text-sm text-rose-600">{error}</p>}
       </form>
 
-      {result && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
+          {result ? (
             <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
               {result.plan.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Texte généré</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-500">Le plan apparaîtra ici après la génération.</p>
+          )}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Texte généré</p>
+          {result ? (
             <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.body}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Titres possibles</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-500">Le texte complet apparaîtra ici après la génération.</p>
+          )}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Titres possibles</p>
+          {result ? (
             <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
               {result.titles.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
             </ul>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Mots-clés</p>
-            <p className="mt-2 text-sm text-slate-700">{result.keywords.join(", ")}</p>
-          </div>
+          ) : (
+            <p className="mt-2 text-sm text-slate-500">Les propositions de titres apparaîtront ici.</p>
+          )}
         </div>
-      )}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Mots-clés suggérés</p>
+          {result ? (
+            <p className="mt-2 text-sm text-slate-700">{result.keywords.join(", ")}</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-500">Les mots-clés apparaîtront ici.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

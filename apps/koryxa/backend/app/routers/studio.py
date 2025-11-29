@@ -141,7 +141,20 @@ async def assistant_generate(
     prompt = f"{system_msg}\n\n{brief_text}"
     try:
         raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90)
-        parsed = json.loads(raw) if isinstance(raw, str) else {}
+        parsed = {}
+        if isinstance(raw, str):
+            try:
+                parsed = json.loads(raw)
+            except Exception:
+                # tenter d'extraire un JSON entre accolades
+                import re
+
+                match = re.search(r"\{.*\}", raw, re.DOTALL)
+                if match:
+                    try:
+                        parsed = json.loads(match.group(0))
+                    except Exception:
+                        parsed = {}
         plan = parsed.get("plan") or ""
         texte = parsed.get("texte") or ""
         titres = parsed.get("titres") or []
@@ -150,14 +163,18 @@ async def assistant_generate(
             titres = [str(titres)]
         if not isinstance(mots_cles, list):
             mots_cles = [str(mots_cles)]
-        return {
-            "plan": plan,
-            "texte": texte,
+        cleaned = {
+            "plan": str(plan),
+            "texte": str(texte),
             "titres": [str(t).strip() for t in titres if str(t).strip()],
             "mots_cles": [str(m).strip() for m in mots_cles if str(m).strip()],
         }
+        # si tout est vide, remonter une erreur explicite
+        if not any(cleaned.values()):
+            raise ValueError("Réponse IA vide ou illisible")
+        return cleaned
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Génération échouée: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Génération échouée: {exc}") from exc
 
 
 @router.post("/generate", response_model=GeneratedContent)

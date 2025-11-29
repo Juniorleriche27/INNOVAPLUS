@@ -137,12 +137,19 @@ def _parse_blocks(raw: str) -> dict:
     titres_block = _extract_block(raw_text, "Titres") or ""
     keywords_block = _extract_block(raw_text, "Mots[- ]?cl[eé]s|Mots[- ]?clés suggérés") or ""
 
-    titres = [line.strip("-•— ").strip() for line in titres_block.splitlines() if line.strip()]
-    mots_cles = [kw.strip() for kw in re.split(r"[;,]", keywords_block) if kw.strip()]
+    def _clean_line(line: str) -> str:
+        return line.strip().strip("*-•— ").strip()
+
+    titres = [_clean_line(line) for line in titres_block.splitlines() if _clean_line(line)]
+    mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", keywords_block) if _clean_line(kw)]
+
+    # Fallback: si texte vide mais plan contient du texte, l'utiliser pour peupler texte
+    if not texte and plan:
+        texte = plan
 
     return {
-        "plan": plan,
-        "texte": texte,
+        "plan": plan.strip() if isinstance(plan, str) else plan,
+        "texte": texte.strip() if isinstance(texte, str) else texte,
         "titres": titres,
         "mots_cles": mots_cles,
     }
@@ -177,7 +184,7 @@ async def assistant_generate(
     system_msg = (
         "Tu es CHATLAYA, assistant IA de la plateforme KORYXA, spécialisé dans la rédaction de contenus (articles, fiches, pages de site, posts, emails, annonces d’opportunités).\n"
         "Tu reçois un brief avec : type de contenu, contexte/activité, public cible, objectif, ton souhaité, longueur approximative (en mots).\n"
-        "Tu dois répondre en français et retourner exactement les 4 éléments suivants, sans JSON, sans dictionnaire technique :\n"
+        "Tu dois répondre en français et retourner exactement les 4 éléments suivants, sans JSON, sans dictionnaire technique, sans puces ni markdown (*, **, -, •) :\n"
         "Plan : un plan lisible sur plusieurs lignes, numéroté (Introduction, Partie 1, Partie 2, Conclusion…).\n"
         "Texte : le texte complet, structuré en plusieurs paragraphes, adapté au type de contenu et au public cible. Vise une longueur proche de la demande.\n"
         "Titres possibles : 3 propositions de titres, chacune sur une ligne.\n"

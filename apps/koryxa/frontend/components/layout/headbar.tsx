@@ -378,18 +378,28 @@ export default function Headbar() {
                   <IconChevronDown className={clsx("h-3 w-3 transition-transform", productMenuOpen && "rotate-180")} />
                 </button>
                 {productMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200/70 bg-white/95 backdrop-blur-xl p-3 shadow-xl shadow-slate-900/10">
-                    <p className="px-2 pb-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Portefeuille</p>
-                    <div className="space-y-2">
+                  <div className="absolute right-0 mt-2 w-[440px] rounded-3xl border border-slate-200/70 bg-white/98 backdrop-blur-xl p-4 shadow-2xl shadow-slate-900/10">
+                    <div className="flex items-center justify-between pb-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Portefeuille</p>
+                        <p className="text-xs text-slate-500">Verticales IA prêtes à déployer</p>
+                      </div>
+                      <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">KORYXA Suite</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
                       {PRODUCT_LINKS.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
                           onClick={() => setProductMenuOpen(false)}
-                          className="block rounded-xl px-3 py-2 hover:bg-slate-50 transition-colors"
+                          className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3 py-3 shadow-sm hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-lg transition"
                         >
-                          <p className="text-xs font-semibold text-slate-800">{item.label}</p>
-                          <p className="text-[11px] text-slate-500">{item.hint}</p>
+                          <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                          <p className="text-[11px] text-slate-500 leading-snug">{item.hint}</p>
+                          <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700">
+                            Découvrir
+                            <IconChevronDown className="h-3 w-3 -rotate-90" />
+                          </span>
                         </Link>
                       ))}
                     </div>

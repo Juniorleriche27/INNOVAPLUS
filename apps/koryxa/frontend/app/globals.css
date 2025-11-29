@@ -22,6 +22,11 @@ body {
   height: 100%;
 }
 
+html {
+  /* Dézoom global ~12% pour densifier les pages */
+  font-size: 14px;
+}
+
 body {
   margin: 0;
   background: radial-gradient(circle at top, rgba(148, 163, 184, 0.15), transparent 60%), var(--background);

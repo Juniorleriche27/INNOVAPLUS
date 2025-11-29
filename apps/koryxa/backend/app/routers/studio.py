@@ -126,14 +126,16 @@ def _extract_block(raw: str, label: str) -> str:
     match = re.search(pattern, raw, re.IGNORECASE | re.DOTALL)
     if not match:
         return ""
-    return match.group(1).strip()
+    group = match.group(1)
+    return group.strip() if isinstance(group, str) else str(group).strip()
 
 
 def _parse_blocks(raw: str) -> dict:
-    plan = _extract_block(raw, "Plan")
-    texte = _extract_block(raw, "Texte")
-    titres_block = _extract_block(raw, "Titres")
-    keywords_block = _extract_block(raw, "Mots[- ]?cl[eé]s|Mots[- ]?clés suggérés")
+    raw_text = raw if isinstance(raw, str) else str(raw or "")
+    plan = _extract_block(raw_text, "Plan")
+    texte = _extract_block(raw_text, "Texte")
+    titres_block = _extract_block(raw_text, "Titres") or ""
+    keywords_block = _extract_block(raw_text, "Mots[- ]?cl[eé]s|Mots[- ]?clés suggérés") or ""
 
     titres = [line.strip("-•— ").strip() for line in titres_block.splitlines() if line.strip()]
     mots_cles = [kw.strip() for kw in re.split(r"[;,]", keywords_block) if kw.strip()]

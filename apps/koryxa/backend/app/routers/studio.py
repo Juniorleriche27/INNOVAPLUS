@@ -143,6 +143,36 @@ def _parse_blocks(raw: str) -> dict:
     titres = [_clean_line(line) for line in titres_block.splitlines() if _clean_line(line)]
     mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", keywords_block) if _clean_line(kw)]
 
+    # Nettoyage du plan : retirer marquages markdown ou mentions "Texte :"
+    if isinstance(plan, str):
+        plan = re.sub(r"\*\*", "", plan)
+        plan = re.sub(r"Texte\s*:.*", "", plan, flags=re.IGNORECASE | re.DOTALL).strip()
+
+    # Si le bloc texte est vide, essayer de l'extraire directement du texte brut
+    if not texte:
+        match_txt = re.search(r"Texte\s*:\s*(.*?)(?:Titres\s*:|Mots[- ]?cl[eé]s\s*:|\Z)", raw_text, re.IGNORECASE | re.DOTALL)
+        if match_txt:
+            texte = match_txt.group(1).strip()
+
+    # Si un des titres contient "Mots-clés", le rerouter vers mots_cles
+    cleaned_titres: list[str] = []
+    for line in titres:
+        low = line.lower()
+        if low.startswith("mots-cl") or low.startswith("mots clés"):
+            extracted = line.split(":", 1)[1] if ":" in line else ""
+            extra_kw = [_clean_line(kw) for kw in re.split(r"[;,]", extracted) if _clean_line(kw)]
+            if extra_kw:
+                mots_cles.extend(extra_kw)
+        else:
+            cleaned_titres.append(line)
+    titres = cleaned_titres
+
+    # Si mots_cles reste vide, tenter un grep global
+    if not mots_cles:
+        global_kw = re.search(r"Mots[- ]?cl[eé]s\s*:\s*([^\n]+)", raw_text, re.IGNORECASE)
+        if global_kw:
+            mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", global_kw.group(1)) if _clean_line(kw)]
+
     # Fallback: si texte vide mais plan contient du texte, l'utiliser pour peupler texte
     if not texte and plan:
         texte = plan

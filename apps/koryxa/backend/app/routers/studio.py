@@ -188,7 +188,7 @@ async def assistant_generate(
         "Plan : un plan lisible sur plusieurs lignes, numéroté (Introduction, Partie 1, Partie 2, Conclusion…).\n"
         "Texte : le texte complet, structuré en plusieurs paragraphes, adapté au type de contenu et au public cible. Vise une longueur proche de la demande.\n"
         "Titres possibles : 3 propositions de titres, chacune sur une ligne.\n"
-        "Mots-clés suggérés : une liste de mots-clés séparés par des virgules.\n"
+        "Mots-clés suggérés : 5 à 10 mots-clés séparés par des virgules. Si rien n’est évident, propose tout de même 5 mots-clés pertinents.\n"
         "Tu ne dois pas renvoyer de JSON ni de balises Markdown, uniquement ces 4 blocs dans cet ordre :\n"
         "Plan : ...\n"
         "Texte : ...\n"

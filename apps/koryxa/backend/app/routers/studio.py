@@ -191,6 +191,10 @@ def _parse_blocks(raw: str) -> dict:
     if not texte and plan:
         texte = plan
 
+    # Fallback extra: si aucune info utile (plan/titres/mots_cles vides) mais qu'on a un texte brut, mettre l'intégralité
+    if not any([plan, texte, titres, mots_cles]) and raw_text:
+        texte = raw_text.strip()
+
     return {
         "plan": plan.strip() if isinstance(plan, str) else plan,
         "texte": texte.strip() if isinstance(texte, str) else texte,

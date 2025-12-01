@@ -26,10 +26,23 @@ const PRODUCT_LINKS = [
 ];
 
 const NAV_PILL_CLASS =
-  "relative inline-flex min-w-[118px] justify-center px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5";
+  "relative inline-flex min-w-[112px] justify-center px-3 py-2 text-[11px] font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5";
 
 const CTA_PILL_CLASS =
-  "inline-flex min-w-[136px] justify-center items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 shadow-sm";
+  "inline-flex min-w-[132px] justify-center items-center gap-2 px-3 py-2 text-[11px] font-semibold rounded-xl transition-all duration-200 shadow-sm";
+
+const wrapLabel = (text: string) => {
+  const parts = text.split(" ");
+  if (parts.length <= 1) return text;
+  const first = parts.shift();
+  const rest = parts.join(" ");
+  return (
+    <span className="flex flex-col leading-tight text-center">
+      <span>{first}</span>
+      <span>{rest}</span>
+    </span>
+  );
+};
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -194,7 +207,7 @@ export default function Headbar() {
           </div>
 
           {/* Center: Nav */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6">
+          <nav className="hidden lg:flex flex-wrap items-center gap-1 flex-1 ml-6">
             {NAV_LINKS.map((link) => {
               const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -208,7 +221,7 @@ export default function Headbar() {
                       : "text-slate-600 border-slate-200/70 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
                   )}
                 >
-                  {link.label}
+                  {wrapLabel(link.label)}
                   {active && (
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sky-500" />
                   )}
@@ -354,7 +367,7 @@ export default function Headbar() {
                     "hidden sm:inline-flex text-slate-700 border border-slate-200/70 bg-white/80 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
                   )}
                 >
-                  Se connecter
+                  {wrapLabel("Se connecter")}
                 </Link>
                 <Link
                   href="/signup"
@@ -365,7 +378,7 @@ export default function Headbar() {
                   )}
                 >
                   <IconSparkles className="h-4 w-4" />
-                  Créer un compte
+                  {wrapLabel("Créer un compte")}
                 </Link>
               </div>
             )}
@@ -380,7 +393,7 @@ export default function Headbar() {
                 )}
               >
                 <IconSparkles className="h-4 w-4" />
-                Poster un besoin
+                {wrapLabel("Poster un besoin")}
               </Link>
               <div className="relative">
                 <button
@@ -390,7 +403,7 @@ export default function Headbar() {
                     "text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:-translate-y-0.5"
                   )}
                 >
-                  Produits
+                  {wrapLabel("Produits")}
                   <IconChevronDown className={clsx("h-3 w-3 transition-transform", productMenuOpen && "rotate-180")} />
                 </button>
                 {productMenuOpen && (

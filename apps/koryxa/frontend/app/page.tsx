@@ -80,6 +80,14 @@ const EMPTY_STATES = [
   "Aucun talent correspondant. Ajustez les compétences requises."
 ];
 
+const PARTNERS = ["GIZ", "BidLab", "AFD", "Agritech CI", "TPE locales"];
+
+const HERO_HIGHLIGHTS = [
+  { label: "Pays activés", value: "24", tone: "emerald" },
+  { label: "Talents vérifiés", value: "12k", tone: "sky" },
+  { label: "Temps médian de match", value: "36 h", tone: "amber" },
+];
+
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 const SECTION_SUBTITLE = "text-base text-slate-500";
 const KPI_CARD = "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/5 transition hover:-translate-y-0.5 hover:shadow";
@@ -98,18 +106,27 @@ export default async function HomePage() {
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/30 to-blue-50/50 shadow-xl shadow-sky-900/5">
         <div className="absolute inset-y-0 -right-20 w-1/2 bg-sky-50/70 blur-3xl" aria-hidden />
         <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-sky-100 opacity-70 blur-3xl" aria-hidden />
-        <div className="relative z-10 grid gap-10 px-8 py-16 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-20">
+        <div className="relative z-10 grid gap-10 px-6 py-14 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-18">
           <div className="space-y-8">
-            <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">
-              Moteur IA KORYXA
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
+                Moteur IA KORYXA
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                Équité active NeedIndex
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                Données live + démonstration
+              </span>
+            </div>
             <div className="space-y-6">
               <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                L'IA qui transforme les besoins en 
+                L'IA qui transforme les besoins en
                 <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent"> opportunités</span>
               </h1>
               <p className="text-lg leading-relaxed text-slate-600 max-w-2xl">
-                Notre moteur d'IA détecte les besoins réels, fait le matching des talents et répartit équitablement les opportunités par pays avec transparence totale.
+                KORYXA détecte les signaux terrains, construit des opportunités et répartit équitablement les missions entre pays avec un NeedIndex auditable.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
@@ -119,45 +136,64 @@ export default async function HomePage() {
               <Link href="/chatlaya" className="btn-secondary">
                 CHATLAYA
               </Link>
+              <Link href="/equity" className="inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
+                Voir l'équité en détail →
+              </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              {PROOFS.map((proof) => (
+              {HERO_HIGHLIGHTS.map((item) => (
                 <div
-                  key={proof.title}
-                  className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-md shadow-slate-900/5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg"
+                  key={item.label}
+                  className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-md shadow-slate-900/5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <p className="text-sm font-semibold text-slate-900">{proof.title}</p>
-                  <p className="mt-2 text-sm text-slate-500">{proof.description}</p>
+                  <p className="text-3xl font-bold text-slate-900">{item.value}</p>
+                  <p className="text-sm text-slate-500">{item.label}</p>
                 </div>
               ))}
             </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Partenaires & pilotes</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {PARTNERS.map((p) => (
+                  <span key={p} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-6 rounded-3xl border border-sky-100 bg-sky-50/80 p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">NeedIndex live</p>
-            <div className="space-y-4">
-              <div className="flex items-baseline justify-between">
-                <p className="text-6xl font-black text-sky-600">0,82</p>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm shadow-sky-200">
-                  Équité globale
-                </span>
+          <div className="space-y-4 rounded-3xl border border-sky-100 bg-white/80 p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">NeedIndex live</p>
+              <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">Audit temps réel</span>
+            </div>
+            <div className="grid gap-3">
+              <div className="rounded-2xl border border-slate-100 bg-sky-50/60 p-4 shadow-inner shadow-sky-100/40">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-5xl font-black text-sky-600">0,82</p>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm shadow-sky-200">
+                    Équité globale
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  Répartition active sur 24 pays. Mise à jour à chaque attribution.
+                </p>
               </div>
-              <p className="text-sm text-slate-600">
-                Répartition équitable active sur 24 pays. Mise à jour chaque fois qu'une opportunité est attribuée.
-              </p>
               <div className="space-y-3">
-                <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>CI · Côte d'Ivoire</span>
-                  <span className="text-sky-600">+2 blocs</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>SN · Sénégal</span>
-                  <span className="text-sky-600">+1 bloc</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-white/70 px-3 py-2 text-sm text-slate-600">
-                  <span>FR · France</span>
-                  <span className="text-slate-400">quota max atteint</span>
-                </div>
+                {[
+                  { country: "CI · Côte d'Ivoire", delta: "+2 blocs", tone: "text-sky-600" },
+                  { country: "SN · Sénégal", delta: "+1 bloc", tone: "text-sky-600" },
+                  { country: "FR · France", delta: "quota max atteint", tone: "text-slate-400" },
+                ].map((item) => (
+                  <div key={item.country} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/90 px-3 py-2 text-sm text-slate-600">
+                    <span>{item.country}</span>
+                    <span className={item.tone}>{item.delta}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+                Données de démonstration. Les chiffres live reflètent la production dès connexion.
               </div>
             </div>
           </div>

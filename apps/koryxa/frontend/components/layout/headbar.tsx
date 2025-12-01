@@ -198,11 +198,11 @@ export default function Headbar() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "relative px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200",
-                    "hover:bg-slate-50 hover:text-slate-900",
+                    "relative px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200",
+                    "border bg-white/80 shadow-sm hover:-translate-y-0.5",
                     active 
-                      ? "text-sky-700 bg-sky-50 shadow-sm" 
-                      : "text-slate-600"
+                      ? "text-sky-700 border-sky-200 bg-sky-50/90 shadow-sky-100/60" 
+                      : "text-slate-600 border-slate-200/70 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
                   )}
                 >
                   {link.label}
@@ -346,7 +346,7 @@ export default function Headbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  className="hidden sm:inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all duration-200"
+                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 border border-slate-200/70 bg-white/80 rounded-xl shadow-sm hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700 transition-all duration-200"
                 >
                   Se connecter
                 </Link>

@@ -173,7 +173,7 @@ export default function Headbar() {
       <div className="w-full px-3 sm:px-4 lg:px-6">
         <div className="flex items-center justify-between gap-4 py-3">
           {/* Left: Brand */}
-          <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">

@@ -156,6 +156,9 @@ def _parse_blocks(raw: str) -> dict:
 
     titres = [_clean_line(line) for line in titres_block.splitlines() if _clean_line(line)]
     mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", keywords_block) if _clean_line(kw)]
+    # Si titres est une seule ligne avec des virgules, splitter
+    if len(titres) == 1 and "," in titres[0]:
+        titres = [_clean_line(part) for part in titres[0].split(",") if _clean_line(part)]
 
     # Nettoyage du plan : retirer marquages markdown ou mentions "Texte :"
     if isinstance(plan, str):
@@ -216,6 +219,20 @@ def _parse_blocks(raw: str) -> dict:
         inline_keywords = re.search(r"\*\*Mots[- ]?cl[eé]s?\*\*\s*:?\s*([^\n]+)", raw_text, re.IGNORECASE)
         if inline_keywords:
             mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", inline_keywords.group(1)) if _clean_line(kw)]
+
+    # Si mots-clés toujours vides, générer un petit set heuristique depuis le texte
+    if not mots_cles and isinstance(texte, str) and len(texte) > 20:
+        words = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ]{4,}", texte.lower())
+        stop = {"les","des","pour","avec","dans","une","entre","leur","leurs","elles","elles","nous","vous","plus","tous","toutes","toute","tout","quand","mais","alors","ainsi","dont","afin","comme","parce","cette","ceci","cela","sont","cest","peut","être","etre","bien","plusieurs","aider","avoir","faire","chaque","autres","autre","très","tres","ainsi","dont","vers","apres","après","avant","pourquoi","comment","chez"}
+        uniq: list[str] = []
+        for w in words:
+            if w in stop:
+                continue
+            if w not in uniq:
+                uniq.append(w)
+            if len(uniq) >= 6:
+                break
+        mots_cles = uniq
 
     # Fallback extra: si aucune info utile (plan/titres/mots_cles vides) mais qu'on a un texte brut, mettre l'intégralité
     if not any([plan, texte, titres, mots_cles]) and raw_text:

@@ -23,8 +23,8 @@ body {
 }
 
 html {
-  /* Dézoom global (~12%) : taille de base réduite et adaptative */
-  font-size: clamp(13px, 0.9vw, 14px);
+  /* Dézoom global (10%) : taille de base réduite */
+  font-size: 90%;
 }
 
 body {

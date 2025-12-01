@@ -198,7 +198,7 @@ export default function Headbar() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "relative px-3 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200",
+                    "relative px-3 py-2 text-xs font-semibold rounded-lg transition-all duration-200",
                     "hover:bg-slate-50 hover:text-slate-900",
                     active 
                       ? "text-sky-700 bg-sky-50 shadow-sm" 

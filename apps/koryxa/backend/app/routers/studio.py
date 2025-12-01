@@ -200,6 +200,22 @@ def _parse_blocks(raw: str) -> dict:
             candidate = alt.group(1).strip() if alt else raw_text.strip()
             if candidate:
                 texte = candidate
+        # Nettoyer les marqueurs markdown et couper avant une section "Titres"
+        texte = re.sub(r"\*\*", "", texte).strip()
+        if "**Titres" in texte:
+            texte = texte.split("**Titres", 1)[0].strip()
+
+    # Extraction inline si le modèle a écrit Titres/Mots-clés dans le texte
+    if not titres:
+        inline_titles = re.search(r"\*\*Titres?\*\*\s*:?\s*(.*?)(\*\*Mots[- ]?cl[eé]s|\Z)", raw_text, re.IGNORECASE | re.DOTALL)
+        if inline_titles:
+            block = inline_titles.group(1)
+            titres = [_clean_line(line) for line in block.splitlines() if _clean_line(line)]
+
+    if not mots_cles:
+        inline_keywords = re.search(r"\*\*Mots[- ]?cl[eé]s?\*\*\s*:?\s*([^\n]+)", raw_text, re.IGNORECASE)
+        if inline_keywords:
+            mots_cles = [_clean_line(kw) for kw in re.split(r"[;,]", inline_keywords.group(1)) if _clean_line(kw)]
 
     # Fallback extra: si aucune info utile (plan/titres/mots_cles vides) mais qu'on a un texte brut, mettre l'intégralité
     if not any([plan, texte, titres, mots_cles]) and raw_text:

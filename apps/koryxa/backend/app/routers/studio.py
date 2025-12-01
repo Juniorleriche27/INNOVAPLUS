@@ -191,6 +191,16 @@ def _parse_blocks(raw: str) -> dict:
     if not texte and plan:
         texte = plan
 
+    # Si texte est trop court ou réduit à de la ponctuation (ex: "**"), tenter un fallback large
+    if isinstance(texte, str):
+        stripped = re.sub(r"[\*\-\•_]+", "", texte).strip()
+        if len(stripped) < 12 and raw_text:
+            # Préférer la partie après "Texte:" sinon tout le brut
+            alt = re.search(r"Texte\s*:\s*(.*)", raw_text, re.IGNORECASE | re.DOTALL)
+            candidate = alt.group(1).strip() if alt else raw_text.strip()
+            if candidate:
+                texte = candidate
+
     # Fallback extra: si aucune info utile (plan/titres/mots_cles vides) mais qu'on a un texte brut, mettre l'intégralité
     if not any([plan, texte, titres, mots_cles]) and raw_text:
         texte = raw_text.strip()

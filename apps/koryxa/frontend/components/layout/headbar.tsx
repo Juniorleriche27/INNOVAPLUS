@@ -26,10 +26,10 @@ const PRODUCT_LINKS = [
 ];
 
 const NAV_PILL_CLASS =
-  "relative inline-flex min-w-[130px] justify-center px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5";
+  "relative inline-flex min-w-[118px] justify-center px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5";
 
 const CTA_PILL_CLASS =
-  "inline-flex min-w-[140px] justify-center items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 shadow-sm";
+  "inline-flex min-w-[136px] justify-center items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 shadow-sm";
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -173,21 +173,21 @@ export default function Headbar() {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 py-3">
           {/* Left: Brand */}
-          <div className="flex items-start gap-4 min-w-0">
-            <Link href="/" className="flex items-start gap-3 group">
-              <div className="flex flex-col items-start gap-2">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
+                  <span className="text-white font-semibold text-xs">AI</span>
+                </div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <div className="flex flex-col gap-1">
                 <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
                   KORYXA
                 </p>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  Intelligence Artificielle • Transparence • Équité
-                </div>
-                <div className="relative mt-1">
-                  <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
-                    <span className="text-white font-semibold text-xs">AI</span>
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="whitespace-nowrap">Intelligence Artificielle • Transparence • Équité</span>
                 </div>
               </div>
             </Link>

@@ -25,6 +25,12 @@ const PRODUCT_LINKS = [
   { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },
 ];
 
+const NAV_PILL_CLASS =
+  "relative inline-flex min-w-[130px] justify-center px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5";
+
+const CTA_PILL_CLASS =
+  "inline-flex min-w-[140px] justify-center items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 shadow-sm";
+
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -167,23 +173,21 @@ export default function Headbar() {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 py-3">
           {/* Left: Brand */}
-          <div className="flex items-center gap-4 min-w-0">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="flex items-center gap-3">
-                <div className="relative">
+          <div className="flex items-start gap-4 min-w-0">
+            <Link href="/" className="flex items-start gap-3 group">
+              <div className="flex flex-col items-start gap-2">
+                <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
+                  KORYXA
+                </p>
+                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/80 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  Intelligence Artificielle • Transparence • Équité
+                </div>
+                <div className="relative mt-1">
                   <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
                     <span className="text-white font-semibold text-xs">AI</span>
                   </div>
                   <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                </div>
-                <div className="leading-tight hidden sm:block">
-                  <p className="text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
-                    KORYXA
-                  </p>
-                  <p className="text-[11px] rounded-full bg-slate-100/70 text-slate-500 px-2 py-0.5 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    Intelligence Artificielle • Transparence • Équité
-                  </p>
                 </div>
               </div>
             </Link>
@@ -198,8 +202,7 @@ export default function Headbar() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "relative px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200",
-                    "border bg-white/80 shadow-sm hover:-translate-y-0.5",
+                    NAV_PILL_CLASS,
                     active 
                       ? "text-sky-700 border-sky-200 bg-sky-50/90 shadow-sky-100/60" 
                       : "text-slate-600 border-slate-200/70 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
@@ -346,14 +349,20 @@ export default function Headbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 border border-slate-200/70 bg-white/80 rounded-xl shadow-sm hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700 transition-all duration-200"
+                  className={clsx(
+                    CTA_PILL_CLASS,
+                    "hidden sm:inline-flex text-slate-700 border border-slate-200/70 bg-white/80 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
+                  )}
                 >
                   Se connecter
                 </Link>
                 <Link
                   href="/signup"
                   prefetch={false}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                  className={clsx(
+                    CTA_PILL_CLASS,
+                    "text-white bg-sky-600 hover:bg-sky-700 hover:-translate-y-0.5 shadow-sky-200/80"
+                  )}
                 >
                   <IconSparkles className="h-4 w-4" />
                   Créer un compte
@@ -365,7 +374,10 @@ export default function Headbar() {
             <div className="hidden lg:flex items-center gap-2">
               <Link 
                 href="/missions/new" 
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 hover:border-emerald-300 transition-all duration-200"
+                className={clsx(
+                  CTA_PILL_CLASS,
+                  "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 hover:border-emerald-300 hover:-translate-y-0.5"
+                )}
               >
                 <IconSparkles className="h-4 w-4" />
                 Poster un besoin
@@ -373,7 +385,10 @@ export default function Headbar() {
               <div className="relative">
                 <button
                   onClick={() => setProductMenuOpen((v) => !v)}
-                  className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                  className={clsx(
+                    CTA_PILL_CLASS,
+                    "text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:-translate-y-0.5"
+                  )}
                 >
                   Produits
                   <IconChevronDown className={clsx("h-3 w-3 transition-transform", productMenuOpen && "rotate-180")} />

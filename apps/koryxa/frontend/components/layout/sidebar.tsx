@@ -108,7 +108,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
     <aside
       className={clsx(
         // Modern sticky sidebar with glass effect
-        "sticky top-0 z-30 h-screen shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl",
+        "sticky top-0 z-30 h-screen shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-hidden",
         "transition-all duration-300 ease-in-out",
         // Smooth width transitions
         collapsed ? "w-[72px]" : "w-[280px]",
@@ -122,10 +122,10 @@ export default function Sidebar({ className, style }: { className?: string; styl
     >
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200/60">
+        <div className="flex items-center justify-between p-3 border-b border-slate-200/60">
           {isExpanded && (
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center">
+              <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
                 <span className="text-white font-semibold text-xs">AI</span>
               </div>
               <div>
@@ -149,7 +149,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="sidebar-nav flex-1 p-4 space-y-2 overflow-y-auto">
           {WORKSPACE_LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
@@ -162,7 +162,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                   "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
                   "hover:bg-slate-50 hover:shadow-sm",
                   active
-                    ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60"
+                    ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60 ring-1 ring-sky-100"
                     : "text-slate-600 hover:text-slate-900",
                   // Collapsed state
                   collapsed && !hovered && "justify-center px-2"

@@ -10,6 +10,7 @@ from fastapi.concurrency import run_in_threadpool
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.ai import generate_answer
+from app.core.config import settings
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user
 from app.schemas.studio import (
@@ -308,8 +309,9 @@ async def assistant_generate(
     )
     prompt = f"{system_msg}\n\n{brief_text}"
     try:
+        provider = "cohere" if settings.COHERE_API_KEY else "local"
         max_tokens_user = payload.get("max_tokens")
-        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90, max_tokens_user, None, None, None)
+        raw = await run_in_threadpool(generate_answer, prompt, provider, None, 90, max_tokens_user, None, None, None)
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)
@@ -344,7 +346,7 @@ async def assistant_generate(
                 "title": payload.get("title"),
             }
         )
-        raw_json = await run_in_threadpool(generate_answer, legacy_prompt, "local", None, 90)
+        raw_json = await run_in_threadpool(generate_answer, legacy_prompt, provider, None, 90, max_tokens_user, None, None, None)
         if isinstance(raw_json, str):
             try:
                 parsed_json = json.loads(raw_json)

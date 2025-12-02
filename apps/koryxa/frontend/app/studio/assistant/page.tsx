@@ -163,7 +163,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
           {result ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.plan}</p>
+            <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-slate-800">{result.plan}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Le plan apparaîtra ici après la génération.</p>
           )}
@@ -171,7 +171,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Texte généré</p>
           {result ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{result.texte}</p>
+            <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-slate-800">{result.texte}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Le texte complet apparaîtra ici après la génération.</p>
           )}
@@ -179,7 +179,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Titres possibles</p>
           {result ? (
-            <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
+            <ul className="mt-3 list-disc pl-5 text-base leading-7 text-slate-800">
               {result.titres.map((item, idx) => (
                 <li key={idx}>{item}</li>
               ))}
@@ -191,7 +191,7 @@ export default function StudioAssistantPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Mots-clés suggérés</p>
           {result ? (
-            <p className="mt-2 text-sm text-slate-700">{result.mots_cles.join(", ")}</p>
+            <p className="mt-3 text-base leading-7 text-slate-800">{result.mots_cles.join(", ")}</p>
           ) : (
             <p className="mt-2 text-sm text-slate-500">Les mots-clés apparaîtront ici.</p>
           )}

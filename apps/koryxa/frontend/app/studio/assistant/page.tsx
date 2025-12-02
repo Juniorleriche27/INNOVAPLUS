@@ -106,7 +106,7 @@ export default function StudioAssistantPage() {
                 Génération IA
               </span>
             </div>
-            <p className="text-sm text-slate-600">Brief -> Génération -> Copier en un clic, avec contrôle des tokens.</p>
+            <p className="text-sm text-slate-600">Brief → Génération → Copier en un clic, avec contrôle des tokens.</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-200">

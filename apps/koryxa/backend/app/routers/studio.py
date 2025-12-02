@@ -310,6 +310,23 @@ async def assistant_generate(
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)
+
+        # Si le texte est trop court, tenter une relance de continuation
+        texte_clean = parsed.get("texte") or ""
+        word_target = int(payload.get("length_hint") or 800)
+        if len(texte_clean.split()) < 180:
+            continue_prompt = (
+                f"Continue et développe en détail (au moins {word_target} mots au total) le texte suivant, "
+                f"en restant cohérent avec le brief et en ajoutant des paragraphes supplémentaires :\n\n{texte_clean}"
+            )
+            try:
+                cont = await run_in_threadpool(generate_answer, continue_prompt, "local", None, 90)
+                if isinstance(cont, str) and cont.strip():
+                    texte_clean = f"{texte_clean}\n\n{cont.strip()}"
+                    parsed["texte"] = texte_clean
+            except Exception:
+                pass
+
         if any(parsed.values()):
             return parsed
         # Fallback JSON si l'IA n'a pas respecté le format blocs

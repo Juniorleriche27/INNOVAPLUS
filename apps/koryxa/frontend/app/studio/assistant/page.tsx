@@ -10,6 +10,7 @@ type GenResult = {
   texte: string;
   titres: string[];
   mots_cles: string[];
+  combined: string;
 };
 
 export default function StudioAssistantPage() {
@@ -21,6 +22,7 @@ export default function StudioAssistantPage() {
     objective: "informer",
     tone: "professionnel",
     length_hint: "",
+    max_tokens: "1200",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +48,25 @@ export default function StudioAssistantPage() {
           objective: form.objective,
           tone: form.tone,
           length_hint: form.length_hint,
+          max_tokens: Number(form.max_tokens) || undefined,
         }),
       });
       if (!genRes.ok) throw new Error(await genRes.text());
       const data = await genRes.json();
+      const combined = [
+        data.plan && `Plan :\n${data.plan}`,
+        data.texte && `Texte :\n${data.texte}`,
+        (data.titres || []).length ? `Titres :\n${(data.titres || []).join("\n")}` : "",
+        (data.mots_cles || []).length ? `Mots-clés :\n${(data.mots_cles || []).join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
       setResult({
         plan: data.plan || "",
         texte: data.texte || "",
         titres: data.titres || [],
         mots_cles: data.mots_cles || [],
+        combined,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erreur inattendue";
@@ -143,6 +155,17 @@ export default function StudioAssistantPage() {
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
           </label>
+          <label className="text-sm text-slate-700">
+            Max tokens (jusqu'à 4000)
+            <input
+              type="number"
+              min={200}
+              max={4000}
+              value={form.max_tokens}
+              onChange={(e) => handleChange("max_tokens", e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -159,43 +182,24 @@ export default function StudioAssistantPage() {
         {error && <p className="text-sm text-rose-600">{error}</p>}
       </form>
 
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
-          {result ? (
-            <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-slate-800">{result.plan}</p>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">Le plan apparaîtra ici après la génération.</p>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Contenu complet</p>
+          {result && (
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(result.combined || "")}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Copier
+            </button>
           )}
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Texte généré</p>
-          {result ? (
-            <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-slate-800">{result.texte}</p>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">Le texte complet apparaîtra ici après la génération.</p>
-          )}
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Titres possibles</p>
-          {result ? (
-            <ul className="mt-3 list-disc pl-5 text-base leading-7 text-slate-800">
-              {result.titres.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">Les propositions de titres apparaîtront ici.</p>
-          )}
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Mots-clés suggérés</p>
-          {result ? (
-            <p className="mt-3 text-base leading-7 text-slate-800">{result.mots_cles.join(", ")}</p>
-          ) : (
-            <p className="mt-2 text-sm text-slate-500">Les mots-clés apparaîtront ici.</p>
-          )}
-        </div>
+        {result ? (
+          <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-slate-800">{result.combined}</p>
+        ) : (
+          <p className="mt-2 text-sm text-slate-500">Le contenu complet apparaîtra ici après la génération.</p>
+        )}
       </div>
     </div>
   );

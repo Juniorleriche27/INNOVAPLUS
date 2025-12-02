@@ -104,6 +104,7 @@ def _build_redaction_prompt(brief: dict) -> str:
     target_len = max(target_len, 400)
     length_min = max(320, target_len - 100)
     length_max = target_len + 150
+    max_tokens = int(brief.get("max_tokens") or 0) or None
 
     parts = [
         "Tu es CHATLAYA, assistant IA de la plateforme KORYXA, spécialisé dans la rédaction de contenus (articles, fiches, pages de site, posts, emails, annonces d’opportunités).",
@@ -140,6 +141,7 @@ def _build_redaction_prompt(brief: dict) -> str:
         f"Objectif : {brief.get('objective')}",
         f"Ton : {brief.get('tone')}",
         f"Longueur approximative : {length_hint or 'standard'} (impose {length_min}-{length_max} mots)",
+        f"Max tokens disponible : {max_tokens or 'défaut modèle'}",
     ]
     return "\n".join(parts)
 
@@ -306,7 +308,8 @@ async def assistant_generate(
     )
     prompt = f"{system_msg}\n\n{brief_text}"
     try:
-        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90)
+        max_tokens_user = payload.get("max_tokens")
+        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90, history=None, context=None)
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)

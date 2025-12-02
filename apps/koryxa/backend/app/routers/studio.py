@@ -309,7 +309,7 @@ async def assistant_generate(
     prompt = f"{system_msg}\n\n{brief_text}"
     try:
         max_tokens_user = payload.get("max_tokens")
-        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90, history=None, context=None)
+        raw = await run_in_threadpool(generate_answer, prompt, "local", None, 90, max_tokens_user, None, None, None)
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)

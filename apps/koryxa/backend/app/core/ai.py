@@ -75,6 +75,7 @@ def generate_answer(
     provider: str | None = None,
     model: str | None = None,
     timeout: int | None = None,
+    max_new_tokens: int | None = None,
     history: Optional[List[dict[str, str]]] = None,
     context: str | None = None,
     rag_sources: Optional[List[Dict[str, Any]]] = None,
@@ -105,8 +106,9 @@ def generate_answer(
                 conversation.insert(0, {"role": "system", "content": system_prompt})
             smollm = get_smollm_model()
             configured_max = settings.CHAT_MAX_NEW_TOKENS or 320
+            requested = max_new_tokens or configured_max
             # Permettre des textes plus longs pour la rédaction (Studio)
-            max_tokens = max(128, min(configured_max, 1200))
+            max_tokens = max(128, min(requested, 4000))
             if on_token and getattr(smollm, "chat_completion_stream", None):
                 response = smollm.chat_completion_stream(
                     conversation,

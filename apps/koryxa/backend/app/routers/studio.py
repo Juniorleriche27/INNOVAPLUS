@@ -96,6 +96,15 @@ async def get_brief(
 
 def _build_redaction_prompt(brief: dict) -> str:
     """Prompt système pour le mode rédaction assistée (réponse en blocs lisibles)."""
+    length_hint = brief.get("length_hint") or ""
+    try:
+        target_len = int(str(length_hint).strip())
+    except Exception:
+        target_len = 450
+    target_len = max(target_len, 400)
+    length_min = max(320, target_len - 100)
+    length_max = target_len + 150
+
     parts = [
         "Tu es CHATLAYA, assistant IA de la plateforme KORYXA, spécialisé dans la rédaction de contenus (articles, fiches, pages de site, posts, emails, annonces d’opportunités).",
         "Tu reçois un brief avec : type de contenu, contexte/activité, public cible, objectif, ton souhaité, longueur approximative (en mots).",
@@ -120,7 +129,7 @@ def _build_redaction_prompt(brief: dict) -> str:
         "",
         "Consignes de fond :",
         "- Plan : lisible, numéroté, pas de puces ni d’astérisques.",
-        "- Texte : plusieurs paragraphes, longueur proche de la demande.",
+        f"- Texte : au moins 4 paragraphes complets, longueur {length_min} à {length_max} mots (même si la longueur demandée est faible).",
         "- Titres : 3 propositions, une par ligne, pas de puces.",
         "- Mots-clés : 5 à 10, séparés par des virgules, obligatoires même si tu dois les inférer.",
         "",
@@ -130,7 +139,7 @@ def _build_redaction_prompt(brief: dict) -> str:
         f"Public cible : {brief.get('target_audience')}",
         f"Objectif : {brief.get('objective')}",
         f"Ton : {brief.get('tone')}",
-        f"Longueur approximative : {brief.get('length_hint') or 'standard'}",
+        f"Longueur approximative : {length_hint or 'standard'} (impose {length_min}-{length_max} mots)",
     ]
     return "\n".join(parts)
 

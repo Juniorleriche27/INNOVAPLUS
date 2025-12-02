@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
     CHAT_PROVIDER: str = os.getenv("PROVIDER", "local")
     CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
-    CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "600"))
+    CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "900"))
     # CORS
     ALLOWED_ORIGINS: str | None = os.getenv("ALLOWED_ORIGINS")
     # RAG / AI

@@ -105,7 +105,8 @@ def generate_answer(
                 conversation.insert(0, {"role": "system", "content": system_prompt})
             smollm = get_smollm_model()
             configured_max = settings.CHAT_MAX_NEW_TOKENS or 320
-            max_tokens = max(64, min(configured_max, 768))
+            # Permettre des textes plus longs pour la rédaction (Studio)
+            max_tokens = max(128, min(configured_max, 1200))
             if on_token and getattr(smollm, "chat_completion_stream", None):
                 response = smollm.chat_completion_stream(
                     conversation,

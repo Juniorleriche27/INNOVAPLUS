@@ -1,3 +1,7 @@
+ "use client";
+
+import { useState } from "react";
+
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
   return (

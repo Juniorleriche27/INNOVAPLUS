@@ -13,7 +13,8 @@ type Mission = {
   budget?: string;
   devise?: string;
   deadline?: string;
-  statut: "Ouverte";
+  statut: "Ouverte" | "En cours";
+  redacteurId?: string;
 };
 
 const TYPES = [
@@ -46,6 +47,7 @@ export default function StudioMissionsPage() {
     devise: "",
     deadline: "",
   });
+  const currentUserId = "me-user"; // placeholder utilisateur connecté
 
   const resetForm = () => {
     setForm({
@@ -98,6 +100,25 @@ export default function StudioMissionsPage() {
   };
 
   const missionsClient = useMemo(() => missions, [missions]);
+  const missionsOuvertes = useMemo(
+    () => missions.filter((m) => m.statut === "Ouverte" && m.redacteurId !== currentUserId),
+    [missions]
+  );
+  const missionsRedacteur = useMemo(
+    () => missions.filter((m) => m.redacteurId === currentUserId),
+    [missions]
+  );
+
+  const handleAssign = (id: string) => {
+    setSuccess("");
+    setMissions((prev) => {
+      const next = prev.map((m) =>
+        m.id === id ? { ...m, statut: "En cours" as const, redacteurId: currentUserId } : m
+      );
+      return next;
+    });
+    setSuccess("Mission assignée avec succès.");
+  };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-sky-50/30 to-white px-4 py-8 sm:px-6 lg:px-10 space-y-6">
@@ -345,11 +366,91 @@ export default function StudioMissionsPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-slate-600">Les missions disponibles pour les rédacteurs apparaîtront ici.</p>
-            <p className="text-sm text-slate-500">
-              Commence par compléter ton profil et suivre le parcours rédacteur IA pour accéder aux missions réservées.
-            </p>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-800">Missions disponibles</p>
+              </div>
+              {missionsOuvertes.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-600">Aucune mission n&apos;est disponible pour le moment.</p>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-sm text-slate-700">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-[0.1em] text-slate-500">
+                        <th className="py-2 pr-4">Titre</th>
+                        <th className="py-2 pr-4">Type</th>
+                        <th className="py-2 pr-4">Date limite</th>
+                        <th className="py-2 pr-4">Budget</th>
+                        <th className="py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {missionsOuvertes.map((m) => (
+                        <tr key={m.id}>
+                          <td className="py-2 pr-4 font-semibold text-slate-900">{m.titre}</td>
+                          <td className="py-2 pr-4">{m.type}</td>
+                          <td className="py-2 pr-4">{m.deadline || "—"}</td>
+                          <td className="py-2 pr-4">
+                            {m.budget ? `${m.budget} ${m.devise || ""}`.trim() : "—"}
+                          </td>
+                          <td className="py-2">
+                            <button
+                              onClick={() => handleAssign(m.id)}
+                              className="text-sm font-semibold text-sky-700 hover:underline"
+                            >
+                              Prendre la mission
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-800">Mes missions (rédacteur)</p>
+              {missionsRedacteur.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-600">Tu n&apos;as pas encore pris de mission.</p>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-sm text-slate-700">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-[0.1em] text-slate-500">
+                        <th className="py-2 pr-4">Titre</th>
+                        <th className="py-2 pr-4">Type</th>
+                        <th className="py-2 pr-4">Statut</th>
+                        <th className="py-2 pr-4">Date limite</th>
+                        <th className="py-2 pr-4">Budget</th>
+                        <th className="py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {missionsRedacteur.map((m) => (
+                        <tr key={m.id}>
+                          <td className="py-2 pr-4 font-semibold text-slate-900">{m.titre}</td>
+                          <td className="py-2 pr-4">{m.type}</td>
+                          <td className="py-2 pr-4">
+                            <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 border border-amber-100">
+                              En cours
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4">{m.deadline || "—"}</td>
+                          <td className="py-2 pr-4">
+                            {m.budget ? `${m.budget} ${m.devise || ""}`.trim() : "—"}
+                          </td>
+                          <td className="py-2">
+                            <button className="text-sky-700 text-sm font-semibold hover:underline">Voir</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

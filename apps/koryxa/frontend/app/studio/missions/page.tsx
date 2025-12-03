@@ -1,9 +1,104 @@
- "use client";
+"use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+type Mission = {
+  id: string;
+  titre: string;
+  type: string;
+  description: string;
+  public_cible: string;
+  objectif: string;
+  ton: string;
+  budget?: string;
+  devise?: string;
+  deadline?: string;
+  statut: "Ouverte";
+};
+
+const TYPES = [
+  "Article de blog",
+  "Page de site",
+  "Fiche produit",
+  "Post réseaux sociaux",
+  "Email / newsletter",
+  "Annonce d’opportunité",
+  "Autre",
+];
+
+const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
+const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
 
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
+  const [showForm, setShowForm] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [form, setForm] = useState({
+    titre: "",
+    type: "",
+    description: "",
+    public_cible: "",
+    objectif: "",
+    ton: "",
+    budget: "",
+    devise: "",
+    deadline: "",
+  });
+
+  const resetForm = () => {
+    setForm({
+      titre: "",
+      type: "",
+      description: "",
+      public_cible: "",
+      objectif: "",
+      ton: "",
+      budget: "",
+      devise: "",
+      deadline: "",
+    });
+    setErrors({});
+    setShowForm(false);
+  };
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!form.titre.trim()) e.titre = "Requis";
+    if (!form.type.trim()) e.type = "Requis";
+    if (!form.description.trim()) e.description = "Requis";
+    if (!form.public_cible.trim()) e.public_cible = "Requis";
+    if (!form.objectif.trim()) e.objectif = "Requis";
+    if (!form.ton.trim()) e.ton = "Requis";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess("");
+    if (!validate()) return;
+    const newMission: Mission = {
+      id: crypto.randomUUID(),
+      titre: form.titre.trim(),
+      type: form.type.trim(),
+      description: form.description.trim(),
+      public_cible: form.public_cible.trim(),
+      objectif: form.objectif.trim(),
+      ton: form.ton.trim(),
+      budget: form.budget.trim() || undefined,
+      devise: form.devise.trim() || undefined,
+      deadline: form.deadline || undefined,
+      statut: "Ouverte",
+    };
+    setMissions((prev) => [newMission, ...prev]);
+    setSuccess("Mission créée avec succès.");
+    resetForm();
+  };
+
+  const missionsClient = useMemo(() => missions, [missions]);
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-sky-50/30 to-white px-4 py-8 sm:px-6 lg:px-10 space-y-6">
       <div className="rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
@@ -41,17 +136,213 @@ export default function StudioMissionsPage() {
 
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
         {tab === "client" ? (
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => alert("La création de mission sera bientôt disponible.")}
-              className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 transition"
-            >
-              Créer une mission
-            </button>
-            <p className="text-sm text-slate-600">
-              Tu n&apos;as encore publié aucune mission. La liste de tes missions apparaîtra ici.
-            </p>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowForm((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 transition"
+              >
+                Créer une mission
+              </button>
+              {success && <span className="text-sm text-emerald-600">{success}</span>}
+            </div>
+
+            {showForm && (
+              <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-sm text-slate-700">
+                    Titre de la mission *
+                    <input
+                      value={form.titre}
+                      onChange={(e) => setForm((prev) => ({ ...prev, titre: e.target.value }))}
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                        errors.titre ? "border-rose-300" : "border-slate-200"
+                      }`}
+                      placeholder="Article de blog sur CHATLAYA Studio"
+                    />
+                    {errors.titre && <p className="text-xs text-rose-600 mt-1">{errors.titre}</p>}
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Type de contenu *
+                    <select
+                      value={form.type}
+                      onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                        errors.type ? "border-rose-300" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="">Sélectionner...</option>
+                      {TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.type && <p className="text-xs text-rose-600 mt-1">{errors.type}</p>}
+                  </label>
+                </div>
+
+                <label className="text-sm text-slate-700">
+                  Description détaillée *
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                      errors.description ? "border-rose-300" : "border-slate-200"
+                    }`}
+                    rows={4}
+                    placeholder="Décris précisément le besoin, les livrables, ton et longueur..."
+                  />
+                  {errors.description && <p className="text-xs text-rose-600 mt-1">{errors.description}</p>}
+                </label>
+
+                <label className="text-sm text-slate-700">
+                  Public cible *
+                  <input
+                    value={form.public_cible}
+                    onChange={(e) => setForm((prev) => ({ ...prev, public_cible: e.target.value }))}
+                    className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                      errors.public_cible ? "border-rose-300" : "border-slate-200"
+                    }`}
+                    placeholder="Étudiants, clients B2B, etc."
+                  />
+                  {errors.public_cible && <p className="text-xs text-rose-600 mt-1">{errors.public_cible}</p>}
+                </label>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="text-sm text-slate-700">
+                    Objectif *
+                    <select
+                      value={form.objectif}
+                      onChange={(e) => setForm((prev) => ({ ...prev, objectif: e.target.value }))}
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                        errors.objectif ? "border-rose-300" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="">Sélectionner...</option>
+                      {OBJECTIFS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.objectif && <p className="text-xs text-rose-600 mt-1">{errors.objectif}</p>}
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Ton souhaité *
+                    <select
+                      value={form.ton}
+                      onChange={(e) => setForm((prev) => ({ ...prev, ton: e.target.value }))}
+                      className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm ${
+                        errors.ton ? "border-rose-300" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="">Sélectionner...</option>
+                      {TONS.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.ton && <p className="text-xs text-rose-600 mt-1">{errors.ton}</p>}
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Date limite (optionnel)
+                    <input
+                      type="date"
+                      value={form.deadline}
+                      onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-sm text-slate-700">
+                    Budget (optionnel)
+                    <input
+                      type="number"
+                      value={form.budget}
+                      onChange={(e) => setForm((prev) => ({ ...prev, budget: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="15000"
+                    />
+                  </label>
+                  <label className="text-sm text-slate-700">
+                    Devise (optionnel)
+                    <input
+                      value={form.devise}
+                      onChange={(e) => setForm((prev) => ({ ...prev, devise: e.target.value }))}
+                      className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      placeholder="XOF, EUR..."
+                    />
+                  </label>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button
+                    type="submit"
+                    className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 transition"
+                  >
+                    Enregistrer la mission
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-slate-800">Mes missions</p>
+              </div>
+              {missionsClient.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-600">
+                  Tu n&apos;as encore publié aucune mission. La liste de tes missions apparaîtra ici.
+                </p>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="min-w-full text-sm text-slate-700">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-[0.1em] text-slate-500">
+                        <th className="py-2 pr-4">Titre</th>
+                        <th className="py-2 pr-4">Type</th>
+                        <th className="py-2 pr-4">Statut</th>
+                        <th className="py-2 pr-4">Date limite</th>
+                        <th className="py-2 pr-4">Budget</th>
+                        <th className="py-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {missionsClient.map((m) => (
+                        <tr key={m.id}>
+                          <td className="py-2 pr-4 font-semibold text-slate-900">{m.titre}</td>
+                          <td className="py-2 pr-4">{m.type}</td>
+                          <td className="py-2 pr-4">
+                            <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 border border-emerald-100">
+                              {m.statut}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4">{m.deadline || "—"}</td>
+                          <td className="py-2 pr-4">
+                            {m.budget ? `${m.budget} ${m.devise || ""}`.trim() : "—"}
+                          </td>
+                          <td className="py-2">
+                            <button className="text-sky-700 text-sm font-semibold hover:underline">Voir</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

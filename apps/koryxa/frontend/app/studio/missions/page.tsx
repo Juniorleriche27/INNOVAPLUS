@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type Mission = {
   id: string;
@@ -14,7 +15,10 @@ type Mission = {
   devise?: string;
   deadline?: string;
   statut: "Ouverte" | "En cours";
+  clientId: string;
+  clientName: string;
   redacteurId?: string;
+  redacteurName?: string;
 };
 
 const TYPES = [
@@ -29,6 +33,7 @@ const TYPES = [
 
 const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
 const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
+const STORAGE_KEY = "studio_missions_cache";
 
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
@@ -48,6 +53,27 @@ export default function StudioMissionsPage() {
     deadline: "",
   });
   const currentUserId = "me-user"; // placeholder utilisateur connecté
+  const currentUserName = "Moi (démonstration)";
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed: Mission[] = JSON.parse(raw);
+        setMissions(parsed);
+      }
+    } catch (err) {
+      console.error("load missions failed", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(missions));
+    } catch (err) {
+      console.error("save missions failed", err);
+    }
+  }, [missions]);
 
   const resetForm = () => {
     setForm({
@@ -93,6 +119,8 @@ export default function StudioMissionsPage() {
       devise: form.devise.trim() || undefined,
       deadline: form.deadline || undefined,
       statut: "Ouverte",
+      clientId: currentUserId,
+      clientName: currentUserName,
     };
     setMissions((prev) => [newMission, ...prev]);
     setSuccess("Mission créée avec succès.");
@@ -113,7 +141,9 @@ export default function StudioMissionsPage() {
     setSuccess("");
     setMissions((prev) => {
       const next = prev.map((m) =>
-        m.id === id ? { ...m, statut: "En cours" as const, redacteurId: currentUserId } : m
+        m.id === id
+          ? { ...m, statut: "En cours" as const, redacteurId: currentUserId, redacteurName: currentUserName }
+          : m
       );
       return next;
     });
@@ -355,7 +385,9 @@ export default function StudioMissionsPage() {
                             {m.budget ? `${m.budget} ${m.devise || ""}`.trim() : "—"}
                           </td>
                           <td className="py-2">
-                            <button className="text-sky-700 text-sm font-semibold hover:underline">Voir</button>
+                            <Link className="text-sky-700 text-sm font-semibold hover:underline" href={`/studio/missions/${m.id}`}>
+                              Voir
+                            </Link>
                           </td>
                         </tr>
                       ))}
@@ -442,7 +474,9 @@ export default function StudioMissionsPage() {
                             {m.budget ? `${m.budget} ${m.devise || ""}`.trim() : "—"}
                           </td>
                           <td className="py-2">
-                            <button className="text-sky-700 text-sm font-semibold hover:underline">Voir</button>
+                            <Link className="text-sky-700 text-sm font-semibold hover:underline" href={`/studio/missions/${m.id}`}>
+                              Voir
+                            </Link>
                           </td>
                         </tr>
                       ))}

@@ -96,7 +96,7 @@ export default function StudioAssistantPage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-sky-50/40 to-white">
-      <div className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur px-4 py-3 sm:px-6 lg:px-10 shadow-sm">
+      <div className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur px-4 py-3 sm:px-6 lg:px-10 shadow-sm">
         <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
             <h1 className="text-xl font-semibold text-slate-900">Rédaction assistée</h1>
@@ -149,6 +149,10 @@ export default function StudioAssistantPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              Tokens {form.max_tokens}
+            </div>
             <button
               type="button"
               onClick={() => setFullscreen((v) => !v)}
@@ -263,24 +267,24 @@ export default function StudioAssistantPage() {
                 </p>
               </div>
 
-              {activeTab === "content" && (
-                <div className="space-y-4">
-                  {result.plan && (
-                    <div className="rounded-2xl bg-slate-900 text-slate-100 p-4 shadow-md shadow-slate-900/10">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-300 mb-2">Plan</p>
-                      <p className="whitespace-pre-wrap text-sm leading-6">{result.plan}</p>
-                    </div>
-                  )}
-                  {result.texte && (
-                    <div className="rounded-2xl bg-white border border-slate-100 p-5 shadow-md shadow-slate-900/10">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-                        <span className="w-2 h-2 rounded-full bg-sky-500" />
-                        Réponse IA
+                {activeTab === "content" && (
+                  <div className="space-y-4">
+                    {result.plan && (
+                      <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-4 shadow-md shadow-slate-900/10">
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-300 mb-2">Plan</p>
+                        <p className="whitespace-pre-wrap text-sm leading-6">{result.plan}</p>
                       </div>
-                      <div className="whitespace-pre-wrap text-base leading-7 text-slate-800">{result.texte}</div>
-                    </div>
-                  )}
-                  {(result.titres.length > 0 || result.mots_cles.length > 0) && (
+                    )}
+                    {result.texte && (
+                      <div className="rounded-2xl bg-slate-50 border border-slate-100 p-5 shadow-md shadow-slate-900/10">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2">
+                          <span className="w-2 h-2 rounded-full bg-sky-500" />
+                          Réponse IA · {stats.words} mots · ~{stats.tokens} tok
+                        </div>
+                        <div className="whitespace-pre-wrap text-base leading-7 text-slate-800">{result.texte}</div>
+                      </div>
+                    )}
+                    {(result.titres.length > 0 || result.mots_cles.length > 0) && (
                     <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 shadow-sm shadow-slate-900/5">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-2">Titres & mots-clés</p>
                       {result.titres.length > 0 && (

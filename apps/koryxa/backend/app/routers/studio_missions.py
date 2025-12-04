@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel, Field
+
+from app.db.mongo import get_db
+
+router = APIRouter(prefix="/studio-missions", tags=["studio-missions"])
+
+
+class MissionCreate(BaseModel):
+    titre: str
+    type: str
+    description: str
+    public_cible: str
+    objectif: str
+    ton: str
+    budget: Optional[str] = None
+    devise: Optional[str] = None
+    deadline: Optional[str] = None
+    client_id: str = Field(default="demo-client")
+    client_name: str = Field(default="Client demo")
+
+
+class MissionDB(MissionCreate):
+    id: str | None = None
+    statut: str = "Ouverte"
+    redacteur_id: Optional[str] = None
+    redacteur_name: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@router.get("", response_model=list[dict])
+async def list_missions(db: AsyncIOMotorDatabase = Depends(get_db)):
+    cursor = db["studio_missions"].find({}).sort("created_at", -1)
+    missions: list[dict] = []
+    async for doc in cursor:
+        doc["id"] = str(doc.get("_id"))
+        missions.append(doc)
+    return missions
+
+
+@router.post("", response_model=dict)
+async def create_mission(payload: MissionCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
+    doc = payload.dict()
+    doc.update({
+        "statut": "Ouverte",
+        "created_at": datetime.now(timezone.utc),
+    })
+    res = await db["studio_missions"].insert_one(doc)
+    doc["id"] = str(res.inserted_id)
+    return doc
+
+
+@router.get("/{mission_id}", response_model=dict)
+async def get_mission(mission_id: str, db: AsyncIOMotorDatabase = Depends(get_db)):
+    from bson import ObjectId
+
+    try:
+        oid = ObjectId(mission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID invalide")
+    doc = await db["studio_missions"].find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+    doc["id"] = str(doc.get("_id"))
+    return doc
+
+
+class AssignPayload(BaseModel):
+    redacteur_id: str = Field(default="demo-redacteur")
+    redacteur_name: str = Field(default="Rédacteur demo")
+
+
+@router.post("/{mission_id}/assign", response_model=dict)
+async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMotorDatabase = Depends(get_db)):
+    from bson import ObjectId
+
+    try:
+        oid = ObjectId(mission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID invalide")
+
+    doc = await db["studio_missions"].find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+    if doc.get("statut") != "Ouverte" or doc.get("redacteur_id"):
+        raise HTTPException(status_code=409, detail="Mission non disponible")
+
+    await db["studio_missions"].update_one(
+        {"_id": oid},
+        {"$set": {"statut": "En cours", "redacteur_id": payload.redacteur_id, "redacteur_name": payload.redacteur_name}},
+    )
+    doc = await db["studio_missions"].find_one({"_id": oid})
+    doc["id"] = str(doc.get("_id"))
+    return doc

@@ -86,8 +86,9 @@ export default function StudioMissionsPage() {
     devise: "",
     deadline: "",
   });
-  const [currentUserId, setCurrentUserId] = useState("me-user");
-  const [currentUserName, setCurrentUserName] = useState("Moi (démonstration)");
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [userLoaded, setUserLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -103,6 +104,7 @@ export default function StudioMissionsPage() {
       } catch (err) {
         console.warn("Impossible de récupérer l'utilisateur connecté", err);
       }
+      setUserLoaded(true);
     })();
     (async () => {
       try {
@@ -187,16 +189,20 @@ export default function StudioMissionsPage() {
   const missionsClient = useMemo(() => missions, [missions]);
   const missionsOuvertes = useMemo(
     () => missions.filter((m) => m.statut === "Ouverte" && m.redacteurId !== currentUserId),
-    [missions]
+    [missions, currentUserId]
   );
   const missionsRedacteur = useMemo(
     () => missions.filter((m) => m.redacteurId === currentUserId),
-    [missions]
+    [missions, currentUserId]
   );
 
   const handleAssign = (id: string) => {
     setSuccess("");
     setErrorMsg("");
+    if (!currentUserId) {
+      setErrorMsg("Connecte-toi pour prendre une mission.");
+      return;
+    }
     (async () => {
       try {
         const res = await fetchWithFallback(`${API}/${id}/assign`, {
@@ -506,9 +512,12 @@ export default function StudioMissionsPage() {
                           <td className="py-2">
                             <button
                               onClick={() => handleAssign(m.id)}
-                              className="text-sm font-semibold text-sky-700 hover:underline"
+                              disabled={!currentUserId || !userLoaded}
+                              className={`text-sm font-semibold ${
+                                currentUserId && userLoaded ? "text-sky-700 hover:underline" : "text-slate-400 cursor-not-allowed"
+                              }`}
                             >
-                              Prendre la mission
+                              {currentUserId && userLoaded ? "Prendre la mission" : "Connexion requise"}
                             </button>
                           </td>
                         </tr>

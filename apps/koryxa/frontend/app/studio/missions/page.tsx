@@ -41,6 +41,7 @@ export default function StudioMissionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [success, setSuccess] = useState("");
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     titre: "",
@@ -100,6 +101,7 @@ export default function StudioMissionsPage() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setSuccess("");
+    setErrorMsg("");
     if (!validate()) return;
     (async () => {
       try {
@@ -129,6 +131,8 @@ export default function StudioMissionsPage() {
         resetForm();
       } catch (err) {
         console.error(err);
+        const message = err instanceof Error ? err.message : "Erreur lors de la création de mission";
+        setErrorMsg(message);
       }
     })();
   };
@@ -145,6 +149,7 @@ export default function StudioMissionsPage() {
 
   const handleAssign = (id: string) => {
     setSuccess("");
+    setErrorMsg("");
     (async () => {
       try {
         const res = await fetch(`${API}/${id}/assign`, {
@@ -159,7 +164,7 @@ export default function StudioMissionsPage() {
         setSuccess("Mission assignée avec succès.");
       } catch (err) {
         console.error(err);
-        setSuccess("La mission n'est plus disponible.");
+        setErrorMsg("La mission n'est plus disponible.");
         // reload state
         try {
           const res = await fetch(API, { credentials: "include" });
@@ -211,16 +216,17 @@ export default function StudioMissionsPage() {
       <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
         {tab === "client" ? (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setShowForm((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 transition"
-              >
-                Créer une mission
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowForm((v) => !v)}
+                  className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700 transition"
+                >
+                  Créer une mission
+                </button>
               {success && <span className="text-sm text-emerald-600">{success}</span>}
-            </div>
+              {errorMsg && <span className="text-sm text-rose-600">{errorMsg}</span>}
+              </div>
 
             {showForm && (
               <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-inner">

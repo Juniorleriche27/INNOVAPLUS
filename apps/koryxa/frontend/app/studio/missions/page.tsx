@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 type Mission = {
   id: string;
@@ -33,7 +34,7 @@ const TYPES = [
 
 const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
 const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
-const STORAGE_KEY = "studio_missions_cache";
+const API = `${INNOVA_API_BASE.replace(/(\\/innova\\/api)+/g, "/innova/api")}/studio-missions`;
 
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
@@ -56,24 +57,17 @@ export default function StudioMissionsPage() {
   const currentUserName = "Moi (démonstration)";
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed: Mission[] = JSON.parse(raw);
-        setMissions(parsed);
+    (async () => {
+      try {
+        const res = await fetch(API, { credentials: "include" });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        setMissions(data);
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error("load missions failed", err);
-    }
+    })();
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(missions));
-    } catch (err) {
-      console.error("save missions failed", err);
-    }
-  }, [missions]);
 
   const resetForm = () => {
     setForm({
@@ -107,24 +101,36 @@ export default function StudioMissionsPage() {
     e.preventDefault();
     setSuccess("");
     if (!validate()) return;
-    const newMission: Mission = {
-      id: crypto.randomUUID(),
-      titre: form.titre.trim(),
-      type: form.type.trim(),
-      description: form.description.trim(),
-      public_cible: form.public_cible.trim(),
-      objectif: form.objectif.trim(),
-      ton: form.ton.trim(),
-      budget: form.budget.trim() || undefined,
-      devise: form.devise.trim() || undefined,
-      deadline: form.deadline || undefined,
-      statut: "Ouverte",
-      clientId: currentUserId,
-      clientName: currentUserName,
-    };
-    setMissions((prev) => [newMission, ...prev]);
-    setSuccess("Mission créée avec succès.");
-    resetForm();
+    (async () => {
+      try {
+        const payload = {
+          titre: form.titre.trim(),
+          type: form.type.trim(),
+          description: form.description.trim(),
+          public_cible: form.public_cible.trim(),
+          objectif: form.objectif.trim(),
+          ton: form.ton.trim(),
+          budget: form.budget.trim() || undefined,
+          devise: form.devise.trim() || undefined,
+          deadline: form.deadline || undefined,
+          client_id: currentUserId,
+          client_name: currentUserName,
+        };
+        const res = await fetch(API, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const created = await res.json();
+        setMissions((prev) => [created, ...prev]);
+        setSuccess("Mission créée avec succès.");
+        resetForm();
+      } catch (err) {
+        console.error(err);
+      }
+    })();
   };
 
   const missionsClient = useMemo(() => missions, [missions]);
@@ -139,15 +145,32 @@ export default function StudioMissionsPage() {
 
   const handleAssign = (id: string) => {
     setSuccess("");
-    setMissions((prev) => {
-      const next = prev.map((m) =>
-        m.id === id
-          ? { ...m, statut: "En cours" as const, redacteurId: currentUserId, redacteurName: currentUserName }
-          : m
-      );
-      return next;
-    });
-    setSuccess("Mission assignée avec succès.");
+    (async () => {
+      try {
+        const res = await fetch(`${API}/${id}/assign`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ redacteur_id: currentUserId, redacteur_name: currentUserName }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const updated = await res.json();
+        setMissions((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+        setSuccess("Mission assignée avec succès.");
+      } catch (err) {
+        console.error(err);
+        setSuccess("La mission n'est plus disponible.");
+        // reload state
+        try {
+          const res = await fetch(API, { credentials: "include" });
+          if (res.ok) {
+            setMissions(await res.json());
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    })();
   };
 
   return (

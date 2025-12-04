@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 
 from app.db.mongo import get_db
+from app.schemas.myplanning import TaskCreatePayload
 
 router = APIRouter(prefix="/studio-missions", tags=["studio-missions"])
 
@@ -97,4 +98,34 @@ async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMot
     )
     doc = await db["studio_missions"].find_one({"_id": oid})
     doc["id"] = str(doc.get("_id"))
+
+    # Créer une tâche MyPlanning pour le rédacteur
+    try:
+        due_dt = None
+        if doc.get("deadline"):
+            try:
+                due_dt = datetime.fromisoformat(str(doc["deadline"]))
+            except Exception:
+                due_dt = None
+        task_payload = TaskCreatePayload(
+            title=f"Mission: {doc.get('titre','')}",
+            description=doc.get("description"),
+            category="mission",
+            priority_eisenhower="important_not_urgent",
+            kanban_state="todo",
+            high_impact=True,
+            estimated_duration_minutes=doc.get("estimated_duration_minutes") or 90,
+            due_datetime=due_dt,
+            source="ia",
+        )
+        task_doc = task_payload.dict()
+        task_doc["user_id"] = payload.redacteur_id
+        task_doc["assignee_user_id"] = payload.redacteur_id
+        task_doc["created_at"] = datetime.utcnow()
+        task_doc["updated_at"] = datetime.utcnow()
+        await db["myplanning_tasks"].insert_one(task_doc)
+    except Exception:
+        # Ne pas bloquer l'assignation si la création de tâche échoue
+        pass
+
     return doc

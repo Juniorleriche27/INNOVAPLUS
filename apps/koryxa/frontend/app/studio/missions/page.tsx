@@ -34,7 +34,7 @@ const TYPES = [
 
 const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
 const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
-const API = `${INNOVA_API_BASE.replace(/(\\/innova\\/api)+/g, "/innova/api")}/studio-missions`;
+const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio-missions`;
 
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");

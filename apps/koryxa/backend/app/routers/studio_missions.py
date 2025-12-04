@@ -42,6 +42,10 @@ def _serialize(doc: dict) -> dict:
         doc["id"] = str(doc.pop("_id"))
     if isinstance(doc.get("created_at"), datetime):
         doc["created_at"] = doc["created_at"].isoformat()
+    if doc.get("client_id") is not None:
+        doc["client_id"] = str(doc["client_id"])
+    if doc.get("redacteur_id") is not None:
+        doc["redacteur_id"] = str(doc["redacteur_id"])
     return doc
 
 

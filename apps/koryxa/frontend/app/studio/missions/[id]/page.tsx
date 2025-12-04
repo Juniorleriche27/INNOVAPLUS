@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 type Mission = {
   id: string;
@@ -22,31 +23,65 @@ type Mission = {
   redacteurName?: string;
 };
 
-const STORAGE_KEY = "studio_missions_cache";
+const API = `${INNOVA_API_BASE.replace(/(\\/innova\\/api)+/g, "/innova/api")}/studio-missions`;
+
+async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
+  try {
+    return await fetch(input, init);
+  } catch {
+    const relative = typeof input === "string" && input.startsWith("http") ? input.replace(API, "/innova/api/studio-missions") : input;
+    return fetch(relative, init);
+  }
+}
+
+function mapMission(data: any): Mission {
+  return {
+    id: data?.id || data?._id || "",
+    titre: data?.titre || "",
+    type: data?.type || "",
+    description: data?.description || "",
+    public_cible: data?.public_cible || data?.publicCible || "",
+    objectif: data?.objectif || "",
+    ton: data?.ton || "",
+    budget: data?.budget || "",
+    devise: data?.devise || "",
+    deadline: data?.deadline || "",
+    statut: data?.statut || data?.status || "Ouverte",
+    clientId: data?.client_id || data?.clientId || "",
+    clientName: data?.client_name || data?.clientName || "",
+    redacteurId: data?.redacteur_id || data?.redacteurId,
+    redacteurName: data?.redacteur_name || data?.redacteurName,
+  };
+}
 
 export default function MissionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const missionId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const currentUserId = "me-user";
-  const [missions, setMissions] = useState<Mission[]>([]);
+  const [mission, setMission] = useState<Mission | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setMissions(JSON.parse(raw));
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
-  const mission = useMemo(() => missions.find((m) => m.id === missionId), [missions, missionId]);
+    if (!missionId) return;
+    (async () => {
+      try {
+        const res = await fetchWithFallback(`${API}/${missionId}`, { credentials: "include" });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        setMission(mapMission(data));
+      } catch (err) {
+        console.error(err);
+        setError("Mission introuvable.");
+      }
+    })();
+  }, [missionId]);
 
   if (!mission) {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center px-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-          <p className="text-sm text-slate-700">Mission introuvable.</p>
+          <p className="text-sm text-slate-700">{error || "Mission introuvable."}</p>
           <Link href="/studio/missions" className="mt-3 inline-flex text-sm font-semibold text-sky-700">
             ← Retour au Studio de missions
           </Link>

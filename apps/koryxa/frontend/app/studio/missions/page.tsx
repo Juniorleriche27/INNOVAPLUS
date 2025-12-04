@@ -47,6 +47,26 @@ async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
   }
 }
 
+function mapMission(data: any): Mission {
+  return {
+    id: data?.id || data?._id || "",
+    titre: data?.titre || "",
+    type: data?.type || "",
+    description: data?.description || "",
+    public_cible: data?.public_cible || data?.publicCible || "",
+    objectif: data?.objectif || "",
+    ton: data?.ton || "",
+    budget: data?.budget || "",
+    devise: data?.devise || "",
+    deadline: data?.deadline || "",
+    statut: data?.statut || data?.status || "Ouverte",
+    clientId: data?.client_id || data?.clientId || "",
+    clientName: data?.client_name || data?.clientName || "",
+    redacteurId: data?.redacteur_id || data?.redacteurId,
+    redacteurName: data?.redacteur_name || data?.redacteurName,
+  };
+}
+
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
   const [showForm, setShowForm] = useState(false);
@@ -74,9 +94,10 @@ export default function StudioMissionsPage() {
         const res = await fetchWithFallback(API, { credentials: "include" });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        setMissions(data);
+        setMissions(Array.isArray(data) ? data.map(mapMission) : []);
       } catch (err) {
         console.error(err);
+        setErrorMsg("Impossible de charger les missions.");
       }
     })();
   }, []);
@@ -137,13 +158,13 @@ export default function StudioMissionsPage() {
         });
         if (!res.ok) throw new Error(await res.text());
         const created = await res.json();
-        setMissions((prev) => [created, ...prev]);
+        setMissions((prev) => [mapMission(created), ...prev]);
         setSuccess("Mission créée avec succès.");
         resetForm();
       } catch (err) {
         console.error(err);
         const message = err instanceof Error ? err.message : "Erreur lors de la création de mission";
-        setErrorMsg(message);
+        setErrorMsg(message || "Erreur lors de la création de mission");
       }
     })();
   };
@@ -170,7 +191,7 @@ export default function StudioMissionsPage() {
           body: JSON.stringify({ redacteur_id: currentUserId, redacteur_name: currentUserName }),
         });
         if (!res.ok) throw new Error(await res.text());
-        const updated = await res.json();
+        const updated = mapMission(await res.json());
         setMissions((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
         setSuccess("Mission assignée avec succès.");
       } catch (err) {
@@ -180,7 +201,8 @@ export default function StudioMissionsPage() {
         try {
           const res = await fetchWithFallback(API, { credentials: "include" });
           if (res.ok) {
-            setMissions(await res.json());
+            const data = await res.json();
+            setMissions(Array.isArray(data) ? data.map(mapMission) : []);
           }
         } catch (e) {
           console.error(e);

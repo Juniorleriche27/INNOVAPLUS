@@ -35,13 +35,21 @@ class MissionDB(MissionCreate):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+def _serialize(doc: dict) -> dict:
+    doc = dict(doc or {})
+    if "_id" in doc:
+        doc["id"] = str(doc.pop("_id"))
+    if isinstance(doc.get("created_at"), datetime):
+        doc["created_at"] = doc["created_at"].isoformat()
+    return doc
+
+
 @router.get("", response_model=list[dict])
 async def list_missions(db: AsyncIOMotorDatabase = Depends(get_db)):
     cursor = db["studio_missions"].find({}).sort("created_at", -1)
     missions: list[dict] = []
     async for doc in cursor:
-        doc["id"] = str(doc.get("_id"))
-        missions.append(doc)
+        missions.append(_serialize(doc))
     return missions
 
 
@@ -53,8 +61,8 @@ async def create_mission(payload: MissionCreate, db: AsyncIOMotorDatabase = Depe
         "created_at": datetime.now(timezone.utc),
     })
     res = await db["studio_missions"].insert_one(doc)
-    doc["id"] = str(res.inserted_id)
-    return doc
+    doc["_id"] = res.inserted_id
+    return _serialize(doc)
 
 
 @router.get("/{mission_id}", response_model=dict)
@@ -68,8 +76,7 @@ async def get_mission(mission_id: str, db: AsyncIOMotorDatabase = Depends(get_db
     doc = await db["studio_missions"].find_one({"_id": oid})
     if not doc:
         raise HTTPException(status_code=404, detail="Mission introuvable")
-    doc["id"] = str(doc.get("_id"))
-    return doc
+    return _serialize(doc)
 
 
 class AssignPayload(BaseModel):
@@ -97,7 +104,7 @@ async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMot
         {"$set": {"statut": "En cours", "redacteur_id": payload.redacteur_id, "redacteur_name": payload.redacteur_name}},
     )
     doc = await db["studio_missions"].find_one({"_id": oid})
-    doc["id"] = str(doc.get("_id"))
+    doc = _serialize(doc)
 
     # Créer une tâche MyPlanning pour le rédacteur
     try:

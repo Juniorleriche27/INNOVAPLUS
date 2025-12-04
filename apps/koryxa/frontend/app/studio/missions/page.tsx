@@ -35,6 +35,7 @@ const TYPES = [
 const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
 const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
 const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio-missions`;
+const AUTH_ME = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/auth/me`;
 
 async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
   try {
@@ -85,10 +86,24 @@ export default function StudioMissionsPage() {
     devise: "",
     deadline: "",
   });
-  const currentUserId = "me-user"; // placeholder utilisateur connecté
-  const currentUserName = "Moi (démonstration)";
+  const [currentUserId, setCurrentUserId] = useState("me-user");
+  const [currentUserName, setCurrentUserName] = useState("Moi (démonstration)");
 
   useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchWithFallback(AUTH_ME, { cache: "no-store", credentials: "include" });
+        if (res.ok) {
+          const me = await res.json();
+          const uid = me?.id || me?._id;
+          if (uid) setCurrentUserId(uid);
+          const name = `${me?.first_name || ""} ${me?.last_name || ""}`.trim() || me?.email;
+          if (name) setCurrentUserName(name);
+        }
+      } catch (err) {
+        console.warn("Impossible de récupérer l'utilisateur connecté", err);
+      }
+    })();
     (async () => {
       try {
         const res = await fetchWithFallback(API, { credentials: "include" });

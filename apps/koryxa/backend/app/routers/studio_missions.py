@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.db.mongo import get_db
 from app.schemas.myplanning import TaskCreatePayload
+from app.deps.auth import get_current_user
 
 router = APIRouter(prefix="/studio-missions", tags=["studio-missions"])
 
@@ -54,11 +55,19 @@ async def list_missions(db: AsyncIOMotorDatabase = Depends(get_db)):
 
 
 @router.post("", response_model=dict)
-async def create_mission(payload: MissionCreate, db: AsyncIOMotorDatabase = Depends(get_db)):
+async def create_mission(
+    payload: MissionCreate,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    client_id = current["_id"]
+    client_name = f"{current.get('first_name','') or ''} {current.get('last_name','') or ''}".strip() or current.get("email") or "Client"
     doc = payload.dict()
     doc.update({
         "statut": "Ouverte",
         "created_at": datetime.now(timezone.utc),
+        "client_id": client_id,
+        "client_name": client_name,
     })
     res = await db["studio_missions"].insert_one(doc)
     doc["_id"] = res.inserted_id
@@ -85,7 +94,12 @@ class AssignPayload(BaseModel):
 
 
 @router.post("/{mission_id}/assign", response_model=dict)
-async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMotorDatabase = Depends(get_db)):
+async def assign_mission(
+    mission_id: str,
+    payload: AssignPayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
     from bson import ObjectId
 
     try:
@@ -99,9 +113,12 @@ async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMot
     if doc.get("statut") != "Ouverte" or doc.get("redacteur_id"):
         raise HTTPException(status_code=409, detail="Mission non disponible")
 
+    redacteur_id = current["_id"]
+    redacteur_name = f"{current.get('first_name','') or ''} {current.get('last_name','') or ''}".strip() or current.get("email") or payload.redacteur_name
+
     await db["studio_missions"].update_one(
         {"_id": oid},
-        {"$set": {"statut": "En cours", "redacteur_id": payload.redacteur_id, "redacteur_name": payload.redacteur_name}},
+        {"$set": {"statut": "En cours", "redacteur_id": redacteur_id, "redacteur_name": redacteur_name}},
     )
     doc = await db["studio_missions"].find_one({"_id": oid})
     doc = _serialize(doc)
@@ -126,8 +143,8 @@ async def assign_mission(mission_id: str, payload: AssignPayload, db: AsyncIOMot
             source="ia",
         )
         task_doc = task_payload.dict()
-        task_doc["user_id"] = payload.redacteur_id
-        task_doc["assignee_user_id"] = payload.redacteur_id
+        task_doc["user_id"] = redacteur_id
+        task_doc["assignee_user_id"] = redacteur_id
         task_doc["created_at"] = datetime.utcnow()
         task_doc["updated_at"] = datetime.utcnow()
         await db["myplanning_tasks"].insert_one(task_doc)

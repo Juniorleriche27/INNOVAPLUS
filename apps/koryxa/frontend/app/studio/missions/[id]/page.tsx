@@ -24,6 +24,7 @@ type Mission = {
 };
 
 const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio-missions`;
+const AUTH_ME = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/auth/me`;
 
 async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
   try {
@@ -58,9 +59,29 @@ export default function MissionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const missionId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const currentUserId = "me-user";
+  const [currentUserId, setCurrentUserId] = useState("");
   const [mission, setMission] = useState<Mission | null>(null);
   const [error, setError] = useState("");
+  const [plan, setPlan] = useState("");
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchWithFallback(AUTH_ME, { cache: "no-store", credentials: "include" });
+        if (res.ok) {
+          const me = await res.json();
+          const uid = me?.id || me?._id;
+          if (uid) setCurrentUserId(uid);
+        }
+      } catch (err) {
+        console.warn("Impossible de récupérer l'utilisateur connecté", err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!missionId) return;
@@ -70,6 +91,16 @@ export default function MissionDetailPage() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         setMission(mapMission(data));
+        try {
+          const draftRes = await fetchWithFallback(`${API}/${missionId}/draft`, { credentials: "include" });
+          if (draftRes.ok) {
+            const draftData = await draftRes.json();
+            setPlan(draftData.plan || "");
+            setDraft(draftData.draft || "");
+          }
+        } catch (err) {
+          console.warn("Impossible de charger le brouillon", err);
+        }
       } catch (err) {
         console.error(err);
         setError("Mission introuvable.");
@@ -92,6 +123,51 @@ export default function MissionDetailPage() {
 
   const isClient = mission.clientId === currentUserId;
   const isRedacteur = mission.redacteurId === currentUserId;
+  const canEdit = isRedacteur || isClient;
+
+  const handleGenerate = async () => {
+    if (!missionId) return;
+    setGenerating(true);
+    setFeedback("");
+    try {
+      const res = await fetchWithFallback(`${API}/${missionId}/prepare`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setPlan(data.plan || "");
+      setDraft(data.draft || "");
+      setFeedback("Contenu généré avec succès.");
+    } catch (err) {
+      console.error(err);
+      setFeedback("La génération a échoué. Merci de réessayer.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!missionId) return;
+    setSaving(true);
+    setFeedback("");
+    try {
+      const res = await fetchWithFallback(`${API}/${missionId}/draft`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, draft }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await res.json();
+      setFeedback("Brouillon sauvegardé.");
+    } catch (err) {
+      console.error(err);
+      setFeedback("Impossible de sauvegarder le brouillon.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-sky-50/30 to-white px-4 py-8 sm:px-6 lg:px-10 space-y-6">
@@ -149,6 +225,62 @@ export default function MissionDetailPage() {
           </div>
         </div>
       </div>
+
+      {canEdit && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-900/5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Espace de rédaction</p>
+              <p className="text-sm text-slate-600">
+                Utilise CHATLAYA pour générer un plan et un brouillon, puis adapte le texte avant de le soumettre au client.
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Type : {mission.type} • Objectif : {mission.objectif} • Ton : {mission.ton}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow ${
+                  generating ? "bg-slate-400" : "bg-sky-600 hover:bg-sky-700"
+                }`}
+              >
+                {generating ? "Génération en cours..." : "Préparer avec CHATLAYA"}
+              </button>
+              <button
+                onClick={handleSaveDraft}
+                disabled={saving}
+                className={`rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold shadow-sm ${
+                  saving ? "text-slate-400" : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {saving ? "Sauvegarde..." : "Sauvegarder le brouillon"}
+              </button>
+            </div>
+          </div>
+
+          {feedback && <p className="text-sm font-semibold text-slate-700">{feedback}</p>}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-inner">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Plan proposé</p>
+              <div className="mt-2 min-h-[180px] whitespace-pre-wrap text-sm text-slate-800">
+                {plan ? plan : "Le plan de l’article apparaîtra ici après la génération."}
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-inner">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Brouillon du rédacteur</p>
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                className="mt-2 h-52 w-full resize-vertical rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-sky-500 focus:outline-none"
+                placeholder='Commence à rédiger ici ou clique sur "Préparer avec CHATLAYA".'
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <Link href="/studio/missions" className="inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
         ← Retour au Studio de missions

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -10,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.db.mongo import get_db
 from app.schemas.myplanning import TaskCreatePayload
 from app.deps.auth import get_current_user
+from app.core.ai import generate_answer
 
 router = APIRouter(prefix="/studio-missions", tags=["studio-missions"])
 
@@ -97,6 +99,15 @@ class AssignPayload(BaseModel):
     redacteur_name: str = Field(default="Rédacteur demo")
 
 
+class DraftPayload(BaseModel):
+    plan: Optional[str] = None
+    draft: Optional[str] = None
+
+class DraftPayload(BaseModel):
+    plan: Optional[str] = None
+    draft: Optional[str] = None
+
+
 @router.post("/{mission_id}/assign", response_model=dict)
 async def assign_mission(
     mission_id: str,
@@ -157,3 +168,126 @@ async def assign_mission(
         pass
 
     return doc
+
+
+@router.get("/{mission_id}/draft", response_model=dict)
+async def get_draft(
+    mission_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    from bson import ObjectId
+
+    try:
+        oid = ObjectId(mission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID invalide")
+
+    mission = await db["studio_missions"].find_one({"_id": oid})
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+
+    # Autoriser client ou rédacteur
+    current_id = current["_id"]
+    if mission.get("client_id") != current_id and mission.get("redacteur_id") != current_id:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    draft = await db["studio_mission_drafts"].find_one({"mission_id": oid, "redacteur_id": current_id})
+    if not draft:
+        return {"plan": None, "draft": None, "updated_at": None}
+    return {
+        "plan": draft.get("plan"),
+        "draft": draft.get("draft"),
+        "updated_at": draft.get("updated_at").isoformat() if draft.get("updated_at") else None,
+    }
+
+
+@router.post("/{mission_id}/draft", response_model=dict)
+async def save_draft(
+    mission_id: str,
+    payload: DraftPayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    from bson import ObjectId
+
+    try:
+        oid = ObjectId(mission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID invalide")
+
+    mission = await db["studio_missions"].find_one({"_id": oid})
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+
+    current_id = current["_id"]
+    if mission.get("redacteur_id") != current_id:
+        raise HTTPException(status_code=403, detail="Seul le rédacteur assigné peut sauvegarder le brouillon")
+
+    now = datetime.utcnow()
+    await db["studio_mission_drafts"].update_one(
+        {"mission_id": oid, "redacteur_id": current_id},
+        {"$set": {"plan": payload.plan, "draft": payload.draft, "updated_at": now}},
+        upsert=True,
+    )
+    return {"plan": payload.plan, "draft": payload.draft, "updated_at": now.isoformat()}
+
+
+@router.post("/{mission_id}/prepare", response_model=dict)
+async def prepare_with_ai(
+    mission_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+):
+    from bson import ObjectId
+
+    try:
+        oid = ObjectId(mission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="ID invalide")
+
+    mission = await db["studio_missions"].find_one({"_id": oid})
+    if not mission:
+        raise HTTPException(status_code=404, detail="Mission introuvable")
+
+    current_id = current["_id"]
+    if mission.get("redacteur_id") != current_id and mission.get("client_id") != current_id:
+        raise HTTPException(status_code=403, detail="Accès refusé")
+
+    brief = (
+        f"Type de contenu : {mission.get('type','')}\n"
+        f"Description : {mission.get('description','')}\n"
+        f"Public cible : {mission.get('public_cible','')}\n"
+        f"Objectif : {mission.get('objectif','')}\n"
+        f"Ton souhaité : {mission.get('ton','')}\n"
+        f"Longueur approximative : 800-1200 mots\n"
+    )
+    prompt = (
+        "Tu es CHATLAYA, assistant IA de KORYXA. Aide un rédacteur à produire un contenu à partir du brief suivant.\n"
+        "Réponds avec deux blocs uniquement :\n"
+        "Plan : (plan numéroté)\n"
+        "Texte : (un texte complet adapté au public cible et à l'objectif)\n\n"
+        f"Brief :\n{brief}"
+    )
+    try:
+        answer = generate_answer(prompt, max_new_tokens=900)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Echec génération IA: {exc}") from exc
+
+    plan = ""
+    texte = ""
+    parts = re.split(r"Texte\\s*:", answer, flags=re.IGNORECASE)
+    if parts:
+        plan = re.sub(r"^\\s*Plan\\s*:\\s*", "", parts[0], flags=re.IGNORECASE).strip()
+        if len(parts) > 1:
+            texte = parts[1].strip()
+    if not plan and not texte:
+        texte = answer.strip()
+
+    now = datetime.utcnow()
+    await db["studio_mission_drafts"].update_one(
+        {"mission_id": oid, "redacteur_id": current_id},
+        {"$set": {"plan": plan, "draft": texte, "updated_at": now}},
+        upsert=True,
+    )
+    return {"plan": plan, "draft": texte, "updated_at": now.isoformat()}

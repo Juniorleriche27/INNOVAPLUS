@@ -23,7 +23,7 @@ type Mission = {
   redacteurName?: string;
 };
 
-const API = `${INNOVA_API_BASE.replace(/(\\/innova\\/api)+/g, "/innova/api")}/studio-missions`;
+const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio-missions`;
 
 async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
   try {

@@ -36,6 +36,17 @@ const OBJECTIFS = ["Informer", "Vendre", "Recruter", "Mobiliser", "Autre"];
 const TONS = ["Professionnel", "Simple", "Motivant", "Institutionnel", "Autre"];
 const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/studio-missions`;
 
+async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
+  try {
+    const res = await fetch(input, init);
+    return res;
+  } catch (err) {
+    // Fallback vers chemin relatif (évite CORS si domaine Vercel non autorisé)
+    const relative = typeof input === "string" && input.startsWith("http") ? input.replace(API, "/innova/api/studio-missions") : input;
+    return fetch(relative, init);
+  }
+}
+
 export default function StudioMissionsPage() {
   const [tab, setTab] = useState<"client" | "redacteur">("client");
   const [showForm, setShowForm] = useState(false);
@@ -60,7 +71,7 @@ export default function StudioMissionsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(API, { credentials: "include" });
+        const res = await fetchWithFallback(API, { credentials: "include" });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         setMissions(data);
@@ -118,7 +129,7 @@ export default function StudioMissionsPage() {
           client_id: currentUserId,
           client_name: currentUserName,
         };
-        const res = await fetch(API, {
+        const res = await fetchWithFallback(API, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -152,7 +163,7 @@ export default function StudioMissionsPage() {
     setErrorMsg("");
     (async () => {
       try {
-        const res = await fetch(`${API}/${id}/assign`, {
+        const res = await fetchWithFallback(`${API}/${id}/assign`, {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -167,7 +178,7 @@ export default function StudioMissionsPage() {
         setErrorMsg("La mission n'est plus disponible.");
         // reload state
         try {
-          const res = await fetch(API, { credentials: "include" });
+          const res = await fetchWithFallback(API, { credentials: "include" });
           if (res.ok) {
             setMissions(await res.json());
           }

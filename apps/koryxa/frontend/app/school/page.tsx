@@ -67,6 +67,10 @@ export default function SchoolCatalogPage() {
 
       {error && <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">{error}</div>}
 
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-sm">
+        Vous n’avez encore terminé aucun certificat. Commencez par <span className="font-semibold text-sky-700">KORYXA Pro – Mindset & Systèmes d’Habitudes</span> par exemple.
+      </div>
+
       {filtered.length === 0 && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 shadow-sm">
           Vous n’avez encore terminé aucun certificat. Commencez par <span className="font-semibold text-sky-700">KORYXA Pro – Mindset & Systèmes d’Habitudes</span> par exemple.

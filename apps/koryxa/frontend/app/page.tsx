@@ -24,69 +24,7 @@ const HOW_IT_WORKS = [
   { step: "04", title: "Attribution, suivi et amélioration continue" }
 ];
 
-const KPI_METRICS = [
-  { label: "Opportunités ouvertes", value: "128" },
-  { label: "Assignations cette semaine", value: "42" },
-  { label: "Taux d'acceptation", value: "87 %" },
-  { label: "Répartition équitable", value: "NeedIndex 0,41" },
-  { label: "Temps médian de matching", value: "36 h" }
-];
-
-const SAMPLE_OPPORTUNITY = {
-  title: "Déploiement data pour coopératives agricoles",
-  skills: ["Data engineering", "AgriTech", "Python"],
-  country: "CI",
-  status: "open",
-  needIndex: "0,35"
-};
-
-const OPPORTUNITY_DETAILS = {
-  context: "Analyse des ventes locales et recommandations de pricing pour 120 coopératives ivoiriennes. Données issues du RAG terrain + rapports FAO.",
-  skills: ["Analyse de données", "Pricing dynamique", "Agriculture durable"],
-  country: "Côte d'Ivoire",
-  equity: "Quota pays actif (min 15 % / max 35 %)"
-};
-
-const TALENT_SAMPLE = {
-  name: "Mariam Koffi",
-  country: "CI",
-  skills: ["Data analyst", "Power BI", "SQL avancé"],
-  reputation: "0,92",
-  availability: "Disponible 3 j / semaine"
-};
-
-const GLOBAL_ACTIONS = [
-  "Créer une opportunité",
-  "Trouver une mission",
-  "Voir le contexte",
-  "Postuler",
-  "Proposer",
-  "Accepter",
-  "Refuser",
-  "Terminer"
-];
-
-const FILTERS = ["Pays", "Compétence", "Statut", "Récents"];
-
-const TOASTS = [
-  "Opportunité créée avec succès",
-  "Candidature envoyée",
-  "Attribution réalisée",
-  "Contexte insuffisant (ajoutez un document ou précisez le besoin)"
-];
-
-const EMPTY_STATES = [
-  "Aucune opportunité pour ces filtres. Essayez un autre pays ou une autre compétence.",
-  "Aucun talent correspondant. Ajustez les compétences requises."
-];
-
 const PARTNERS = ["GIZ", "BidLab", "AFD", "Agritech CI", "TPE locales"];
-
-const HERO_HIGHLIGHTS = [
-  { label: "Pays activés", value: "24", tone: "emerald" },
-  { label: "Talents vérifiés", value: "12k", tone: "sky" },
-  { label: "Temps médian de match", value: "36 h", tone: "amber" },
-];
 
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 const SECTION_SUBTITLE = "text-base text-slate-500";
@@ -140,17 +78,6 @@ export default async function HomePage() {
                 Voir l'équité en détail →
               </Link>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {HERO_HIGHLIGHTS.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-md shadow-slate-900/5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  <p className="text-3xl font-bold text-slate-900">{item.value}</p>
-                  <p className="text-sm text-slate-500">{item.label}</p>
-                </div>
-              ))}
-            </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Partenaires & pilotes</span>
               <div className="flex flex-wrap items-center gap-2">
@@ -163,39 +90,17 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="space-y-4 rounded-3xl border border-sky-100 bg-white/80 p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-700">NeedIndex live</p>
-              <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">Audit temps réel</span>
+          <div className="space-y-3 rounded-3xl border border-sky-100 bg-white/80 p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <p className="text-sm font-semibold text-slate-900">Équité & contrôle</p>
             </div>
-            <div className="grid gap-3">
-              <div className="rounded-2xl border border-slate-100 bg-sky-50/60 p-4 shadow-inner shadow-sky-100/40">
-                <div className="flex items-baseline justify-between">
-                  <p className="text-5xl font-black text-sky-600">0,82</p>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm shadow-sky-200">
-                    Équité globale
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">
-                  Répartition active sur 24 pays. Mise à jour à chaque attribution.
-                </p>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { country: "CI · Côte d'Ivoire", delta: "+2 blocs", tone: "text-sky-600" },
-                  { country: "SN · Sénégal", delta: "+1 bloc", tone: "text-sky-600" },
-                  { country: "FR · France", delta: "quota max atteint", tone: "text-slate-400" },
-                ].map((item) => (
-                  <div key={item.country} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/90 px-3 py-2 text-sm text-slate-600">
-                    <span>{item.country}</span>
-                    <span className={item.tone}>{item.delta}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
-                Données de démonstration. Les chiffres live reflètent la production dès connexion.
-              </div>
-            </div>
+            <p className="text-sm text-slate-600">
+              NeedIndex, quotas min/max par pays et audit des attributions sont activables au déploiement. Consultez la doc pour la configuration.
+            </p>
+            <Link href="/equity" className="inline-flex w-fit items-center gap-2 rounded-full border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50">
+              Voir l’équité
+            </Link>
           </div>
         </div>
       </section>

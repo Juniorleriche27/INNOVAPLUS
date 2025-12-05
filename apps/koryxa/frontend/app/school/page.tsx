@@ -13,9 +13,8 @@ const FILTERS: Array<{ label: string; value: string | null }> = [
 ];
 
 function categoryLabel(cert: CertificateProgram) {
-  if (cert.category === "pro") return "Pro (payant)";
-  if (cert.category === "explorer") return "Explorer (gratuit)";
-  return cert.category;
+  if (cert.is_paid) return "Pro / Payant";
+  return "Explorer / Gratuit";
 }
 
 export default function SchoolCatalogPage() {
@@ -39,10 +38,11 @@ export default function SchoolCatalogPage() {
 
   const filtered = useMemo(() => {
     if (filter === "finished") {
-      return certs.filter((c) => (c.issued || false) || (c.progress_percent ?? 0) >= 99.9);
+      return certs.filter((c) => (c.user_progress_status ?? "not_started") === "completed");
     }
-    if (!filter) return certs;
-    return certs.filter((c) => c.category === filter);
+    if (filter === "pro") return certs.filter((c) => c.is_paid);
+    if (filter === "explorer") return certs.filter((c) => !c.is_paid);
+    return certs;
   }, [certs, filter]);
 
   return (
@@ -67,10 +67,18 @@ export default function SchoolCatalogPage() {
 
       {error && <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">{error}</div>}
 
+      {filtered.length === 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-600 shadow-sm">
+          Vous n’avez encore terminé aucun certificat. Commencez par <span className="font-semibold text-sky-700">KORYXA Pro – Mindset & Systèmes d’Habitudes</span> par exemple.
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((cert) => {
-          const progress = cert.progress_percent ?? 0;
-          const issued = cert.issued;
+          const progress = cert.user_progress_percent ?? cert.progress_percent ?? 0;
+          const status = cert.user_progress_status ?? (cert.issued ? "completed" : "not_started");
+          const issued = cert.issued || status === "completed";
+          const cta = issued ? "Revoir le parcours" : status === "in_progress" ? "Continuer" : "Découvrir";
           return (
             <Link
               href={`/school/${cert.slug}`}
@@ -88,15 +96,19 @@ export default function SchoolCatalogPage() {
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Gratuit</span>
                 )}
               </div>
-              <p className="mt-2 line-clamp-3 text-sm text-slate-600">{cert.description}</p>
+              <p className="mt-2 line-clamp-3 text-sm text-slate-600">{cert.short_description || cert.description}</p>
               <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
                 <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">{cert.short_label || cert.slug}</span>
                 {cert.estimated_duration && <span>{cert.estimated_duration}</span>}
               </div>
               <div className="mt-4">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
-                  <span>{issued ? "Certificat obtenu" : "Progression"}</span>
-                  <span>{issued ? "✓" : `${progress}%`}</span>
+                  <span>
+                    {status === "not_started" && "Pas encore commencé"}
+                    {status === "in_progress" && "En cours"}
+                    {status === "completed" && "Terminé"}
+                  </span>
+                  <span>{status === "completed" ? "✓" : `${Math.round(progress)}%`}</span>
                 </div>
                 <div className="mt-1 h-2 w-full rounded-full bg-slate-100">
                   <div
@@ -105,11 +117,10 @@ export default function SchoolCatalogPage() {
                   />
                 </div>
               </div>
-              {user && !loading ? (
-                <div className="mt-4 text-sm font-medium text-sky-700">{issued ? "Voir le certificat" : "Continuer / Commencer"}</div>
-              ) : (
-                <div className="mt-4 text-sm text-slate-500">Connectez-vous pour suivre la progression.</div>
-              )}
+              <div className="mt-4 inline-flex items-center justify-between text-sm font-semibold text-sky-700">
+                {cta}
+                <span aria-hidden className="text-slate-400 group-hover:text-sky-700">→</span>
+              </div>
             </Link>
           );
         })}

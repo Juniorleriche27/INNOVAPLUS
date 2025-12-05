@@ -148,26 +148,37 @@ async def list_certificates(
     certs = await db[COLL_CERTIFICATES].find(query).sort("order_index", 1).to_list(length=200)
     certs_serialized = [_serialize(c) for c in certs]
 
+    enroll_map: Dict[str, dict] = {}
+    issued_map: Dict[str, dict] = {}
     if user_id:
         enrollments = await db[COLL_ENROLLMENTS].find({"user_id": user_id}).to_list(length=200)
         enroll_map = {e["certificate_id"]: e for e in enrollments}
-        issued = await db[COLL_ISSUED].find({"user_id": user_id}).to_list(length=200)
-        issued_map = {i["certificate_id"]: i for i in issued}
-        for cert in certs_serialized:
-            if cert is None:
-                continue
-            cid = cert.get("_id")
-            enr = enroll_map.get(cid)
-            cert["enrollment_status"] = enr.get("status") if enr else None
-            cert["progress_percent"] = enr.get("progress_percent", 0) if enr else 0
-            cert["issued"] = bool(issued_map.get(cid))
-    else:
-        for cert in certs_serialized:
-            if cert is None:
-                continue
-            cert["enrollment_status"] = None
-            cert["progress_percent"] = 0
-            cert["issued"] = False
+        issued_docs = await db[COLL_ISSUED].find({"user_id": user_id}).to_list(length=200)
+        issued_map = {i["certificate_id"]: i for i in issued_docs}
+
+    for cert in certs_serialized:
+        if cert is None:
+            continue
+        cid = cert.get("_id")
+        enr = enroll_map.get(cid)
+        issued = issued_map.get(cid)
+        progress = float(enr.get("progress_percent", 0) if enr else 0)
+        status = "not_started"
+        if issued:
+            status = "completed"
+            progress = 100.0
+        elif enr:
+            status = "completed" if progress >= 100 else "in_progress"
+
+        cert["enrollment_status"] = enr.get("status") if enr else None
+        cert["progress_percent"] = progress
+        cert["issued"] = bool(issued)
+        cert["user_progress_status"] = status
+        cert["user_progress_percent"] = progress
+        # short description fallback
+        if not cert.get("short_description"):
+            desc = cert.get("description") or ""
+            cert["short_description"] = desc[:200]
 
     return [c for c in certs_serialized if c]
 
@@ -228,11 +239,16 @@ async def get_certificate(slug: str, db: AsyncIOMotorDatabase = Depends(get_db),
 
     ordered_modules = [module_map[str(m["_id"])] for m in modules if str(m["_id"]) in module_map]
     result = _serialize(cert) or {}
+    if not result.get("short_description"):
+        desc = result.get("description") or ""
+        result["short_description"] = desc[:200]
     result.update({
         "modules": ordered_modules,
         "enrollment": enrollment,
         "issued": _serialize(issued) if issued else None,
         "skill_slugs": skill_slugs,
+        "user_progress_status": "completed" if issued else ("in_progress" if enrollment else "not_started"),
+        "user_progress_percent": 100.0 if issued else (enrollment.get("progress_percent", 0) if enrollment else 0),
     })
     return result
 

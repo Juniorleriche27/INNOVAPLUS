@@ -26,6 +26,7 @@ class CertificateProgram(BaseModel):
     status: str = "draft"
     required_evidence_types: List[str] = []
     skills: List[str] = Field(default_factory=list, description="List of skill tag slugs")
+    short_description: Optional[str] = None
 
 
 class CertificateModule(BaseModel):

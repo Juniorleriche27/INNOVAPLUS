@@ -116,6 +116,7 @@ export type CertificateProgram = {
   is_paid: boolean;
   price?: number | null;
   estimated_duration?: string | null;
+  short_description?: string | null;
   status: string;
   required_evidence_types?: string[];
   skills?: string[];
@@ -123,6 +124,8 @@ export type CertificateProgram = {
   enrollment_status?: string | null;
   progress_percent?: number;
   issued?: boolean;
+  user_progress_status?: "not_started" | "in_progress" | "completed";
+  user_progress_percent?: number;
 };
 
 export type CertificateModule = {

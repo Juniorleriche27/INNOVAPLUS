@@ -134,19 +134,26 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
 
     # Meeting with explicit time/duration
     if "réunion" in txt or "meeting" in txt:
-        hour_label = _extract_time_label(txt)
+        start_label = None
+        # Prefer the hour after "commence à"
+        m_start = re.search(r"commence\s+a\s+([01]?\d|2[0-3])h", txt)
+        if m_start:
+            start_label = f"{m_start.group(1)}h"
+        if not start_label:
+            start_label = _extract_time_label(txt)
+        # Look for duration "réunion de Xh" or "durée de Xh"
         duration_hours = None
-        match = re.search(r"\b(\d{1,2})\s*h", txt)
-        if match:
+        m_dur = re.search(r"(réunion|duree|durée)\s+(de\s+)?(\d{1,2})h", txt)
+        if m_dur:
             try:
-                duration_hours = max(1, min(6, int(match.group(1))))
+                duration_hours = max(1, min(6, int(m_dur.group(3))))
             except Exception:
                 duration_hours = None
-        if hour_label:
+        if start_label:
             end_label = None
             if duration_hours is not None:
                 try:
-                    start_h = int(hour_label.replace("h", ""))
+                    start_h = int(start_label.replace("h", ""))
                     end_h = (start_h + duration_hours) % 24
                     end_label = f"{str(end_h).zfill(2)}h"
                 except Exception:
@@ -154,9 +161,9 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
             base_title = "Réunion projet"
             if "d-clic" in txt or "dclic" in txt:
                 base_title = "Réunion projet D-CLIC"
-            title = f"{base_title} {hour_label}"
+            title = f"{base_title} {start_label}"
             if end_label:
-                title = f"{base_title} {hour_label}-{end_label}"
+                title = f"{base_title} {start_label}-{end_label}"
             desc = "Objectif : avancer/terminer le projet mentionné."
             add_task(title, desc, (duration_hours or 2) * 60, "urgent_important", True)
             meeting_added = True
@@ -258,6 +265,8 @@ async def suggest_tasks_from_text(
         "Loisirs/distractions sans enjeu -> not_urgent_not_important. "
         "Impact élevé = true si la tâche contribue à un objectif prioritaire (études, projet, santé, finances) ou réduit un risque important. Sinon false. "
         "Ne crée pas de noms de projet/organisation/produit qui ne figurent pas explicitement dans le texte utilisateur. "
+        "Si l'utilisateur décrit une réunion ou un événement, crée une seule tâche pour cette réunion (pas de doublons). "
+        "S'il y a plusieurs heures, privilégie celle indiquée après 'commence à' comme heure de début; si une durée est précisée (ex: 'réunion de 2h'), calcule le créneau complet. "
         "Inclure l'heure ou le créneau dans le titre quand il existe (ex: 'Réveil 6h', 'Formation 9h', 'Sport 20h'). "
         "Réponds uniquement par un JSON compact sans préambule ni commentaire. "
         "Ne retourne pas de texte hors JSON. "
@@ -309,6 +318,18 @@ async def suggest_tasks_from_text(
                 "due_datetime": due_dt,
             }
         )
+    # Déduplication basique des réunions si l'IA retourne plusieurs entrées
+    meeting_titles = [t for t in cleaned if "réunion" in t["title"].lower()]
+    if len(meeting_titles) > 1:
+        kept: list[Dict[str, Any]] = []
+        has_meeting = False
+        for t in cleaned:
+            if "réunion" in t["title"].lower():
+                if has_meeting:
+                    continue
+                has_meeting = True
+            kept.append(t)
+        cleaned = kept
     # Si l'IA retourne trop peu d'items ou des titres faibles, compléter par l'heuristique
     if len(cleaned) < 3 or any(len(t["title"]) < 12 for t in cleaned):
         for item in heuristic:

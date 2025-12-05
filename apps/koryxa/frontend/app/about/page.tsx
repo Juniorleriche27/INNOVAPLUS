@@ -21,7 +21,7 @@ const PILLARS: Pillar[] = [
   {
     title: "Talents et réseau",
     description: "Cartographier les compétences IA/tech, connecter talents, mentors et entreprises pour créer des opportunités concrètes.",
-    cta: { label: "Explorer les contributeurs", href: "/contributors" },
+    cta: { label: "Explorer les talents", href: "/talents" },
   },
   {
     title: "Connaissance et RAG",

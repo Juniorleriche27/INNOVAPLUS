@@ -274,7 +274,7 @@ async def prepare_with_ai(
         answer = generate_answer(
             prompt,
             provider="cohere",
-            model=settings.LLM_MODEL or "command-r-plus",
+            model=settings.LLM_MODEL or "command-r-08-2024",
             max_new_tokens=900,
             timeout=30,
         )

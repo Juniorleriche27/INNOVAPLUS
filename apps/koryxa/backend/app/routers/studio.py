@@ -311,7 +311,17 @@ async def assistant_generate(
     try:
         provider = "cohere" if settings.COHERE_API_KEY else "local"
         max_tokens_user = payload.get("max_tokens")
-        raw = await run_in_threadpool(generate_answer, prompt, provider, None, 90, max_tokens_user, None, None, None)
+        raw = await run_in_threadpool(
+            generate_answer,
+            prompt,
+            provider,
+            settings.LLM_MODEL or "command-r-08-2024",
+            90,
+            max_tokens_user,
+            None,
+            None,
+            None,
+        )
         if not isinstance(raw, str):
             raw = str(raw)
         parsed = _parse_blocks(raw)

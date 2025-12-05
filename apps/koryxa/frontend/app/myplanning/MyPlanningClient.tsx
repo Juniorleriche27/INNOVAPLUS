@@ -45,6 +45,8 @@ type Task = {
   updated_at?: string | null;
 };
 
+type DateTimeParts = { date: string; time: string };
+
 type TaskListResponse = {
   items: Task[];
   total?: number;
@@ -251,20 +253,28 @@ function formatDateInputValue(date: Date): string {
   return copy.toISOString().split("T")[0];
 }
 
-function formatDateTimeLocal(value?: string | null): string {
-  if (!value) return "";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value.length > 16 ? value.slice(0, 16) : value;
-  }
-  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
-
 function toIsoDate(date: Date): string {
   const copy = new Date(date);
   copy.setHours(0, 0, 0, 0);
   return copy.toISOString();
+}
+
+function splitDateTime(value?: string | null): DateTimeParts {
+  if (!value) return { date: "", time: "" };
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return { date: "", time: "" };
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60000);
+  const [datePart, timePartRaw] = local.toISOString().split("T");
+  return { date: datePart, time: timePartRaw.slice(0, 5) };
+}
+
+function joinDateTime(datePart: string, timePart: string): string | undefined {
+  if (!datePart) return undefined;
+  if (!timePart) return datePart;
+  const iso = `${datePart}T${timePart}:00`;
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
 }
 
 function friendlyError(message: string): string {
@@ -330,6 +340,8 @@ export default function MyPlanningClient(): JSX.Element {
     quietHours: string;
     notifications: boolean;
   }>({ autonomy: "medium", tone: "coach", quietHours: "06:00-22:00", notifications: true });
+  const [dueDatePart, setDueDatePart] = useState<string>("");
+  const [dueTimePart, setDueTimePart] = useState<string>("");
 
   const loadTasks = async () => {
     setLoading(true);
@@ -390,6 +402,13 @@ export default function MyPlanningClient(): JSX.Element {
       }
     }
   }, []);
+
+  useEffect(() => {
+    // Sync date/time inputs with current due_datetime
+    const parts = splitDateTime(formValues.due_datetime);
+    setDueDatePart(parts.date);
+    setDueTimePart(parts.time);
+  }, [formValues.due_datetime]);
 
   const categories = useMemo(() => {
     const set = new Set(tasks.map((task) => task.category).filter(Boolean) as string[]);
@@ -530,6 +549,8 @@ export default function MyPlanningClient(): JSX.Element {
 
   const resetForm = () => {
     setFormValues({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
+    setDueDatePart("");
+    setDueTimePart("");
     setEditingId(null);
   };
 
@@ -539,7 +560,8 @@ export default function MyPlanningClient(): JSX.Element {
       setBanner({ type: "error", message: "Le titre est obligatoire." });
       return;
     }
-    const payload = normalizeTaskPayload(formValues);
+    const mergedDue = joinDateTime(dueDatePart, dueTimePart) || formValues.due_datetime;
+    const payload = normalizeTaskPayload({ ...formValues, due_datetime: mergedDue });
     try {
       if (editingId) {
         const task = await apiFetch<Task>(`/tasks/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
@@ -1220,12 +1242,21 @@ export default function MyPlanningClient(): JSX.Element {
         </label>
         <label className="text-sm text-slate-600">
           Échéance
-          <input
-            type="datetime-local"
-            value={formatDateTimeLocal(formValues.due_datetime)}
-            onChange={(event) => setFormValues((prev) => ({ ...prev, due_datetime: event.target.value || undefined }))}
-            className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-          />
+          <div className="mt-1 grid grid-cols-[1.1fr,0.9fr] gap-2">
+            <input
+              type="date"
+              value={dueDatePart}
+              onChange={(event) => setDueDatePart(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            />
+            <input
+              type="time"
+              value={dueTimePart}
+              onChange={(event) => setDueTimePart(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              placeholder="hh:mm"
+            />
+          </div>
         </label>
         <label className="text-sm text-slate-600 md:col-span-2">
           Commentaires

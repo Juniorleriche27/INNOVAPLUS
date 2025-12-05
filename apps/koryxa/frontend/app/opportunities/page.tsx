@@ -29,6 +29,12 @@ const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
 };
 
+const STATUS_CLASS: Record<string, string> = {
+  open: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  draft: "bg-slate-50 text-slate-700 border-slate-200",
+  closed: "bg-rose-50 text-rose-700 border-rose-100",
+};
+
 function formatDate(value?: string) {
   if (!value) return "—";
   const d = new Date(value);
@@ -43,6 +49,7 @@ export default function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [country, setCountry] = useState("");
+  const [total, setTotal] = useState<number>(0);
 
   const load = async () => {
     setLoading(true);
@@ -60,6 +67,7 @@ export default function OpportunitiesPage() {
       }
       const data: ListResponse = await res.json();
       setItems(data.items || []);
+      setTotal(data.total || 0);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inattendue");
     } finally {
@@ -71,33 +79,31 @@ export default function OpportunitiesPage() {
     void load();
   }, []);
 
-  const filtered = useMemo(() => {
-    return items;
-  }, [items]);
+  const filtered = useMemo(() => items, [items]);
 
   return (
-    <div className="w-full px-4 py-8 sm:px-8 lg:px-12">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-slate-500">Opportunités</p>
-            <h1 className="mt-1 text-2xl font-semibold text-slate-900">Pipeline des opportunités</h1>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-              Suivez les besoins publiés, leurs offres et les statuts. Publiez un besoin, créez une offre ou importez vos opportunités.
+    <div className="w-full px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-3xl border border-slate-200/70 bg-white/95 p-6 shadow-lg shadow-slate-900/5 sm:p-8">
+        <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Opportunités</p>
+            <h1 className="text-3xl font-semibold text-slate-900">Pipeline des opportunités</h1>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Suivez vos besoins publiés, les offres et leurs statuts. Créez une opportunité, associez une mission ou filtrez par pays/statut.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
             <Link href="/missions/new" className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
               Poster un besoin
             </Link>
-            <Link href="/projects/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50">
+            <Link href="/projects/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300 hover:bg-slate-50">
               Créer une offre
             </Link>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-4 sm:p-5">
-          <div className="grid gap-3 sm:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-4 sm:p-5 shadow-inner shadow-slate-100/60">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <input
               placeholder="Rechercher un titre"
               value={search}
@@ -127,6 +133,7 @@ export default function OpportunitiesPage() {
               Rafraîchir
             </button>
           </div>
+          <div className="mt-3 text-xs text-slate-500">{filtered.length} opportunité(s) · Total: {total}</div>
         </div>
 
         {loading ? (
@@ -134,21 +141,23 @@ export default function OpportunitiesPage() {
         ) : error ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-            Aucune opportunité pour ces filtres. Publiez un besoin ou importez une offre.
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+            Aucune opportunité pour ces filtres. Publiez un besoin ou importez une offre pour démarrer.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-3">
             {filtered.map((opp) => (
-              <div key={opp.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{opp.title}</p>
+              <div key={opp.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold text-slate-900">{opp.title}</p>
                     <p className="text-xs text-slate-500">Créée le {formatDate(opp.created_at)}</p>
-                    {opp.problem && <p className="mt-1 text-sm text-slate-600 line-clamp-2">{opp.problem}</p>}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+                    {opp.problem && <p className="text-sm text-slate-600 line-clamp-2">{opp.problem}</p>}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
                       {opp.country && <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold">{opp.country}</span>}
-                      <span className="rounded-full bg-sky-50 px-2 py-1 font-semibold text-sky-700">{STATUS_LABEL[opp.status] || opp.status}</span>
+                      <span className={`rounded-full border px-2 py-1 font-semibold ${STATUS_CLASS[opp.status] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                        {STATUS_LABEL[opp.status] || opp.status}
+                      </span>
                       {opp.skills_required?.slice(0, 4).map((s) => (
                         <span key={s} className="rounded-full border border-slate-200 px-2 py-1">
                           {s}
@@ -161,9 +170,12 @@ export default function OpportunitiesPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 text-sm">
+                  <div className="flex flex-col gap-2 text-sm sm:items-end">
                     <Link href="/missions/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
                       Associer une mission
+                    </Link>
+                    <Link href="/projects/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+                      Ajouter une offre
                     </Link>
                   </div>
                 </div>

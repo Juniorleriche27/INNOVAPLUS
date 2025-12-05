@@ -55,6 +55,13 @@ function IconBriefcase(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconBook(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h9a4 4 0 014 4v10a3 3 0 01-3-3 3 3 0 01-3 3H6a2 2 0 01-2-2V5z" />
+    </svg>
+  );
+}
 function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -78,6 +85,7 @@ const WORKSPACE_LINKS = [
   { href: "/meet", label: "INNOVA-MEET", description: "Réseau social intégré", icon: IconChat },
   { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
+  { href: "/school", label: "KORYXA School", description: "Certificats & parcours", icon: IconBook },
 ];
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {

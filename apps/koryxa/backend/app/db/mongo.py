@@ -53,6 +53,19 @@ async def connect_to_mongo() -> None:
             await _db["social_messages"].create_index([("thread_id", 1), ("ts", 1)])
             await _db["planning_events"].create_index([("user_id_anon", 1), ("ts", -1)])
 
+            # KORYXA School collections
+            await _db["certificate_programs"].create_index([("slug", 1)], unique=True)
+            await _db["certificate_programs"].create_index([("category", 1), ("status", 1)])
+            await _db["certificate_modules"].create_index([("certificate_id", 1), ("order_index", 1)])
+            await _db["certificate_lessons"].create_index([("certificate_id", 1), ("order_index", 1)])
+            await _db["lesson_resources"].create_index([("lesson_id", 1)])
+            await _db["certificate_enrollments"].create_index([("user_id", 1), ("certificate_id", 1)], unique=True)
+            await _db["lesson_progress"].create_index([("enrollment_id", 1), ("lesson_id", 1)], unique=True)
+            await _db["certificate_evidence"].create_index([("certificate_id", 1), ("user_id", 1)])
+            await _db["issued_certificates"].create_index([("certificate_id", 1), ("user_id", 1)], unique=True)
+            await _db["certificate_skill_links"].create_index([("certificate_id", 1), ("skill_slug", 1)], unique=True)
+            await _db["user_certificate_skills"].create_index([("user_id", 1), ("skill_slug", 1)], unique=True)
+
             # Auth & Chatlaya collections
             await _db["sessions"].create_index("token_hash", unique=True)
             await _db["sessions"].create_index("expires_at", expireAfterSeconds=0)

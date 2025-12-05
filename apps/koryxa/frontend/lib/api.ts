@@ -104,3 +104,96 @@ export const apiMetrics = {
     return json<{ ok: boolean }>(res);
   },
 };
+
+// --- KORYXA School ---
+export type CertificateProgram = {
+  _id: string;
+  title: string;
+  slug: string;
+  short_label?: string | null;
+  description?: string | null;
+  category: string;
+  is_paid: boolean;
+  price?: number | null;
+  estimated_duration?: string | null;
+  status: string;
+  required_evidence_types?: string[];
+  skills?: string[];
+  order_index?: number;
+  enrollment_status?: string | null;
+  progress_percent?: number;
+  issued?: boolean;
+};
+
+export type CertificateModule = {
+  _id: string;
+  certificate_id: string;
+  title: string;
+  description?: string | null;
+  order_index?: number;
+  lessons?: Lesson[];
+};
+
+export type Lesson = {
+  _id: string;
+  module_id: string;
+  certificate_id?: string;
+  title: string;
+  lesson_type: string;
+  order_index?: number;
+  summary?: string | null;
+  resources?: ContentResource[];
+};
+
+export type ContentResource = {
+  _id: string;
+  lesson_id: string;
+  certificate_id?: string;
+  resource_type: string;
+  url?: string | null;
+  content_text?: string | null;
+  reading_time_minutes?: number | null;
+  metadata?: Record<string, unknown>;
+};
+
+export type CertificateDetail = CertificateProgram & {
+  modules: CertificateModule[];
+  enrollment?: { _id: string; status: string; progress_percent?: number } | null;
+  issued?: { _id: string; verification_code: string; issued_at: string } | null;
+  skill_slugs?: string[];
+};
+
+export const apiSchool = {
+  async listCertificates(category?: string) {
+    const url = category ? `${API_BASE}/school/certificates?category=${encodeURIComponent(category)}` : `${API_BASE}/school/certificates`;
+    const res = await apiFetch(url, { cache: "no-store" });
+    return json<CertificateProgram[]>(res);
+  },
+  async getCertificate(slug: string) {
+    const res = await apiFetch(`${API_BASE}/school/certificates/${slug}`, { cache: "no-store" });
+    return json<CertificateDetail>(res);
+  },
+  async enroll(certificateId: string) {
+    const res = await apiFetch(`${API_BASE}/school/certificates/${certificateId}/enroll`, {
+      method: "POST",
+      credentials: "include",
+    });
+    return json<{ ok: boolean; enrollment_id: string }>(res);
+  },
+  async completeLesson(lessonId: string) {
+    const res = await apiFetch(`${API_BASE}/school/lessons/${lessonId}/complete`, {
+      method: "POST",
+      credentials: "include",
+    });
+    return json<{ ok: boolean; progress_percent: number; issued?: unknown }>(res);
+  },
+  async submitEvidence(certificateId: string, data: { type: string; payload?: Record<string, unknown> }) {
+    const res = await apiFetch(`${API_BASE}/school/certificates/${certificateId}/evidence`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+    return json<{ ok: boolean; evidence_id: string }>(res);
+  },
+};

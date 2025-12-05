@@ -27,6 +27,7 @@ from app.routers.metrics import router as metrics_router
 from app.routers.emailer import router as email_router
 from app.routers.invite import router as invite_router
 from app.routers.opportunities import router as opportunities_router
+from app.routers import school as school_router
 from app.routers.marketplace import router as market_router
 from app.routers.meet_api import router as meet_router
 from app.routers.smollm import router as smollm_router
@@ -185,6 +186,7 @@ innova_api.include_router(missions_router)
 innova_api.include_router(studio_router)
 innova_api.include_router(myplanning_router)
 innova_api.include_router(studio_missions_router.router)
+innova_api.include_router(school_router.router)
 innova_api.include_router(auth_router)
 app.include_router(innova_api)
 # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*

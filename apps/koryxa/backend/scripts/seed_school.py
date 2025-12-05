@@ -28,7 +28,7 @@ CERTIFICATES = [
         "category": "pro",
         "is_paid": True,
         "estimated_duration": "4-6 semaines",
-        "required_evidence_types": [],
+        "required_evidence_types": ["project_link"],
         "skills": ["mindset", "habits", "execution"],
     },
     {
@@ -214,6 +214,225 @@ def _module_block(certificate_id: str, title: str, description: str, order: int,
     return module_doc, lessons
 
 
+async def _seed_mindset_cert(db, cert_id: str) -> None:
+    """Seed full modules/lessons/resources for KORYXA Pro – Mindset & Systèmes d’Habitudes."""
+    await db["certificate_modules"].delete_many({"certificate_id": cert_id})
+    await db["certificate_lessons"].delete_many({"certificate_id": cert_id})
+    await db["lesson_resources"].delete_many({"certificate_id": cert_id})
+
+    modules_payload = []
+    resources_payload = []
+
+    # Module 1 – Comprendre le Mindset & le Cerveau qui Apprend
+    m1_lessons = []
+    l11, r11 = _lesson_block(cert_id, "Pourquoi ce certificat & comment l’utiliser", "internal_text", "Présentation du parcours et lien avec l’emploi infini et KORYXA.", 1, {
+        "resource_type": "internal_text",
+        "content_text": "Bienvenue dans KORYXA Pro – Mindset & Habitudes. Ce parcours t’aide à bâtir un système personnel pour apprendre, livrer et tenir dans la durée.",
+    })
+    m1_lessons.append(l11)
+    if r11:
+        resources_payload.append(r11)
+
+    l12, r12 = _lesson_block(cert_id, "Mindset fixe vs mindset de croissance", "external_article", "Différence entre mindset fixe et croissance, inspiré de Carol Dweck.", 2, {
+        "resource_type": "external_article",
+        "url": "https://teachingcommons.stanford.edu/resources/learning/mindset",
+        "metadata": {"title": "Growth mindset expliqué simplement", "source": "Teaching Commons"},
+    })
+    m1_lessons.append(l12)
+    if r12:
+        resources_payload.append(r12)
+    # Add internal text snippet for growth mindset
+    r12b = {
+        "_id": ObjectId(),
+        "certificate_id": cert_id,
+        "lesson_id": str(l12["_id"]),
+        "resource_type": "internal_text",
+        "content_text": "Mindset de croissance: l’intelligence se développe par l’effort stratégique, feedback et itérations. Le progrès est le signal.",
+    }
+    resources_payload.append(r12b)
+
+    l13, r13 = _lesson_block(cert_id, "Neuroplasticité : le cerveau se modifie avec la pratique", "youtube_video", "Vidéo/article montrant que le cerveau reste plastique à l’âge adulte.", 3, {
+        "resource_type": "youtube_video",
+        "url": "https://www.youtube.com/watch?v=ELpfYCZa87g",
+        "metadata": {"title": "Neuroplasticité et apprentissage", "source": "YouTube"},
+    })
+    m1_lessons.append(l13)
+    if r13:
+        resources_payload.append(r13)
+
+    l14, r14 = _lesson_block(cert_id, "Croyances limitantes & réécriture", "internal_text", "Lister 3 croyances limitantes et les reformuler en version croissance.", 4, {
+        "resource_type": "internal_text",
+        "content_text": "Exercice: écris 3 croyances («Je ne suis pas bon en…») puis reformule-les («Je peux progresser si…»).",
+    })
+    m1_lessons.append(l14)
+    if r14:
+        resources_payload.append(r14)
+
+    m1, m1_lessons = _module_block(cert_id, "Module 1 – Mindset & Cerveau", "Comprendre mindset de croissance et neuroplasticité.", 1, m1_lessons)
+    modules_payload.append(m1)
+
+    # Module 2 – Construire des Habitudes qui Tiennent (Tiny Habits & B=MAP)
+    m2_lessons = []
+    l21, r21 = _lesson_block(cert_id, "Comment naît un comportement : B = MAP", "external_article", "Modèle BJ Fogg: Motivation, Ability, Prompt.", 1, {
+        "resource_type": "external_article",
+        "url": "https://behaviormodel.org/",
+        "metadata": {"title": "Fogg Behavior Model", "source": "Stanford / BJ Fogg"},
+    })
+    m2_lessons.append(l21)
+    if r21:
+        resources_payload.append(r21)
+    r21b = {
+        "_id": ObjectId(),
+        "certificate_id": cert_id,
+        "lesson_id": str(l21["_id"]),
+        "resource_type": "internal_text",
+        "content_text": "B = MAP : Motivation, Ability, Prompt. Ajuste ability (rendre facile) et crée un prompt clair pour sécuriser l’action.",
+    }
+    resources_payload.append(r21b)
+
+    l22, r22 = _lesson_block(cert_id, "Tiny Habits : commencer ridiculement petit", "external_article", "Micro-habitudes ancrées sur une routine existante.", 2, {
+        "resource_type": "external_article",
+        "url": "https://www.tinyhabits.com/next-steps/",
+        "metadata": {"title": "Tiny Habits guide", "source": "BJ Fogg"},
+    })
+    m2_lessons.append(l22)
+    if r22:
+        resources_payload.append(r22)
+
+    l23, r23 = _lesson_block(cert_id, "Designer 3 mini-habitudes", "internal_text", "Créer 3 habitudes: apprentissage, santé/énergie, projet KORYXA.", 3, {
+        "resource_type": "internal_text",
+        "content_text": "Choisis 3 tiny habits (1 apprentissage, 1 énergie, 1 projet). Formule-les: «Après [routine], je ferai [micro-action de 30s]».",
+    })
+    m2_lessons.append(l23)
+    if r23:
+        resources_payload.append(r23)
+
+    l24, r24 = _lesson_block(cert_id, "Gérer les obstacles : motivation en baisse", "internal_text", "Réduire la taille de l’habitude, ajuster l’environnement, prompts visuels.", 4, {
+        "resource_type": "internal_text",
+        "content_text": "Plan anti-obstacles: réduire la taille, préparer matériel, placer un rappel visuel, lier à une routine fixe.",
+    })
+    m2_lessons.append(l24)
+    if r24:
+        resources_payload.append(r24)
+
+    m2, m2_lessons = _module_block(cert_id, "Module 2 – Habitudes qui tiennent", "Tiny Habits et B=MAP pour installer des routines.", 2, m2_lessons)
+    modules_payload.append(m2)
+
+    # Module 3 – Rituels d’écriture & clarté
+    m3_lessons = []
+    l31, r31 = _lesson_block(cert_id, "Pourquoi écrire chaque jour ?", "external_article", "Bénéfices du journaling sur clarté mentale et stress.", 1, {
+        "resource_type": "external_article",
+        "url": "https://www.vox.com/future-perfect/2018/7/25/17593884/journaling-mental-health-anxiety-depression-benefits",
+        "metadata": {"title": "Journaling et bien-être", "source": "Vox"},
+    })
+    m3_lessons.append(l31)
+    if r31:
+        resources_payload.append(r31)
+    r31b = {
+        "_id": ObjectId(),
+        "certificate_id": cert_id,
+        "lesson_id": str(l31["_id"]),
+        "resource_type": "internal_text",
+        "content_text": "Le journaling réduit le stress, clarifie les idées, aide la régulation émotionnelle. 5 minutes suffisent pour débuter.",
+    }
+    resources_payload.append(r31b)
+
+    l32, r32 = _lesson_block(cert_id, "Les “Morning Pages” de Julia Cameron", "youtube_video", "3 pages manuscrites le matin, sans censure.", 2, {
+        "resource_type": "youtube_video",
+        "url": "https://www.youtube.com/watch?v=K7r6v6dUQpw",
+        "metadata": {"title": "Morning Pages expliquées", "source": "YouTube"},
+    })
+    m3_lessons.append(l32)
+    if r32:
+        resources_payload.append(r32)
+
+    l33, r33 = _lesson_block(cert_id, "Adapter le rituel à la réalité locale", "internal_text", "Faire sans matériel coûteux: feuilles recyclées, carnet simple, téléphone si besoin.", 3, {
+        "resource_type": "internal_text",
+        "content_text": "Pas de carnet ? Utilise des feuilles simples ou ton téléphone. Objectif: 5-10 minutes, pas de perfection.",
+    })
+    m3_lessons.append(l33)
+    if r33:
+        resources_payload.append(r33)
+
+    l34, r34 = _lesson_block(cert_id, "Challenge 7 jours : journal d’apprentissage & d’opportunités", "project_brief", "Écrire chaque jour: ce que tu as appris, un problème vu, une idée d’action.", 4, {
+        "resource_type": "internal_text",
+        "content_text": "Pendant 7 jours, note: 1) ce que tu as appris, 2) un problème dans ton environnement, 3) une micro-idée d’action.",
+    })
+    m3_lessons.append(l34)
+    if r34:
+        resources_payload.append(r34)
+
+    m3, m3_lessons = _module_block(cert_id, "Module 3 – Rituels d’écriture", "Journaling, morning pages et adaptation locale.", 3, m3_lessons)
+    modules_payload.append(m3)
+
+    # Module 4 – Priorisation, énergie & système quotidien
+    m4_lessons = []
+    l41, r41 = _lesson_block(cert_id, "Temps, énergie, attention : les 3 ressources", "internal_text", "Comprendre que l’attention prime sur le temps.", 1, {
+        "resource_type": "internal_text",
+        "content_text": "On ne gère pas que le temps: l’énergie et l’attention sont clés. Protéger 1 bloc focus par jour.",
+    })
+    m4_lessons.append(l41)
+    if r41:
+        resources_payload.append(r41)
+
+    l42, r42 = _lesson_block(cert_id, "Prioriser quand tout est urgent", "internal_text", "Cadres simples type MoSCoW/Daily 3 adaptés KORYXA.", 2, {
+        "resource_type": "internal_text",
+        "content_text": "Priorise avec 3 items par jour: 1 critique, 1 importante, 1 rapide. Tout le reste est optionnel.",
+    })
+    m4_lessons.append(l42)
+    if r42:
+        resources_payload.append(r42)
+
+    l43, r43 = _lesson_block(cert_id, "Construire une journée “KORYXA Pro”", "internal_text", "Une journée type: apprentissage, projet/opportunité, bien-être.", 3, {
+        "resource_type": "internal_text",
+        "content_text": "Plan-type: 1 bloc apprentissage (30-60min), 1 bloc projet/opportunité, 1 bloc bien-être/récup.",
+    })
+    m4_lessons.append(l43)
+    if r43:
+        resources_payload.append(r43)
+
+    l44, r44 = _lesson_block(cert_id, "Bilan hebdo : ce qui marche, ce qui bloque", "internal_text", "Questions guidées pour ajuster.", 4, {
+        "resource_type": "internal_text",
+        "content_text": "Chaque semaine: Qu’est-ce qui a changé ? Qu’ai-je tenu ? Qu’est-ce qui bloque ? Que vais-je ajuster ?",
+    })
+    m4_lessons.append(l44)
+    if r44:
+        resources_payload.append(r44)
+
+    m4, m4_lessons = _module_block(cert_id, "Module 4 – Système quotidien", "Priorisation, énergie, journée type et bilans.", 4, m4_lessons)
+    modules_payload.append(m4)
+
+    # Module 5 – Projet final
+    m5_lessons = []
+    l51, r51 = _lesson_block(cert_id, "Concevoir ton plan 30 jours", "project_brief", "Intention principale, 3 tiny habits, rituel d’écriture, bilan hebdo.", 1, {
+        "resource_type": "internal_text",
+        "content_text": "Plan 30 jours: intention, 3 tiny habits, rituel d’écriture quotidien, bilan hebdo planifié.",
+    })
+    m5_lessons.append(l51)
+    if r51:
+        resources_payload.append(r51)
+
+    l52, r52 = _lesson_block(cert_id, "Soumettre ta preuve KORYXA", "project_brief", "Photo/scan de journal, capture planning, paragraphe de bilan.", 2, {
+        "resource_type": "internal_text",
+        "content_text": "Preuve: photo/scan d’une page de journal (sans infos sensibles), capture de planning/suivi, paragraphe de bilan.",
+    })
+    m5_lessons.append(l52)
+    if r52:
+        resources_payload.append(r52)
+
+    m5, m5_lessons = _module_block(cert_id, "Module 5 – Projet final", "Plan 30 jours et preuve finale.", 5, m5_lessons)
+    modules_payload.append(m5)
+
+    # Insert all
+    if modules_payload:
+        await db["certificate_modules"].insert_many(modules_payload)
+    all_lessons = m1_lessons + m2_lessons + m3_lessons + m4_lessons + m5_lessons
+    if all_lessons:
+        await db["certificate_lessons"].insert_many(all_lessons)
+    if resources_payload:
+        await db["lesson_resources"].insert_many(resources_payload)
+
+
 async def seed_certificate(db, cert_def: dict, order_index: int) -> None:
     existing = await db["certificate_programs"].find_one({"slug": cert_def["slug"]})
     base_doc = {
@@ -249,7 +468,9 @@ async def seed_certificate(db, cert_def: dict, order_index: int) -> None:
 
     # Simple default module + lessons if none exist
     module_exists = await db["certificate_modules"].count_documents({"certificate_id": cert_id})
-    if module_exists == 0:
+    if cert_def["slug"] == "koryxa-pro-mindset":
+        await _seed_mindset_cert(db, cert_id)
+    elif module_exists == 0:
         intro_lesson, intro_resource = _lesson_block(
             cert_id,
             "Présentation",

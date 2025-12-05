@@ -211,6 +211,7 @@ async def get_certificate(slug: str, db: AsyncIOMotorDatabase = Depends(get_db),
         lesson_map[str(lesson["_id"])] = ldoc
         module_map.get(lesson.get("module_id"), {}).get("lessons", []).append(ldoc)
         ldoc["resources"] = []
+        ldoc["status"] = "not_started"
 
     for res in resources:
         rdoc = _serialize(res)
@@ -233,6 +234,26 @@ async def get_certificate(slug: str, db: AsyncIOMotorDatabase = Depends(get_db),
         issued = await db[COLL_ISSUED].find_one({"user_id": user_id, "certificate_id": cert_id})
         if enrollment:
             enrollment = _serialize(enrollment)
+            # attach lesson progress
+            progress_docs = await db[COLL_PROGRESS].find({"enrollment_id": enrollment["_id"]}).to_list(length=2000)
+            progress_map = {p["lesson_id"]: p for p in progress_docs}
+            for lid, ldoc in lesson_map.items():
+                p = progress_map.get(lid)
+                if p:
+                    ldoc["status"] = p.get("status", "completed")
+
+            # compute module progress
+            for mod in modules:
+                mod_key = str(mod["_id"])
+                bucket = module_map.get(mod_key, {}).get("lessons", [])
+                if bucket:
+                    completed = sum(1 for l in bucket if l.get("status") == "completed")
+                    module_pct = round(100.0 * completed / len(bucket), 2)
+                    module_map.get(mod_key, {})["progress_percent"] = module_pct
+            # update certificate progress if missing
+            module_pcts = [module_map[str(m["_id"])].get("progress_percent", 0) for m in modules if module_map.get(str(m["_id"]))]
+            if module_pcts:
+                enrollment["progress_percent"] = round(sum(module_pcts) / len(module_pcts), 2)
 
     skills = await db[COLL_CERT_SKILLS].find({"certificate_id": cert_id}).to_list(length=50)
     skill_slugs = [s.get("skill_slug") for s in skills if s.get("skill_slug")]

@@ -48,6 +48,7 @@ export default function LearnPage() {
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [evidenceText, setEvidenceText] = useState("");
   const [evidenceMessage, setEvidenceMessage] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     if (!params?.slug) return;
@@ -77,16 +78,11 @@ export default function LearnPage() {
     if (!activeLesson) return;
     setCompleting(true);
     try {
-      const res = await apiSchool.completeLesson(activeLesson._id);
-      setData((prev) => {
-        if (!prev) return prev;
-        const updatedModules = prev.modules.map((m) => ({
-          ...m,
-          lessons: (m.lessons || []).map((l) => (l._id === activeLesson._id ? { ...l, status: "completed" as const } : l)),
-        }));
-        return { ...prev, modules: updatedModules, enrollment: { ...(prev.enrollment || {}), progress_percent: res.progress_percent } } as CertificateDetail;
-      });
-      setEvidenceMessage(res.issued ? "Certificat émis !" : null);
+      await apiSchool.completeLesson(activeLesson._id);
+      const refreshed = await apiSchool.getCertificate(params.slug);
+      setData(refreshed);
+      const newActive = refreshed.modules.flatMap((m) => m.lessons || []).find((l) => l._id === activeLesson._id) || null;
+      setActiveLesson(newActive);
     } catch (err) {
       setError((err as Error).message || "Impossible de marquer la leçon");
     } finally {
@@ -110,6 +106,22 @@ export default function LearnPage() {
     }
   }
 
+  async function enroll() {
+    if (!data) return;
+    setEnrolling(true);
+    try {
+      await apiSchool.enroll(data._id);
+      const refreshed = await apiSchool.getCertificate(params.slug);
+      setData(refreshed);
+      const firstLesson = refreshed.modules?.[0]?.lessons?.[0] || null;
+      setActiveLesson(firstLesson || null);
+    } catch (err) {
+      setError((err as Error).message || "Impossible de vous inscrire");
+    } finally {
+      setEnrolling(false);
+    }
+  }
+
   if (loading) return <div className="text-slate-500">Chargement…</div>;
   if (error) return <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">{error}</div>;
   if (!data) return <div className="text-slate-500">Aucune donnée.</div>;
@@ -127,10 +139,16 @@ export default function LearnPage() {
         <div className="space-y-2">
           {data.modules?.map((mod) => (
             <div key={mod._id} className="rounded-lg border border-slate-200 bg-slate-50/80 p-2">
-              <p className="text-xs font-semibold text-slate-700">{mod.title}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-700">{mod.title}</p>
+                {typeof mod.progress_percent === "number" && (
+                  <span className="text-[11px] font-semibold text-slate-500">{Math.round(mod.progress_percent)}%</span>
+                )}
+              </div>
               <div className="mt-1 space-y-1">
                 {mod.lessons?.map((lesson) => {
                   const active = activeLesson?._id === lesson._id;
+                  const completed = lesson.status === "completed";
                   return (
                     <button
                       key={lesson._id}
@@ -138,7 +156,10 @@ export default function LearnPage() {
                       className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-sm transition ${active ? "bg-sky-50 text-sky-700" : "hover:bg-white text-slate-700"}`}
                     >
                       <span className="truncate">{lesson.title}</span>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">{lesson.lesson_type}</span>
+                      <div className="flex items-center gap-2">
+                        {completed && <span className="text-emerald-600 text-xs font-semibold">✓</span>}
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">{lesson.lesson_type}</span>
+                      </div>
                     </button>
                   );
                 })}
@@ -208,6 +229,20 @@ export default function LearnPage() {
               </button>
               {evidenceMessage && <p className="text-xs text-emerald-700">{evidenceMessage}</p>}
             </div>
+          </div>
+        )}
+
+        {!data.enrollment && (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="font-semibold text-slate-800">Commencez ce parcours</p>
+            <p className="text-slate-600">Inscrivez-vous pour suivre les modules, marquer les leçons terminées et soumettre votre preuve.</p>
+            <button
+              onClick={enroll}
+              disabled={enrolling}
+              className="mt-3 inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-60"
+            >
+              {enrolling ? "Inscription…" : "Commencer le parcours"}
+            </button>
           </div>
         )}
       </div>

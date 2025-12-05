@@ -21,6 +21,7 @@ export default function CertificateDetailPage() {
   const [data, setData] = useState<CertificateDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!params?.slug) return;
@@ -38,6 +39,10 @@ export default function CertificateDetailPage() {
 
   async function enroll() {
     if (!data) return;
+    if (!user) {
+        setEnrollError("Connectez-vous pour démarrer ce parcours.");
+        return;
+    }
     setSubmitting(true);
     try {
       await apiSchool.enroll(data._id);
@@ -94,6 +99,7 @@ export default function CertificateDetailPage() {
                 {data.enrollment ? "Continuer" : submitting ? "Inscription…" : "Commencer"}
               </button>
             )}
+            {enrollError && <p className="mt-2 text-xs text-amber-700">{enrollError}</p>}
             {!user && (
               <p className="mt-3 text-xs text-slate-500">Connectez-vous pour démarrer ce parcours.</p>
             )}

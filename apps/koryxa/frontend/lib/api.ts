@@ -134,6 +134,7 @@ export type CertificateModule = {
   title: string;
   description?: string | null;
   order_index?: number;
+  progress_percent?: number;
   lessons?: Lesson[];
 };
 
@@ -146,6 +147,7 @@ export type Lesson = {
   order_index?: number;
   summary?: string | null;
   resources?: ContentResource[];
+  status?: "not_started" | "in_progress" | "completed";
 };
 
 export type ContentResource = {

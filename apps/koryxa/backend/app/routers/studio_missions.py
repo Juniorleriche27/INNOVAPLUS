@@ -270,10 +270,20 @@ async def prepare_with_ai(
         f"Brief :\n{brief}"
     )
     try:
-        # Forcer Cohere pour une génération fiable et concise
-        answer = generate_answer(prompt, provider="cohere", model="command-r", max_new_tokens=900)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Echec génération IA: {exc}") from exc
+        # Utiliser Cohere (modèle plus récent) si disponible, sinon fallback local
+        answer = generate_answer(
+            prompt,
+            provider="cohere",
+            model=settings.LLM_MODEL or "command-r-plus",
+            max_new_tokens=900,
+            timeout=30,
+        )
+    except Exception:
+        try:
+            # Fallback local/smollm
+            answer = generate_answer(prompt, provider="local", max_new_tokens=900, timeout=30)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Echec génération IA: {exc}") from exc
 
     plan = ""
     texte = ""

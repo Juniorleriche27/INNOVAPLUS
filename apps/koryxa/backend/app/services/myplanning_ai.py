@@ -143,8 +143,9 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
     if "midi" in txt or "pause" in txt or "déjeuner" in txt or "manger" in txt:
         add_task("Pause déjeuner + repos (12h)", "Couper 45-60 min pour manger et souffler", 60, "important_not_urgent", True)
     # Project work
-    if "projet" in txt or "koryxa" in txt or "travail" in txt:
-        add_task("Bloc projet KORYXA", "Avancer sur le livrable prioritaire de l'après-midi", 120, "important_not_urgent", True)
+    if "projet" in txt or "travail" in txt or "koryxa" in txt:
+        title = "Bloc projet KORYXA" if "koryxa" in txt else "Bloc projet prioritaire"
+        add_task(title, "Avancer sur le livrable prioritaire de l'après-midi", 120, "important_not_urgent", True)
     # Messages
     if "message" in txt or "mail" in txt or "répond" in txt:
         add_task("Répondre aux messages importants", "Trier et répondre aux priorités", 30, "urgent_not_important", False)

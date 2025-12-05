@@ -71,6 +71,44 @@ async def create_opportunity(payload: Dict[str, Any], db: AsyncIOMotorDatabase =
     return {"opportunity_id": str(res.inserted_id)}
 
 
+def _serialize_opp(doc: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": str(doc.get("_id")),
+        "title": doc.get("title"),
+        "problem": doc.get("problem"),
+        "status": doc.get("status") or "open",
+        "country": doc.get("country"),
+        "skills_required": doc.get("skills_required") or [],
+        "tags": doc.get("tags") or [],
+        "created_at": doc.get("created_at"),
+    }
+
+
+@router.get("/opportunities")
+async def list_opportunities(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    country: Optional[str] = None,
+    page: int = 1,
+    limit: int = 50,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    query: Dict[str, Any] = {}
+    if status:
+        query["status"] = status
+    if country:
+        query["country"] = country.upper()
+    if search:
+        query["title"] = {"$regex": search, "$options": "i"}
+    skip = max(0, (page - 1) * limit)
+    cursor = db["opportunities"].find(query).sort("created_at", -1).skip(skip).limit(limit)
+    items: List[Dict[str, Any]] = []
+    async for doc in cursor:
+        items.append(_serialize_opp(doc))
+    total = await db["opportunities"].count_documents(query)
+    return {"items": items, "total": total, "page": page, "has_more": page * limit < total}
+
+
 async def _load_profiles(db: AsyncIOMotorDatabase, country: Optional[str]) -> List[Dict[str, Any]]:
     q: Dict[str, Any] = {}
     if country:

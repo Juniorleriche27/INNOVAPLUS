@@ -117,6 +117,7 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
     """Rule-based enrichment to avoid truncated or missing tasks when LLM fails."""
     txt = free_text.lower()
     tasks: list[dict[str, Any]] = []
+    meeting_added = False
 
     def add_task(title: str, description: str | None, duration: int | None, priority: str | None, impact: bool) -> None:
         tasks.append(
@@ -131,21 +132,53 @@ def _heuristic_enrich(free_text: str) -> list[dict[str, Any]]:
             }
         )
 
+    # Meeting with explicit time/duration
+    if "réunion" in txt or "meeting" in txt:
+        hour_label = _extract_time_label(txt)
+        duration_hours = None
+        match = re.search(r"\b(\d{1,2})\s*h", txt)
+        if match:
+            try:
+                duration_hours = max(1, min(6, int(match.group(1))))
+            except Exception:
+                duration_hours = None
+        if hour_label:
+            end_label = None
+            if duration_hours is not None:
+                try:
+                    start_h = int(hour_label.replace("h", ""))
+                    end_h = (start_h + duration_hours) % 24
+                    end_label = f"{str(end_h).zfill(2)}h"
+                except Exception:
+                    end_label = None
+            base_title = "Réunion projet"
+            if "d-clic" in txt or "dclic" in txt:
+                base_title = "Réunion projet D-CLIC"
+            title = f"{base_title} {hour_label}"
+            if end_label:
+                title = f"{base_title} {hour_label}-{end_label}"
+            desc = "Objectif : avancer/terminer le projet mentionné."
+            add_task(title, desc, (duration_hours or 2) * 60, "urgent_important", True)
+            meeting_added = True
+
     # Wake-up / breakfast
     if "réveil" in txt or "réveiller" in txt:
         label = _extract_time_label(txt) or "6h"
         add_task(f"Réveil {label} + petit-déjeuner", None, 30, "urgent_not_important", True)
     # Formation / cours
     if "formation" in txt or "d-clic" in txt or "dclic" in txt or "cours" in txt:
-        hour = _extract_time_label(txt) or "9h"
-        add_task(f"Partir pour la formation D-CLIC ({hour})", "Trajet + installation en salle", 60, "urgent_important", True)
+        travel_keywords = any(k in txt for k in ["partir", "trajet", "aller", "route", "se rendre"])
+        if travel_keywords:
+            hour = _extract_time_label(txt) or "9h"
+            add_task(f"Partir pour la formation D-CLIC ({hour})", "Trajet + installation en salle", 60, "urgent_important", True)
     # Lunch break
     if "midi" in txt or "pause" in txt or "déjeuner" in txt or "manger" in txt:
         add_task("Pause déjeuner + repos (12h)", "Couper 45-60 min pour manger et souffler", 60, "important_not_urgent", True)
     # Project work
     if "projet" in txt or "travail" in txt or "koryxa" in txt:
-        title = "Bloc projet KORYXA" if "koryxa" in txt else "Bloc projet prioritaire"
-        add_task(title, "Avancer sur le livrable prioritaire de l'après-midi", 120, "important_not_urgent", True)
+        if not meeting_added:
+            title = "Bloc projet KORYXA" if "koryxa" in txt else "Bloc projet prioritaire"
+            add_task(title, "Avancer sur le livrable prioritaire évoqué.", 120, "important_not_urgent", True)
     # Messages
     if "message" in txt or "mail" in txt or "répond" in txt:
         add_task("Répondre aux messages importants", "Trier et répondre aux priorités", 30, "urgent_not_important", False)
@@ -224,6 +257,7 @@ async def suggest_tasks_from_text(
         "Petites urgences logistiques à heure fixe sans enjeu majeur -> urgent_not_important. "
         "Loisirs/distractions sans enjeu -> not_urgent_not_important. "
         "Impact élevé = true si la tâche contribue à un objectif prioritaire (études, projet, santé, finances) ou réduit un risque important. Sinon false. "
+        "Ne crée pas de noms de projet/organisation/produit qui ne figurent pas explicitement dans le texte utilisateur. "
         "Inclure l'heure ou le créneau dans le titre quand il existe (ex: 'Réveil 6h', 'Formation 9h', 'Sport 20h'). "
         "Réponds uniquement par un JSON compact sans préambule ni commentaire. "
         "Ne retourne pas de texte hors JSON. "

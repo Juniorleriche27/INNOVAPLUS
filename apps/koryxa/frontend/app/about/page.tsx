@@ -173,7 +173,7 @@ export default function AboutPage() {
             <p className="text-sm text-slate-600">Copilote et RAG sur vos sources.</p>
           </a>
           <a href="/meet" className="rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:shadow">
-            <p className="font-semibold">INNOVA-MEET</p>
+            <p className="font-semibold">KORYXA Meet</p>
             <p className="text-sm text-slate-600">Fil d'opportunités et collaboration.</p>
           </a>
           <a href="/marketplace" className="rounded-2xl border border-slate-200 p-4 transition hover:border-sky-200 hover:shadow">

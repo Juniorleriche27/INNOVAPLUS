@@ -82,7 +82,7 @@ const WORKSPACE_LINKS = [
   { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique", icon: IconLayers },
   { href: "/talents", label: "Talents", description: "Profils et disponibilité", icon: IconUsers },
   { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité", icon: IconChip },
-  { href: "/meet", label: "INNOVA-MEET", description: "Réseau social intégré", icon: IconChat },
+  { href: "/meet", label: "KORYXA Meet", description: "Réseau social KORYXA", icon: IconChat },
   { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
   { href: "/school", label: "KORYXA School", description: "Certificats & parcours", icon: IconBook },
@@ -137,8 +137,8 @@ export default function Sidebar({ className, style }: { className?: string; styl
                 <span className="text-white font-semibold text-xs">AI</span>
               </div>
               <div>
-                <h2 className="text-base font-semibold text-slate-900">WORKSPACE</h2>
-                <p className="text-[11px] text-slate-500">Intelligence Artificielle</p>
+                <h2 className="text-base font-semibold text-slate-900">KORYXA</h2>
+                <p className="text-[11px] text-slate-500">IA • Opportunités</p>
               </div>
             </div>
           )}

@@ -162,8 +162,8 @@ export default function MeetPage() {
         {/* Header */}
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">INNOVA-MEET</h1>
-            <p className="text-sm text-slate-500">Réseau social intégré – partagez besoins, solutions et succès</p>
+            <h1 className="text-2xl font-semibold text-slate-900">KORYXA Meet</h1>
+            <p className="text-sm text-slate-500">Réseau social KORYXA – partagez besoins, solutions et succès</p>
           </div>
           <div className="flex gap-2">
             <button

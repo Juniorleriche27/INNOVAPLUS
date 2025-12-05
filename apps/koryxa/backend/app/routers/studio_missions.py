@@ -269,8 +269,8 @@ async def prepare_with_ai(
         "Texte : (un texte complet adapté au public cible et à l'objectif)\n\n"
         f"Brief :\n{brief}"
     )
+    # Forcer Cohere et remonter l'erreur si indisponible (évite un fallback silencieux)
     try:
-        # Utiliser Cohere (modèle plus récent) si disponible, sinon fallback local
         answer = generate_answer(
             prompt,
             provider="cohere",
@@ -278,12 +278,8 @@ async def prepare_with_ai(
             max_new_tokens=900,
             timeout=30,
         )
-    except Exception:
-        try:
-            # Fallback local/smollm
-            answer = generate_answer(prompt, provider="local", max_new_tokens=900, timeout=30)
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=f"Echec génération IA: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Echec génération IA (Cohere): {exc}") from exc
 
     plan = ""
     texte = ""

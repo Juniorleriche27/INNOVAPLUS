@@ -150,7 +150,7 @@ def generate_answer(
         client = _get_cohere_client()
         if client:
             try:
-                mdl = model or settings.LLM_MODEL or "command-r"
+                mdl = model or settings.LLM_MODEL or "command-r-08-2024"
                 last_user = effective_prompt
                 if history:
                     last_user = next((msg["content"] for msg in reversed(history) if msg.get("role") == "user"), effective_prompt)
@@ -160,7 +160,8 @@ def generate_answer(
                     on_token(text)
                 return text
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Cohere chat failed, falling back to echo: %s", exc)
+                logger.warning("Cohere chat failed, returning explicit error: %s", exc)
+                raise RuntimeError(f"Cohere failed: {exc}") from exc
 
     if provider_name == "echo":
         if on_token:

@@ -270,7 +270,8 @@ async def prepare_with_ai(
         f"Brief :\n{brief}"
     )
     try:
-        answer = generate_answer(prompt, max_new_tokens=900)
+        # Forcer Cohere pour une génération fiable et concise
+        answer = generate_answer(prompt, provider="cohere", model="command-r", max_new_tokens=900)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Echec génération IA: {exc}") from exc
 

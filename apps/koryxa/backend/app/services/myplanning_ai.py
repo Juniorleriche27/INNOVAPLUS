@@ -208,7 +208,8 @@ async def suggest_tasks_from_text(
     free_text: str,
     language: str | None,
     preferred_duration_block: int | None,
-) -> List[Dict[str, Any]]:
+) -> Tuple[List[Dict[str, Any]], bool]:
+    used_fallback = False
     prompt = (
         "Tu es un assistant KORYXA qui structure une journée en tâches actionnables. "
         "Ne tronque pas les mots. "
@@ -236,7 +237,8 @@ async def suggest_tasks_from_text(
     raw = await _call_llama(prompt)
     if raw == FALLBACK_REPLY:
         logger.warning("LLM returned fallback reply; using heuristic tasks.")
-        return _fallback_tasks(free_text)[:8]
+        used_fallback = True
+        return _fallback_tasks(free_text)[:8], used_fallback
     data = _extract_json(raw) or {}
     tasks = data.get("tasks") if isinstance(data, dict) else None
     if not isinstance(tasks, list):
@@ -245,6 +247,7 @@ async def suggest_tasks_from_text(
     if not tasks:
         logger.warning("AI suggest tasks returned empty list; using heuristic tasks.")
         tasks = _fallback_tasks(free_text)
+        used_fallback = True
     cleaned: List[Dict[str, Any]] = []
     heuristic = _heuristic_enrich(free_text)
     for item in tasks:
@@ -295,7 +298,7 @@ async def suggest_tasks_from_text(
                     "due_datetime": item.get("due_datetime"),
                 }
             )
-    return cleaned[:8]
+    return cleaned[:8], used_fallback
 
 
 def _build_task_snapshot(tasks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

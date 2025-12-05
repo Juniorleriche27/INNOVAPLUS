@@ -113,6 +113,8 @@ async def on_startup():
         await db["metrics_product"].create_index([("name", 1), ("ts", -1)])
         await db["me_profiles"].create_index([("user_id", 1)], unique=True)
         await db["decisions_audit"].create_index([("offer_id", 1), ("ts", -1)])
+        await db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1), ("due_datetime", 1)])
+        await db["myplanning_tasks"].create_index([("user_id", 1), ("created_at", -1)])
     except Exception:
         pass
 

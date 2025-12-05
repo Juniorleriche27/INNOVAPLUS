@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+import time
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -31,6 +32,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/myplanning", tags=["myplanning"])
 
 COLLECTION = "myplanning_tasks"
+_RATE_LIMIT_BUCKETS: dict[str, List[float]] = {}
+
+
+def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
+    now = time.time()
+    bucket = _RATE_LIMIT_BUCKETS.get(key, [])
+    bucket = [ts for ts in bucket if now - ts < window_seconds]
+    if len(bucket) >= limit:
+        raise HTTPException(status_code=429, detail="Trop de requêtes. Réessayez dans quelques instants.")
+    bucket.append(now)
+    _RATE_LIMIT_BUCKETS[key] = bucket
 
 
 def _serialize_datetime(value: Any) -> Optional[datetime]:
@@ -95,6 +107,13 @@ def _prepare_task_payload(payload: dict) -> dict:
     return doc
 
 
+def _validate_dates(doc: dict) -> None:
+    start_dt = _serialize_datetime(doc.get("start_datetime"))
+    due_dt = _serialize_datetime(doc.get("due_datetime"))
+    if start_dt and due_dt and start_dt > due_dt:
+        raise HTTPException(status_code=400, detail="La date de début ne peut pas dépasser l'échéance.")
+
+
 def _parse_date_filter(date_str: Optional[str]) -> Optional[tuple[datetime, datetime]]:
     if not date_str:
         return None
@@ -113,6 +132,8 @@ async def list_tasks(
     high_impact: Optional[bool] = Query(default=None),
     date: Optional[str] = Query(default=None, description="ISO date filter for today view"),
     week_start: Optional[str] = Query(default=None, description="ISO date for the starting Monday"),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=100, ge=1, le=500),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> TaskListResponse:
@@ -135,16 +156,20 @@ async def list_tasks(
             end = start + timedelta(days=7)
             criteria["due_datetime"] = {"$lte": end}
             criteria.setdefault("$or", []).append({"due_datetime": {"$gte": start}})
+    skip = (page - 1) * limit
     cursor = (
         db[COLLECTION]
         .find(criteria)
         .sort([("high_impact", -1), ("due_datetime", 1), ("created_at", -1)])
-        .limit(250)
+        .skip(skip)
+        .limit(limit)
     )
     tasks: List[TaskResponse] = []
     async for doc in cursor:
         tasks.append(_serialize_task(doc))
-    return TaskListResponse(items=tasks)
+    total = await db[COLLECTION].count_documents(criteria)
+    has_more = page * limit < total
+    return TaskListResponse(items=tasks, total=total, has_more=has_more)
 
 
 @router.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
@@ -156,6 +181,7 @@ async def create_task(
     now = datetime.utcnow()
     doc = payload.dict()
     doc = _prepare_task_payload(doc)
+    _validate_dates(doc)
     doc["user_id"] = current["_id"]
     doc["source"] = doc.get("source") or "manual"
     if doc.get("kanban_state") == "done" and not doc.get("completed_at"):
@@ -185,6 +211,7 @@ async def update_task(
     if not existing:
         raise HTTPException(status_code=404, detail="Tâche introuvable")
     updates = _prepare_task_payload(updates)
+    _validate_dates({**existing, **updates})
     now = datetime.utcnow()
     if "kanban_state" in updates:
         new_state = updates["kanban_state"]
@@ -231,6 +258,7 @@ async def bulk_create_tasks(
     for item in payload:
         doc = item.dict()
         doc = _prepare_task_payload(doc)
+        _validate_dates(doc)
         doc["user_id"] = current["_id"]
         doc["created_at"] = now
         doc["updated_at"] = now
@@ -275,8 +303,12 @@ async def ai_suggest_tasks(
     db: AsyncIOMotorDatabase = Depends(get_db),  # noqa: ARG001
     current: dict = Depends(get_current_user),  # noqa: ARG001
 ) -> AiSuggestTasksResponse:
-    drafts = await suggest_tasks_from_text(payload.free_text, payload.language, payload.preferred_duration_block)
-    return AiSuggestTasksResponse(drafts=drafts)
+    _rate_limit(f"ai_suggest:{current['_id']}")
+    clean_text = payload.free_text.strip()
+    if len(clean_text) > 2000:
+        raise HTTPException(status_code=400, detail="Le texte est trop long (2000 caractères max).")
+    drafts, used_fallback = await suggest_tasks_from_text(clean_text, payload.language, payload.preferred_duration_block)
+    return AiSuggestTasksResponse(drafts=drafts, used_fallback=used_fallback)
 
 
 async def _load_open_tasks(
@@ -308,6 +340,7 @@ async def ai_plan_day(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> AiPlanDayResponse:
+    _rate_limit(f"ai_plan:{current['_id']}")
     tasks = await _load_open_tasks(db, current["_id"])
     order, focus = await plan_day_with_llama(tasks, payload.date, payload.available_minutes)
     return AiPlanDayResponse(
@@ -322,6 +355,7 @@ async def ai_replan_with_time(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> AiReplanResponse:
+    _rate_limit(f"ai_replan:{current['_id']}")
     tasks = await _load_open_tasks(db, current["_id"], payload.task_ids)
     recs = await replan_with_time_limit(tasks, payload.available_minutes)
     formatted = [

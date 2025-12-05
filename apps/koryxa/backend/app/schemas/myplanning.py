@@ -77,6 +77,8 @@ class TaskResponse(TaskBase):
 
 class TaskListResponse(BaseModel):
     items: List[TaskResponse]
+    total: int = 0
+    has_more: bool = False
 
 
 class AiTaskDraft(BaseModel):
@@ -97,6 +99,7 @@ class AiSuggestTasksRequest(BaseModel):
 
 class AiSuggestTasksResponse(BaseModel):
     drafts: List[AiTaskDraft]
+    used_fallback: bool = False
 
 
 class AiPlanDayRequest(BaseModel):

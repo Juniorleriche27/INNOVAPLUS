@@ -38,13 +38,17 @@ type Task = {
   pomodoro_done?: number | null;
   comments?: string | null;
   source?: TaskSource | null;
-  linked_goal?: string | null;
-  moscow?: string | null;
   status?: TaskStatus | null;
   kanban_state_extended?: AdvancedKanban | null;
   assignee_user_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+};
+
+type TaskListResponse = {
+  items: Task[];
+  total?: number;
+  has_more?: boolean;
 };
 
 type AiDraft = {
@@ -331,8 +335,18 @@ export default function MyPlanningClient(): JSX.Element {
     setLoading(true);
     setTaskLoadError(null);
     try {
-      const data = await apiFetch<{ items: Task[] }>("/tasks");
-      setTasks(data.items);
+      const PAGE_SIZE = 200;
+      let page = 1;
+      const aggregated: Task[] = [];
+      while (true) {
+        const data = await apiFetch<TaskListResponse>(`/tasks?page=${page}&limit=${PAGE_SIZE}`);
+        aggregated.push(...(data.items || []));
+        const more = data.has_more ?? (data.items?.length || 0) === PAGE_SIZE;
+        if (!more || (data.items || []).length === 0) break;
+        page += 1;
+        if (page > 20) break; // safety guard against infinite loop
+      }
+      setTasks(aggregated);
     } catch (err) {
       const message = err instanceof Error ? friendlyError(err.message) : "Impossible de charger les tâches";
       setTaskLoadError(message);
@@ -562,8 +576,11 @@ export default function MyPlanningClient(): JSX.Element {
     setAiSummaryError(null);
     setAddedDrafts(new Set());
     try {
-      const res = await apiFetch<{ drafts: AiDraft[] }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
+      const res = await apiFetch<{ drafts: AiDraft[]; used_fallback?: boolean }>("/ai/suggest-tasks", { method: "POST", body: JSON.stringify({ free_text: aiText }) });
       setAiDrafts(res.drafts);
+      if (res.used_fallback) {
+        setBanner({ type: "error", message: "IA principale indisponible. Suggestions générées en mode secours (heuristique)." });
+      }
       if (!res.drafts || res.drafts.length === 0) {
         setAiSummaryError("L'IA n'a pas généré de tâches. Ajustez votre description et réessayez.");
         return;

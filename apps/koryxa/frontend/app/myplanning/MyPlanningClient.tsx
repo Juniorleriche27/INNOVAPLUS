@@ -310,7 +310,7 @@ export default function MyPlanningClient(): JSX.Element {
   const [filterPriority, setFilterPriority] = useState<"all" | Priority>("all");
   const [filterStatus, setFilterStatus] = useState<"all" | KanbanState>("all");
   const [filterSource, setFilterSource] = useState<"all" | TaskSource>("all");
-  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>("today");
+  const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>("all");
   const [aiText, setAiText] = useState("");
   const [aiDrafts, setAiDrafts] = useState<AiDraft[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -438,7 +438,7 @@ export default function MyPlanningClient(): JSX.Element {
     const isInPeriod = (task: Task) => {
       if (filterPeriod === "all") return true;
       const ref = parseDate(task.due_datetime) || parseDate(task.start_datetime) || parseDate(task.created_at);
-      if (!ref) return false;
+      if (!ref) return true;
       if (filterPeriod === "today") return sameDay(ref, selectedDate);
       const diffDays = (now.getTime() - ref.getTime()) / (1000 * 60 * 60 * 24);
       if (filterPeriod === "last7") return diffDays <= 7;

@@ -3,19 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import TelemetryPing from "@/components/util/TelemetryPing";
-
-type Post = {
-  id: string;
-  author: string;
-  authorId: string;
-  country: string;
-  tags: string[];
-  text: string;
-  likes: number;
-  comments: number;
-  timestamp: number;
-  isLiked?: boolean;
-};
+import { apiMeet, type MeetPost } from "@/lib/api";
 
 type Filter = {
   country: string;
@@ -25,9 +13,11 @@ type Filter = {
 
 export default function MeetPage() {
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [items, setItems] = useState<Post[]>([]);
+  const [page, setPage] = useState(0);
+  const [items, setItems] = useState<MeetPost[]>([]);
   const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [posting, setPosting] = useState(false);
   const [filters, setFilters] = useState<Filter>({
     country: "all",
     tags: [],
@@ -35,119 +25,94 @@ export default function MeetPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [trendingTags, setTrendingTags] = useState<string[]>([]);
-  
-  // In real app, derive from auth/session
-  const isConnected = true; // Temporarily true for demo
-
-  useEffect(() => {
-    // Simulate initial load
-    const t = setTimeout(() => {
-      setItems(gen(1));
-      setTrendingTags(["#agritech", "#fintech", "#edtech", "#healthtech", "#logistics"]);
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(t);
-  }, []);
-
-  function gen(p: number): Post[] {
-    const countries = ["CI", "SN", "BJ", "BF", "ML", "NE", "TG"];
-    const allTags = ["#agritech", "#fintech", "#edtech", "#healthtech", "#logistics", "#energy", "#transport"];
-    
-    return Array.from({ length: 5 }).map((_, i) => ({
-      id: `${p}-${i}`,
-      author: `Auteur ${i + 1 + (p - 1) * 5}`,
-      authorId: `user-${i + 1}`,
-      country: countries[i % countries.length],
-      tags: allTags.slice(0, (i % 3) + 1),
-      text: [
-        "Besoin terrain: optimisation des prix pour coopératives, recherche retours d'expérience et solutions data/IA adaptées au contexte local.",
-        "Succès partagé: notre solution de paiement mobile a permis d'augmenter les revenus de 40% pour 200+ commerçants à Dakar.",
-        "Recherche partenaire technique pour développer une plateforme de gestion des stocks avec IA prédictive.",
-        "Formation disponible: méthodologies agiles pour startups tech en Afrique de l'Ouest. Prochaine session le 15/11.",
-        "Appel à projets: financement disponible pour solutions innovantes dans l'agriculture durable. Dossier avant le 30/11."
-      ][i % 5],
-      likes: Math.floor(Math.random() * 50),
-      comments: Math.floor(Math.random() * 12),
-      timestamp: Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000, // Last 7 days
-      isLiked: Math.random() > 0.7
-    }));
-  }
-
-  function loadMore() {
-    const next = page + 1;
-    setPage(next);
-    setLoading(true);
-    setTimeout(() => {
-      setItems((cur) => [...cur, ...gen(next)]);
-      setLoading(false);
-    }, 400);
-  }
+  const isConnected = true; // TODO: branch to session/auth when available
 
   const charCount = useMemo(() => draft.length, [draft]);
   const maxChars = 280;
 
   const filteredItems = useMemo(() => {
-    let filtered = items;
+    let filtered = [...items];
     
     if (filters.country !== "all") {
-      filtered = filtered.filter(p => p.country === filters.country);
+      filtered = filtered.filter(p => (p.country || "").toUpperCase() === filters.country);
     }
     
     if (filters.tags.length > 0) {
       filtered = filtered.filter(p => 
-        filters.tags.some(tag => p.tags.includes(tag))
+        filters.tags.some(tag => (p.tags || []).includes(tag))
       );
     }
     
     if (filters.sort === "recent") {
-      filtered.sort((a, b) => b.timestamp - a.timestamp);
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else {
-      // Sort by engagement (likes + comments)
-      filtered.sort((a, b) => (b.likes + b.comments) - (a.likes + a.comments));
+      filtered.sort((a, b) => (b.tags?.length || 0) - (a.tags?.length || 0));
     }
     
     return filtered;
   }, [items, filters]);
 
-  const handleLike = (postId: string) => {
-    setItems(prev => prev.map(p => 
-      p.id === postId 
-        ? { 
-            ...p, 
-            isLiked: !p.isLiked, 
-            likes: p.isLiked ? p.likes - 1 : p.likes + 1 
-          }
-        : p
-    ));
-  };
+  useEffect(() => {
+    loadFeed(0, true);
+  }, []);
 
-  const handlePublish = () => {
-    if (!draft.trim() || !isConnected) return;
-    
-    const newPost: Post = {
-      id: `new-${Date.now()}`,
-      author: "Vous",
-      authorId: "current-user",
-      country: "CI", // Default
-      tags: draft.match(/#\w+/g) || [],
-      text: draft,
-      likes: 0,
-      comments: 0,
-      timestamp: Date.now(),
-      isLiked: false
-    };
-    
-    setItems(prev => [newPost, ...prev]);
-    setDraft("");
-  };
+  async function loadFeed(nextPage: number, reset = false) {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiMeet.feed({ limit: 20, offset: nextPage * 20 });
+      const newItems = res.items;
+      const combined = reset ? newItems : [...items, ...newItems];
+      setItems(combined);
+      setPage(nextPage);
+      // trending from tags
+      const tagCounts: Record<string, number> = {};
+      combined.forEach((p) => (p.tags || []).forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+      setTrendingTags(Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t]) => t));
+    } catch (e: any) {
+      setError(e?.message || "Impossible de charger le feed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const formatTime = (timestamp: number) => {
+  async function handlePublish() {
+    if (!draft.trim() || !isConnected || posting) return;
+    setPosting(true);
+    setError(null);
+    try {
+      const tags = draft.match(/#\w+/g) || [];
+      const payload = {
+        user_id: "frontend-user", // TODO: remplacer par l’ID session
+        text: draft.trim(),
+        tags,
+        country: (filters.country !== "all" ? filters.country : undefined) || "CI",
+      };
+      const r = await apiMeet.create(payload);
+      const created: MeetPost = {
+        id: r.post_id,
+        user_id: payload.user_id,
+        text: payload.text,
+        tags,
+        country: payload.country,
+        created_at: new Date().toISOString(),
+      };
+      setItems((cur) => [created, ...cur]);
+      setDraft("");
+    } catch (e: any) {
+      setError(e?.message || "Publication impossible");
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  const formatTime = (iso: string) => {
+    const ts = new Date(iso).getTime();
     const now = Date.now();
-    const diff = now - timestamp;
+    const diff = now - ts;
     const days = Math.floor(diff / (24 * 60 * 60 * 1000));
     const hours = Math.floor(diff / (60 * 60 * 1000));
     const minutes = Math.floor(diff / (60 * 1000));
-    
     if (days > 0) return `il y a ${days}j`;
     if (hours > 0) return `il y a ${hours}h`;
     if (minutes > 0) return `il y a ${minutes}min`;
@@ -214,10 +179,10 @@ export default function MeetPage() {
                     </div>
                     <button 
                       onClick={handlePublish}
-                      disabled={!isConnected || charCount === 0 || charCount > maxChars}
+                      disabled={!isConnected || charCount === 0 || charCount > maxChars || posting}
                       className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Publier
+                      {posting ? "Publication..." : "Publier"}
                     </button>
                   </div>
                 </div>
@@ -289,16 +254,16 @@ export default function MeetPage() {
                   <header className="mb-4 flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-sm">
-                        {post.author.slice(0, 2).toUpperCase()}
+                        {(post.user_id || "US").slice(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-900">{post.author}</h3>
+                          <h3 className="font-semibold text-slate-900">{post.user_id || "Utilisateur"}</h3>
                           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
-                            {post.country}
+                            {post.country || "ND"}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500">{formatTime(post.timestamp)}</p>
+                        <p className="text-xs text-slate-500">{formatTime(post.created_at)}</p>
                       </div>
                     </div>
                   </header>
@@ -323,33 +288,7 @@ export default function MeetPage() {
                   )}
                   
                   <footer className="flex items-center gap-4">
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors ${
-                        post.isLiked
-                          ? 'bg-sky-100 text-sky-700'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      <svg className="h-4 w-4" fill={post.isLiked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      {post.likes}
-                    </button>
-                    
-                    <button className="flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      {post.comments}
-                    </button>
-                    
-                    <button className="flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                      </svg>
-                      Partager
-                    </button>
+                    <span className="text-xs text-slate-500">#{(post.tags || []).length} tags</span>
                   </footer>
                 </article>
               ))}

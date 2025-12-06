@@ -242,3 +242,33 @@ export const apiProfiles = {
     return json<{ items: PublicProfile[]; total: number }>(res);
   },
 };
+
+// --- Meet (social feed) ---
+export type MeetPost = {
+  id: string;
+  user_id: string;
+  text: string;
+  tags: string[];
+  country?: string | null;
+  created_at: string;
+};
+
+export const apiMeet = {
+  async create(post: { user_id: string; text: string; tags?: string[]; country?: string }) {
+    const res = await apiFetch(`${API_BASE}/meet/post`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(post),
+    });
+    return json<{ post_id: string }>(res);
+  },
+  async feed(params?: { country?: string; tags?: string[]; limit?: number; offset?: number }) {
+    const query = new URLSearchParams();
+    if (params?.country) query.set("country", params.country);
+    if (params?.tags?.length) query.set("tags", params.tags.join(","));
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset) query.set("offset", String(params.offset));
+    const res = await apiFetch(`${API_BASE}/meet/feed?${query.toString()}`, { cache: "no-store" });
+    return json<{ items: MeetPost[]; total: number }>(res);
+  },
+};

@@ -29,6 +29,8 @@ export default function NewMissionPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [createOpportunity, setCreateOpportunity] = useState(true);
+  const [productSlug, setProductSlug] = useState("");
 
   if (!loading && !user) {
     return (
@@ -64,9 +66,27 @@ export default function NewMissionPage() {
     setSuccess(null);
     try {
       const response = await missionsApi.create(payload);
+      const missionId = response.mission_id;
       setSuccess("Mission créée. Redirection vers le suivi…");
-      if (response.mission_id) {
-        setTimeout(() => router.push(`/missions/track/${response.mission_id}`), 1200);
+      if (missionId && createOpportunity) {
+        try {
+          await opportunitiesApi.create({
+            title: payload.title,
+            problem: payload.description,
+            skills_required: payload.deliverables ? payload.deliverables.split(",").map((s) => s.trim()).filter(Boolean) : [],
+            tags: preview?.keywords || [],
+            country: payload.location_hint,
+            status: "open",
+            mission_id: missionId,
+            source: "mission",
+            product_slug: productSlug || undefined,
+          });
+        } catch (opErr) {
+          console.error("Création opportunité liée échouée", opErr);
+        }
+      }
+      if (missionId) {
+        setTimeout(() => router.push(`/missions/track/${missionId}`), 1200);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -211,6 +231,25 @@ export default function NewMissionPage() {
                 <input type="checkbox" checked={payload.collect_multiple_quotes} onChange={(e) => update("collect_multiple_quotes", e.target.checked)} />
                 Collecter plusieurs devis (max 3)
               </label>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-sm font-semibold text-slate-900">Créer une opportunité liée</p>
+            <p className="text-xs text-slate-600">Elle sera visible dans le pipeline et liée à cette mission.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={createOpportunity} onChange={(e) => setCreateOpportunity(e.target.checked)} />
+                Créer automatiquement une opportunité
+              </label>
+              {createOpportunity && (
+                <input
+                  value={productSlug}
+                  onChange={(e) => setProductSlug(e.target.value)}
+                  placeholder="Produit (slug) optionnel"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100 sm:max-w-xs"
+                />
+              )}
             </div>
           </div>
 

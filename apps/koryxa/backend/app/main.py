@@ -27,6 +27,7 @@ from app.routers.metrics import router as metrics_router
 from app.routers.emailer import router as email_router
 from app.routers.invite import router as invite_router
 from app.routers.opportunities import router as opportunities_router
+from app.routers.engine import router as engine_router
 from app.routers import school as school_router
 from app.routers.marketplace import router as market_router
 from app.routers.meet_api import router as meet_router
@@ -183,6 +184,7 @@ innova_api.include_router(notifications_router)
 innova_api.include_router(metrics_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)
+innova_api.include_router(engine_router)
 innova_api.include_router(smollm_router)
 innova_api.include_router(profiles_router)
 innova_api.include_router(missions_router)

@@ -202,3 +202,20 @@ export const apiSchool = {
     return json<{ ok: boolean; evidence_id: string }>(res);
   },
 };
+
+// --- Skills ---
+export type SkillItem = {
+  slug: string;
+  label: string;
+  total: number;
+  certificates: number;
+  users: number;
+  offers: number;
+};
+
+export const apiSkills = {
+  async list(): Promise<{ items: SkillItem[] }> {
+    const res = await apiFetch(`${API_BASE}/skills`, { cache: "no-store" });
+    return json<{ items: SkillItem[] }>(res);
+  },
+};

@@ -3,7 +3,6 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const PARTNERS = ["GIZ", "BidLab", "AFD", "Agritech CI", "TPE locales"];
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 const SECTION_SUBTITLE = "text-base text-slate-500";
 
@@ -103,17 +102,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Partenaires */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Partenaires & pilotes</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {PARTNERS.map((p) => (
-            <span key={p} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-              {p}
-            </span>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

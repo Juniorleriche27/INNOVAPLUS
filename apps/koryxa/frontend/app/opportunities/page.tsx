@@ -3,23 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { INNOVA_API_BASE } from "@/lib/env";
-
-type Opportunity = {
-  id: string;
-  title: string;
-  problem?: string;
-  status: string;
-  country?: string;
-  skills_required?: string[];
-  tags?: string[];
-  created_at?: string;
-};
-
-type ListResponse = {
-  items: Opportunity[];
-  total: number;
-  has_more?: boolean;
-};
+import type { Opportunity, OpportunityListResponse } from "@/lib/types/opportunities";
 
 const API = `${INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api")}/opportunities`;
 
@@ -50,6 +34,8 @@ export default function OpportunitiesPage() {
   const [status, setStatus] = useState("all");
   const [country, setCountry] = useState("");
   const [total, setTotal] = useState<number>(0);
+  const [source, setSource] = useState("all");
+  const [product, setProduct] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -60,12 +46,14 @@ export default function OpportunitiesPage() {
       if (search.trim()) params.set("search", search.trim());
       if (status !== "all") params.set("status", status);
       if (country.trim()) params.set("country", country.trim());
+       if (source !== "all") params.set("source", source);
+       if (product.trim()) params.set("product", product.trim());
       const res = await fetch(`${API}?${params.toString()}`, { credentials: "include" });
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(txt || "Impossible de charger les opportunités");
       }
-      const data: ListResponse = await res.json();
+      const data: OpportunityListResponse = await res.json();
       setItems(data.items || []);
       setTotal(data.total || 0);
     } catch (e) {
@@ -103,7 +91,7 @@ export default function OpportunitiesPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-4 sm:p-5 shadow-inner shadow-slate-100/60">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <input
               placeholder="Rechercher un titre"
               value={search}
@@ -124,6 +112,22 @@ export default function OpportunitiesPage() {
               placeholder="Pays (ex: CI, SN)"
               value={country}
               onChange={(e) => setCountry(e.target.value.toUpperCase())}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            />
+            <select
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            >
+              <option value="all">Toutes sources</option>
+              <option value="manual">Manuel</option>
+              <option value="product">Produit</option>
+              <option value="mission">Mission</option>
+            </select>
+            <input
+              placeholder="Produit (slug)"
+              value={product}
+              onChange={(e) => setProduct(e.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
             <button
@@ -168,6 +172,13 @@ export default function OpportunitiesPage() {
                           {t}
                         </span>
                       ))}
+                      {opp.product_slug && <span className="rounded-full bg-indigo-50 px-2 py-1 font-semibold text-indigo-700">Produit : {opp.product_slug}</span>}
+                      {opp.source && <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-600">Source : {opp.source}</span>}
+                      {opp.mission_id && (
+                        <Link href={`/missions/track/${opp.mission_id}`} className="rounded-full bg-sky-50 px-2 py-1 font-semibold text-sky-700 underline">
+                          Mission liée
+                        </Link>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 text-sm sm:items-end">

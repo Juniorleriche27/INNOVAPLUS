@@ -58,6 +58,9 @@ async def create_opportunity(payload: Dict[str, Any], db: AsyncIOMotorDatabase =
     skills_required = payload.get("skills_required") or []
     tags = payload.get("tags") or []
     country = payload.get("country")
+    mission_id = payload.get("mission_id")
+    source = payload.get("source") or "manual"
+    product_slug = payload.get("product_slug")
     doc = {
         "title": title,
         "problem": problem,
@@ -66,6 +69,9 @@ async def create_opportunity(payload: Dict[str, Any], db: AsyncIOMotorDatabase =
         "country": country,
         "status": "open",
         "created_at": iso_now(),
+        "mission_id": mission_id,
+        "source": source,
+        "product_slug": product_slug,
     }
     res = await db["opportunities"].insert_one(doc)
     return {"opportunity_id": str(res.inserted_id)}
@@ -81,6 +87,9 @@ def _serialize_opp(doc: Dict[str, Any]) -> Dict[str, Any]:
         "skills_required": doc.get("skills_required") or [],
         "tags": doc.get("tags") or [],
         "created_at": doc.get("created_at"),
+        "mission_id": doc.get("mission_id"),
+        "source": doc.get("source"),
+        "product_slug": doc.get("product_slug"),
     }
 
 
@@ -89,6 +98,8 @@ async def list_opportunities(
     search: Optional[str] = None,
     status: Optional[str] = None,
     country: Optional[str] = None,
+    source: Optional[str] = None,
+    product: Optional[str] = None,
     page: int = 1,
     limit: int = 50,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -100,6 +111,10 @@ async def list_opportunities(
         query["country"] = country.upper()
     if search:
         query["title"] = {"$regex": search, "$options": "i"}
+    if source:
+        query["source"] = source
+    if product:
+        query["product_slug"] = product
     skip = max(0, (page - 1) * limit)
     cursor = db["opportunities"].find(query).sort("created_at", -1).skip(skip).limit(limit)
     items: List[Dict[str, Any]] = []

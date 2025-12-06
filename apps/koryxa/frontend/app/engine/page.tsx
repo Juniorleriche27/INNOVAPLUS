@@ -120,15 +120,94 @@ export default function EnginePage() {
           </div>
           <div className="mt-3 grid gap-2 text-sm">
             {(rules?.equity?.quotas || []).map((q, idx) => (
-              <div key={`${q.country}-${idx}`} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
-                <span className="font-semibold text-slate-800">{q.country}</span>
-                <span className="text-slate-500">Min {q.min ?? "ND"} / Max {q.max ?? "ND"}</span>
-                <span className="ml-auto text-xs font-semibold text-emerald-700">{q.active ? "Actif" : "Inactif"}</span>
+              <div key={`${q.country}-${idx}`} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
+                <input
+                  className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                  value={q.country}
+                  onChange={(e) =>
+                    setRules((prev) => {
+                      const next = { ...(prev || _emptyRules) };
+                      const quotas = [...(next.equity.quotas || [])];
+                      quotas[idx] = { ...quotas[idx], country: e.target.value.toUpperCase() };
+                      next.equity.quotas = quotas;
+                      return next;
+                    })
+                  }
+                  placeholder="Pays"
+                />
+                <input
+                  type="number"
+                  className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                  value={q.min ?? ""}
+                  onChange={(e) =>
+                    setRules((prev) => {
+                      const next = { ...(prev || _emptyRules) };
+                      const quotas = [...(next.equity.quotas || [])];
+                      quotas[idx] = { ...quotas[idx], min: e.target.value ? Number(e.target.value) : undefined };
+                      next.equity.quotas = quotas;
+                      return next;
+                    })
+                  }
+                  placeholder="Min"
+                />
+                <input
+                  type="number"
+                  className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-sm"
+                  value={q.max ?? ""}
+                  onChange={(e) =>
+                    setRules((prev) => {
+                      const next = { ...(prev || _emptyRules) };
+                      const quotas = [...(next.equity.quotas || [])];
+                      quotas[idx] = { ...quotas[idx], max: e.target.value ? Number(e.target.value) : undefined };
+                      next.equity.quotas = quotas;
+                      return next;
+                    })
+                  }
+                  placeholder="Max"
+                />
+                <label className="ml-2 flex items-center gap-1 text-xs text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={!!q.active}
+                    onChange={(e) =>
+                      setRules((prev) => {
+                        const next = { ...(prev || _emptyRules) };
+                        const quotas = [...(next.equity.quotas || [])];
+                        quotas[idx] = { ...quotas[idx], active: e.target.checked };
+                        next.equity.quotas = quotas;
+                        return next;
+                      })
+                    }
+                  />
+                  Actif
+                </label>
+                <button
+                  className="ml-auto text-xs font-semibold text-red-600 hover:underline"
+                  onClick={() =>
+                    setRules((prev) => {
+                      const next = { ...(prev || _emptyRules) };
+                      next.equity.quotas = (next.equity.quotas || []).filter((_, i) => i !== idx);
+                      return next;
+                    })
+                  }
+                >
+                  Supprimer
+                </button>
               </div>
             ))}
-            {(rules?.equity?.quotas || []).length === 0 && (
-              <p className="text-xs text-slate-500">Aucun quota défini.</p>
-            )}
+            {(rules?.equity?.quotas || []).length === 0 && <p className="text-xs text-slate-500">Aucun quota défini.</p>}
+            <button
+              className="mt-2 inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+              onClick={() =>
+                setRules((prev) => {
+                  const next = { ...(prev || _emptyRules) };
+                  next.equity.quotas = [...(next.equity.quotas || []), { country: "", min: undefined, max: undefined, active: true }];
+                  return next;
+                })
+              }
+            >
+              + Ajouter un quota
+            </button>
           </div>
         </section>
 

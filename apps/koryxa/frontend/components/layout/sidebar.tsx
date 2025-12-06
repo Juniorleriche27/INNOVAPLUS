@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+const ENABLE_SCHOOL = process.env.NEXT_PUBLIC_ENABLE_SCHOOL === "true";
+
 function IconTarget(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -85,7 +87,10 @@ const WORKSPACE_LINKS = [
   { href: "/meet", label: "KORYXA Meet", description: "Réseau social KORYXA", icon: IconChat },
   { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
-  { href: "/school", label: "KORYXA School", description: "Certificats & parcours", icon: IconBook },
+  // KORYXA School est caché par défaut pour préparer le module en coulisses.
+  ...(ENABLE_SCHOOL
+    ? [{ href: "/school", label: "KORYXA School", description: "Certificats & parcours", icon: IconBook } as const]
+    : []),
 ];
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {

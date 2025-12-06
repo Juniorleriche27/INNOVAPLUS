@@ -23,6 +23,7 @@ from app.schemas.profiles import (
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 COLLECTION = "workspace_profiles"
+PROFILES = "profiles"
 
 
 def _timestamp() -> str:
@@ -145,6 +146,43 @@ def _anonymize_profile(doc: Dict[str, Any], role: str) -> Dict[str, Any]:
     cleaned = {k: v for k, v in section.items() if k not in {"contact_email", "contact_phone", "preferred_channels", "channels"}}
     cleaned["user_id"] = "anonymized"
     return cleaned
+
+
+@router.get("/public")
+async def list_public_profiles(
+    country: str | None = None,
+    skill: str | None = None,
+    remote: bool | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Liste publique des profils prestataires (anonymisés) avec filtres simples.
+    """
+    q: Dict[str, Any] = {}
+    if country:
+        q["country"] = country.strip().upper()
+    if remote is not None:
+        q["remote"] = bool(remote)
+    cursor = db[PROFILES].find(q).sort("last_active_at", -1).skip(offset).limit(min(limit, 100))
+    items = []
+    async for p in cursor:
+        skills = p.get("skills") or []
+        if skill and skill.strip().lower() not in {s.lower() for s in skills}:
+            continue
+        items.append(
+            {
+                "user_id": p.get("user_id"),
+                "skills": skills,
+                "country": p.get("country"),
+                "remote": p.get("remote", True),
+                "languages": p.get("languages") or [],
+                "last_active_at": p.get("last_active_at"),
+            }
+        )
+    total = await db[PROFILES].count_documents(q)
+    return {"items": items, "total": total}
 
 
 @router.get("/export/demo")

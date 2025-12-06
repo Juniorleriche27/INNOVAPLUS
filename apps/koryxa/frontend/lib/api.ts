@@ -219,3 +219,26 @@ export const apiSkills = {
     return json<{ items: SkillItem[] }>(res);
   },
 };
+
+// --- Profiles / talents ---
+export type PublicProfile = {
+  user_id: string;
+  skills: string[];
+  country?: string | null;
+  remote?: boolean;
+  languages?: string[];
+  last_active_at?: string | null;
+};
+
+export const apiProfiles = {
+  async listPublic(params?: { country?: string; skill?: string; remote?: boolean; limit?: number; offset?: number }) {
+    const query = new URLSearchParams();
+    if (params?.country) query.set("country", params.country);
+    if (params?.skill) query.set("skill", params.skill);
+    if (params?.remote !== undefined) query.set("remote", params.remote ? "1" : "0");
+    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.offset) query.set("offset", String(params.offset));
+    const res = await apiFetch(`${API_BASE}/profiles/public?${query.toString()}`, { cache: "no-store" });
+    return json<{ items: PublicProfile[]; total: number }>(res);
+  },
+};

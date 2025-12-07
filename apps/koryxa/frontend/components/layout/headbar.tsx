@@ -425,13 +425,35 @@ export default function Headbar() {
             </div>
 
             {/* Mobile menu */}
-            <button
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Ouvrir le menu"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200 lg:hidden"
-            >
-              <IconMenu className="h-5 w-5" />
-            </button>
+            {/* Mobile compact actions */}
+            <div className="lg:hidden flex items-center gap-1.5">
+              <button
+                onClick={() => setSearchOpen(true)}
+                aria-label="Rechercher"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+              >
+                <IconSearch className="h-4 w-4" />
+              </button>
+              <Link
+                href="/login"
+                className="rounded-xl border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-700"
+              >
+                Connexion
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-xl bg-sky-600 px-2.5 py-2 text-[11px] font-semibold text-white shadow-sm"
+              >
+                Créer
+              </Link>
+              <button
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Ouvrir le menu"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+              >
+                <IconMenu className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

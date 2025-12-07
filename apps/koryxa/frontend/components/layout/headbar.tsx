@@ -171,7 +171,7 @@ export default function Headbar() {
       )}
     >
       <div className="w-full px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between gap-4 py-3">
+        <div className="flex items-center justify-between gap-3 sm:gap-4 py-2.5 sm:py-3">
           {/* Left: Brand */}
           <div className="flex items-center gap-3 min-w-0">
             <Link href="/" className="flex items-center gap-3 group">
@@ -185,7 +185,7 @@ export default function Headbar() {
                 <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
                   KORYXA
                 </p>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
+                <div className="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span className="whitespace-nowrap">Intelligence Artificielle • Transparence • Équité</span>
                 </div>
@@ -218,7 +218,7 @@ export default function Headbar() {
           </nav>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Search */}
             <button
               onClick={() => setSearchOpen(true)}

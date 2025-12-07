@@ -27,6 +27,13 @@ html {
   font-size: 90%;
 }
 
+@media (max-width: 640px) {
+  html {
+    /* Mobile : remonter légèrement la taille pour la lisibilité */
+    font-size: 96%;
+  }
+}
+
 body {
   margin: 0;
   background: radial-gradient(circle at top, rgba(148, 163, 184, 0.15), transparent 60%), var(--background);

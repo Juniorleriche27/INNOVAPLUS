@@ -202,3 +202,27 @@ a {
   border: 2px solid transparent;
   background-clip: content-box;
 }
+
+/* Mobile polish: improve readability and tighten paddings without touching desktop */
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+  .container-shell {
+    padding: 0 18px;
+  }
+  .card-surface {
+    padding: 18px;
+    border-radius: 22px;
+    box-shadow: 0 12px 28px rgba(15, 68, 120, 0.06);
+  }
+  .btn-primary,
+  .btn-secondary {
+    padding: 11px 16px;
+    font-size: 13px;
+  }
+  .grid-kpi {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+  }
+}

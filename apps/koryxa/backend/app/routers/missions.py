@@ -499,6 +499,33 @@ async def list_missions(
     ]
 
 
+@router.get("/offers/public", summary="Liste publique des offres prestataires (démonstration)")
+async def list_offers_public(
+    prestataire_id: Optional[str] = None,
+    limit: int = 20,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    q: Dict[str, Any] = {}
+    if prestataire_id:
+        q["prestataire_id"] = prestataire_id
+    cur = db[COLL_OFFERS].find(q).sort("dispatched_at", -1).limit(min(limit, 100))
+    items: List[Dict[str, Any]] = []
+    async for offer in cur:
+        mission_doc = await db[COLL_MISSIONS].find_one({"_id": _oid(offer["mission_id"])})
+        if not mission_doc:
+            continue
+        items.append({
+            "mission_id": offer["mission_id"],
+            "title": mission_doc.get("title"),
+            "offer_id": str(offer["_id"]),
+            "status": offer.get("status"),
+            "expires_at": offer.get("expires_at"),
+            "wave": offer.get("wave"),
+            "prestataire_id": offer.get("prestataire_id"),
+        })
+    return {"items": items, "total": len(items)}
+
+
 @router.get("/{mission_id}", summary="Détail d'une mission")
 async def mission_detail(
     mission_id: str,

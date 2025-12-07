@@ -76,6 +76,10 @@ export default function MeetPage() {
     }
   }
 
+  function loadMore() {
+    loadFeed(page + 1, false);
+  }
+
   async function handlePublish() {
     if (!draft.trim() || !isConnected || posting) return;
     setPosting(true);

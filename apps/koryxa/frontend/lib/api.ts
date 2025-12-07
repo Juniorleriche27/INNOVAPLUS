@@ -247,10 +247,13 @@ export const apiProfiles = {
 export type MeetPost = {
   id: string;
   user_id: string;
+  author?: string | null;
   text: string;
   tags: string[];
   country?: string | null;
   created_at: string;
+  likes_count?: number;
+  comments_count?: number;
 };
 
 export const apiMeet = {
@@ -262,6 +265,22 @@ export const apiMeet = {
     });
     return json<{ post_id: string }>(res);
   },
+  async like(payload: { post_id: string; user_id: string; action: "like" | "unlike" }) {
+    const res = await apiFetch(`${API_BASE}/meet/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return json<{ ok: boolean; likes: number }>(res);
+  },
+  async comment(payload: { post_id: string; user_id: string; text: string; author?: string }) {
+    const res = await apiFetch(`${API_BASE}/meet/post`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return json<{ comment_id: string; comments: number }>(res);
+  },
   async feed(params?: { country?: string; tags?: string[]; limit?: number; offset?: number }) {
     const query = new URLSearchParams();
     if (params?.country) query.set("country", params.country);
@@ -270,5 +289,9 @@ export const apiMeet = {
     if (params?.offset) query.set("offset", String(params.offset));
     const res = await apiFetch(`${API_BASE}/meet/feed?${query.toString()}`, { cache: "no-store" });
     return json<{ items: MeetPost[]; total: number }>(res);
+  },
+  async comments(post_id: string) {
+    const res = await apiFetch(`${API_BASE}/meet/comments?post_id=${encodeURIComponent(post_id)}`, { cache: "no-store" });
+    return json<{ items: Array<{ comment_id: string; post_id: string; user_id: string; author?: string; text: string; created_at: string }> }>(res);
   },
 };

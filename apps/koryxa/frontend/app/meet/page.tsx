@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import TelemetryPing from "@/components/util/TelemetryPing";
 import { apiMeet, type MeetPost } from "@/lib/api";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 type Filter = {
   country: string;
@@ -25,7 +26,8 @@ export default function MeetPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [trendingTags, setTrendingTags] = useState<string[]>([]);
-  const isConnected = true; // TODO: branch to session/auth when available
+  const { user } = useAuth();
+  const isConnected = !!user;
 
   const charCount = useMemo(() => draft.length, [draft]);
   const maxChars = 280;
@@ -87,7 +89,8 @@ export default function MeetPage() {
     try {
       const tags = draft.match(/#\w+/g) || [];
       const payload = {
-        user_id: "frontend-user", // TODO: remplacer par l’ID session
+        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
+        author: (user as any)?.display_name || user?.email || user?.name || "Utilisateur",
         text: draft.trim(),
         tags,
         country: (filters.country !== "all" ? filters.country : undefined) || "CI",
@@ -96,10 +99,13 @@ export default function MeetPage() {
       const created: MeetPost = {
         id: r.post_id,
         user_id: payload.user_id,
+        author: payload.author,
         text: payload.text,
         tags,
         country: payload.country,
         created_at: new Date().toISOString(),
+        likes_count: 0,
+        comments_count: 0,
       };
       setItems((cur) => [created, ...cur]);
       setDraft("");
@@ -107,6 +113,24 @@ export default function MeetPage() {
       setError(e?.message || "Publication impossible");
     } finally {
       setPosting(false);
+    }
+  }
+
+  async function toggleLike(post: MeetPost) {
+    if (!isConnected) return;
+    try {
+      await apiMeet.like({
+        post_id: post.id,
+        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
+        action: "like",
+      });
+      setItems((cur) =>
+        cur.map((p) =>
+          p.id === post.id ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p
+        )
+      );
+    } catch (e) {
+      setError("Like impossible");
     }
   }
 
@@ -258,11 +282,11 @@ export default function MeetPage() {
                   <header className="mb-4 flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-sm">
-                        {(post.user_id || "US").slice(0, 2).toUpperCase()}
+                        {(post.author || post.user_id || "US").slice(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-900">{post.user_id || "Utilisateur"}</h3>
+                          <h3 className="font-semibold text-slate-900">{post.author || post.user_id || "Utilisateur"}</h3>
                           <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                             {post.country || "ND"}
                           </span>
@@ -289,9 +313,20 @@ export default function MeetPage() {
                         </span>
                       ))}
                     </div>
-                  )}
+                 )}
                   
                   <footer className="flex items-center gap-4">
+                    <button
+                      onClick={() => toggleLike(post)}
+                      disabled={!isConnected}
+                      className="flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                      {post.likes_count ?? 0}
+                    </button>
+                    <span className="text-xs text-slate-500">Commentaires : {post.comments_count ?? 0}</span>
                     <span className="text-xs text-slate-500">#{(post.tags || []).length} tags</span>
                   </footer>
                 </article>

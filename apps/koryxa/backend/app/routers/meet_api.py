@@ -106,7 +106,7 @@ async def feed(country: Optional[str] = None, tags: Optional[str] = None, limit:
 class LikePayload(BaseModel):
     post_id: str
     user_id: str
-    action: str = Field("like", regex="^(like|unlike)$")
+    action: str = Field("like", pattern="^(like|unlike)$")
 
 
 @router.post("/like", dependencies=[Depends(rate_limiter)])

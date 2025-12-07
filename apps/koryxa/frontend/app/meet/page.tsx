@@ -198,19 +198,19 @@ export default function MeetPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <main className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 py-6">
+      <main className="mx-auto w-full max-w-[1200px] px-3 sm:px-5 lg:px-8 py-4 sm:py-6">
         <TelemetryPing name="view_meet" />
         
         {/* Header */}
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">KORYXA Meet</h1>
-            <p className="text-sm text-slate-500">Réseau social KORYXA – partagez besoins, solutions et succès</p>
+        <header className="mb-4 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-900">KORYXA Meet</h1>
+            <p className="text-sm text-slate-500">Partagez besoins, solutions et succès</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-300 hover:text-sky-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2 text-sm font-medium text-slate-600 hover:border-sky-300 hover:text-sky-700 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -219,7 +219,7 @@ export default function MeetPage() {
             </button>
             <Link 
               href="/meet/new" 
-              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -229,11 +229,11 @@ export default function MeetPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Composer */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-semibold text-sm">
                   {isConnected ? "VO" : "?"}
@@ -269,7 +269,7 @@ export default function MeetPage() {
             {/* Filters */}
             {showFilters && (
               <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Pays</label>
                     <select
@@ -325,9 +325,9 @@ export default function MeetPage() {
             )}
 
             {/* Feed */}
-            <section className="space-y-4">
+            <section className="space-y-3 sm:space-y-4">
               {filteredItems.map((post) => (
-                <article key={post.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+                <article key={post.id} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
                   <header className="mb-4 flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white font-semibold text-sm">
@@ -451,10 +451,10 @@ export default function MeetPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Trending Tags */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Tendances</h3>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Tendances</h3>
               <div className="space-y-3">
                 {trendingTags.map((tag, index) => (
                   <div key={tag} className="flex items-center justify-between">
@@ -466,8 +466,8 @@ export default function MeetPage() {
             </section>
 
             {/* Quick Stats */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Communauté</h3>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3 sm:mb-4">Communauté</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Membres actifs</span>

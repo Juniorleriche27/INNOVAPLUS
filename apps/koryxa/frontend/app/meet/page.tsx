@@ -26,6 +26,8 @@ export default function MeetPage() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [trendingTags, setTrendingTags] = useState<string[]>([]);
+  const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [openComments, setOpenComments] = useState<Record<string, { loading: boolean; items: Array<{ comment_id: string; user_id: string; author?: string; text: string; created_at: string }>; draft: string }>>({});
   const { user } = useAuth();
   const isConnected = !!user;
 
@@ -118,19 +120,66 @@ export default function MeetPage() {
 
   async function toggleLike(post: MeetPost) {
     if (!isConnected) return;
+    const already = liked.has(post.id);
     try {
       await apiMeet.like({
         post_id: post.id,
         user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
-        action: "like",
+        action: already ? "unlike" : "like",
+      });
+      setLiked((prev) => {
+        const next = new Set(prev);
+        if (already) next.delete(post.id);
+        else next.add(post.id);
+        return next;
       });
       setItems((cur) =>
         cur.map((p) =>
-          p.id === post.id ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p
+          p.id === post.id ? { ...p, likes_count: (p.likes_count || 0) + (already ? -1 : 1) } : p
         )
       );
     } catch (e) {
       setError("Like impossible");
+    }
+  }
+
+  async function loadComments(post: MeetPost) {
+    setOpenComments((prev) => ({ ...prev, [post.id]: { loading: true, items: [], draft: "" } }));
+    try {
+      const res = await apiMeet.comments(post.id);
+      setOpenComments((prev) => ({ ...prev, [post.id]: { loading: false, items: res.items, draft: "" } }));
+    } catch (e) {
+      setError("Commentaires indisponibles");
+      setOpenComments((prev) => ({ ...prev, [post.id]: { loading: false, items: [], draft: "" } }));
+    }
+  }
+
+  async function submitComment(post: MeetPost) {
+    const box = openComments[post.id];
+    if (!isConnected || !box || !box.draft.trim()) return;
+    try {
+      const payload = {
+        post_id: post.id,
+        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
+        author: (user as any)?.display_name || user?.email || user?.name || "Utilisateur",
+        text: box.draft.trim(),
+      };
+      const r = await apiMeet.comment(payload);
+      const newItem = {
+        comment_id: r.comment_id,
+        post_id: post.id,
+        user_id: payload.user_id,
+        author: payload.author,
+        text: payload.text,
+        created_at: new Date().toISOString(),
+      };
+      setOpenComments((prev) => ({
+        ...prev,
+        [post.id]: { loading: false, draft: "", items: [newItem, ...(prev[post.id]?.items || [])] },
+      }));
+      setItems((cur) => cur.map((p) => (p.id === post.id ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p)));
+    } catch (e) {
+      setError("Commentaire impossible");
     }
   }
 
@@ -319,16 +368,64 @@ export default function MeetPage() {
                     <button
                       onClick={() => toggleLike(post)}
                       disabled={!isConnected}
-                      className="flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                      className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors ${
+                        liked.has(post.id)
+                          ? "bg-sky-100 text-sky-700"
+                          : "text-slate-600 hover:bg-slate-100"
+                      } disabled:opacity-50`}
                     >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-4 w-4" fill={liked.has(post.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
                       {post.likes_count ?? 0}
                     </button>
-                    <span className="text-xs text-slate-500">Commentaires : {post.comments_count ?? 0}</span>
+                    <button
+                      onClick={() => {
+                        if (!openComments[post.id]) loadComments(post);
+                        else setOpenComments((prev) => ({ ...prev, [post.id]: undefined as any }));
+                      }}
+                      className="text-xs font-semibold text-slate-600 hover:text-sky-700"
+                    >
+                      Commentaires : {post.comments_count ?? 0}
+                    </button>
                     <span className="text-xs text-slate-500">#{(post.tags || []).length} tags</span>
                   </footer>
+
+                  {openComments[post.id] && (
+                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+                      <div className="flex items-start gap-2">
+                        <textarea
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:outline-none"
+                          rows={2}
+                          placeholder="Écrire un commentaire..."
+                          value={openComments[post.id]?.draft || ""}
+                          onChange={(e) =>
+                            setOpenComments((prev) => ({
+                              ...prev,
+                              [post.id]: { ...(prev[post.id] || { items: [], loading: false, draft: "" }), draft: e.target.value },
+                            }))
+                          }
+                        />
+                        <button
+                          onClick={() => submitComment(post)}
+                          disabled={!isConnected || openComments[post.id]?.draft.trim() === ""}
+                          className="rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          Envoyer
+                        </button>
+                      </div>
+                      {openComments[post.id]?.loading && <p className="text-xs text-slate-500">Chargement...</p>}
+                      <div className="space-y-2">
+                        {(openComments[post.id]?.items || []).map((c) => (
+                          <div key={c.comment_id} className="rounded-lg bg-slate-50 px-3 py-2">
+                            <p className="text-xs font-semibold text-slate-800">{c.author || c.user_id}</p>
+                            <p className="text-sm text-slate-700">{c.text}</p>
+                            <p className="text-[11px] text-slate-500">{formatTime(c.created_at)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </article>
               ))}
 

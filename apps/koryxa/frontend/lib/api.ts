@@ -257,7 +257,7 @@ export type MeetPost = {
 };
 
 export const apiMeet = {
-  async create(post: { user_id: string; text: string; tags?: string[]; country?: string }) {
+  async create(post: { user_id: string; text: string; tags?: string[]; country?: string; author?: string }) {
     const res = await apiFetch(`${API_BASE}/meet/post`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -274,12 +274,12 @@ export const apiMeet = {
     return json<{ ok: boolean; likes: number }>(res);
   },
   async comment(payload: { post_id: string; user_id: string; text: string; author?: string }) {
-    const res = await apiFetch(`${API_BASE}/meet/post`, {
+    const res = await apiFetch(`${API_BASE}/meet/comment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    return json<{ comment_id: string; comments: number }>(res);
+    return json<{ ok: boolean; comment_id: string; comments: number }>(res);
   },
   async feed(params?: { country?: string; tags?: string[]; limit?: number; offset?: number }) {
     const query = new URLSearchParams();

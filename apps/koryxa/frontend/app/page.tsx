@@ -8,13 +8,13 @@ const SECTION_SUBTITLE = "text-base text-slate-500";
 
 export default function HomePage() {
   return (
-    <div className="space-y-14 pb-12">
+    <div className="space-y-10 sm:space-y-14 pb-12 px-3 sm:px-0">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/40 to-blue-50/40 shadow-xl shadow-sky-900/5">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/50 to-blue-50/40 shadow-xl shadow-sky-900/5">
         <div className="absolute inset-y-0 -right-20 w-1/2 bg-sky-50/70 blur-3xl" aria-hidden />
         <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-sky-100 opacity-70 blur-3xl" aria-hidden />
-        <div className="relative z-10 grid gap-10 px-6 py-14 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-18">
-          <div className="space-y-6">
+        <div className="relative z-10 grid gap-8 px-5 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-18">
+          <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
                 KORYXA
@@ -24,10 +24,10 @@ export default function HomePage() {
               </span>
             </div>
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
+              <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
                 Transformez vos besoins en opportunités actionnables
               </h1>
-              <p className="text-lg leading-relaxed text-slate-600 max-w-2xl">
+              <p className="text-base sm:text-lg leading-relaxed text-slate-600 max-w-2xl">
                 Publiez un besoin, structurez-le avec l’IA, puis suivez le matching et les quotas d’équité. Un seul espace pour vos missions, talents et copilotes KORYXA.
               </p>
             </div>
@@ -39,7 +39,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="space-y-3 rounded-3xl border border-sky-100 bg-white/90 p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
+          <div className="space-y-3 rounded-3xl border border-sky-100 bg-white/95 p-5 sm:p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
             <p className="text-sm font-semibold text-slate-900">Copilotes & modules</p>
             <div className="grid gap-2 text-sm text-slate-700">
               <Link href="/opportunities" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">Pipeline opportunités</Link>

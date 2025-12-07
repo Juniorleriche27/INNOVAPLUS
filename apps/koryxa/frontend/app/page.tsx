@@ -8,7 +8,7 @@ const SECTION_SUBTITLE = "text-base text-slate-500";
 
 export default function HomePage() {
   return (
-    <div className="space-y-10 sm:space-y-14 pb-12 px-3 sm:px-0">
+    <div className="space-y-10 sm:space-y-14 pb-12 px-3 sm:px-0 pt-16 sm:pt-0">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/50 to-blue-50/40 shadow-xl shadow-sky-900/5">
         <div className="absolute inset-y-0 -right-20 w-1/2 bg-sky-50/70 blur-3xl" aria-hidden />

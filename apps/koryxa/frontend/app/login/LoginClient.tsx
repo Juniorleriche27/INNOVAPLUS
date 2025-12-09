@@ -18,7 +18,7 @@ export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<Step>("request");
-  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export default function LoginClient() {
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    setActionLoading(true);
     setError(null);
     setInfo(null);
     setDebugCode(null);
@@ -52,13 +52,13 @@ export default function LoginClient() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   }
 
   async function verifyOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    setActionLoading(true);
     setError(null);
     try {
       const resp = await fetch(`${INNOVA_API_BASE}/auth/login-otp`, {
@@ -79,7 +79,7 @@ export default function LoginClient() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   }
 
@@ -114,9 +114,9 @@ export default function LoginClient() {
             <button
               type="submit"
               className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
-              disabled={loading}
+              disabled={actionLoading}
             >
-              {loading ? "Envoi..." : "Recevoir un code"}
+              {actionLoading ? "Envoi..." : "Recevoir un code"}
             </button>
           </form>
         ) : (
@@ -183,9 +183,9 @@ export default function LoginClient() {
             <button
               type="submit"
               className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
-              disabled={loading}
+              disabled={actionLoading}
             >
-              {loading ? "Connexion..." : "Valider le code"}
+              {actionLoading ? "Connexion..." : "Valider le code"}
             </button>
             <button
               type="button"

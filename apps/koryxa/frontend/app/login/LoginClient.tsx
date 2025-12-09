@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { INNOVA_API_BASE } from "@/lib/env";
 import { FormEvent, useState } from "react";
@@ -12,7 +13,7 @@ export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect") || "/";
-  const { refresh } = useAuth();
+  const { refresh, user, initialLoggedIn, loading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -23,6 +24,13 @@ export default function LoginClient() {
   const [debugCode, setDebugCode] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+
+  // If already logged in, redirect client-side (avoids server-side fetch failure).
+  useEffect(() => {
+    if (!loading && (user || initialLoggedIn)) {
+      router.replace(redirect);
+    }
+  }, [user, initialLoggedIn, loading, redirect, router]);
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

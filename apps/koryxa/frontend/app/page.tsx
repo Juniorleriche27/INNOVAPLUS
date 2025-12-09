@@ -8,104 +8,77 @@ const SECTION_SUBTITLE = "text-base text-slate-500";
 
 export default function HomePage() {
   return (
-    <div className="space-y-10 sm:space-y-14 pb-14 px-4 sm:px-0 pt-14 sm:pt-0">
+    <div className="space-y-10 sm:space-y-14 pb-12 px-3 sm:px-0 pt-16 sm:pt-0">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-xl shadow-slate-900/20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.25),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(16,185,129,0.18),transparent_32%),radial-gradient(circle_at_70%_80%,rgba(99,102,241,0.2),transparent_35%)]" aria-hidden />
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/50 to-blue-50/40 shadow-xl shadow-sky-900/5">
+        <div className="absolute inset-y-0 -right-20 w-1/2 bg-sky-50/70 blur-3xl" aria-hidden />
+        <div className="absolute -left-24 -top-24 h-64 w-64 rounded-full bg-sky-100 opacity-70 blur-3xl" aria-hidden />
         <div className="relative z-10 grid gap-8 px-5 py-10 sm:px-6 sm:py-14 lg:grid-cols-[1.6fr_1fr] lg:px-12 lg:py-18">
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-100 backdrop-blur">
+              <span className="inline-flex items-center rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
                 KORYXA
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-emerald-100/70 px-3 py-1.5 text-xs font-semibold text-emerald-900">
-                IA • Transparence • Équité • Mobile
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                IA • Transparence • Équité
               </span>
             </div>
             <div className="space-y-4">
-              <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-white sm:text-5xl">
-                KORYXA, pensé mobile pour transformer vos besoins en actions
+              <h1 className="text-3xl sm:text-4xl font-bold leading-tight text-slate-900 sm:text-5xl">
+                Transformez vos besoins en opportunités actionnables
               </h1>
-              <p className="text-base sm:text-lg leading-relaxed text-slate-200/90 max-w-2xl">
-                Publiez un besoin, structurez-le avec l’IA, suivez le matching et les quotas d’équité. Une expérience fluide, même sur téléphone.
+              <p className="text-base sm:text-lg leading-relaxed text-slate-600 max-w-2xl">
+                Publiez un besoin, structurez-le avec l’IA, puis suivez le matching et les quotas d’équité. Un seul espace pour vos missions, talents et copilotes KORYXA.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/opportunities" className="btn-primary bg-white text-slate-900 shadow-white/30 hover:bg-slate-100">
-                Voir le pipeline
-              </Link>
-              <Link href="/missions/new" className="btn-secondary border-white/40 bg-white/10 text-white hover:border-white hover:bg-white/15">
-                Poster un besoin
-              </Link>
-              <Link href="/equity" className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
+              <Link href="/opportunities" className="btn-primary">Voir le pipeline</Link>
+              <Link href="/missions/new" className="btn-secondary">Poster un besoin</Link>
+              <Link href="/equity" className="inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
                 Règles d’équité →
               </Link>
             </div>
           </div>
-          <div className="space-y-4 rounded-3xl border border-white/20 bg-white/10 p-5 sm:p-6 shadow-lg shadow-slate-900/30 backdrop-blur">
-            <p className="text-sm font-semibold text-white">Copilotes & modules</p>
-            <div className="grid gap-2 text-sm text-white/90">
-              <Link href="/opportunities" className="rounded-xl border border-white/30 px-3 py-3 bg-white/10 hover:border-white hover:bg-white/15">Pipeline opportunités</Link>
-              <Link href="/talents" className="rounded-xl border border-white/30 px-3 py-3 bg-white/10 hover:border-white hover:bg-white/15">Talents & disponibilité</Link>
-              <Link href="/marketplace" className="rounded-xl border border-white/30 px-3 py-3 bg-white/10 hover:border-white hover:bg-white/15">Marketplace & offres</Link>
-              <Link href="/chatlaya" className="rounded-xl border border-white/30 px-3 py-3 bg-white/10 hover:border-white hover:bg-white/15">CHATLAYA (copilote IA)</Link>
-              <Link href="/myplanning" className="rounded-xl border border-white/30 px-3 py-3 bg-white/10 hover:border-white hover:bg-white/15">MyPlanning</Link>
+          <div className="space-y-3 rounded-3xl border border-sky-100 bg-white/95 p-5 sm:p-6 shadow-lg shadow-sky-200/40 backdrop-blur">
+            <p className="text-sm font-semibold text-slate-900">Copilotes & modules</p>
+            <div className="grid gap-2 text-sm text-slate-700">
+              <Link href="/opportunities" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">Pipeline opportunités</Link>
+              <Link href="/talents" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">Talents & disponibilité</Link>
+              <Link href="/marketplace" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">Marketplace & offres</Link>
+              <Link href="/chatlaya" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">CHATLAYA (copilote IA)</Link>
+              <Link href="/myplanning" className="rounded-xl border border-slate-100 px-3 py-2 hover:border-sky-200 hover:text-sky-700">MyPlanning</Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Mobile quick actions */}
-      <section className="sm:hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-slate-900">Actions rapides</h2>
-          <span className="text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full">Mobile</span>
-        </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-          {[
-            { label: "Poster un besoin", href: "/missions/new", accent: "bg-emerald-50 text-emerald-700 border-emerald-100" },
-            { label: "Pipeline", href: "/opportunities", accent: "bg-sky-50 text-sky-700 border-sky-100" },
-            { label: "Talents", href: "/talents", accent: "bg-indigo-50 text-indigo-700 border-indigo-100" },
-            { label: "CHATLAYA", href: "/chatlaya", accent: "bg-orange-50 text-orange-700 border-orange-100" },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`snap-start min-w-[180px] rounded-2xl border px-4 py-4 text-sm font-semibold shadow-sm ${item.accent}`}
-            >
-              {item.label}
-            </Link>
-          ))}
         </div>
       </section>
 
       {/* Modules clés */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h2 className={SECTION_TITLE + " text-2xl sm:text-3xl"}>Modules KORYXA</h2>
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className={SECTION_TITLE}>Modules KORYXA</h2>
           <Link href="/resources" className="text-sm font-semibold text-sky-700">Voir la documentation</Link>
         </div>
         <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm hover:-translate-y-0.5 transition">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">Opportunités & missions</p>
             <p className="mt-2 text-sm text-slate-600">Publier des besoins, suivre les statuts et associer des offres.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link href="/opportunities" className="btn-secondary">Pipeline</Link>
               <Link href="/missions/new" className="btn-primary">Nouveau besoin</Link>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm hover:-translate-y-0.5 transition">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">Talents & Marketplace</p>
             <p className="mt-2 text-sm text-slate-600">Profils, bundles, services et offres packagées.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link href="/marketplace" className="btn-secondary">Découvrir</Link>
               <Link href="/talents" className="btn-secondary">Talents</Link>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm hover:-translate-y-0.5 transition">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">Copilotes IA</p>
             <p className="mt-2 text-sm text-slate-600">CHATLAYA, MyPlanning, Studio IA.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Link href="/chatlaya" className="btn-secondary">CHATLAYA</Link>
               <Link href="/myplanning" className="btn-secondary">MyPlanning</Link>
             </div>
@@ -114,7 +87,7 @@ export default function HomePage() {
       </section>
 
       {/* Équité / gouvernance */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm sm:grid sm:grid-cols-2 sm:gap-4">
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:grid sm:grid-cols-2 sm:gap-4">
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-slate-900">Équité & NeedIndex</h3>
           <p className="text-sm text-slate-600">

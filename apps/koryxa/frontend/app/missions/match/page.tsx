@@ -103,11 +103,11 @@ export default function MissionMatchPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 space-y-6">
-      <header className="rounded-3xl bg-gradient-to-r from-sky-600 via-sky-500 to-blue-700 px-6 py-6 text-white shadow-lg shadow-sky-400/20">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/70">Matching express</p>
-        <h1 className="mt-2 text-3xl font-semibold">Trouve un profil dès maintenant</h1>
-        <p className="mt-2 max-w-3xl text-sm text-white/85">
+    <main className="mx-auto max-w-6xl px-3 sm:px-4 py-8 sm:py-10 space-y-6">
+      <header className="rounded-3xl bg-gradient-to-r from-sky-600 via-sky-500 to-blue-700 px-5 sm:px-6 py-6 text-white shadow-lg shadow-sky-400/20">
+        <p className="text-[11px] sm:text-xs uppercase tracking-[0.25em] text-white/70">Matching express</p>
+        <h1 className="mt-2 text-2xl sm:text-3xl font-semibold">Trouve un profil dès maintenant</h1>
+        <p className="mt-2 max-w-3xl text-sm sm:text-base text-white/85">
           Décris ton besoin en une phrase, l’IA reformule, crée la mission et envoie une vague. Tu vois les offres en direct et tu confirmes dès qu’un profil te convient.
         </p>
       </header>
@@ -115,7 +115,7 @@ export default function MissionMatchPage() {
       {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Brief rapide</p>
@@ -173,7 +173,7 @@ export default function MissionMatchPage() {
               <p className="mt-1">{rewrite}</p>
             </div>
           )}
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <button
               onClick={handleSubmit}
               disabled={!canSubmit || stage === "pending"}
@@ -181,15 +181,15 @@ export default function MissionMatchPage() {
             >
               {stage === "pending" ? "Envoi en cours…" : "Lancer le matching"}
             </button>
-            <Link href="/missions/manage" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
-              Voir mes missions
+            <Link href="/missions/dashboard" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+              Dashboard missions
             </Link>
           </div>
           {stage === "matching" && <p className="text-xs text-slate-500">Matching en cours… (rafraîchissement auto)</p>}
           {stage === "completed" && <p className="text-xs text-emerald-600">Offres reçues. Choisis un profil ci-contre.</p>}
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Offres reçues</p>

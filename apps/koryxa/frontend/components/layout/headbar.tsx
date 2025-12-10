@@ -435,14 +435,20 @@ export default function Headbar() {
                 <IconSearch className="h-4 w-4" />
               </button>
               <Link
-                href="/login"
+                href="/products/koryxa-suite"
                 className="rounded-xl border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-700"
+              >
+                Produits
+              </Link>
+              <Link
+                href="/login"
+                className="hidden sm:inline-flex rounded-xl border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-700"
               >
                 Connexion
               </Link>
               <Link
                 href="/signup"
-                className="rounded-xl bg-sky-600 px-2.5 py-2 text-[11px] font-semibold text-white shadow-sm"
+                className="hidden sm:inline-flex rounded-xl bg-sky-600 px-2.5 py-2 text-[11px] font-semibold text-white shadow-sm"
               >
                 Créer
               </Link>
@@ -534,6 +540,26 @@ export default function Headbar() {
                 );
               })}
             </nav>
+
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-slate-600">Produits KORYXA</p>
+                <span className="rounded-full bg-sky-100 px-2 py-1 text-[11px] font-semibold text-sky-700">Suite</span>
+              </div>
+              <div className="space-y-2">
+                {PRODUCT_LINKS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-700 border border-slate-200 hover:border-sky-200 hover:text-sky-700"
+                  >
+                    <span>{item.label}</span>
+                    <IconChevronDown className="h-3 w-3 -rotate-90" />
+                  </Link>
+                ))}
+              </div>
+            </div>
             
             <div className="space-y-3">
               <Link 

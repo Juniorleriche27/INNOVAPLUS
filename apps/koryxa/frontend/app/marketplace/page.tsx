@@ -101,6 +101,13 @@ const INITIAL_FORM = {
   contactPhone: "",
 };
 
+const INITIAL_IDENTITY = {
+  userId: "",
+  userName: "",
+  email: "",
+  phone: "",
+};
+
 const formatPrice = (price?: number, currency?: string) => {
   if (!price) return "À discuter";
   try {
@@ -146,6 +153,8 @@ export default function MarketplacePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<string>(STEP_ITEMS[0].key);
   const [showFaq, setShowFaq] = useState(false);
+  const [identity, setIdentity] = useState(INITIAL_IDENTITY);
+  const [applying, setApplying] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement | null>(null);
   const formRef = useRef<HTMLDivElement | null>(null);
 
@@ -179,6 +188,20 @@ export default function MarketplacePage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         setForm({ ...INITIAL_FORM, ...parsed });
+      }
+      const savedIdentity = localStorage.getItem("marketplaceIdentity");
+      if (savedIdentity) {
+        const parsedId = JSON.parse(savedIdentity);
+        setIdentity({ ...INITIAL_IDENTITY, ...parsedId });
+        if (!parsedId.ownerName && parsedId.userName) {
+          setForm((prev) => ({ ...prev, ownerName: parsedId.userName }));
+        }
+        if (!parsedId.contactEmail && parsedId.email) {
+          setForm((prev) => ({ ...prev, contactEmail: parsedId.email }));
+        }
+        if (!parsedId.contactPhone && parsedId.phone) {
+          setForm((prev) => ({ ...prev, contactPhone: parsedId.phone }));
+        }
       }
     } catch {
       // ignore
@@ -222,7 +245,7 @@ export default function MarketplacePage() {
   }, [offers]);
 
   const canPublish =
-    form.ownerName.trim().length > 2 &&
+    (form.ownerName.trim().length > 2 || identity.userName.trim().length > 2) &&
     form.title.trim().length > 3 &&
     form.description.trim().length > 20;
 
@@ -241,6 +264,7 @@ export default function MarketplacePage() {
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean);
+      const ownerName = (form.ownerName || identity.userName).trim();
       const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
@@ -251,12 +275,12 @@ export default function MarketplacePage() {
         price: form.price ? Number(form.price) : undefined,
         currency: form.currency,
         owner_id:
-          `${form.ownerName}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
+          `${ownerName || "public"}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
           `public-${Date.now()}`,
-        owner_name: form.ownerName.trim(),
+        owner_name: ownerName || "Communauté KORYXA",
         cover_image: form.coverImage.trim() || undefined,
-        contact_email: form.contactEmail.trim() || undefined,
-        contact_phone: form.contactPhone.trim() || undefined,
+        contact_email: (form.contactEmail || identity.email).trim() || undefined,
+        contact_phone: (form.contactPhone || identity.phone).trim() || undefined,
       };
       const res = await fetch(`${INNOVA_API_BASE}/marketplace/offers/create`, {
         method: "POST",
@@ -280,6 +304,46 @@ export default function MarketplacePage() {
   };
 
   const heroScroll = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  const handleSaveIdentity = () => {
+    localStorage.setItem("marketplaceIdentity", JSON.stringify(identity));
+    if (!form.ownerName && identity.userName) {
+      setForm((prev) => ({ ...prev, ownerName: identity.userName }));
+    }
+    if (!form.contactEmail && identity.email) {
+      setForm((prev) => ({ ...prev, contactEmail: identity.email }));
+    }
+    if (!form.contactPhone && identity.phone) {
+      setForm((prev) => ({ ...prev, contactPhone: identity.phone }));
+    }
+    setSuccessMessage("Identité sauvegardée pour postuler / publier plus vite.");
+  };
+
+  const handleApply = async (offerId: string) => {
+    if (!identity.userId.trim()) {
+      setError("Ajoutez votre identifiant (email ou user_id) pour postuler.");
+      return;
+    }
+    setApplying(offerId);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await fetch(`${INNOVA_API_BASE}/marketplace/offers/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer_id: offerId, user_id: identity.userId.trim() }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Echec de la candidature");
+      }
+      setSuccessMessage("Candidature envoyée. L'auteur sera notifié.");
+    } catch (err) {
+      setError("Impossible d'envoyer votre candidature. Réessayez ou vérifiez votre identifiant.");
+    } finally {
+      setApplying(null);
+    }
+  };
 
   const previewOffer = useMemo(() => {
     return {
@@ -439,6 +503,62 @@ export default function MarketplacePage() {
             {stats.active} opportunité(s) publiées aujourd'hui · {stats.filled} mission(s) confirmée(s) ce mois.
           </div>
         )}
+
+        <section className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-900">Mon identité (pour postuler / publier)</p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Identifiant (email ou user_id) *</label>
+                  <input
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                    value={identity.userId}
+                    onChange={(e) => setIdentity({ ...identity, userId: e.target.value })}
+                    placeholder="ylamadokou@gmail.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Nom affiché</label>
+                  <input
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                    value={identity.userName}
+                    onChange={(e) => setIdentity({ ...identity, userName: e.target.value })}
+                    placeholder="Collectif KORYXA"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Email de contact</label>
+                  <input
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                    value={identity.email}
+                    onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
+                    placeholder="contact@exemple.org"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">Téléphone / WhatsApp</label>
+                  <input
+                    className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                    value={identity.phone}
+                    onChange={(e) => setIdentity({ ...identity, phone: e.target.value })}
+                    placeholder="+221..."
+                  />
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveIdentity}
+              className="w-full rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-500/30 transition hover:-translate-y-0.5 hover:bg-sky-700 md:w-auto"
+            >
+              Sauvegarder
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Votre identifiant est stocké localement (navigateur) et utilisé pour postuler, générer l'identité publique et préremplir vos offres.
+          </p>
+        </section>
 
         <section ref={formRef} className="mb-8 rounded-[32px] border border-slate-200 bg-white/95 p-6 shadow-lg shadow-slate-900/5">
           <div className="flex items-center gap-2 pb-4">
@@ -807,6 +927,20 @@ export default function MarketplacePage() {
                     </div>
                   )}
                   <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleApply(offer.offer_id)}
+                      disabled={!!applying}
+                      className={clsx(
+                        "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition",
+                        applying === offer.offer_id
+                          ? "border-slate-200 bg-slate-100 text-slate-500"
+                          : "border-sky-200 bg-sky-50 text-sky-700 hover:-translate-y-0.5 hover:shadow-sm",
+                      )}
+                      title={identity.userId ? "Postuler avec votre identifiant enregistré" : "Ajoutez votre identifiant plus haut pour postuler"}
+                    >
+                      {applying === offer.offer_id ? "Envoi..." : "Je suis intéressé"}
+                    </button>
                     {offer.contact_email && (
                       <a
                         href={`mailto:${offer.contact_email}`}

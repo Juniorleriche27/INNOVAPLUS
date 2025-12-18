@@ -97,7 +97,12 @@ export default function MissionMatchPage() {
       await missionsApi.dispatch(created.mission_id, { wave_size: 5, timeout_minutes: 5 });
       setStage("matching");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible de lancer le matching");
+      const msg = err instanceof Error ? err.message : "Impossible de lancer le matching";
+      if (msg.toLowerCase().includes("connexion requise")) {
+        setError("Connexion requise : connectez-vous puis relancez le matching.");
+      } else {
+        setError(msg);
+      }
       setStage("error");
     }
   }
@@ -112,7 +117,21 @@ export default function MissionMatchPage() {
         </p>
       </header>
 
-      {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex-1">{error}</div>
+            {error.toLowerCase().includes("connexion requise") && (
+              <Link
+                href="/auth/login"
+                className="rounded-full border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+              >
+                Se connecter
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">

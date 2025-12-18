@@ -3,15 +3,35 @@ import { INNOVA_API_BASE } from "@/lib/env";
 const BASE = `${INNOVA_API_BASE}/missions`;
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init.headers || {}) },
-    ...init,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `HTTP ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(init.headers || {}) },
+      ...init,
+    });
+  } catch (err) {
+    throw new Error("Impossible de contacter l'API (réseau/CORS). Réessayez ou reconnectez-vous.");
   }
+
+  if (!res.ok) {
+    let message = "";
+    try {
+      const data = await res.json();
+      const detail = (data as any)?.detail;
+      if (typeof detail === "string") message = detail;
+      else if (detail?.detail) message = String(detail.detail);
+      else if ((data as any)?.message) message = String((data as any).message);
+      else message = JSON.stringify(data);
+    } catch {
+      message = await res.text().catch(() => "");
+    }
+    if (res.status === 401) {
+      throw new Error("Connexion requise. Connectez-vous puis relancez le matching.");
+    }
+    throw new Error(message || `HTTP ${res.status}`);
+  }
+
   return res.json() as Promise<T>;
 }
 

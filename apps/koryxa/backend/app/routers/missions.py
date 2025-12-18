@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -140,39 +141,41 @@ def _estimate_tokens(text: str) -> int:
 
 
 async def _summarize_need(payload: MissionCreatePayload) -> Dict[str, Any]:
-    prompt = (
-        "Tu es un PM IA pour KORYXA. Résume un besoin en 80-120 mots, "
-        "liste 5 à 8 mots-clés (tags) et identifie 2 à 3 livrables clés. "
-        "Retourne uniquement un JSON valide: {\"summary\": str, \"keywords\": [str], \"deliverables\": [str]}.")
-    prompt += (
-        f"\nTitre: {payload.title}\nLangue: {payload.language}\nMode: {payload.work_mode}\n"
-        f"Description:\n{payload.description}\nLivrables attendus:\n{payload.deliverables}\n"
-        f"Délai souhaité: {payload.deadline or 'N/A'}\nBudget: {payload.budget.dict()}"
-    )
-    # Utiliser Cohere en priorité pour la reformulation (fallback local)
-    raw = await run_in_threadpool(generate_answer, prompt, "cohere")
-    summary = raw.strip()
-    keywords: List[str] = []
-    deliverables: List[str] = []
-    try:
-        data = json.loads(raw)
-        summary = str(data.get("summary") or summary)
-        raw_kw = data.get("keywords") or data.get("tags") or []
-        if isinstance(raw_kw, str):
-            keywords = [part.strip() for part in raw_kw.split(",") if part.strip()]
-        else:
-            keywords = [str(part).strip() for part in raw_kw if str(part).strip()]
-        raw_del = data.get("deliverables") or []
-        deliverables = [str(part).strip() for part in raw_del if str(part).strip()]
-    except Exception:  # noqa: BLE001
-        pass
-    if not keywords:
-        keywords = [token.lower() for token in payload.title.split()[:4]]
-    return {
-        "summary": summary[:800],
-        "keywords": keywords[:10],
-        "deliverables": deliverables[:5],
-    }
+    """
+    Important: Matching express doit répondre vite (<2-3s idéalement).
+    On utilise un résumé heuristique immédiat; l'IA peut enrichir plus tard,
+    mais ne doit pas bloquer la création de mission.
+    """
+    def _clean_tokens(text: str) -> List[str]:
+        parts = re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}", text.lower())
+        stop = {
+            "pour", "avec", "sans", "dans", "plus", "moins", "afin", "comme", "une", "des", "les",
+            "sur", "mon", "mes", "ton", "tes", "vos", "notre", "faire", "besoin", "projet",
+            "mission", "data", "donnees", "donnée", "données",
+        }
+        uniq: List[str] = []
+        for p in parts:
+            if p in stop:
+                continue
+            if p not in uniq:
+                uniq.append(p)
+        return uniq
+
+    title_tokens = _clean_tokens(payload.title)[:6]
+    desc_tokens = _clean_tokens(payload.description)[:6]
+    keywords = (title_tokens + [t for t in desc_tokens if t not in title_tokens])[:10]
+
+    # Deliverables: split simple
+    deliverables_raw = payload.deliverables or ""
+    deliverables = [p.strip(" -•\t") for p in re.split(r"[\n,;/]+", deliverables_raw) if p.strip()]
+    deliverables = deliverables[:5] or [payload.title.strip()[:80]]
+
+    # Summary: keep it short & useful
+    summary = payload.description.strip()
+    if len(summary) > 420:
+        summary = summary[:420].rsplit(" ", 1)[0] + "…"
+
+    return {"summary": summary[:800], "keywords": keywords, "deliverables": deliverables}
 
 
 def _escalation_reasons(payload: MissionCreatePayload) -> List[str]:
@@ -340,19 +343,19 @@ def _score_candidate(mission: Dict[str, Any], profile: Dict[str, Any]) -> float:
 
 
 async def _generate_offer_message(mission: Dict[str, Any], prestataire: Dict[str, Any]) -> str:
-    prompt = (
-        "Rédige en français un message d'offre professionnel (<90 mots). "
-        "Mentionne le nom du prestataire, le titre de la mission et invite à cliquer sur 'J'accepte'."
-    )
-    prompt += (
-        f"\nPrestataire: {prestataire.get('prestataire', {}).get('display_name') or 'profil'}"
-        f"\nMission: {mission.get('title')}"
-        f"\nRésumé: {mission.get('ai', {}).get('summary')}"
-        f"\nLivrables clés: {(mission.get('ai', {}).get('deliverables') or [])}"
-        f"\nDélai: {mission.get('deadline') or 'non précisé'}"
-    )
-    raw = await run_in_threadpool(generate_answer, prompt, "local")
-    return raw.strip()[:600]
+    # Message template (ne pas bloquer le matching sur un appel IA)
+    display_name = (prestataire.get("prestataire", {}) or {}).get("display_name") or "un profil"
+    title = mission.get("title") or "votre mission"
+    deadline = mission.get("deadline") or "non précisé"
+    deliverables = mission.get("deliverables") or ""
+    short_del = deliverables.strip().replace("\n", " ")
+    if len(short_del) > 140:
+        short_del = short_del[:140].rsplit(" ", 1)[0] + "…"
+    return (
+        f"Bonjour, je suis {display_name}. Je suis intéressé par « {title} ».\n"
+        f"Je peux livrer: {short_del or 'un livrable conforme à votre besoin'}.\n"
+        f"Délai: {deadline}. Cliquez sur « Confirmer » si ce profil vous convient."
+    )[:600]
 
 
 async def _notify_prestataire(
@@ -589,7 +592,8 @@ async def dispatch_wave(
         res = await db[COLL_OFFERS].insert_one(doc)
         doc["offer_id"] = str(res.inserted_id)
         inserted.append(doc)
-        await _notify_prestataire(doc, item["profile"], mission, payload.channel)
+        # Ne pas bloquer le matching sur l'envoi email/whatsapp
+        asyncio.create_task(_notify_prestataire(doc, item["profile"], mission, payload.channel))
 
     await db[COLL_MISSIONS].update_one(
         {"_id": _oid(mission_id)},

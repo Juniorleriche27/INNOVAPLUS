@@ -133,7 +133,7 @@ async def on_shutdown():
 START_TIME = __import__("time").time()
 
 
-@app.get("/")
+@app.get("/", include_in_schema=not MYPLANNING_ONLY)
 async def root():
     return {"status": "ok", "service": settings.APP_NAME, "docs": "/docs"}
 

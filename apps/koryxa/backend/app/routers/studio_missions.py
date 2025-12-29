@@ -51,7 +51,7 @@ def _serialize(doc: dict) -> dict:
     return doc
 
 
-@router.get("", response_model=list[dict])
+@router.get("", response_model=list[dict], operation_id="studio_missions_list")
 async def list_missions(db: AsyncIOMotorDatabase = Depends(get_db)):
     cursor = db["studio_missions"].find({}).sort("created_at", -1)
     missions: list[dict] = []
@@ -60,7 +60,7 @@ async def list_missions(db: AsyncIOMotorDatabase = Depends(get_db)):
     return missions
 
 
-@router.post("", response_model=dict)
+@router.post("", response_model=dict, operation_id="studio_missions_create")
 async def create_mission(
     payload: MissionCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),

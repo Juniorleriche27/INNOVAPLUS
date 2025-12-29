@@ -42,9 +42,13 @@ from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
 import os
+import logging
+from app.core.product_mode import is_myplanning_only
 
 
 app = FastAPI(title=settings.APP_NAME)
+logger = logging.getLogger(__name__)
+MYPLANNING_ONLY = is_myplanning_only()
 
 raw_origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",") if o.strip()]
 cors_origins = {origin.rstrip("/") for origin in raw_origins}
@@ -164,65 +168,76 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
     }
 
 
-# Only include module routers (health, etc.) at root; feature APIs live under /plusbook
-app.include_router(innova_router)
-app.include_router(pieagency_router)
-app.include_router(farmlink_router)
-app.include_router(sante_router)
-app.include_router(rag_router)
-app.include_router(chatlaya_router)
+if MYPLANNING_ONLY:
+    # Minimal footprint: only auth, notifications, myplanning (under /innova/api) + health
+    minimal = APIRouter(prefix="/innova/api")
+    minimal.include_router(auth_router)
+    minimal.include_router(notifications_router)
+    minimal.include_router(myplanning_router)
+    app.include_router(minimal)
+    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
+    app.include_router(minimal, prefix="/innova/api", include_in_schema=False)
+    logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning only")
+else:
+    # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
+    app.include_router(innova_router)
+    app.include_router(pieagency_router)
+    app.include_router(farmlink_router)
+    app.include_router(sante_router)
+    app.include_router(rag_router)
+    app.include_router(chatlaya_router)
 
-# Mount module-prefixed routes
-innova_api = APIRouter(prefix="/innova/api")
-# Legacy INNOVA core lists (domains/contributors/technologies) disabled
-# innova_api.include_router(innova_core_router)
-innova_api.include_router(opportunities_router)
-innova_api.include_router(market_router)
-innova_api.include_router(meet_router)
-innova_api.include_router(me_router)
-innova_api.include_router(notifications_router)
-innova_api.include_router(metrics_router)
-innova_api.include_router(email_router)
-innova_api.include_router(invite_router)
-innova_api.include_router(engine_router)
-innova_api.include_router(smollm_router)
-innova_api.include_router(profiles_router)
-innova_api.include_router(missions_router)
-innova_api.include_router(studio_router)
-innova_api.include_router(myplanning_router)
-innova_api.include_router(skills_router)
-innova_api.include_router(studio_missions_router.router)
-innova_api.include_router(school_router.router)
-innova_api.include_router(auth_router)
-app.include_router(innova_api)
-# Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
-# by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
-app.include_router(innova_api, prefix="/innova/api", include_in_schema=False)
+    # Mount module-prefixed routes
+    innova_api = APIRouter(prefix="/innova/api")
+    # Legacy INNOVA core lists (domains/contributors/technologies) disabled
+    # innova_api.include_router(innova_core_router)
+    innova_api.include_router(opportunities_router)
+    innova_api.include_router(market_router)
+    innova_api.include_router(meet_router)
+    innova_api.include_router(me_router)
+    innova_api.include_router(notifications_router)
+    innova_api.include_router(metrics_router)
+    innova_api.include_router(email_router)
+    innova_api.include_router(invite_router)
+    innova_api.include_router(engine_router)
+    innova_api.include_router(smollm_router)
+    innova_api.include_router(profiles_router)
+    innova_api.include_router(missions_router)
+    innova_api.include_router(studio_router)
+    innova_api.include_router(myplanning_router)
+    innova_api.include_router(skills_router)
+    innova_api.include_router(studio_missions_router.router)
+    innova_api.include_router(school_router.router)
+    innova_api.include_router(auth_router)
+    app.include_router(innova_api)
+    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
+    # by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
+    app.include_router(innova_api, prefix="/innova/api", include_in_schema=False)
 
-innova_rag = APIRouter(prefix="/innova")
-innova_rag.include_router(rag_router)
-app.include_router(innova_rag)
+    innova_rag = APIRouter(prefix="/innova")
+    innova_rag.include_router(rag_router)
+    app.include_router(innova_rag)
 
-# Serve public storage similar to Laravel's /storage symlink
-app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")
+    # Serve public storage similar to Laravel's /storage symlink
+    app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")
 
-# Mount the same API under /plusbook prefix for unified gateway
-plusbook = APIRouter(prefix="/plusbook")
-plusbook.include_router(ebooks_router)
-plusbook.include_router(posts_router)
-plusbook.include_router(messages_router)
-plusbook.include_router(groups_router)
-plusbook.include_router(contact_router)
-plusbook.include_router(diag_router)
+    # Mount the same API under /plusbook prefix for unified gateway
+    plusbook = APIRouter(prefix="/plusbook")
+    plusbook.include_router(ebooks_router)
+    plusbook.include_router(posts_router)
+    plusbook.include_router(messages_router)
+    plusbook.include_router(groups_router)
+    plusbook.include_router(contact_router)
+    plusbook.include_router(diag_router)
 
-@plusbook.get("/health")
-async def plusbook_health(db: AsyncIOMotorDatabase = Depends(get_db)):
-    ok = False
-    try:
-        await db.command("ping")
-        ok = True
-    except Exception:
+    @plusbook.get("/health")
+    async def plusbook_health(db: AsyncIOMotorDatabase = Depends(get_db)):
         ok = False
-    return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": ok}
+        try:
+            await db.command("ping")
+            ok = True
+        except Exception:
+            ok = False
+        return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": ok}
 
-app.include_router(plusbook)
+    app.include_router(plusbook)

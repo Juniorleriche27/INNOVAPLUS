@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     DB_NAME: str
     ENV: str = os.getenv("ENV", "development")
     APP_NAME: str = "plusbooks-fastapi"
+    PRODUCT_MODE: str = os.getenv("PRODUCT_MODE", "all")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "insecure-dev-secret-change-me")
     JWT_ALG: str = "HS256"
     JWT_EXPIRES_MINUTES: int = int(os.getenv("JWT_EXPIRES_MINUTES", "60"))

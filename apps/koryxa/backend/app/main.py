@@ -160,7 +160,7 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
         "queue_depth": queue_depth,
         "uptime_s": uptime,
         "version": os.getenv("APP_VERSION", "1.0.0"),
-        "commit_sha": os.getenv("COMMIT_SHA", "unknown"),
+        "commit_sha": (os.getenv("COMMIT_SHA") or (__import__("subprocess").run(["git","-C", os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), "rev-parse","--short","HEAD"], capture_output=True, text=True).stdout.strip() or "unknown")),
     }
 
 

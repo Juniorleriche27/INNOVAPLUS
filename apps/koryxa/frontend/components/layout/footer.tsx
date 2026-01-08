@@ -1,5 +1,6 @@
 // innova-frontend/components/layout/footer.tsx
 import Link from "next/link";
+import { IS_V1_SIMPLE } from "@/lib/env";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -14,12 +15,17 @@ export default function Footer() {
           <div className="leading-tight">
             <p className="font-semibold text-slate-800">KORYXA</p>
             <p className="text-xs text-slate-500">
-              KORYXA — Moteur IA d’opportunités. Transparence · Équité · Impact.
+              {IS_V1_SIMPLE
+                ? "Formation et besoins reels, pour des resultats concrets."
+                : "KORYXA — Moteur IA d’opportunités. Transparence · Équité · Impact."}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 sm:text-sm">
+          <Link href="/about" className="transition hover:text-sky-600">
+            À propos
+          </Link>
           <Link href="/privacy" className="transition hover:text-sky-600">
             Confidentialité
           </Link>

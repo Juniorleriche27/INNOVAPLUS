@@ -11,21 +11,58 @@ export default function HomePage() {
   if (IS_V1_SIMPLE) {
     return (
       <main className="px-4 py-12 sm:px-6">
-        <section className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA</p>
-          <h1 className="mt-4 text-3xl font-bold text-slate-900">KORYXA</h1>
-          <p className="mt-3 text-base text-slate-600">
-            Formation + accompagnement data pour entreprises, avec missions réelles.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/school" className="btn-primary">
-              Découvrir KORYXA School
-            </Link>
-            <Link href="/entreprise" className="btn-secondary">
-              Je suis une entreprise
-            </Link>
-          </div>
-        </section>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-10">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA</p>
+            <h1 className="mt-4 text-3xl font-bold text-slate-900">KORYXA</h1>
+            <p className="mt-3 text-base text-slate-600">
+              Formation + accompagnement data pour entreprises, avec missions réelles.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/school" className="btn-primary">
+                Découvrir KORYXA School
+              </Link>
+              <Link href="/entreprise" className="btn-secondary">
+                Je suis une entreprise
+              </Link>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Comment ça marche ?</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-sm font-semibold text-slate-900">Entreprise</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Dépose un besoin réel (données, reporting, automatisation, modèle, etc.).
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-sm font-semibold text-slate-900">KORYXA School</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Les apprenants se forment en travaillant sur ces besoins.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-sm font-semibold text-slate-900">KORYXA</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Encadre, structure, valide les livrables et assure le suivi.
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-slate-600">
+              Une formation qui produit des résultats concrets, utiles aux organisations.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/school" className="btn-primary">
+                Découvrir KORYXA School
+              </Link>
+              <Link href="/entreprise" className="btn-secondary">
+                Je suis une entreprise
+              </Link>
+            </div>
+          </section>
+        </div>
       </main>
     );
   }

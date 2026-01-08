@@ -5,7 +5,7 @@ import { INNOVA_API_BASE } from "@/lib/env";
 
 type EngineRules = {
   rag_sources: string[];
-  llm: { primary_model: string; smollm_enabled: boolean };
+  llm: { primary_model: string; llm_api_enabled: boolean };
   equity: { quotas: Array<{ country: string; min?: number; max?: number; active?: boolean }> };
   filters?: { languages?: string[]; countries?: string[] };
   updated_at?: string;
@@ -91,7 +91,7 @@ export default function EnginePage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-900">Modèles IA</p>
-              <StatPill label={rules?.llm?.smollm_enabled ? "SmolLM actif" : "SmolLM inactif"} />
+              <StatPill label={rules?.llm?.llm_api_enabled ? "API LLM active" : "API LLM inactive"} />
             </div>
             <label className="text-xs text-slate-500">Modèle principal</label>
             <input
@@ -102,10 +102,10 @@ export default function EnginePage() {
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
-                checked={!!rules?.llm?.smollm_enabled}
-                onChange={(e) => setRules((prev) => ({ ...(prev || _emptyRules), llm: { ...(prev?.llm || {}), smollm_enabled: e.target.checked } }))}
+                checked={!!rules?.llm?.llm_api_enabled}
+                onChange={(e) => setRules((prev) => ({ ...(prev || _emptyRules), llm: { ...(prev?.llm || {}), llm_api_enabled: e.target.checked } }))}
               />
-              Activer SmolLM local
+              Activer l&apos;API LLM
             </label>
           </div>
         </section>
@@ -245,6 +245,6 @@ export default function EnginePage() {
 
 const _emptyRules: EngineRules = {
   rag_sources: [],
-  llm: { primary_model: "", smollm_enabled: true },
+  llm: { primary_model: "", llm_api_enabled: true },
   equity: { quotas: [] },
 };

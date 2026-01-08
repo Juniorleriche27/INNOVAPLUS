@@ -53,7 +53,7 @@ Notes
 -----
 
 - Les uploads (`apps/koryxa/backend/storage/public`) restent servis via `/storage/...`.
-- `docs/models/smollm-360m.md` décrit l’intégration SmolLM locale.
+- Les appels IA utilisent une API (ex: Cohere) via `COHERE_API_KEY` et `PROVIDER=cohere`.
 - Scripts CI (GitHub Actions) / Vercel doivent pointer vers `apps/koryxa/*` ou `products/*` selon le module ciblé.
 
 Missions & matching
@@ -72,5 +72,5 @@ Déploiement Hetzner
 -------------------
 
 - Service systemd : `innovaplus-backend.service` (voir `apps/koryxa/backend/OPERATIONS.md`).
-- Fichier `/etc/innovaplus/backend.env` : `ENABLE_SMOLLM=true`, `PROVIDER=local`, `SMOLLM_MODEL_PATH=/opt/innovaplus/models/smollm-360m-instruct`.
+- Fichier `/etc/innovaplus/backend.env` : `PROVIDER=cohere`, `COHERE_API_KEY=...` (ou `LLM_PROVIDER=cohere`).
 - FastAPI écoute sur `127.0.0.1:8000` derrière Nginx `https://api.innovaplus.africa`.

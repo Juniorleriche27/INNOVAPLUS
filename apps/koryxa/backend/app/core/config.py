@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
@@ -27,19 +26,6 @@ def _load_dotenv_with_fallback() -> None:
 _load_dotenv_with_fallback()
 
 
-def _default_adapter_path() -> Optional[str]:
-    """Return default adapter path if present locally."""
-    backend_root = Path(__file__).resolve().parents[2]
-    guesses = [
-        backend_root / "models" / "llama-3.2-3b-instruct-lora",
-        Path("/opt/innovaplus/models/llama-3.2-3b-instruct-lora"),
-    ]
-    for candidate in guesses:
-        if candidate.exists():
-            return str(candidate)
-    return None
-
-
 class Settings(BaseSettings):
     MONGO_URI: str
     DB_NAME: str
@@ -59,7 +45,7 @@ class Settings(BaseSettings):
     SMTP_PASS: str | None = os.getenv("SMTP_PASS")
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", os.getenv("SMTP_STARTTLS", "true")).lower() in {"1", "true", "yes"}
     SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
-    CHAT_PROVIDER: str = os.getenv("PROVIDER", "local")
+    CHAT_PROVIDER: str = os.getenv("PROVIDER", "cohere")
     CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
     CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "900"))
     # CORS
@@ -71,11 +57,6 @@ class Settings(BaseSettings):
     LLM_MODEL: str | None = os.getenv("LLM_MODEL")
     # LLM calls for MyPlanning can take longer; default to 5 minutes unless overridden
     LLM_TIMEOUT: int = int(os.getenv("LLM_TIMEOUT", "300"))
-    SMOLLM_MODEL_PATH: str = os.getenv(
-        "SMOLLM_MODEL_PATH",
-        "models/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
-    )
-    SMOLLM_ADAPTER_PATH: Optional[str] = os.getenv("SMOLLM_ADAPTER_PATH") or _default_adapter_path()
     COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")
     VECTOR_INDEX_NAME: str = os.getenv("VECTOR_INDEX_NAME", "vector_index")
     RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))

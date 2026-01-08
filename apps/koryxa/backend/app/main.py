@@ -31,7 +31,6 @@ from app.routers.engine import router as engine_router
 from app.routers import school as school_router
 from app.routers.marketplace import router as market_router
 from app.routers.meet_api import router as meet_router
-from app.routers.smollm import router as smollm_router
 from app.routers.profiles import router as profiles_router
 from app.routers.missions import router as missions_router
 from app.routers.studio import router as studio_router
@@ -93,13 +92,6 @@ async def on_startup():
     except Exception:
         pass
     
-    # Initialize SmolLM if enabled
-    try:
-        from app.core.smollm_init import initialize_smollm_on_startup
-        initialize_smollm_on_startup()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning(f"SmolLM initialization failed: {e}")
     # Ensure indexes
     try:
         from app.db.mongo import get_db
@@ -200,7 +192,6 @@ else:
     innova_api.include_router(email_router)
     innova_api.include_router(invite_router)
     innova_api.include_router(engine_router)
-    innova_api.include_router(smollm_router)
     innova_api.include_router(profiles_router)
     innova_api.include_router(missions_router)
     innova_api.include_router(studio_router)

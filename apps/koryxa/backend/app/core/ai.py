@@ -91,60 +91,7 @@ def generate_answer(
     )
 
     if provider_name in {"local", "smollm", "chatlaya"}:
-        try:
-            from app.core.smollm import get_smollm_model
-
-            conversation = list(history or [])
-            if not conversation:
-                conversation = [{"role": "user", "content": effective_prompt}]
-            system_prompt = SYSTEM_PROMPT
-            if context:
-                system_prompt = f"{SYSTEM_PROMPT}\n\n{context}"
-            if conversation[0].get("role") == "system":
-                conversation[0]["content"] = f"{system_prompt}\n\n{conversation[0].get('content','')}"
-            else:
-                conversation.insert(0, {"role": "system", "content": system_prompt})
-            smollm = get_smollm_model()
-            configured_max = settings.CHAT_MAX_NEW_TOKENS or 320
-            requested = max_new_tokens or configured_max
-            # Permettre des textes plus longs pour la rédaction (Studio)
-            max_tokens = max(128, min(requested, 4000))
-            if on_token and getattr(smollm, "chat_completion_stream", None):
-                response = smollm.chat_completion_stream(
-                    conversation,
-                    max_tokens=max_tokens,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repeat_penalty=1.05,
-                    stop_tokens=["</s>", "<|im_end|>", "###"],
-                    ignore_eos=True,
-                    on_token=on_token,
-                )
-            else:
-                response = smollm.chat_completion(
-                    conversation,
-                    max_tokens=max_tokens,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repeat_penalty=1.05,
-                    stop_tokens=["</s>", "<|im_end|>", "###"],
-                    ignore_eos=True,
-                )
-            cleaned = response.strip()
-            logger.debug(
-                "SmolLM returned len=%d snippet=%r",
-                len(cleaned),
-                cleaned[:120],
-            )
-            if cleaned:
-                if on_token and not getattr(smollm, "chat_completion_stream", None):
-                    on_token(cleaned)
-                return cleaned
-            logger.debug("SmolLM empty response, returning fallback reply.")
-            return FALLBACK_REPLY
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Local provider failed, returning fallback reply: %s", exc)
-            return FALLBACK_REPLY
+        provider_name = "cohere" if settings.COHERE_API_KEY else "echo"
 
     if provider_name == "cohere":
         client = _get_cohere_client()

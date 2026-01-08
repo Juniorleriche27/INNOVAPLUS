@@ -22,7 +22,7 @@ def _default_rules() -> Dict[str, Any]:
     return {
         "_id": "default",
         "rag_sources": [],
-        "llm": {"primary_model": "command-r-plus-08-2024", "smollm_enabled": True},
+        "llm": {"primary_model": "command-r-plus-08-2024", "llm_api_enabled": True},
         "equity": {"quotas": []},
         "filters": {"languages": [], "countries": []},
         "updated_at": _now(),
@@ -35,6 +35,11 @@ async def get_rules(db: AsyncIOMotorDatabase = Depends(get_db)):
     if not doc:
         doc = _default_rules()
         await db[COLL_RULES].insert_one(doc)
+    llm = doc.get("llm", {}) if isinstance(doc.get("llm"), dict) else {}
+    if "llm_api_enabled" not in llm:
+        legacy_enabled = llm.get("smollm_enabled")
+        llm["llm_api_enabled"] = bool(legacy_enabled) if legacy_enabled is not None else True
+        doc["llm"] = llm
     doc["updated_at"] = doc.get("updated_at") or _now()
     return doc
 
@@ -58,9 +63,15 @@ async def update_rules(payload: Dict[str, Any], db: AsyncIOMotorDatabase = Depen
 
     doc["rag_sources"] = rag_sources
     doc["equity"] = {"quotas": quotas or []}
+    legacy_enabled = llm.get("smollm_enabled") if isinstance(llm, dict) else None
+    stored_legacy = doc.get("llm", {}).get("smollm_enabled")
+    api_enabled = llm.get("llm_api_enabled") if isinstance(llm, dict) else None
+    if api_enabled is None:
+        api_enabled = legacy_enabled if legacy_enabled is not None else stored_legacy
+
     doc["llm"] = {
         "primary_model": llm.get("primary_model") or doc.get("llm", {}).get("primary_model") or "command-r-plus-08-2024",
-        "smollm_enabled": bool(llm.get("smollm_enabled")) if llm.get("smollm_enabled") is not None else doc.get("llm", {}).get("smollm_enabled", True),
+        "llm_api_enabled": bool(api_enabled) if api_enabled is not None else True,
     }
     doc["filters"] = {
         "languages": clean_list(filters.get("languages")),

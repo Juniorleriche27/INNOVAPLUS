@@ -11,7 +11,7 @@ Core variables (fichier `/etc/innovaplus/backend.env` en prod) :
 - `MONGO_URI`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS`
 - `FRONTEND_BASE_URL` (utilisé pour générer les CTA dans les emails/notifications)
 - SMTP : `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`
-- IA locale : `ENABLE_SMOLLM=true`, `SMOLLM_MODEL_PATH=/opt/innovaplus/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf`
+- IA via API : `PROVIDER=cohere`, `COHERE_API_KEY=...` (ou `LLM_PROVIDER=cohere`)
 - Notifications WhatsApp (optionnel) : `WHATSAPP_API_URL`, `WHATSAPP_API_TOKEN`, `WHATSAPP_SENDER`
 
 Run locally

@@ -217,13 +217,10 @@ def _normalize_due_datetime(value: Any) -> str | None:
 
 
 async def _call_llama(prompt: str) -> str:
-    # Try Cohere first (cloud) for MyPlanning, then local SmolLM if enabled, puis fallback
+    # Try Cohere first (cloud) for MyPlanning, then configured provider, puis fallback
     provider_candidates = []
     if settings.COHERE_API_KEY:
         provider_candidates.append("cohere")
-    enable_smollm = os.getenv("ENABLE_SMOLLM", "false").lower() == "true"
-    if enable_smollm or settings.SMOLLM_MODEL_PATH:
-        provider_candidates.extend(["smollm", "local"])
     provider_candidates.extend([settings.CHAT_PROVIDER, settings.LLM_PROVIDER, "echo"])
     timeout = getattr(settings, "LLM_TIMEOUT", 30)
 

@@ -30,3 +30,7 @@ export const SITE_BASE_URL = normalize(
   process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL,
   "https://innovaplus.africa",
 );
+
+export const IS_V1_SIMPLE =
+  (process.env.NEXT_PUBLIC_V1_SIMPLE || "").toLowerCase() === "true" ||
+  (process.env.NEXT_PUBLIC_APP_MODE || "").toUpperCase() === "V1";

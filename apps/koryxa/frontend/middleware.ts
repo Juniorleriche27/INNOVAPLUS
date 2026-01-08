@@ -11,10 +11,49 @@ function isProtectedPath(pathname: string) {
 }
 
 const SESSION_COOKIE = "innova_session";
+const V1_SIMPLE =
+  (process.env.NEXT_PUBLIC_V1_SIMPLE || "").toLowerCase() === "true" ||
+  (process.env.NEXT_PUBLIC_APP_MODE || "").toUpperCase() === "V1";
+
+const V1_HIDDEN_PREFIXES = [
+  "/opportunities",
+  "/skills",
+  "/talents",
+  "/engine",
+  "/meet",
+  "/missions",
+  "/marketplace",
+  "/myplanning",
+  "/chatlaya",
+  "/studio",
+  "/products",
+  "/resources",
+  "/equity",
+  "/analytics",
+  "/projects",
+  "/notifications",
+  "/messages",
+  "/post",
+  "/posts",
+  "/groups",
+];
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
+
+  if (V1_SIMPLE) {
+    if (pathname.startsWith("/school/") && !pathname.startsWith("/school/tracks")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/school";
+      return NextResponse.redirect(url);
+    }
+    if (V1_HIDDEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/bientot";
+      return NextResponse.redirect(url);
+    }
+  }
 
   if (pathname === "/chat-laya" || pathname.startsWith("/chat-laya/")) {
     const url = request.nextUrl.clone();
@@ -65,13 +104,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/chat-laya/:path*",
-    "/opportunites",
-    "/a-propos",
-    "/ressources",
-    "/analytics/:path*",
-    "/chatlaya",
-    "/login",
-    "/signup",
+    "/((?!_next|.*\\..*).*)",
   ],
 };

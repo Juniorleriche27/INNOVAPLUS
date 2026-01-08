@@ -1,5 +1,6 @@
 // Landing page épurée sans métriques démo
 import Link from "next/link";
+import { IS_V1_SIMPLE } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,28 @@ const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 const SECTION_SUBTITLE = "text-base text-slate-500";
 
 export default function HomePage() {
+  if (IS_V1_SIMPLE) {
+    return (
+      <main className="px-4 py-12 sm:px-6">
+        <section className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA</p>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900">KORYXA</h1>
+          <p className="mt-3 text-base text-slate-600">
+            Formation + accompagnement data pour entreprises, avec missions réelles.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/school" className="btn-primary">
+              Découvrir KORYXA School
+            </Link>
+            <Link href="/entreprise" className="btn-secondary">
+              Je suis une entreprise
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <div className="space-y-10 sm:space-y-14 pb-12 px-3 sm:px-0 pt-16 sm:pt-0">
       {/* Hero */}

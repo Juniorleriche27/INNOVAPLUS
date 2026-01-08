@@ -4,8 +4,10 @@ import clsx from "clsx";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { IS_V1_SIMPLE } from "@/lib/env";
 
 const ENABLE_SCHOOL = process.env.NEXT_PUBLIC_ENABLE_SCHOOL === "true";
+const IS_V1 = IS_V1_SIMPLE;
 
 function IconTarget(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -93,6 +95,11 @@ const WORKSPACE_LINKS = [
     : []),
 ];
 
+const V1_LINKS = [
+  { href: "/school", label: "KORYXA School", description: "Programme de formation", icon: IconBook },
+  { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
+];
+
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -139,11 +146,11 @@ export default function Sidebar({ className, style }: { className?: string; styl
           {isExpanded && (
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-                <span className="text-white font-semibold text-xs">AI</span>
+                <span className="text-white font-semibold text-xs">{IS_V1 ? "K" : "AI"}</span>
               </div>
               <div>
                 <h2 className="text-base font-semibold text-slate-900">KORYXA</h2>
-                <p className="text-[11px] text-slate-500">IA • Opportunités</p>
+                <p className="text-[11px] text-slate-500">{IS_V1 ? "School & Entreprise" : "IA • Opportunités"}</p>
               </div>
             </div>
           )}
@@ -163,7 +170,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
 
         {/* Navigation */}
         <nav className="sidebar-nav flex-1 p-4 space-y-2 overflow-y-auto">
-          {WORKSPACE_LINKS.map((link) => {
+          {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
             
@@ -217,20 +224,22 @@ export default function Sidebar({ className, style }: { className?: string; styl
         <div className="p-4 border-t border-slate-200/60">
           {isExpanded ? (
             <div className="space-y-3">
-              <div className="rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[11px] font-medium text-slate-700">Système actif</span>
+              {!IS_V1 && (
+                <div className="rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[11px] font-medium text-slate-700">Système actif</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    IA en temps réel • Matching intelligent
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-600">
-                  IA en temps réel • Matching intelligent
-                </p>
-              </div>
+              )}
               
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
                 <span>v2.1.0</span>
                 <span>•</span>
-                <span>Dernière mise à jour</span>
+                <span>{IS_V1 ? "V1 simple active" : "Dernière mise à jour"}</span>
               </div>
             </div>
           ) : (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiSchool, type CertificateProgram } from "@/lib/api";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { IS_V1_SIMPLE } from "@/lib/env";
 
 const FILTERS: Array<{ label: string; value: string | null }> = [
   { label: "Tous", value: null },
@@ -203,6 +204,99 @@ const MOCK_CERTIFICATES: CertificateProgram[] = [
 ];
 
 export default function SchoolCatalogPage() {
+  if (IS_V1_SIMPLE) {
+    return (
+      <main className="px-4 py-12 sm:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Programme</p>
+            <h1 className="mt-3 text-3xl font-bold text-slate-900">KORYXA School</h1>
+            <p className="mt-2 text-base text-slate-600">
+              Apprenez la data et l’IA appliquée sur des besoins réels.
+            </p>
+            <div className="mt-6">
+              <Link href="/school" className="btn-primary">Rejoindre KORYXA School</Link>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Tronc commun (4–6 semaines)</h2>
+            <div className="mt-4 space-y-4 text-sm text-slate-700">
+              <div>
+                <p className="font-semibold text-slate-900">Module 1 – Introduction aux métiers de la data</p>
+                <ul className="mt-2 list-disc pl-5 text-slate-600">
+                  <li>DA / DE / DS / MLE : rôles, missions, outils</li>
+                  <li>Domaines d’application (santé, finance, marketing…)</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Module 2 – Bases Python pour la data</p>
+                <ul className="mt-2 list-disc pl-5 text-slate-600">
+                  <li>variables, conditions, boucles</li>
+                  <li>listes, dictionnaires, fonctions</li>
+                  <li>intro NumPy & Pandas</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Module 3 – Manipulation des données</p>
+                <ul className="mt-2 list-disc pl-5 text-slate-600">
+                  <li>CSV / Excel / JSON</li>
+                  <li>nettoyage (NA, doublons, formats)</li>
+                  <li>jointures, filtres</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Module 4 – Bases SQL</p>
+                <ul className="mt-2 list-disc pl-5 text-slate-600">
+                  <li>tables, clés, requêtes</li>
+                  <li>SELECT, WHERE, JOIN, GROUP BY</li>
+                  <li>Python ↔ SQL (sqlite3 / SQLAlchemy)</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Module 5 – Visualisation</p>
+                <ul className="mt-2 list-disc pl-5 text-slate-600">
+                  <li>matplotlib + seaborn</li>
+                  <li>bar/line/scatter/heatmap</li>
+                  <li>dashboards simples (Power BI ou Data Studio)</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Module 6 – Projet commun de synthèse</p>
+                <p className="mt-2 text-slate-600">projet final du tronc commun</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Spécialisations (4 tracks)</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {[
+                { title: "Data Analyst", slug: "data-analyst", focus: "Analyse et tableaux de bord pour la décision." },
+                { title: "Data Engineer", slug: "data-engineer", focus: "Pipelines fiables et préparation des données." },
+                { title: "Data Scientist", slug: "data-scientist", focus: "Modèles et expérimentation appliquée." },
+                { title: "Machine Learning Engineer", slug: "machine-learning-engineer", focus: "Industrialisation des modèles ML." },
+              ].map((track) => (
+                <div key={track.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+                  <p className="text-sm font-semibold text-slate-900">{track.title}</p>
+                  <p className="mt-2 text-sm text-slate-600">{track.focus}</p>
+                  <Link href={`/school/tracks/${track.slug}`} className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+                    Voir le détail →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Prêt à commencer ?</h2>
+            <p className="mt-2 text-sm text-slate-600">Rejoignez la première cohorte KORYXA School.</p>
+            <Link href="/school" className="btn-primary mt-4 inline-flex">Rejoindre KORYXA School</Link>
+          </section>
+        </div>
+      </main>
+    );
+  }
   const { user, loading } = useAuth();
   const [certs, setCerts] = useState<CertificateProgram[]>([]);
   const [filter, setFilter] = useState<string | null>(null);

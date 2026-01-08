@@ -22,6 +22,7 @@ const NAV_LINKS_V1 = [
   { href: "/", label: "Accueil" },
   { href: "/school", label: "KORYXA School" },
   { href: "/entreprise", label: "Entreprise" },
+  { href: "/about", label: "À propos" },
 ];
 
 const PRODUCT_LINKS = [

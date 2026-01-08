@@ -220,6 +220,18 @@ export default function SchoolCatalogPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Le modèle KORYXA</h2>
+            <ul className="mt-4 list-disc pl-5 text-sm text-slate-600">
+              <li>Les entreprises décrivent un besoin réel.</li>
+              <li>KORYXA le transforme en missions claires.</li>
+              <li>Les apprenants travaillent dessus dans KORYXA School.</li>
+              <li>KORYXA accompagne et valide les livrables.</li>
+              <li>L’entreprise reçoit des résultats exploitables.</li>
+              <li>Les apprenants gagnent de l’expérience + un portfolio vérifié.</li>
+            </ul>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Tronc commun (4–6 semaines)</h2>
             <div className="mt-4 space-y-4 text-sm text-slate-700">
               <div>

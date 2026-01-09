@@ -1,6 +1,6 @@
 export type ResourceLink = { label: string; url: string };
 export type SectionVideo = { label: string; url: string };
-export type ModuleSection = { title: string; text: string[]; video?: SectionVideo };
+export type ModuleSection = { title: string; text: string[]; video?: SectionVideo; articles?: ResourceLink[] };
 export type NotebookBlock = { title: string; description: string; code: string; download?: string };
 export type QuizQuestion = {
   prompt: string;
@@ -51,6 +51,10 @@ export const foundationalProgram: ProgramContent = {
             label: "IBM – What is Data Science",
             url: "https://www.youtube.com/watch?v=X3paOmcrTjQ",
           },
+          articles: [
+            { label: "Inria – Qu'est-ce que la data science ?", url: "https://www.inria.fr/fr/data-science" },
+            { label: "IBM – The Different Data Science Roles", url: "https://www.ibm.com/topics/data-science" },
+          ],
         },
         {
           title: "Data Analyst",
@@ -64,6 +68,9 @@ export const foundationalProgram: ProgramContent = {
             label: "IBM – What does a Data Analyst do?",
             url: "https://www.youtube.com/watch?v=ywZXpfdqg1o",
           },
+          articles: [
+            { label: "Onisep – Fiche metier : Data Analyst", url: "https://www.onisep.fr/Ressources/Univers-Metier/Metiers/data-analyst" },
+          ],
         },
         {
           title: "Data Engineer",
@@ -77,6 +84,9 @@ export const foundationalProgram: ProgramContent = {
             label: "DataScientest – Qu'est-ce qu'un Data Engineer ?",
             url: "https://www.youtube.com/watch?v=IeyYWxaMP3M",
           },
+          articles: [
+            { label: "OpenClassrooms – Data Engineer : role et competences", url: "https://openclassrooms.com/fr/paths/324-data-engineer" },
+          ],
         },
         {
           title: "Data Scientist",
@@ -90,6 +100,9 @@ export const foundationalProgram: ProgramContent = {
             label: "DataScientest – Que fait un Data Scientist ?",
             url: "https://www.youtube.com/watch?v=ixVR8uPetHQ",
           },
+          articles: [
+            { label: "APEC – Fiche metier : Data Scientist", url: "https://www.apec.fr/candidat/metiers/Fiche-metier-Data-scientist.html" },
+          ],
         },
         {
           title: "Machine Learning Engineer",
@@ -104,6 +117,10 @@ export const foundationalProgram: ProgramContent = {
             label: "Google Developers – Machine Learning Engineer explained",
             url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
           },
+          articles: [
+            { label: "DataScientest – Machine Learning Engineer : role et responsabilites", url: "https://datascientest.com/metier-machine-learning-engineer" },
+            { label: "Google Cloud – What is a Machine Learning Engineer?", url: "https://cloud.google.com/learn/what-is-machine-learning-engineer" },
+          ],
         },
         {
           title: "Collaboration des metiers",
@@ -118,6 +135,12 @@ export const foundationalProgram: ProgramContent = {
             label: "L'Atelier Data – Data Scientist vs Data Analyst vs Data Engineer : quelles differences ?",
             url: "https://www.youtube.com/watch?v=mEZIHFxUFEc",
           },
+          articles: [
+            {
+              label: "Towards Data Science – Data Analyst vs Data Scientist vs Data Engineer",
+              url: "https://towardsdatascience.com/data-scientist-vs-data-analyst-vs-data-engineer-62f6b1b6d7e4",
+            },
+          ],
         },
       ],
       resources: { videos: [], articles: [] },

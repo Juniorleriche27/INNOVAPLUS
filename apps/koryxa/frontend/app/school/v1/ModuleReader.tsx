@@ -94,6 +94,20 @@ export default function ModuleReader({
                   ))}
                 </div>
                 {renderVideo(section.video)}
+                {section.articles && section.articles.length > 0 ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <p className="text-sm font-semibold text-slate-900">Pour aller plus loin (lecture recommandee)</p>
+                    <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
+                      {section.articles.map((article) => (
+                        <li key={article.url}>
+                          <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
+                            {article.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

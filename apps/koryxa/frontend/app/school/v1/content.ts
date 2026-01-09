@@ -1,4 +1,6 @@
 export type ResourceLink = { label: string; url: string };
+export type SectionVideo = { label: string; url: string };
+export type ModuleSection = { title: string; text: string[]; video?: SectionVideo };
 export type NotebookBlock = { title: string; description: string; code: string; download?: string };
 export type QuizQuestion = {
   prompt: string;
@@ -12,6 +14,7 @@ export type ModuleContent = {
   title: string;
   text: string[];
   resources: { videos: ResourceLink[]; articles: ResourceLink[] };
+  sections?: ModuleSection[];
   notebook?: NotebookBlock;
   quiz: QuizQuestion[];
 };
@@ -33,50 +36,151 @@ export const foundationalProgram: ProgramContent = {
     {
       id: "intro-metiers",
       title: "Introduction aux metiers de la data & IA",
-      text: [
-        "Ce module pose le cadre des principaux roles data et IA. Il clarifie les missions reelles, les outils courants et la logique de collaboration entre profils.",
-        "L'objectif est de comprendre qui fait quoi, pourquoi, et comment un besoin d'entreprise devient une mission data ou IA.",
-        "Prenez le temps d'identifier le role qui vous attire le plus et les competences a renforcer.",
+      text: [],
+      sections: [
+        {
+          title: "Introduction generale",
+          text: [
+            "KORYXA School ne fonctionne pas comme une plateforme de videos. Un parcours est un livre, un module est un chapitre, et une lecon est une page. Le texte est le support officiel : il donne la structure, explique les concepts et fixe ce qui fait foi. Les videos sont la pour illustrer, pas pour remplacer.",
+            "Dans ce module, tu vas comprendre a quoi servent les principaux metiers de la data et de l'IA, comment ils transforment un besoin reel en mission exploitable, et pourquoi l'intelligence artificielle devient un outil central de creation de valeur. L'IA n'est pas un slogan : elle aide a cadrer un probleme, accelerer la production, et standardiser la qualite des livrables.",
+            "Une entreprise qui veut mieux suivre ses ventes, une ONG qui veut analyser des donnees terrain, une startup qui veut automatiser un processus : ce sont des besoins concrets. La data et l'IA permettent de transformer ces besoins en actions claires. C'est cette transformation qui crée des opportunites reelles pour les apprenants, tout en aidant les organisations a obtenir des resultats.",
+            "Pour avancer, il faut savoir qui fait quoi. Chaque role a une mission precise, mais tous travaillent ensemble. Un bon livrable data n'est jamais le resultat d'une seule personne : c'est une chaine qui va de la collecte a l'analyse, puis a la decision. Ce module te donne les bases pour comprendre cette chaine.",
+            "Retenir ce principe est essentiel : l'IA n'est utile que si elle est branchee sur des donnees fiables et un objectif clair. Sans cadre, elle produit du bruit. Avec un cadre, elle produit un livrable exploitable. C'est cette logique que KORYXA installe des le debut.",
+          ],
+          video: {
+            label: "IBM – What is Data Science",
+            url: "https://www.youtube.com/watch?v=X3paOmcrTjQ",
+          },
+        },
+        {
+          title: "Data Analyst",
+          text: [
+            "Le Data Analyst est le role qui rend la data lisible. Son travail consiste a transformer des donnees brutes en informations utiles pour la decision. Il structure des tableaux de bord, identifie des tendances, et explique ce que les chiffres veulent dire pour l'organisation.",
+            "Un bon Data Analyst ne se limite pas a produire un graphique. Il commence par une question claire : \"Pourquoi nos ventes baissent dans telle region ?\", \"Quels produits se vendent le mieux ?\", \"Quelle campagne marketing a le plus d'impact ?\" Ensuite, il collecte les donnees, les nettoie, puis construit une analyse qui repond au besoin.",
+            "Le Data Analyst travaille sur des cas reels : reporting, suivi de performance, segmentation client, analyse de couts. Il sert d'interface entre la data et les equipes operationnelles. C'est souvent le premier role data dans une entreprise qui veut progresser vers l'IA.",
+            "Dans une mission KORYXA, le Data Analyst pose le cadre du livrable : quels indicateurs suivre, quels niveaux de detail, et quelles actions en sortent. Son travail doit etre clair, lisible et directement utilisable par l'organisation.",
+          ],
+          video: {
+            label: "IBM – What does a Data Analyst do?",
+            url: "https://www.youtube.com/watch?v=ywZXpfdqg1o",
+          },
+        },
+        {
+          title: "Data Engineer",
+          text: [
+            "Le Data Engineer construit les fondations. Il cree les pipelines qui collectent, stockent et preparent les donnees. Sans lui, pas de data fiable pour l'analyse ou l'IA.",
+            "Son travail est technique, mais essentiel : connecter des sources, automatiser les flux, assurer la qualite. Il met en place des bases de donnees, organise les schemas, et garantit que les donnees sont disponibles quand l'organisation en a besoin.",
+            "Dans un besoin reel, le Data Engineer intervient des le debut : il transforme un probleme flou en flux clair. Exemple : une entreprise a des donnees disperses. Le Data Engineer les rassemble, les structure, puis les rend exploitables pour le reste de l'equipe.",
+            "Le Data Engineer assure aussi la durabilite : un pipeline bien concu evite les erreurs silencieuses et facilite le passage a l'echelle. C'est la difference entre un test ponctuel et un systeme qui fonctionne chaque semaine.",
+          ],
+          video: {
+            label: "IBM – What does a Data Engineer do?",
+            url: "https://www.youtube.com/watch?v=I_P7wX8Q6Sw",
+          },
+        },
+        {
+          title: "Data Scientist",
+          text: [
+            "Le Data Scientist cree des modeles pour expliquer ou predire. Il utilise des methodes statistiques et des algorithmes pour repondre a des questions avancees : prevoir une demande, detecter une anomalie, recommander une action.",
+            "Il commence toujours par un besoin clair. Exemple : \"Quels clients risquent de partir ?\", \"Comment optimiser une chaine logistique ?\" Il construit un modele, le teste, puis explique les resultats. Ce travail demande rigueur et interpretation.",
+            "L'IA est au coeur du metier de Data Scientist, mais elle reste un outil. L'objectif n'est pas de faire un modele impressionnant, mais un modele utile. Un bon Data Scientist traduit la complexite en decisions simples.",
+            "Dans une mission, il documente les hypotheses, les limites et les risques. Cela permet a l'entreprise de comprendre pourquoi le modele fonctionne, et dans quels cas il ne doit pas etre utilise.",
+          ],
+          video: {
+            label: "Simplilearn – What does a Data Scientist do?",
+            url: "https://www.youtube.com/watch?v=XpIFS6jZbe8",
+          },
+        },
+        {
+          title: "Machine Learning Engineer",
+          text: [
+            "Le Machine Learning Engineer (MLE) fait passer les modeles dans le monde reel. Il transforme un prototype en service stable, rapide et utilisable par des equipes ou des applications.",
+            "Son role est d'industrialiser : automatiser l'entrainement, deployer des API, surveiller les performances. Il garantit que l'IA fonctionne dans le temps, meme quand les donnees changent.",
+            "Dans un projet concret, le MLE prend le relais apres la phase d'analyse et de modele. Il s'assure que le livrable est exploitable par l'entreprise : fiable, documente et maintenable.",
+            "Il pense aussi a la securite, aux couts et aux performances. L'objectif est d'avoir une IA qui produit un resultat utile sans perturber l'organisation.",
+            "Un MLE s'assure que le modele reste utile dans le temps : il mesure les derives, ajuste les versions et met en place des alertes. C'est ce travail qui rend un livrable vraiment fiable.",
+          ],
+          video: {
+            label: "Google Developers – Machine Learning Engineer explained",
+            url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
+          },
+        },
+        {
+          title: "Collaboration des metiers",
+          text: [
+            "Ces metiers ne fonctionnent pas en silo. Un besoin reel traverse plusieurs competences : collecte, nettoyage, analyse, modele, mise en production. C'est une chaine.",
+            "Un Data Analyst a besoin de donnees fiables du Data Engineer. Un Data Scientist a besoin d'analyses propres pour entrainer un modele. Un MLE a besoin d'un modele solide pour deployer.",
+            "KORYXA organise cette collaboration pour transformer des besoins en missions claires. L'objectif est d'apprendre en produisant, mais aussi de livrer un resultat utile a l'organisation.",
+            "C'est cette coordination qui fait la difference : chaque role se concentre sur sa responsabilite, mais le livrable final reste coherent, valide et exploitable.",
+            "Quand la chaine est claire, les decisions sont plus rapides et les erreurs diminuent. La collaboration n'est pas une option : c'est la condition pour produire un resultat concret.",
+          ],
+          video: {
+            label: "Simplilearn – Data Analyst vs Data Scientist vs Data Engineer",
+            url: "https://www.youtube.com/watch?v=1u3qE3z1Z6E",
+          },
+        },
       ],
-      resources: {
-        videos: [
-          { label: "Panorama des metiers de la data (YouTube)", url: "https://www.youtube.com/watch?v=ua-CiDNNj30" },
-          { label: "Pourquoi la data change les organisations", url: "https://www.youtube.com/watch?v=9sVZqkQv9x0" },
-        ],
-        articles: [
-          { label: "Data Analyst vs Data Scientist", url: "https://www.datacamp.com/blog/data-analyst-vs-data-scientist" },
-        ],
-      },
+      resources: { videos: [], articles: [] },
       quiz: [
         {
-          prompt: "Quel est l'objectif principal d'un Data Analyst ?",
-          options: ["Construire des pipelines", "Analyser et rendre la data lisible", "Deployer des modeles en prod"],
+          prompt: "Le texte principal du module sert a :",
+          options: ["Remplacer les videos", "Definir le contenu officiel", "Etre optionnel"],
           answerIndex: 1,
-          explanation: "Le Data Analyst transforme les donnees en insights actionnables via analyses et dashboards.",
+          explanation: "Le texte est la base officielle du module.",
         },
         {
-          prompt: "Vrai ou faux : un Data Engineer travaille surtout sur l'architecture et les flux.",
+          prompt: "Vrai ou faux : l'IA est un outil central pour cadrer un besoin.",
           options: ["Vrai", "Faux"],
           answerIndex: 0,
-          explanation: "Le Data Engineer structure les pipelines et l'infrastructure des donnees.",
+          explanation: "L'IA aide a structurer un probleme en mission claire.",
         },
         {
-          prompt: "Quel role est le plus implique dans l'industrialisation ML ?",
-          options: ["Machine Learning Engineer", "Product Manager", "Designer"],
+          prompt: "Quel role rend la data lisible pour la decision ?",
+          options: ["Data Analyst", "Data Engineer", "Machine Learning Engineer"],
           answerIndex: 0,
-          explanation: "Le MLE integre les modeles dans des systemes robustes.",
+          explanation: "Le Data Analyst transforme les donnees en insights.",
         },
         {
-          prompt: "Une mission IA commence souvent par :",
+          prompt: "Un Data Engineer se concentre surtout sur :",
+          options: ["Les pipelines et la qualite des donnees", "La mise en production des modeles", "La creation de slides"],
+          answerIndex: 0,
+          explanation: "Il construit les fondations data.",
+        },
+        {
+          prompt: "Vrai ou faux : un Data Scientist doit toujours deployer le modele.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 1,
+          explanation: "Le deploiement est souvent gere par le MLE.",
+        },
+        {
+          prompt: "Le MLE intervient principalement pour :",
+          options: ["Industrialiser les modeles", "Nettoyer les donnees", "Faire du reporting"],
+          answerIndex: 0,
+          explanation: "Il rend le modele stable et utilisable.",
+        },
+        {
+          prompt: "Une mission IA commence par :",
           options: ["Un besoin reel", "Un modele deja entraine", "Un logo"],
           answerIndex: 0,
-          explanation: "Tout part d'un besoin concret qui doit etre cadre.",
+          explanation: "Tout part d'un besoin concret.",
         },
         {
-          prompt: "Quel outil est courant pour l'analyse de donnees ?",
-          options: ["Power BI", "Photoshop", "Figma"],
+          prompt: "La collaboration des metiers est importante parce que :",
+          options: ["Elle reduit les erreurs et clarifie le livrable", "Elle supprime les tests", "Elle evite le besoin de data"],
           answerIndex: 0,
-          explanation: "Power BI est un outil standard pour les dashboards.",
+          explanation: "Les roles s'enchainent pour livrer un resultat utilisable.",
+        },
+        {
+          prompt: "Vrai ou faux : la video remplace le texte officiel.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 1,
+          explanation: "La video illustre, le texte explique.",
+        },
+        {
+          prompt: "Quel element est obligatoire pour passer au module suivant ?",
+          options: ["Le mini-test valide", "Avoir regarde toutes les videos", "Avoir telecharge un notebook"],
+          answerIndex: 0,
+          explanation: "La validation du mini-test est obligatoire.",
         },
       ],
     },

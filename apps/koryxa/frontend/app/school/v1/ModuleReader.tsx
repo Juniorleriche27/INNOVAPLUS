@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { ModuleContent } from "@/app/school/v1/content";
+import type { ModuleContent, ModuleSection, SectionVideo } from "@/app/school/v1/content";
 import { MIN_PASS_PERCENT } from "@/app/school/v1/content";
 
 type Props = {
@@ -45,6 +45,36 @@ export default function ModuleReader({
     setValidated(correct / totalQuestions >= MIN_PASS_PERCENT / 100);
   }
 
+  function getYoutubeId(url: string): string | null {
+    const match = url.match(/v=([a-zA-Z0-9_-]+)/);
+    if (match?.[1]) return match[1];
+    const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+    if (short?.[1]) return short[1];
+    return null;
+  }
+
+  function renderVideo(video?: SectionVideo) {
+    if (!video) return null;
+    const id = getYoutubeId(video.url);
+    if (!id) return null;
+    return (
+      <div className="mt-4 space-y-3">
+        <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+          <iframe
+            className="h-full w-full"
+            src={`https://www.youtube.com/embed/${id}`}
+            title={video.label}
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
+          Voir sur YouTube
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -53,11 +83,27 @@ export default function ModuleReader({
         <p className="mt-2 text-sm text-slate-500">
           Module {moduleIndex + 1} sur {moduleCount}
         </p>
-        <div className="mt-4 space-y-3 text-sm text-slate-700">
-          {module.text.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
+        {module.sections && module.sections.length > 0 ? (
+          <div className="mt-4 space-y-6 text-sm text-slate-700">
+            {module.sections.map((section) => (
+              <div key={section.title} className="space-y-3">
+                <h2 className="text-lg font-semibold text-slate-900">{section.title}</h2>
+                <div className="space-y-3">
+                  {section.text.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+                {renderVideo(section.video)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3 text-sm text-slate-700">
+            {module.text.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           className="mt-5 inline-flex text-sm font-semibold text-sky-700"
@@ -73,35 +119,37 @@ export default function ModuleReader({
         )}
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Ressources externes</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-            <p className="text-sm font-semibold text-slate-900">Videos</p>
-            <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
-              {module.resources.videos.map((video) => (
-                <li key={video.url}>
-                  <a className="text-sky-700 hover:underline" href={video.url} target="_blank" rel="noreferrer">
-                    {video.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+      {module.resources.videos.length > 0 || module.resources.articles.length > 0 ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Ressources externes</h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <p className="text-sm font-semibold text-slate-900">Videos</p>
+              <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
+                {module.resources.videos.map((video) => (
+                  <li key={video.url}>
+                    <a className="text-sky-700 hover:underline" href={video.url} target="_blank" rel="noreferrer">
+                      {video.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <p className="text-sm font-semibold text-slate-900">Articles</p>
+              <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
+                {module.resources.articles.map((article) => (
+                  <li key={article.url}>
+                    <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
+                      {article.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-            <p className="text-sm font-semibold text-slate-900">Articles</p>
-            <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
-              {module.resources.articles.map((article) => (
-                <li key={article.url}>
-                  <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
-                    {article.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {module.notebook && (
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">

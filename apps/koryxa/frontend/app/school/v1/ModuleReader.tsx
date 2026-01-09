@@ -31,6 +31,13 @@ export default function ModuleReader({
 
   const totalQuestions = module.quiz.length;
   const canValidate = Object.keys(answers).length === totalQuestions;
+  const incorrectQuestions = module.quiz
+    .map((question, idx) => ({
+      idx,
+      question,
+      isCorrect: answers[idx] === question.answerIndex,
+    }))
+    .filter((item) => score !== null && !item.isCorrect);
 
   const percent = useMemo(() => {
     if (score === null) return 0;
@@ -224,6 +231,21 @@ export default function ModuleReader({
             </span>
           )}
         </div>
+        {score !== null && incorrectQuestions.length > 0 ? (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+            <p className="font-semibold">Questions ratees</p>
+            <ul className="mt-2 list-disc pl-5 space-y-2">
+              {incorrectQuestions.map(({ idx, question }) => (
+                <li key={question.prompt}>
+                  <span className="font-semibold">{idx + 1}.</span> {question.prompt}
+                  <div className="text-xs text-amber-800">
+                    Bonne reponse : {question.options[question.answerIndex]}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

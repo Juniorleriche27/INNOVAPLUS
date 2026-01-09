@@ -41,11 +41,11 @@ export const foundationalProgram: ProgramContent = {
         {
           title: "Introduction generale",
           text: [
-            "KORYXA School ne fonctionne pas comme une plateforme de videos. Un parcours est un livre, un module est un chapitre, et une lecon est une page. Le texte est le support officiel : il donne la structure, explique les concepts et fixe ce qui fait foi. Les videos sont la pour illustrer, pas pour remplacer.",
-            "Dans ce module, tu vas comprendre a quoi servent les principaux metiers de la data et de l'IA, comment ils transforment un besoin reel en mission exploitable, et pourquoi l'intelligence artificielle devient un outil central de creation de valeur. L'IA n'est pas un slogan : elle aide a cadrer un probleme, accelerer la production, et standardiser la qualite des livrables.",
-            "Une entreprise qui veut mieux suivre ses ventes, une ONG qui veut analyser des donnees terrain, une startup qui veut automatiser un processus : ce sont des besoins concrets. La data et l'IA permettent de transformer ces besoins en actions claires. C'est cette transformation qui crée des opportunites reelles pour les apprenants, tout en aidant les organisations a obtenir des resultats.",
-            "Pour avancer, il faut savoir qui fait quoi. Chaque role a une mission precise, mais tous travaillent ensemble. Un bon livrable data n'est jamais le resultat d'une seule personne : c'est une chaine qui va de la collecte a l'analyse, puis a la decision. Ce module te donne les bases pour comprendre cette chaine.",
-            "Retenir ce principe est essentiel : l'IA n'est utile que si elle est branchee sur des donnees fiables et un objectif clair. Sans cadre, elle produit du bruit. Avec un cadre, elle produit un livrable exploitable. C'est cette logique que KORYXA installe des le debut.",
+            "KORYXA School ne fonctionne pas comme une simple plateforme de videos. Ici, un parcours est concu comme un livre, un module comme un chapitre, et chaque lecon comme une page. Le texte ecrit constitue le support officiel de formation : il structure l'apprentissage, explique les concepts fondamentaux et fixe le cadre de reference. Les videos et ressources externes viennent illustrer et renforcer la comprehension, mais ne remplacent jamais le contenu principal.",
+            "Dans ce module, l'objectif est de comprendre a quoi servent reellement les principaux metiers de la data et de l'intelligence artificielle, comment ils transforment un besoin concret en mission exploitable, et pourquoi l'IA est devenue un outil central de creation de valeur dans les organisations. L'intelligence artificielle n'est pas un slogan ni une solution magique. Utilisee correctement, elle permet de cadrer un probleme, d'accelerer la production, et de standardiser la qualite des livrables.",
+            "Une entreprise qui souhaite mieux suivre ses ventes, une ONG qui veut analyser des donnees terrain, ou une startup qui cherche a automatiser un processus font toutes face a des besoins reels. La data et l'IA permettent de transformer ces besoins en actions claires, mesurables et exploitables. C'est cette transformation qui cree des opportunites concretes pour les apprenants, tout en apportant des resultats utiles aux organisations.",
+            "Pour avancer efficacement, il est essentiel de comprendre qui fait quoi. Chaque metier de la data a une responsabilite precise, mais aucun ne travaille isolement. Un livrable data de qualite est toujours le resultat d'une chaine complete, allant de la collecte des donnees a l'analyse, puis a la prise de decision. Ce module pose les bases necessaires pour comprendre cette chaine et s'y integrer intelligemment.",
+            "Un principe fondamental doit etre retenu des le depart : l'intelligence artificielle n'est utile que si elle repose sur des donnees fiables et un objectif clairement defini. Sans cadre, elle produit du bruit. Avec un cadre rigoureux, elle produit un livrable exploitable. C'est cette logique que KORYXA met en place des les premieres etapes de la formation.",
           ],
           video: {
             label: "IBM – What is Data Science",
@@ -74,8 +74,8 @@ export const foundationalProgram: ProgramContent = {
             "Le Data Engineer assure aussi la durabilite : un pipeline bien concu evite les erreurs silencieuses et facilite le passage a l'echelle. C'est la difference entre un test ponctuel et un systeme qui fonctionne chaque semaine.",
           ],
           video: {
-            label: "IBM – What does a Data Engineer do?",
-            url: "https://www.youtube.com/watch?v=I_P7wX8Q6Sw",
+            label: "Grafikart – Le metier de Data Engineer explique",
+            url: "https://www.youtube.com/watch?v=9wZ8qGZkN6Y",
           },
         },
         {
@@ -87,8 +87,8 @@ export const foundationalProgram: ProgramContent = {
             "Dans une mission, il documente les hypotheses, les limites et les risques. Cela permet a l'entreprise de comprendre pourquoi le modele fonctionne, et dans quels cas il ne doit pas etre utilise.",
           ],
           video: {
-            label: "Simplilearn – What does a Data Scientist do?",
-            url: "https://www.youtube.com/watch?v=XpIFS6jZbe8",
+            label: "DataScientest – C'est quoi le metier de Data Scientist ?",
+            url: "https://www.youtube.com/watch?v=8K8C2UjXQnA",
           },
         },
         {
@@ -115,8 +115,8 @@ export const foundationalProgram: ProgramContent = {
             "Quand la chaine est claire, les decisions sont plus rapides et les erreurs diminuent. La collaboration n'est pas une option : c'est la condition pour produire un resultat concret.",
           ],
           video: {
-            label: "Simplilearn – Data Analyst vs Data Scientist vs Data Engineer",
-            url: "https://www.youtube.com/watch?v=1u3qE3z1Z6E",
+            label: "Machine Learnia – Data Analyst vs Data Scientist vs Data Engineer",
+            url: "https://www.youtube.com/watch?v=Jt6yQ9Hq9nA",
           },
         },
       ],

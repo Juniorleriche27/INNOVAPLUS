@@ -74,8 +74,8 @@ export const foundationalProgram: ProgramContent = {
             "Le Data Engineer assure aussi la durabilite : un pipeline bien concu evite les erreurs silencieuses et facilite le passage a l'echelle. C'est la difference entre un test ponctuel et un systeme qui fonctionne chaque semaine.",
           ],
           video: {
-            label: "Grafikart – Le metier de Data Engineer explique",
-            url: "https://www.youtube.com/watch?v=9wZ8qGZkN6Y",
+            label: "DataScientest – Qu'est-ce qu'un Data Engineer ?",
+            url: "https://www.youtube.com/watch?v=IeyYWxaMP3M",
           },
         },
         {
@@ -87,8 +87,8 @@ export const foundationalProgram: ProgramContent = {
             "Dans une mission, il documente les hypotheses, les limites et les risques. Cela permet a l'entreprise de comprendre pourquoi le modele fonctionne, et dans quels cas il ne doit pas etre utilise.",
           ],
           video: {
-            label: "DataScientest – C'est quoi le metier de Data Scientist ?",
-            url: "https://www.youtube.com/watch?v=8K8C2UjXQnA",
+            label: "DataScientest – Que fait un Data Scientist ?",
+            url: "https://www.youtube.com/watch?v=ixVR8uPetHQ",
           },
         },
         {
@@ -115,8 +115,8 @@ export const foundationalProgram: ProgramContent = {
             "Quand la chaine est claire, les decisions sont plus rapides et les erreurs diminuent. La collaboration n'est pas une option : c'est la condition pour produire un resultat concret.",
           ],
           video: {
-            label: "Machine Learnia – Data Analyst vs Data Scientist vs Data Engineer",
-            url: "https://www.youtube.com/watch?v=Jt6yQ9Hq9nA",
+            label: "L'Atelier Data – Data Scientist vs Data Analyst vs Data Engineer : quelles differences ?",
+            url: "https://www.youtube.com/watch?v=mEZIHFxUFEc",
           },
         },
       ],

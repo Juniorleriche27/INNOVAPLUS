@@ -100,6 +100,12 @@ const V1_LINKS = [
   { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
 ];
 
+const V1_SCHOOL_SUBLINKS = [
+  { href: "/school/fondamentaux", label: "Parcours fondamentaux" },
+  { href: "/school/specialisations", label: "Specialisations" },
+  { href: "/school/validations", label: "Projets & validations" },
+];
+
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -173,49 +179,75 @@ export default function Sidebar({ className, style }: { className?: string; styl
           {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
+            const showSchoolSubs = IS_V1 && link.href === "/school" && isExpanded;
             
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={clsx(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-                  "hover:bg-slate-50 hover:shadow-sm",
-                  active
-                    ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60 ring-1 ring-sky-100"
-                    : "text-slate-600 hover:text-slate-900",
-                  // Collapsed state
-                  collapsed && !hovered && "justify-center px-2"
-                )}
-              >
-                <div className={clsx(
-                  "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
-                  active 
-                    ? "bg-sky-100 text-sky-600" 
-                    : "bg-slate-100 text-slate-500 group-hover:bg-sky-100 group-hover:text-sky-600"
-                )}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                
-                {isExpanded && (
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-semibold truncate">{link.label}</span>
-                      {active && (
-                        <div className="w-2 h-2 rounded-full bg-sky-500" />
-                      )}
+              <div key={link.href} className="space-y-2">
+                <Link
+                  href={link.href}
+                  className={clsx(
+                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
+                    "hover:bg-slate-50 hover:shadow-sm",
+                    active
+                      ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60 ring-1 ring-sky-100"
+                      : "text-slate-600 hover:text-slate-900",
+                    // Collapsed state
+                    collapsed && !hovered && "justify-center px-2"
+                  )}
+                >
+                  <div className={clsx(
+                    "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
+                    active 
+                      ? "bg-sky-100 text-sky-600" 
+                      : "bg-slate-100 text-slate-500 group-hover:bg-sky-100 group-hover:text-sky-600"
+                  )}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] font-semibold truncate">{link.label}</span>
+                        {active && (
+                          <div className="w-2 h-2 rounded-full bg-sky-500" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate">{link.description}</p>
                     </div>
-                    <p className="text-[11px] text-slate-500 truncate">{link.description}</p>
-                  </div>
-                )}
+                  )}
 
-                {/* Tooltip for collapsed state */}
-                {collapsed && !hovered && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                    {link.label}
+                  {/* Tooltip for collapsed state */}
+                  {collapsed && !hovered && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {link.label}
+                    </div>
+                  )}
+                </Link>
+
+                {showSchoolSubs ? (
+                  <div className="ml-10 rounded-xl border border-slate-200/70 bg-white/80 p-2 shadow-sm">
+                    <div className="space-y-1">
+                      {V1_SCHOOL_SUBLINKS.map((sub) => {
+                        const subActive = pathname.startsWith(sub.href);
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={clsx(
+                              "flex items-center rounded-lg px-3 py-2 text-[12px] font-semibold transition",
+                              subActive
+                                ? "bg-sky-50 text-sky-700"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            )}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-              </Link>
+                ) : null}
+              </div>
             );
           })}
         </nav>

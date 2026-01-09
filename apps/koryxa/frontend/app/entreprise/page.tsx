@@ -69,6 +69,13 @@ export default function EntreprisePage() {
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Ce que KORYXA garantit</h2>
+          <p className="mt-3 text-sm text-slate-600">
+            KORYXA garantit un cadrage IA + data rigoureux : du besoin initial jusqu’au livrable validé.
+          </p>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Ce que vous apportez</h2>
           <p className="mt-3 text-sm text-slate-600">
             Vous decrivez des besoins reels, vous proposez des missions concretes (meme petites),

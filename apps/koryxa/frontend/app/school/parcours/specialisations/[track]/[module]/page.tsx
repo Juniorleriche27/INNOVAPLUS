@@ -2,6 +2,15 @@ import { notFound } from "next/navigation";
 import ModuleReader from "@/app/school/v1/ModuleReader";
 import { specialisations } from "@/app/school/v1/content";
 
+export function generateStaticParams() {
+  return Object.values(specialisations).flatMap((program) =>
+    program.modules.map((module) => ({
+      track: program.id,
+      module: module.id,
+    }))
+  );
+}
+
 export default function SpecialisationModulePage({ params }: { params: { track: string; module: string } }) {
   const program = specialisations[params.track];
   if (!program) {

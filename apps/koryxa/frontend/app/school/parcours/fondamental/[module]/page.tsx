@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import ModuleReader from "@/app/school/v1/ModuleReader";
 import { foundationalProgram } from "@/app/school/v1/content";
 
+export function generateStaticParams() {
+  return foundationalProgram.modules.map((module) => ({ module: module.id }));
+}
+
 export default function FundamentalModulePage({ params }: { params: { module: string } }) {
   const moduleIndex = foundationalProgram.modules.findIndex((m) => m.id === params.module);
   if (moduleIndex === -1) {

@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { specialisations } from "@/app/school/v1/content";
 
+export function generateStaticParams() {
+  return Object.keys(specialisations).map((track) => ({ track }));
+}
+
 export default function SpecialisationEntryPage({ params }: { params: { track: string } }) {
   const program = specialisations[params.track];
   if (!program) {

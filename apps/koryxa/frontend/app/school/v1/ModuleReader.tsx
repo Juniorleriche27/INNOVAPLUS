@@ -28,9 +28,14 @@ export default function ModuleReader({
   const [validated, setValidated] = useState(false);
   const [score, setScore] = useState<number | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [readingConfirmed, setReadingConfirmed] = useState(false);
+  const [notebookConfirmed, setNotebookConfirmed] = useState(false);
 
   const totalQuestions = module.quiz.length;
-  const canValidate = Object.keys(answers).length === totalQuestions;
+  const requiresReading = Boolean(module.requireReadingConfirmation);
+  const requiresNotebook = Boolean(module.requireNotebookConfirmation);
+  const confirmationsOk = (!requiresReading || readingConfirmed) && (!requiresNotebook || notebookConfirmed);
+  const canValidate = Object.keys(answers).length === totalQuestions && confirmationsOk;
   const incorrectQuestions = module.quiz
     .map((question, idx) => ({
       idx,
@@ -134,6 +139,16 @@ export default function ModuleReader({
             ))}
           </div>
         )}
+        {requiresReading ? (
+          <label className="mt-5 flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={readingConfirmed}
+              onChange={(event) => setReadingConfirmed(event.target.checked)}
+            />
+            J'ai lu le texte du module
+          </label>
+        ) : null}
         <button
           type="button"
           className="mt-5 inline-flex text-sm font-semibold text-sky-700"
@@ -193,6 +208,16 @@ export default function ModuleReader({
               Telecharger le notebook
             </a>
           )}
+          {requiresNotebook ? (
+            <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={notebookConfirmed}
+                onChange={(event) => setNotebookConfirmed(event.target.checked)}
+              />
+              J'ai consulte le notebook
+            </label>
+          ) : null}
         </section>
       )}
 
@@ -201,6 +226,11 @@ export default function ModuleReader({
         <p className="mt-2 text-sm text-slate-600">
           Minimum requis : {MIN_PASS_PERCENT}%. Sans reussite, pas de module suivant.
         </p>
+        {(requiresReading || requiresNotebook) && (
+          <p className="mt-2 text-xs text-slate-500">
+            Validation complete si texte lu, notebook consulte et mini-test reussi.
+          </p>
+        )}
         <div className="mt-4 space-y-4">
           {module.quiz.map((question, idx) => (
             <div key={question.prompt} className="rounded-2xl border border-slate-200 p-4">

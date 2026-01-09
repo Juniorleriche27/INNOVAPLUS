@@ -17,6 +17,8 @@ export type ModuleContent = {
   sections?: ModuleSection[];
   notebook?: NotebookBlock;
   quiz: QuizQuestion[];
+  requireReadingConfirmation?: boolean;
+  requireNotebookConfirmation?: boolean;
 };
 
 export type ProgramContent = {
@@ -228,57 +230,163 @@ export const foundationalProgram: ProgramContent = {
     {
       id: "python-data",
       title: "Bases Python pour la data",
-      text: [
-        "Python est la base du travail data moderne. On apprend ici les structures essentielles pour manipuler des donnees.",
-        "Variables, conditions, boucles et fonctions sont les briques qui permettent d'automatiser l'analyse.",
-        "On termine par une introduction a NumPy et Pandas pour traiter des tableaux de donnees.",
+      text: [],
+      sections: [
+        {
+          title: "Introduction generale",
+          text: [
+            "Python est aujourd'hui le langage central des metiers de la data et de l'intelligence artificielle. Son succes ne repose pas sur un effet de mode, mais sur sa capacite a repondre efficacement a des besoins concrets : analyser des donnees, automatiser des traitements, construire des modeles et deployer des solutions exploitables. Contrairement a d'autres langages plus complexes ou plus rigides, Python privilegie la lisibilite et la simplicite, ce qui permet de se concentrer sur le raisonnement plutot que sur la syntaxe.",
+            "Dans les metiers de la data, Python n'est pas appris pour \"savoir coder\", mais pour produire. Un Data Analyst l'utilise pour nettoyer et analyser des donnees. Un Data Engineer s'en sert pour automatiser des pipelines. Un Data Scientist l'emploie pour modeliser et experimenter. Un Machine Learning Engineer l'utilise pour integrer des modeles dans des applications reelles. Autrement dit, Python est un outil transversal, au coeur de toute la chaine data.",
+            "Ce module pose les bases indispensables. Il ne vise pas a faire de toi un developpeur logiciel, mais a te donner une maitrise fonctionnelle de Python orientee donnees. Tu apprendras a manipuler des variables, a structurer des donnees, a ecrire des conditions et des boucles, et a comprendre les bibliotheques fondamentales utilisees en data. Ces bases sont indispensables : sans elles, il est impossible de comprendre les modules suivants consacres a la manipulation de donnees, au SQL, ou a la visualisation.",
+            "Chez KORYXA School, Python est aborde comme un langage de resolution de problemes. Chaque concept presente dans ce module correspond a un usage reel dans un projet data. L'objectif n'est pas d'accumuler des notions abstraites, mais de construire progressivement une logique de travail claire, reutilisable et orientee livrables.",
+          ],
+          video: {
+            label: "Grafikart - Python pour la Data Science : introduction",
+            url: "https://www.youtube.com/watch?v=HGOBQPFzWKo",
+          },
+        },
+        {
+          title: "Variables et types de donnees",
+          text: [
+            "En Python, une variable permet de stocker une information afin de la reutiliser ou de la transformer. Contrairement a d'autres langages, Python n'exige pas de declarer explicitement le type d'une variable. Le type est determine automatiquement en fonction de la valeur assignee. Cette flexibilite rend le langage accessible, mais elle impose aussi de bien comprendre les types de donnees pour eviter des erreurs logiques.",
+            "Les types de base les plus utilises en data sont les entiers (int), les nombres decimaux (float), les chaines de caracteres (str) et les booleens (bool). Chaque type a un role precis. Par exemple, les entiers servent souvent a representer des quantites, les floats des mesures, les chaines du texte, et les booleens des conditions logiques. Une mauvaise comprehension des types peut conduire a des calculs errones ou a des analyses incoherentes.",
+            "Dans un projet data reel, savoir identifier et manipuler correctement les types est essentiel, notamment lors du nettoyage des donnees ou de la lecture de fichiers externes. Cette partie constitue donc une base fondamentale pour tout le reste du parcours.",
+          ],
+          video: {
+            label: "Grafikart - Variables et types en Python",
+            url: "https://www.youtube.com/watch?v=khKv-8q7YmY",
+          },
+        },
+        {
+          title: "Conditions (if / else)",
+          text: [
+            "Les conditions permettent a un programme de prendre des decisions. En data, elles sont omnipresentes : filtrer des lignes, appliquer des regles metier, classer des observations ou declencher des actions specifiques. La structure if / elif / else permet d'executer un bloc de code uniquement si une condition est remplie.",
+            "Comprendre la logique conditionnelle est indispensable pour transformer des donnees brutes en informations exploitables. Par exemple, une condition peut servir a identifier des clients a risque, a separer des categories ou a verifier la validite d'une donnee. Une condition mal formulee peut fausser toute une analyse.",
+            "Cette partie te permet d'acquerir une logique rigoureuse : apprendre a raisonner en termes de conditions claires et verifiables est une competence cle dans les metiers de la data.",
+          ],
+          video: {
+            label: "Machine Learnia - Python IF/ELSE, WHILE, FOR (3/30)",
+            url: "https://www.youtube.com/watch?v=x_Jeyvw7n9I",
+          },
+        },
+        {
+          title: "Boucles (for / while)",
+          text: [
+            "Les boucles servent a repeter automatiquement une operation sur un ensemble d'elements. En data, elles permettent de parcourir des listes, de traiter des fichiers ligne par ligne ou d'appliquer un calcul a plusieurs observations. Python propose principalement deux types de boucles : for et while.",
+            "La boucle for est la plus utilisee en data, car elle permet de parcourir directement des collections de donnees. La boucle while est plus generale, mais doit etre utilisee avec prudence pour eviter les boucles infinies. Comprendre quand et comment utiliser chaque type de boucle est essentiel pour ecrire des scripts efficaces et lisibles.",
+            "Meme si certaines bibliotheques data reduisent l'usage explicite des boucles, leur comprehension reste indispensable pour lire, comprendre et maintenir du code existant.",
+          ],
+          video: {
+            label: "Grafikart - Les boucles en Python",
+            url: "https://www.youtube.com/watch?v=94UHCEmprCY",
+          },
+        },
+        {
+          title: "Structures de donnees : listes et dictionnaires",
+          text: [
+            "Les structures de donnees permettent d'organiser l'information. Les listes servent a stocker des collections ordonnees d'elements, tandis que les dictionnaires permettent d'associer des cles a des valeurs. Ces deux structures sont omnipresentes en data, car elles permettent de representer des donnees complexes de maniere flexible.",
+            "Une liste peut contenir des valeurs homogenes ou heterogenes, et elle est souvent utilisee pour stocker des observations ou des resultats intermediaires. Un dictionnaire, quant a lui, est ideal pour representer une entite avec plusieurs attributs, comme un utilisateur, un produit ou un enregistrement.",
+            "Savoir manipuler ces structures est fondamental avant de passer a des outils plus avances comme Pandas.",
+          ],
+          video: {
+            label: "Grafikart - Listes et dictionnaires en Python",
+            url: "https://www.youtube.com/watch?v=ZDa-Z5JzLYM",
+          },
+        },
+        {
+          title: "Fonctions et premieres bibliotheques data",
+          text: [
+            "Les fonctions permettent de regrouper du code reutilisable. Elles sont essentielles pour structurer un script, ameliorer sa lisibilite et eviter les repetitions. En data, les fonctions sont utilisees pour automatiser des calculs, appliquer des transformations ou standardiser des traitements.",
+            "Cette partie introduit egalement NumPy et Pandas, deux bibliotheques fondamentales. NumPy permet de manipuler efficacement des tableaux numeriques, tandis que Pandas est concu pour travailler avec des donnees tabulaires. Ces outils seront approfondis dans les modules suivants, mais il est important d'en comprendre des maintenant le role et l'utilite.",
+          ],
+          video: {
+            label: "Data School - Introduction a Pandas",
+            url: "https://www.youtube.com/watch?v=vmEHCJofslg",
+          },
+        },
       ],
       resources: {
-        videos: [
-          { label: "Python pour debutants (YouTube)", url: "https://www.youtube.com/watch?v=rfscVS0vtbw" },
-        ],
         articles: [
-          { label: "Introduction a Pandas", url: "https://pandas.pydata.org/docs/getting_started/intro_tutorials/index.html" },
+          {
+            label: "OpenClassrooms - Python pour la data science",
+            url: "https://openclassrooms.com/fr/courses/4444646-initiez-vous-a-python-pour-lanalyse-de-donnees",
+          },
+          {
+            label: "Coursera - Why Python is used for Data Science",
+            url: "https://www.coursera.org/articles/python-for-data-science",
+          },
         ],
+        videos: [],
       },
       notebook: {
-        title: "Notebook Python - bases",
-        description: "Exemples simples sur variables, boucles et listes.",
-        code: "names = [\"Awa\", \"Jean\", \"Mamadou\"]\nfor name in names:\n    print(f\"Bonjour {name}\")\n\nscores = [12, 15, 9, 18]\nprint(sum(scores) / len(scores))",
-        download: "/downloads/python-bases.ipynb",
+        title: "Notebook Module 2 - Bases Python",
+        description: "Exercices guides sur variables, conditions, boucles, listes, dictionnaires et premiers DataFrames.",
+        code: "# Variables et types\nage = 23\nnom = \"Awa\"\nactif = True\n\naire = 3.14 * 2 ** 2\nprint(nom, age, actif, aire)\n\n# Conditions\nnote = 12\nif note >= 10:\n    statut = \"valide\"\nelse:\n    statut = \"a revoir\"\nprint(statut)\n\n# Boucles\nnotes = [12, 15, 9, 18]\nfor n in notes:\n    print(n)\n\n# Listes et dictionnaires\netudiants = [\n    {\"nom\": \"Awa\", \"note\": 15},\n    {\"nom\": \"Jean\", \"note\": 9},\n]\n\n# Fonctions\ndef moyenne(valeurs):\n    return sum(valeurs) / len(valeurs)\n\nprint(moyenne([12, 15, 9]))\n\n# Premiers DataFrames Pandas\nimport pandas as pd\n\ndf = pd.DataFrame(etudiants)\nprint(df)\nprint(df[\"note\"].mean())",
       },
       quiz: [
         {
-          prompt: "Quel symbole sert a definir une fonction en Python ?",
-          options: ["def", "func", "lambda"],
+          prompt: "Pourquoi Python est-il central en data ?",
+          options: ["Lisible et adapte aux usages data", "Plus rapide que tous les langages", "Reserve aux experts"],
           answerIndex: 0,
-          explanation: "On utilise le mot-cle def pour declarer une fonction.",
+          explanation: "Python privilegie la lisibilite et les usages data.",
         },
         {
-          prompt: "Vrai ou faux : une liste Python est ordonnee.",
+          prompt: "Vrai ou faux : Python oblige a declarer le type d'une variable.",
           options: ["Vrai", "Faux"],
-          answerIndex: 0,
-          explanation: "Les listes conservent l'ordre des elements.",
+          answerIndex: 1,
+          explanation: "Le typage est dynamique en Python.",
         },
         {
-          prompt: "Quel module est courant pour manipuler des tableaux numeriques ?",
-          options: ["NumPy", "Requests", "Flask"],
-          answerIndex: 0,
-          explanation: "NumPy est la base pour les calculs numeriques.",
+          prompt: "Quel type represente un nombre decimal ?",
+          options: ["int", "float", "str"],
+          answerIndex: 1,
+          explanation: "float represente les nombres a virgule.",
         },
         {
-          prompt: "Quelle structure est ideale pour associer cle -> valeur ?",
+          prompt: "Quel mot-cle permet de tester une condition ?",
+          options: ["if", "for", "def"],
+          answerIndex: 0,
+          explanation: "if sert a executer un bloc selon une condition.",
+        },
+        {
+          prompt: "Les booleens peuvent prendre les valeurs :",
+          options: ["True / False", "Yes / No", "0 / 1 uniquement"],
+          answerIndex: 0,
+          explanation: "En Python, les booleens sont True ou False.",
+        },
+        {
+          prompt: "Une boucle for sert principalement a :",
+          options: ["Repeter une action sur une sequence", "Declarer un module", "Sauver un fichier"],
+          answerIndex: 0,
+          explanation: "for repete une action sur une sequence.",
+        },
+        {
+          prompt: "Une boucle while doit etre utilisee avec prudence car :",
+          options: ["Elle peut devenir infinie", "Elle est interdite en Python", "Elle supprime des donnees"],
+          answerIndex: 0,
+          explanation: "Une condition mal geree peut boucler sans fin.",
+        },
+        {
+          prompt: "Quelle structure associe des cles a des valeurs ?",
           options: ["Liste", "Dictionnaire", "Tuple"],
           answerIndex: 1,
           explanation: "Les dictionnaires sont faits pour ca.",
         },
         {
-          prompt: "Une boucle for sert a :",
-          options: ["Executer une tache repetitive", "Declarer un module", "Sauver un fichier"],
+          prompt: "Quel mot-cle permet de definir une fonction ?",
+          options: ["def", "func", "lambda"],
           answerIndex: 0,
-          explanation: "La boucle for repete une action sur une sequence.",
+          explanation: "def sert a declarer une fonction.",
+        },
+        {
+          prompt: "Quel outil est concu pour manipuler des donnees tabulaires ?",
+          options: ["Pandas", "Flask", "Requests"],
+          answerIndex: 0,
+          explanation: "Pandas est adapte aux tables et DataFrames.",
         },
       ],
+      requireReadingConfirmation: true,
+      requireNotebookConfirmation: true,
     },
     {
       id: "manip-donnees",

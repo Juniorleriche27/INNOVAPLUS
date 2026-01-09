@@ -38,12 +38,20 @@ const V1_HIDDEN_PREFIXES = [
   "/groups",
 ];
 
+const V1_SCHOOL_ALLOWED = [
+  "/school",
+  "/school/fondamentaux",
+  "/school/specialisations",
+  "/school/validations",
+  "/school/parcours",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
 
   if (V1_SIMPLE) {
-    if (pathname.startsWith("/school/") && !pathname.startsWith("/school/tracks")) {
+    if (pathname.startsWith("/school/") && !V1_SCHOOL_ALLOWED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
       const url = request.nextUrl.clone();
       url.pathname = "/school";
       return NextResponse.redirect(url);

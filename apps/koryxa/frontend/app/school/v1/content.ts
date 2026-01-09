@@ -1,0 +1,761 @@
+export type ResourceLink = { label: string; url: string };
+export type NotebookBlock = { title: string; description: string; code: string; download?: string };
+export type QuizQuestion = {
+  prompt: string;
+  options: string[];
+  answerIndex: number;
+  explanation: string;
+};
+
+export type ModuleContent = {
+  id: string;
+  title: string;
+  text: string[];
+  resources: { videos: ResourceLink[]; articles: ResourceLink[] };
+  notebook?: NotebookBlock;
+  quiz: QuizQuestion[];
+};
+
+export type ProgramContent = {
+  id: string;
+  title: string;
+  objective: string;
+  duration: string;
+  modules: ModuleContent[];
+};
+
+export const foundationalProgram: ProgramContent = {
+  id: "fondamental",
+  title: "Parcours Fondamental Commun",
+  objective: "Construire une base solide pour comprendre la data et l'IA appliquee a des besoins reels.",
+  duration: "4–6 semaines",
+  modules: [
+    {
+      id: "intro-metiers",
+      title: "Introduction aux metiers de la data & IA",
+      text: [
+        "Ce module pose le cadre des principaux roles data et IA. Il clarifie les missions reelles, les outils courants et la logique de collaboration entre profils.",
+        "L'objectif est de comprendre qui fait quoi, pourquoi, et comment un besoin d'entreprise devient une mission data ou IA.",
+        "Prenez le temps d'identifier le role qui vous attire le plus et les competences a renforcer.",
+      ],
+      resources: {
+        videos: [
+          { label: "Panorama des metiers de la data (YouTube)", url: "https://www.youtube.com/watch?v=ua-CiDNNj30" },
+          { label: "Pourquoi la data change les organisations", url: "https://www.youtube.com/watch?v=9sVZqkQv9x0" },
+        ],
+        articles: [
+          { label: "Data Analyst vs Data Scientist", url: "https://www.datacamp.com/blog/data-analyst-vs-data-scientist" },
+        ],
+      },
+      quiz: [
+        {
+          prompt: "Quel est l'objectif principal d'un Data Analyst ?",
+          options: ["Construire des pipelines", "Analyser et rendre la data lisible", "Deployer des modeles en prod"],
+          answerIndex: 1,
+          explanation: "Le Data Analyst transforme les donnees en insights actionnables via analyses et dashboards.",
+        },
+        {
+          prompt: "Vrai ou faux : un Data Engineer travaille surtout sur l'architecture et les flux.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 0,
+          explanation: "Le Data Engineer structure les pipelines et l'infrastructure des donnees.",
+        },
+        {
+          prompt: "Quel role est le plus implique dans l'industrialisation ML ?",
+          options: ["Machine Learning Engineer", "Product Manager", "Designer"],
+          answerIndex: 0,
+          explanation: "Le MLE integre les modeles dans des systemes robustes.",
+        },
+        {
+          prompt: "Une mission IA commence souvent par :",
+          options: ["Un besoin reel", "Un modele deja entraine", "Un logo"],
+          answerIndex: 0,
+          explanation: "Tout part d'un besoin concret qui doit etre cadre.",
+        },
+        {
+          prompt: "Quel outil est courant pour l'analyse de donnees ?",
+          options: ["Power BI", "Photoshop", "Figma"],
+          answerIndex: 0,
+          explanation: "Power BI est un outil standard pour les dashboards.",
+        },
+      ],
+    },
+    {
+      id: "python-data",
+      title: "Bases Python pour la data",
+      text: [
+        "Python est la base du travail data moderne. On apprend ici les structures essentielles pour manipuler des donnees.",
+        "Variables, conditions, boucles et fonctions sont les briques qui permettent d'automatiser l'analyse.",
+        "On termine par une introduction a NumPy et Pandas pour traiter des tableaux de donnees.",
+      ],
+      resources: {
+        videos: [
+          { label: "Python pour debutants (YouTube)", url: "https://www.youtube.com/watch?v=rfscVS0vtbw" },
+        ],
+        articles: [
+          { label: "Introduction a Pandas", url: "https://pandas.pydata.org/docs/getting_started/intro_tutorials/index.html" },
+        ],
+      },
+      notebook: {
+        title: "Notebook Python - bases",
+        description: "Exemples simples sur variables, boucles et listes.",
+        code: "names = [\"Awa\", \"Jean\", \"Mamadou\"]\nfor name in names:\n    print(f\"Bonjour {name}\")\n\nscores = [12, 15, 9, 18]\nprint(sum(scores) / len(scores))",
+        download: "/downloads/python-bases.ipynb",
+      },
+      quiz: [
+        {
+          prompt: "Quel symbole sert a definir une fonction en Python ?",
+          options: ["def", "func", "lambda"],
+          answerIndex: 0,
+          explanation: "On utilise le mot-cle def pour declarer une fonction.",
+        },
+        {
+          prompt: "Vrai ou faux : une liste Python est ordonnee.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 0,
+          explanation: "Les listes conservent l'ordre des elements.",
+        },
+        {
+          prompt: "Quel module est courant pour manipuler des tableaux numeriques ?",
+          options: ["NumPy", "Requests", "Flask"],
+          answerIndex: 0,
+          explanation: "NumPy est la base pour les calculs numeriques.",
+        },
+        {
+          prompt: "Quelle structure est ideale pour associer cle -> valeur ?",
+          options: ["Liste", "Dictionnaire", "Tuple"],
+          answerIndex: 1,
+          explanation: "Les dictionnaires sont faits pour ca.",
+        },
+        {
+          prompt: "Une boucle for sert a :",
+          options: ["Executer une tache repetitive", "Declarer un module", "Sauver un fichier"],
+          answerIndex: 0,
+          explanation: "La boucle for repete une action sur une sequence.",
+        },
+      ],
+    },
+    {
+      id: "manip-donnees",
+      title: "Manipulation des donnees",
+      text: [
+        "Avant de produire un resultat, il faut comprendre et nettoyer les donnees.",
+        "On apprend a lire des fichiers CSV, Excel et JSON, puis a corriger les erreurs.",
+        "La qualite des donnees determine la qualite du livrable final.",
+      ],
+      resources: {
+        videos: [
+          { label: "Nettoyage de donnees avec Pandas", url: "https://www.youtube.com/watch?v=vmEHCJofslg" },
+        ],
+        articles: [
+          { label: "Data cleaning basics", url: "https://towardsdatascience.com/data-cleaning-101-6dd1be3b8e8a" },
+        ],
+      },
+      notebook: {
+        title: "Notebook - nettoyage rapide",
+        description: "Traitement des valeurs manquantes et doublons.",
+        code: "import pandas as pd\n\ndf = pd.read_csv(\"data.csv\")\nprint(df.isna().sum())\n\ndf = df.drop_duplicates()\n\ndf[\"amount\"] = df[\"amount\"].fillna(df[\"amount\"].median())",
+      },
+      quiz: [
+        {
+          prompt: "Quelle est la premiere etape avant une analyse ?",
+          options: ["Nettoyer les donnees", "Publier le rapport", "Entrainer un modele"],
+          answerIndex: 0,
+          explanation: "Les donnees doivent etre propres avant toute analyse.",
+        },
+        {
+          prompt: "Vrai ou faux : un doublon peut fausser un tableau de bord.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 0,
+          explanation: "Les doublons biaisent les moyennes et comptages.",
+        },
+        {
+          prompt: "Quel format est souvent utilise pour les donnees tabulaires ?",
+          options: ["CSV", "MP4", "PNG"],
+          answerIndex: 0,
+          explanation: "CSV est un format simple et courant.",
+        },
+        {
+          prompt: "Que faire avec des valeurs manquantes ?",
+          options: ["Les ignorer toujours", "Les traiter ou les expliquer", "Les remplacer par du texte"],
+          answerIndex: 1,
+          explanation: "On decide selon le contexte : supprimer, imputer, etc.",
+        },
+        {
+          prompt: "Quel outil facilite les jointures en Python ?",
+          options: ["Pandas", "Docker", "Nginx"],
+          answerIndex: 0,
+          explanation: "Pandas propose merge et join pour combiner des tables.",
+        },
+      ],
+    },
+    {
+      id: "sql-bases",
+      title: "Bases SQL",
+      text: [
+        "SQL permet d'interroger et structurer des bases de donnees.",
+        "On y retrouve les requetes essentielles : SELECT, WHERE, JOIN, GROUP BY.",
+        "Le but est de passer d'une question business a une requete claire.",
+      ],
+      resources: {
+        videos: [
+          { label: "SQL pour debutants", url: "https://www.youtube.com/watch?v=HXV3zeQKqGY" },
+        ],
+        articles: [
+          { label: "SQL basics cheat sheet", url: "https://www.sqltutorial.org/sql-cheat-sheet/" },
+        ],
+      },
+      quiz: [
+        {
+          prompt: "Quelle clause sert a filtrer les resultats ?",
+          options: ["WHERE", "ORDER", "FROM"],
+          answerIndex: 0,
+          explanation: "WHERE filtre les lignes selon une condition.",
+        },
+        {
+          prompt: "Vrai ou faux : JOIN sert a fusionner des tables.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 0,
+          explanation: "JOIN combine des tables sur une cle.",
+        },
+        {
+          prompt: "Quel mot-cle sert a compter ?",
+          options: ["COUNT", "SUM", "AVG"],
+          answerIndex: 0,
+          explanation: "COUNT compte le nombre de lignes.",
+        },
+        {
+          prompt: "GROUP BY sert a :",
+          options: ["Classer par groupes", "Supprimer des lignes", "Importer un fichier"],
+          answerIndex: 0,
+          explanation: "Il regroupe les lignes avant agregation.",
+        },
+        {
+          prompt: "Un resultat SQL doit etre :",
+          options: ["Lisible", "Opaque", "Sans structure"],
+          answerIndex: 0,
+          explanation: "On vise des resultats clairs et interpretable.",
+        },
+      ],
+    },
+    {
+      id: "visualisation",
+      title: "Visualisation des donnees",
+      text: [
+        "Une bonne visualisation transforme les donnees en decisions.",
+        "On apprend a choisir le bon graphique, et a expliquer ce qu'on montre.",
+        "Le but est de rendre l'information compréhensible en quelques secondes.",
+      ],
+      resources: {
+        videos: [
+          { label: "Data viz basics", url: "https://www.youtube.com/watch?v=6V5pZl1b5wM" },
+        ],
+        articles: [
+          { label: "Guide des graphiques", url: "https://www.data-to-viz.com/" },
+        ],
+      },
+      quiz: [
+        {
+          prompt: "Quel graphique est adapte pour une evolution dans le temps ?",
+          options: ["Courbe", "Camembert", "Table brute"],
+          answerIndex: 0,
+          explanation: "Une courbe montre une evolution.",
+        },
+        {
+          prompt: "Vrai ou faux : un graphique doit etre lisible sans legenda complexe.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 0,
+          explanation: "On vise la clarté immediatement.",
+        },
+        {
+          prompt: "Quel outil est souvent utilise pour les dashboards ?",
+          options: ["Power BI", "Word", "Notepad"],
+          answerIndex: 0,
+          explanation: "Power BI est un outil de BI courant.",
+        },
+        {
+          prompt: "Une bonne visualisation doit :",
+          options: ["Raconter une histoire claire", "Multiplier les couleurs", "Eviter le contexte"],
+          answerIndex: 0,
+          explanation: "Elle explique une histoire simplement.",
+        },
+        {
+          prompt: "Un histogramme sert a :",
+          options: ["Voir une distribution", "Dessiner une carte", "Coder un algorithme"],
+          answerIndex: 0,
+          explanation: "Histogramme = distribution des valeurs.",
+        },
+      ],
+    },
+    {
+      id: "projet-synthese",
+      title: "Projet commun de synthese",
+      text: [
+        "Ce projet rassemble les competences apprises. Vous traitez un besoin simple de bout en bout.",
+        "Le livrable final doit etre clair, documente et reutilisable par une organisation.",
+        "C'est la validation du parcours fondamental.",
+      ],
+      resources: {
+        videos: [
+          { label: "Exemple de projet data", url: "https://www.youtube.com/watch?v=ua-CiDNNj30" },
+        ],
+        articles: [
+          { label: "Comment structurer un livrable data", url: "https://towardsdatascience.com/how-to-structure-a-data-project-3f5f3c3f3b21" },
+        ],
+      },
+      quiz: [
+        {
+          prompt: "Un livrable data doit contenir :",
+          options: ["Contexte, methode, resultats", "Uniquement des graphiques", "Aucune explication"],
+          answerIndex: 0,
+          explanation: "Le contexte et la methodologie sont essentiels.",
+        },
+        {
+          prompt: "Vrai ou faux : un projet final peut rester non documente.",
+          options: ["Vrai", "Faux"],
+          answerIndex: 1,
+          explanation: "La documentation est indispensable.",
+        },
+        {
+          prompt: "L'objectif du projet commun est :",
+          options: ["Valider les acquis", "Faire du marketing", "Ecrire du code sans but"],
+          answerIndex: 0,
+          explanation: "Le projet confirme les competences acquises.",
+        },
+        {
+          prompt: "Un livrable exploitable doit etre :",
+          options: ["Clair et reutilisable", "Complexe", "Sans sources"],
+          answerIndex: 0,
+          explanation: "On vise l'utilisabilite.",
+        },
+        {
+          prompt: "Une conclusion doit rappeler :",
+          options: ["Les resultats et recommandations", "La liste des outils", "Les erreurs uniquement"],
+          answerIndex: 0,
+          explanation: "On synthétise résultats et prochaines etapes.",
+        },
+      ],
+    },
+  ],
+};
+
+export const specialisations: Record<string, ProgramContent> = {
+  "data-analyst": {
+    id: "data-analyst",
+    title: "Specialisation Data Analyst",
+    objective: "Approfondir l'analyse, la visualisation et la communication data.",
+    duration: "4–6 semaines",
+    modules: [
+      {
+        id: "analyse-avancee",
+        title: "Analyse avancee",
+        text: [
+          "On apprend a structurer une analyse de bout en bout avec des questions claires.",
+          "L'objectif est de produire des recommandations directement exploitables.",
+        ],
+        resources: {
+          videos: [
+            { label: "Analyse exploratoire", url: "https://www.youtube.com/watch?v=vmEHCJofslg" },
+          ],
+          articles: [
+            { label: "EDA guide", url: "https://towardsdatascience.com/exploratory-data-analysis-8fc1cb20fd15" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Une analyse avancee commence par :",
+            options: ["Une question claire", "Un graphique final", "Un outil"],
+            answerIndex: 0,
+            explanation: "La question guide l'analyse.",
+          },
+          {
+            prompt: "Vrai ou faux : un DA doit expliquer les hypotheses.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Les hypotheses donnent le contexte.",
+          },
+          {
+            prompt: "Un insight utile est :",
+            options: ["Actionnable", "Decoration", "Sans contexte"],
+            answerIndex: 0,
+            explanation: "Un insight doit permettre une action.",
+          },
+          {
+            prompt: "La qualite d'un dashboard depend de :",
+            options: ["La lisibilite", "Le nombre de couleurs", "Le volume de texte"],
+            answerIndex: 0,
+            explanation: "La clarté est essentielle.",
+          },
+          {
+            prompt: "Une recommandation doit etre :",
+            options: ["Specifique", "Vague", "Ignorable"],
+            answerIndex: 0,
+            explanation: "Elle doit etre precise et mesurable.",
+          },
+        ],
+      },
+      {
+        id: "dashboards",
+        title: "Dashboards clairs",
+        text: [
+          "On transforme des analyses en tableaux de bord lisibles.",
+          "L'accent est mis sur la hierarchie visuelle et la narration.",
+        ],
+        resources: {
+          videos: [
+            { label: "Construire un dashboard utile", url: "https://www.youtube.com/watch?v=6V5pZl1b5wM" },
+          ],
+          articles: [
+            { label: "Dashboard design", url: "https://www.nngroup.com/articles/dashboard-design/" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Un KPI prioritaire doit etre :",
+            options: ["Visible en premier", "Cache", "Ignore"],
+            answerIndex: 0,
+            explanation: "On met en avant l'essentiel.",
+          },
+          {
+            prompt: "Vrai ou faux : trop de graphiques nuit a la lecture.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Moins mais mieux.",
+          },
+          {
+            prompt: "Un dashboard doit repondre a :",
+            options: ["Des questions business", "Des preferences perso", "Une mode"],
+            answerIndex: 0,
+            explanation: "Il sert la decision.",
+          },
+          {
+            prompt: "La couleur sert a :",
+            options: ["Mettre en avant", "Remplir l'espace", "Distraire"],
+            answerIndex: 0,
+            explanation: "Elle guide l'oeil.",
+          },
+          {
+            prompt: "Une bonne visualisation est :",
+            options: ["Simple", "Chargee", "Opaque"],
+            answerIndex: 0,
+            explanation: "La simplicité prime.",
+          },
+        ],
+      },
+    ],
+  },
+  "data-engineer": {
+    id: "data-engineer",
+    title: "Specialisation Data Engineer",
+    objective: "Construire des pipelines fiables et une data utilisable.",
+    duration: "4–6 semaines",
+    modules: [
+      {
+        id: "pipelines",
+        title: "Pipelines et flux",
+        text: [
+          "On apprend a structurer un flux de donnees fiable, de la source au stockage.",
+          "L'objectif est de garantir la qualite et la disponibilite des donnees.",
+        ],
+        resources: {
+          videos: [
+            { label: "Intro pipelines data", url: "https://www.youtube.com/watch?v=0ZonECN6vA8" },
+          ],
+          articles: [
+            { label: "Data pipeline basics", url: "https://www.oracle.com/data-pipeline/" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Un pipeline sert a :",
+            options: ["Automatiser les flux", "Dessiner un schema", "Cacher les donnees"],
+            answerIndex: 0,
+            explanation: "Il automatise la circulation des donnees.",
+          },
+          {
+            prompt: "Vrai ou faux : la qualite des donnees est secondaire.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 1,
+            explanation: "La qualité est critique.",
+          },
+          {
+            prompt: "Un ETL signifie :",
+            options: ["Extraire, Transformer, Charger", "Executer, Tester, Livrer", "Evaluer, Trier, Lister"],
+            answerIndex: 0,
+            explanation: "ETL est la base des pipelines.",
+          },
+          {
+            prompt: "La supervision sert a :",
+            options: ["Detecter les erreurs", "Ignorer les logs", "Ajouter des couleurs"],
+            answerIndex: 0,
+            explanation: "On surveille les flux.",
+          },
+          {
+            prompt: "Une source fiable est :",
+            options: ["Documentee", "Anonyme", "Non verifiee"],
+            answerIndex: 0,
+            explanation: "La documentation garantit la confiance.",
+          },
+        ],
+      },
+      {
+        id: "data-quality",
+        title: "Qualite et monitoring",
+        text: [
+          "On met en place des controles pour assurer la coherence.",
+          "L'objectif est d'eviter les erreurs silencieuses.",
+        ],
+        resources: {
+          videos: [
+            { label: "Data quality checks", url: "https://www.youtube.com/watch?v=1s1k8_3bRj8" },
+          ],
+          articles: [
+            { label: "Data quality basics", url: "https://www.databricks.com/glossary/data-quality" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Un controle de qualite detecte :",
+            options: ["Les anomalies", "Les logos", "Les slides"],
+            answerIndex: 0,
+            explanation: "Il identifie les valeurs anormales.",
+          },
+          {
+            prompt: "Vrai ou faux : un monitoring peut etre automatise.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Oui, via alertes et logs.",
+          },
+          {
+            prompt: "Une alerte doit etre :",
+            options: ["Claire", "Ambigue", "Ignorable"],
+            answerIndex: 0,
+            explanation: "Elle doit être actionnable.",
+          },
+          {
+            prompt: "Le but est de :",
+            options: ["Prevenir les erreurs", "Cacher les erreurs", "Augmenter la complexite"],
+            answerIndex: 0,
+            explanation: "On veut prevenir.",
+          },
+          {
+            prompt: "Un bon pipeline est :",
+            options: ["Documente", "Opaque", "Non verifie"],
+            answerIndex: 0,
+            explanation: "Documenter est essentiel.",
+          },
+        ],
+      },
+    ],
+  },
+  "data-scientist": {
+    id: "data-scientist",
+    title: "Specialisation Data Scientist",
+    objective: "Construire des modeles interpretable et utiles.",
+    duration: "4–6 semaines",
+    modules: [
+      {
+        id: "modele-simple",
+        title: "Modeles predictifs simples",
+        text: [
+          "On commence par des modeles interpretable pour expliquer les resultats.",
+          "L'objectif est de predire sans perdre la comprehension.",
+        ],
+        resources: {
+          videos: [
+            { label: "Intro modeles ML", url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI" },
+          ],
+          articles: [
+            { label: "Modeles interpretable", url: "https://christophm.github.io/interpretable-ml-book/" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Un modele interpretable est :",
+            options: ["Explicable", "Opaque", "Aleatoire"],
+            answerIndex: 0,
+            explanation: "On cherche a expliquer les resultats.",
+          },
+          {
+            prompt: "Vrai ou faux : les donnees entrainent le modele.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Le modele apprend sur les donnees.",
+          },
+          {
+            prompt: "Une variable importante est :",
+            options: ["Celle qui influence la prediction", "Celle qui est jolie", "Celle qui manque"],
+            answerIndex: 0,
+            explanation: "Elle influence la sortie.",
+          },
+          {
+            prompt: "Le sur-apprentissage signifie :",
+            options: ["Trop coller aux donnees d'entrainement", "Manque de donnees", "Absence de modele"],
+            answerIndex: 0,
+            explanation: "Le modele generalise mal.",
+          },
+          {
+            prompt: "Un bon modele doit etre :",
+            options: ["Teste", "Devine", "Cache"],
+            answerIndex: 0,
+            explanation: "On evalue sa performance.",
+          },
+        ],
+      },
+      {
+        id: "evaluation",
+        title: "Evaluation et interpretation",
+        text: [
+          "On apprend a mesurer la performance et a expliquer les predictions.",
+          "Les metriques doivent etre choisies selon le probleme.",
+        ],
+        resources: {
+          videos: [
+            { label: "Metriques ML simples", url: "https://www.youtube.com/watch?v=5JGQ2U8J1x4" },
+          ],
+          articles: [
+            { label: "Precision, recall, F1", url: "https://towardsdatascience.com/precision-recall-and-f1-score-5265c325c52f" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Une metrique sert a :",
+            options: ["Evaluer un modele", "Dessiner un graphique", "Nettoyer une base"],
+            answerIndex: 0,
+            explanation: "On mesure la performance.",
+          },
+          {
+            prompt: "Vrai ou faux : la precision suffit toujours.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 1,
+            explanation: "On choisit la metrique selon le contexte.",
+          },
+          {
+            prompt: "Recall mesure :",
+            options: ["La capacite a trouver les bons cas", "La taille d'un fichier", "Le temps de calcul"],
+            answerIndex: 0,
+            explanation: "Recall = detection des vrais positifs.",
+          },
+          {
+            prompt: "Un seuil permet de :",
+            options: ["Decider de la classe", "Changer les donnees", "Supprimer les metriques"],
+            answerIndex: 0,
+            explanation: "Il decide classification.",
+          },
+          {
+            prompt: "Un modele doit etre :",
+            options: ["Interpretable", "Secret", "Imprevisible"],
+            answerIndex: 0,
+            explanation: "On explique la sortie.",
+          },
+        ],
+      },
+    ],
+  },
+  "machine-learning-engineer": {
+    id: "machine-learning-engineer",
+    title: "Specialisation Machine Learning Engineer",
+    objective: "Industrialiser des modeles et assurer leur fiabilite.",
+    duration: "4–6 semaines",
+    modules: [
+      {
+        id: "deploiement",
+        title: "Deploiement de modeles",
+        text: [
+          "On apprend a transformer un modele en service utilisable.",
+          "L'objectif est de garantir robustesse et performance.",
+        ],
+        resources: {
+          videos: [
+            { label: "ML deployment basics", url: "https://www.youtube.com/watch?v=1nE5rp8da9I" },
+          ],
+          articles: [
+            { label: "MLOps basics", url: "https://www.databricks.com/glossary/mlops" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Deployer un modele signifie :",
+            options: ["Le rendre utilisable en production", "L'archiver", "Le supprimer"],
+            answerIndex: 0,
+            explanation: "Le modele devient un service.",
+          },
+          {
+            prompt: "Vrai ou faux : on doit monitorer un modele en production.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Le monitoring detecte les derives.",
+          },
+          {
+            prompt: "La latence concerne :",
+            options: ["Le temps de reponse", "La taille du code", "Le type de modele"],
+            answerIndex: 0,
+            explanation: "Latence = temps de reponse.",
+          },
+          {
+            prompt: "Un service ML doit etre :",
+            options: ["Fiable", "Imprevisible", "Invisible"],
+            answerIndex: 0,
+            explanation: "Fiabilite et robustesse.",
+          },
+          {
+            prompt: "MLOps sert a :",
+            options: ["Gerer le cycle de vie ML", "Dessiner des logos", "Changer la langue"],
+            answerIndex: 0,
+            explanation: "MLOps gere le cycle ML.",
+          },
+        ],
+      },
+      {
+        id: "qualite-modeles",
+        title: "Qualite et validation des modeles",
+        text: [
+          "On met en place des controles de performance et de biais.",
+          "Le but est de garantir des resultats fiables.",
+        ],
+        resources: {
+          videos: [
+            { label: "Validation ML", url: "https://www.youtube.com/watch?v=3CC4N4z3Gyo" },
+          ],
+          articles: [
+            { label: "Model validation guide", url: "https://developers.google.com/machine-learning/crash-course/validation/overview" },
+          ],
+        },
+        quiz: [
+          {
+            prompt: "Une validation sert a :",
+            options: ["Verifier la performance", "Ignorer les resultats", "Changer les donnees"],
+            answerIndex: 0,
+            explanation: "On verifie la qualite.",
+          },
+          {
+            prompt: "Vrai ou faux : un biais doit etre mesure.",
+            options: ["Vrai", "Faux"],
+            answerIndex: 0,
+            explanation: "Mesurer les biais est essentiel.",
+          },
+          {
+            prompt: "Un modele degrade signifie :",
+            options: ["Baisse de performance", "Plus de vitesse", "Moins de donnees"],
+            answerIndex: 0,
+            explanation: "La performance baisse.",
+          },
+          {
+            prompt: "Le monitoring detecte :",
+            options: ["Les derives", "Les logos", "Les couleurs"],
+            answerIndex: 0,
+            explanation: "Monitoring = detection des derives.",
+          },
+          {
+            prompt: "Le but final est :",
+            options: ["Resultats fiables", "Mystere", "Chaos"],
+            answerIndex: 0,
+            explanation: "On vise la fiabilite.",
+          },
+        ],
+      },
+    ],
+  },
+};
+
+export const MIN_PASS_PERCENT = 70;

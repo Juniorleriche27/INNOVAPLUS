@@ -1,4 +1,4 @@
-export type ResourceLink = { label: string; url: string };
+export type ResourceLink = { label: string; url: string; description?: string };
 export type SectionVideo = { label: string; url: string };
 export type ModuleSection = { title: string; text: string[]; video?: SectionVideo; articles?: ResourceLink[] };
 export type NotebookBlock = { title: string; description: string; code: string; download?: string };
@@ -52,8 +52,16 @@ export const foundationalProgram: ProgramContent = {
             url: "https://www.youtube.com/watch?v=X3paOmcrTjQ",
           },
           articles: [
-            { label: "Inria – Qu'est-ce que la data science ?", url: "https://www.inria.fr/fr/data-science" },
-            { label: "IBM – The Different Data Science Roles", url: "https://www.ibm.com/topics/data-science" },
+            {
+              label: "HETIC – Data Engineer, Data Scientist ou Data Analyst : quel metier ?",
+              url: "https://www.hetic.net/actualites/data-engineer-data-scientist-ou-data-analyst",
+              description: "Clarifie les differences de missions et de competences entre les trois roles.",
+            },
+            {
+              label: "PositiveThinking.tech – Data jobs, part 1: Data Scientist, Data Engineer, Data Analyst",
+              url: "https://positivethinking.tech/insights/data-jobs-part-1/",
+              description: "Vue d'ensemble en anglais pour comparer les roles cote missions et attentes.",
+            },
           ],
         },
         {
@@ -69,7 +77,11 @@ export const foundationalProgram: ProgramContent = {
             url: "https://www.youtube.com/watch?v=ywZXpfdqg1o",
           },
           articles: [
-            { label: "Onisep – Fiche metier : Data Analyst", url: "https://www.onisep.fr/Ressources/Univers-Metier/Metiers/data-analyst" },
+            {
+              label: "DataScientist.fr – Top 10 des metiers de la Data a surveiller en 2025",
+              url: "https://datascientist.fr/blog/top-10-des-metiers-de-la-data-a-surveiller-en-2025",
+              description: "Panorama des roles data pour situer le Data Analyst dans l'ecosysteme.",
+            },
           ],
         },
         {
@@ -85,7 +97,11 @@ export const foundationalProgram: ProgramContent = {
             url: "https://www.youtube.com/watch?v=IeyYWxaMP3M",
           },
           articles: [
-            { label: "OpenClassrooms – Data Engineer : role et competences", url: "https://openclassrooms.com/fr/paths/324-data-engineer" },
+            {
+              label: "Medium – Exploring the Roles of Data Engineer, Analyst, Scientist & ML Engineer",
+              url: "https://medium.com/@adilshamim8/exploring-the-roles-of-data-engineer-analyst-scientist-ml-engineer-b4a2c8205d4d",
+              description: "Comparaison detaillee des responsabilites et des competences attendues.",
+            },
           ],
         },
         {
@@ -101,7 +117,11 @@ export const foundationalProgram: ProgramContent = {
             url: "https://www.youtube.com/watch?v=ixVR8uPetHQ",
           },
           articles: [
-            { label: "APEC – Fiche metier : Data Scientist", url: "https://www.apec.fr/candidat/metiers/Fiche-metier-Data-scientist.html" },
+            {
+              label: "Coursera – Data Engineer vs Data Scientist: What's the Difference?",
+              url: "https://www.coursera.org/articles/data-engineer-vs-data-scientist",
+              description: "Differencie les deux roles et leurs responsabilites en contexte pro.",
+            },
           ],
         },
         {
@@ -118,8 +138,11 @@ export const foundationalProgram: ProgramContent = {
             url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
           },
           articles: [
-            { label: "DataScientest – Machine Learning Engineer : role et responsabilites", url: "https://datascientest.com/metier-machine-learning-engineer" },
-            { label: "Google Cloud – What is a Machine Learning Engineer?", url: "https://cloud.google.com/learn/what-is-machine-learning-engineer" },
+            {
+              label: "Aivancity – Les metiers de l'Intelligence Artificielle (IA) et de la Data",
+              url: "https://www.aivancity.ai/les-metiers-de-lintelligence-artificielle-ia-et-de-la-data",
+              description: "Explique comment les metiers s'articulent autour de l'IA et de la data.",
+            },
           ],
         },
         {
@@ -135,12 +158,7 @@ export const foundationalProgram: ProgramContent = {
             label: "L'Atelier Data – Data Scientist vs Data Analyst vs Data Engineer : quelles differences ?",
             url: "https://www.youtube.com/watch?v=mEZIHFxUFEc",
           },
-          articles: [
-            {
-              label: "Towards Data Science – Data Analyst vs Data Scientist vs Data Engineer",
-              url: "https://towardsdatascience.com/data-scientist-vs-data-analyst-vs-data-engineer-62f6b1b6d7e4",
-            },
-          ],
+          articles: [],
         },
       ],
       resources: { videos: [], articles: [] },

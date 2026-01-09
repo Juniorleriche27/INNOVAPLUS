@@ -103,12 +103,21 @@ export default function ModuleReader({
                 {renderVideo(section.video)}
                 {section.articles && section.articles.length > 0 ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                    <p className="text-sm font-semibold text-slate-900">Pour aller plus loin (lecture recommandee)</p>
-                    <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
+                    <p className="text-sm font-semibold text-slate-900">Pour aller plus loin</p>
+                    <ul className="mt-2 space-y-3 text-sm text-slate-600">
                       {section.articles.map((article) => (
                         <li key={article.url}>
-                          <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
-                            {article.label}
+                          <div className="font-semibold text-slate-800">{article.label}</div>
+                          {article.description ? (
+                            <p className="mt-1 text-xs text-slate-500">{article.description}</p>
+                          ) : null}
+                          <a
+                            className="mt-2 inline-flex rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                            href={article.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Lire l'article
                           </a>
                         </li>
                       ))}

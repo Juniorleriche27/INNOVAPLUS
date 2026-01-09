@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import ModuleReader from "@/app/school/v1/ModuleReader";
 import { specialisations } from "@/app/school/v1/content";
 
@@ -12,23 +12,34 @@ export function generateStaticParams() {
 }
 
 export default function SpecialisationModulePage({ params }: { params: { track: string; module: string } }) {
-  const program = specialisations[params.track];
+  const normalizedTrack = decodeURIComponent(params.track || "").toLowerCase();
+  const program =
+    specialisations[params.track] ||
+    Object.values(specialisations).find((item) => item.id.toLowerCase() === normalizedTrack);
   if (!program) {
     notFound();
   }
-  const moduleIndex = program.modules.findIndex((m) => m.id === params.module);
+  const normalizedModule = decodeURIComponent(params.module || "").toLowerCase();
+  const moduleIndex = program.modules.findIndex((m) => m.id.toLowerCase() === normalizedModule);
+  const fallback = program.modules[0];
   if (moduleIndex === -1) {
-    notFound();
+    if (fallback && params.module !== fallback.id) {
+      redirect(`/school/parcours/specialisations/${program.id}/${fallback.id}`);
+    }
+    if (!fallback) {
+      notFound();
+    }
   }
-  const module = program.modules[moduleIndex];
-  const prev = program.modules[moduleIndex - 1];
-  const next = program.modules[moduleIndex + 1];
+  const activeIndex = moduleIndex === -1 ? 0 : moduleIndex;
+  const module = moduleIndex === -1 ? fallback : program.modules[moduleIndex];
+  const prev = program.modules[activeIndex - 1];
+  const next = program.modules[activeIndex + 1];
 
   return (
     <ModuleReader
       module={module}
       programTitle={program.title}
-      moduleIndex={moduleIndex}
+      moduleIndex={activeIndex}
       moduleCount={program.modules.length}
       prevHref={prev ? `/school/parcours/specialisations/${program.id}/${prev.id}` : `/school/parcours/specialisations/${program.id}`}
       nextHref={next ? `/school/parcours/specialisations/${program.id}/${next.id}` : undefined}

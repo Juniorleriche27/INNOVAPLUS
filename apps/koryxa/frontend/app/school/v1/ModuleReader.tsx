@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ModuleContent, ModuleSection, SectionVideo } from "@/app/school/v1/content";
 import { MIN_PASS_PERCENT } from "@/app/school/v1/content";
@@ -30,6 +30,7 @@ export default function ModuleReader({
   const [showHelp, setShowHelp] = useState(false);
   const [readingConfirmed, setReadingConfirmed] = useState(false);
   const [notebookConfirmed, setNotebookConfirmed] = useState(false);
+  const storageKey = `koryxa.module.${module.id}.quiz`;
 
   const totalQuestions = module.quiz.length;
   const requiresReading = Boolean(module.requireReadingConfirmation);
@@ -48,6 +49,44 @@ export default function ModuleReader({
     if (score === null) return 0;
     return Math.round((score / totalQuestions) * 100);
   }, [score, totalQuestions]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        answers?: Record<number, number>;
+        validated?: boolean;
+        score?: number | null;
+        readingConfirmed?: boolean;
+        notebookConfirmed?: boolean;
+      };
+      if (saved.answers) setAnswers(saved.answers);
+      if (typeof saved.validated === "boolean") setValidated(saved.validated);
+      if (typeof saved.score === "number") setScore(saved.score);
+      if (typeof saved.readingConfirmed === "boolean") setReadingConfirmed(saved.readingConfirmed);
+      if (typeof saved.notebookConfirmed === "boolean") setNotebookConfirmed(saved.notebookConfirmed);
+    } catch {
+      // Ignore corrupted local storage.
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          answers,
+          validated,
+          score,
+          readingConfirmed,
+          notebookConfirmed,
+        })
+      );
+    } catch {
+      // Ignore storage failures (private mode, quota, etc.).
+    }
+  }, [answers, validated, score, readingConfirmed, notebookConfirmed, storageKey]);
 
   function handleValidate() {
     const correct = module.quiz.reduce((acc, q, idx) => {

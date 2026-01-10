@@ -46,11 +46,31 @@ const V1_SCHOOL_ALLOWED = [
   "/school/parcours",
 ];
 
+const V1_PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/signup",
+  "/about",
+  "/privacy",
+  "/terms",
+  "/bientot",
+];
+
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
 
   if (V1_SIMPLE) {
+    const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    if (!hasSession && !isPublic) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set(
+        "redirect",
+        pathname + (searchParams.toString() ? `?${searchParams}` : "")
+      );
+      return NextResponse.redirect(loginUrl);
+    }
     if (pathname.startsWith("/school/") && !V1_SCHOOL_ALLOWED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
       const url = request.nextUrl.clone();
       url.pathname = "/school";

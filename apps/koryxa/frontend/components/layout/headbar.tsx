@@ -86,7 +86,7 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
 export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const { user, initialLoggedIn, loading } = useAuth();
+  const { user, initialLoggedIn, loading, clear } = useAuth();
   const displayName = useMemo(() => {
     if (!user) return "";
     const parts = [user.first_name, user.last_name].filter(Boolean);
@@ -344,7 +344,8 @@ export default function Headbar() {
                           await fetch(`${AUTH_API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }); 
                         } finally { 
                           setAccountOpen(false); 
-                          location.href = '/'; 
+                          clear();
+                          location.href = '/login'; 
                         } 
                       }} 
                   className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"

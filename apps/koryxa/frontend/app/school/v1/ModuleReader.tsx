@@ -37,6 +37,7 @@ export default function ModuleReader({
   const requiresNotebook = Boolean(module.requireNotebookConfirmation);
   const confirmationsOk = (!requiresReading || readingConfirmed) && (!requiresNotebook || notebookConfirmed);
   const canValidate = Object.keys(answers).length === totalQuestions && confirmationsOk;
+  const answeredCount = Object.keys(answers).length;
   const incorrectQuestions = module.quiz
     .map((question, idx) => ({
       idx,
@@ -149,6 +150,31 @@ export default function ModuleReader({
       </div>
     );
   }
+
+  function hashString(input: string) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i += 1) {
+      hash = (hash << 5) - hash + input.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function shuffleOptions(question: ModuleContent["quiz"][number]) {
+    const indexed = question.options.map((label, idx) => ({ label, originalIndex: idx }));
+    let seed = hashString(question.prompt);
+    for (let i = indexed.length - 1; i > 0; i -= 1) {
+      seed = (seed * 9301 + 49297) % 233280;
+      const j = seed % (i + 1);
+      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+    }
+    return indexed;
+  }
+
+  const shuffledOptions = useMemo(
+    () => module.quiz.map((question) => shuffleOptions(question)),
+    [module.quiz]
+  );
 
   return (
     <div className="space-y-6">
@@ -288,20 +314,44 @@ export default function ModuleReader({
             Validation complete si texte lu, notebook consulte et mini-test reussi.
           </p>
         )}
+        {(requiresReading || requiresNotebook) && (
+          <div className="mt-3 space-y-2 text-sm text-slate-700">
+            {requiresReading && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={readingConfirmed}
+                  onChange={(event) => setReadingConfirmed(event.target.checked)}
+                />
+                J'ai lu le texte du module
+              </label>
+            )}
+            {requiresNotebook && (
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={notebookConfirmed}
+                  onChange={(event) => setNotebookConfirmed(event.target.checked)}
+                />
+                J'ai consulte le notebook
+              </label>
+            )}
+          </div>
+        )}
         <div className="mt-4 space-y-4">
           {module.quiz.map((question, idx) => (
             <div key={question.prompt} className="rounded-2xl border border-slate-200 p-4">
               <p className="text-sm font-semibold text-slate-900">{idx + 1}. {question.prompt}</p>
               <div className="mt-3 space-y-2">
-                {question.options.map((opt, optIdx) => (
-                  <label key={opt} className="flex items-center gap-2 text-sm text-slate-600">
+                {shuffledOptions[idx].map((opt) => (
+                  <label key={`${question.prompt}-${opt.originalIndex}`} className="flex items-center gap-2 text-sm text-slate-600">
                     <input
                       type="radio"
                       name={`q-${idx}`}
-                      checked={answers[idx] === optIdx}
-                      onChange={() => setAnswers((prev) => ({ ...prev, [idx]: optIdx }))}
+                      checked={answers[idx] === opt.originalIndex}
+                      onChange={() => setAnswers((prev) => ({ ...prev, [idx]: opt.originalIndex }))}
                     />
-                    {opt}
+                    {opt.label}
                   </label>
                 ))}
               </div>
@@ -321,6 +371,13 @@ export default function ModuleReader({
           >
             Valider le module
           </button>
+          {!canValidate && (
+            <span className="text-xs text-slate-500">
+              {answeredCount < totalQuestions
+                ? `Reponds a toutes les questions (${answeredCount}/${totalQuestions}).`
+                : "Coche le texte lu et le notebook consulte pour valider."}
+            </span>
+          )}
           {score !== null && (
             <span className={`text-sm font-semibold ${validated ? "text-emerald-600" : "text-rose-600"}`}>
               Score {percent}% {validated ? "— Module valide" : "— Reessaie"}

@@ -174,6 +174,29 @@ async def register(
     res = await db["users"].insert_one(user_doc)
     user_doc["_id"] = res.inserted_id
 
+    notify = settings.SIGNUP_NOTIFY_EMAILS
+    if notify:
+        recipients = [e.strip() for e in notify.split(",") if e.strip()]
+        if recipients:
+            subject = "Nouvelle inscription KORYXA"
+            full_name = f"{user_doc.get('first_name', '').strip()} {user_doc.get('last_name', '').strip()}".strip()
+            created = now.strftime("%Y-%m-%d %H:%M:%S UTC")
+            html_body = f"""
+            <html lang=\"fr\">
+              <body>
+                <p>Nouvelle inscription sur KORYXA.</p>
+                <ul>
+                  <li><strong>Email:</strong> {email}</li>
+                  <li><strong>Nom:</strong> {full_name or 'Non renseigné'}</li>
+                  <li><strong>Date:</strong> {created}</li>
+                </ul>
+              </body>
+            </html>
+            """
+            text_body = f"Nouvelle inscription KORYXA\nEmail: {email}\nNom: {full_name or 'Non renseigne'}\nDate: {created}"
+            for recipient in recipients:
+                asyncio.create_task(send_email_async(subject, recipient, html_body, text_body))
+
     expires_at = await _issue_session(response, db, user_doc["_id"], request)
     return {"user": _public_user(user_doc), "session_expires_at": expires_at}
 

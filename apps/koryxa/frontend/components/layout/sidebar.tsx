@@ -110,6 +110,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [schoolOpen, setSchoolOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("innova.sidebar.collapsed");
@@ -119,6 +120,12 @@ export default function Sidebar({ className, style }: { className?: string; styl
     const w = saved === "1" ? "72px" : "280px";
     root.style.setProperty("--sidebar-w", w);
   }, []);
+
+  useEffect(() => {
+    if (pathname.startsWith("/school")) {
+      setSchoolOpen(true);
+    }
+  }, [pathname]);
 
   function toggle() {
     const next = !collapsed;
@@ -179,12 +186,18 @@ export default function Sidebar({ className, style }: { className?: string; styl
           {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
-            const showSchoolSubs = IS_V1 && link.href === "/school" && isExpanded;
+            const isSchoolLink = IS_V1 && link.href === "/school";
+            const showSchoolSubs = isSchoolLink && isExpanded && schoolOpen;
             
             return (
               <div key={link.href} className="space-y-2">
                 <Link
                   href={link.href}
+                  onClick={() => {
+                    if (isSchoolLink) {
+                      setSchoolOpen((prev) => !prev);
+                    }
+                  }}
                   className={clsx(
                     "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
                     "hover:bg-slate-50 hover:shadow-sm",
@@ -208,9 +221,14 @@ export default function Sidebar({ className, style }: { className?: string; styl
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="text-[13px] font-semibold truncate">{link.label}</span>
-                        {active && (
-                          <div className="w-2 h-2 rounded-full bg-sky-500" />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {active && <div className="w-2 h-2 rounded-full bg-sky-500" />}
+                          {isSchoolLink && (
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              {schoolOpen ? "−" : "+"}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-[11px] text-slate-500 truncate">{link.description}</p>
                     </div>

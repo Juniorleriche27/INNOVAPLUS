@@ -393,56 +393,163 @@ export const foundationalProgram: ProgramContent = {
     {
       id: "manip-donnees",
       title: "Manipulation des donnees",
-      text: [
-        "Avant de produire un resultat, il faut comprendre et nettoyer les donnees.",
-        "On apprend a lire des fichiers CSV, Excel et JSON, puis a corriger les erreurs.",
-        "La qualite des donnees determine la qualite du livrable final.",
+      text: [],
+      sections: [
+        {
+          title: "Introduction generale",
+          text: [
+            "La gestion et la preparation des donnees est l'etape la plus longue et la plus decisive d'un projet data. En pratique, 80% du temps est consacre a comprendre le jeu de donnees, corriger les erreurs, et rendre l'information exploitable. C'est ici que se joue la qualite du livrable final : un modele ou un tableau de bord ne vaut rien si les donnees de depart sont incoherentes ou incompletes.",
+            "Dans les missions reelles, un Data Analyst doit souvent partir d'un fichier CSV mal structure, un Data Engineer doit consolider plusieurs sources, et un Data Scientist doit verifier la fiabilite des variables avant de modeliser. La competence cle n'est pas la theorie, mais la capacite a transformer une donnee brute en un dataset propre, lisible et utilisable par toute l'equipe.",
+            "Ce module te donne une methode claire pour y parvenir. Tu vas apprendre a charger des donnees (CSV, Excel), inspecter les colonnes et les types, corriger les valeurs manquantes, supprimer les doublons, filtrer et trier les observations, puis construire des agregats simples. Chaque partie correspond a une etape reelle d'une mission KORYXA.",
+            "L'objectif est mesurable : a la fin du module, tu dois etre capable de livrer un dataset propre, avec des colonnes correctement typees, des valeurs coherentes et des indicateurs de base calcules. Sans cette maitrise, les modules suivants (SQL, visualisation, modele) deviennent fragiles.",
+          ],
+        },
+        {
+          title: "Lecture et inspection des donnees",
+          text: [
+            "La premiere etape consiste a charger correctement les donnees. En Python, on utilise principalement read_csv et read_excel pour importer des fichiers. Une fois le fichier charge, il faut verifier rapidement son contenu : combien de lignes, quelles colonnes, quels types, et quelles valeurs.",
+            "Les methodes head, info et describe donnent une vue rapide et fiable. head permet de voir les premieres lignes, info affiche les types et les valeurs manquantes, et describe donne des statistiques utiles. Ces commandes simples evitent des erreurs couteuses plus tard.",
+            "Dans un contexte professionnel, cette inspection est essentielle pour detecter des colonnes mal typees, des valeurs inattendues, ou des formats non standards. Une bonne lecture des donnees permet de gagner un temps considerable sur le nettoyage.",
+          ],
+          video: {
+            label: "Machine Learnia - Lire et explorer des donnees avec Pandas",
+            url: "https://www.youtube.com/watch?v=vmEHCJofslg",
+          },
+          articles: [
+            {
+              label: "Pandas - Intro to data structures",
+              url: "https://pandas.pydata.org/docs/user_guide/dsintro.html",
+            },
+          ],
+        },
+        {
+          title: "Nettoyage des donnees",
+          text: [
+            "Le nettoyage traite les erreurs courantes : valeurs manquantes, doublons, formats incoherents et types mal definis. Une valeur manquante peut fausser un calcul, un doublon peut biaiser une moyenne, et un mauvais type peut rendre une colonne inutilisable.",
+            "Les operations courantes sont dropna, fillna, drop_duplicates et astype. L'idee n'est pas de supprimer au hasard, mais de choisir une strategie coherente : supprimer quand l'information est irreparable, imputer quand une estimation est acceptable, ou corriger les formats quand l'erreur est evidente.",
+            "Dans les missions KORYXA, cette etape est souvent la plus critique. Une fois les donnees nettoyees, l'analyse devient fiable et les livrables sont defendables face a un client ou une equipe technique.",
+          ],
+          video: {
+            label: "Machine Learnia - Nettoyer des donnees avec Pandas",
+            url: "https://www.youtube.com/watch?v=ZQkqZ8hZc8A",
+          },
+          articles: [
+            {
+              label: "Pandas - Missing data",
+              url: "https://pandas.pydata.org/docs/user_guide/missing_data.html",
+            },
+          ],
+        },
+        {
+          title: "Filtrage, tri et selection",
+          text: [
+            "Une fois les donnees propres, il faut pouvoir selectionner ce qui est utile. Le filtrage permet de garder uniquement les lignes pertinentes, le tri aide a ordonner les observations, et la selection de colonnes evite de manipuler des informations inutiles.",
+            "Les filtres conditionnels en Pandas utilisent des expressions logiques : df[df['col'] > seuil], df[df['statut'] == 'actif'], etc. Le tri se fait avec sort_values, et la selection avec des listes de colonnes ou l'indexation par nom.",
+            "Ces operations sont indispensables pour preparer un dataset cible, construire une analyse par segment, ou produire un fichier nettoye pour une autre equipe.",
+          ],
+          video: {
+            label: "Grafikart - Filtrer et trier des donnees avec Pandas",
+            url: "https://www.youtube.com/watch?v=E6z7Y0a4Z8k",
+          },
+          articles: [
+            {
+              label: "Pandas - Indexing and selecting data",
+              url: "https://pandas.pydata.org/docs/user_guide/indexing.html",
+            },
+          ],
+        },
+        {
+          title: "Agregations et groupby",
+          text: [
+            "L'agregation permet de resumer un jeu de donnees. Avec groupby, on peut calculer des moyennes, des sommes ou des comptes par categorie. C'est la base des indicateurs qu'on retrouve dans les tableaux de bord.",
+            "Exemples : moyenne des ventes par region, nombre de clients par segment, total par periode. Les fonctions d'agregation (mean, sum, count, min, max) transforment la donnee brute en information decisionnelle.",
+            "Dans les projets KORYXA, ces agregats sont souvent le coeur du livrable : ils permettent de produire des insights clairs et d'alimenter des visualisations utiles.",
+          ],
+          video: {
+            label: "Machine Learnia - GroupBy avec Pandas",
+            url: "https://www.youtube.com/watch?v=R7n0zH6qZ8Y",
+          },
+          articles: [
+            {
+              label: "Pandas - Group by",
+              url: "https://pandas.pydata.org/docs/user_guide/groupby.html",
+            },
+          ],
+        },
       ],
       resources: {
-        videos: [
-          { label: "Nettoyage de donnees avec Pandas", url: "https://www.youtube.com/watch?v=vmEHCJofslg" },
-        ],
-        articles: [
-          { label: "Data cleaning basics", url: "https://towardsdatascience.com/data-cleaning-101-6dd1be3b8e8a" },
-        ],
+        videos: [],
+        articles: [],
       },
       notebook: {
-        title: "Notebook - nettoyage rapide",
-        description: "Traitement des valeurs manquantes et doublons.",
-        code: "import pandas as pd\n\ndf = pd.read_csv(\"data.csv\")\nprint(df.isna().sum())\n\ndf = df.drop_duplicates()\n\ndf[\"amount\"] = df[\"amount\"].fillna(df[\"amount\"].median())",
+        title: "Notebook Module 3 - Nettoyage et preparation",
+        description: "Lecture CSV, inspection, nettoyage, filtres, et agregations.",
+        code: "import pandas as pd\nfrom io import StringIO\n\n# Chargement CSV (exemple)\nraw = StringIO(\"\"\"region,produit,vente,statut\\nNord,A,120,actif\\nNord,A,120,actif\\nSud,B,,inactif\\nOuest,C,90,actif\\n\"\"\")\n\ndf = pd.read_csv(raw)\nprint(df.head())\nprint(df.info())\nprint(df.describe(include=\"all\"))\n\n# Nettoyage\nprint(df.isna().sum())\ndf = df.drop_duplicates()\ndf[\"vente\"] = df[\"vente\"].fillna(df[\"vente\"].median())\ndf[\"statut\"] = df[\"statut\"].astype(\"category\")\n\n# Filtrage et selection\nactifs = df[df[\"statut\"] == \"actif\"]\nactifs = actifs.sort_values(by=\"vente\", ascending=False)\nactifs = actifs[[\"region\", \"produit\", \"vente\"]]\n\n# Aggregations\ntotal_par_region = actifs.groupby(\"region\")[\"vente\"].sum().reset_index()\nprint(total_par_region)",
       },
       quiz: [
         {
-          prompt: "Quelle est la premiere etape avant une analyse ?",
-          options: ["Nettoyer les donnees", "Publier le rapport", "Entrainer un modele"],
+          prompt: "Pourquoi la preparation des donnees est-elle centrale ?",
+          options: ["Elle garantit la fiabilite des resultats", "Elle remplace l'analyse", "Elle evite d'utiliser Python"],
           answerIndex: 0,
-          explanation: "Les donnees doivent etre propres avant toute analyse.",
+          explanation: "Des donnees propres rendent les resultats fiables.",
         },
         {
-          prompt: "Vrai ou faux : un doublon peut fausser un tableau de bord.",
+          prompt: "Quelle fonction charge un CSV avec Pandas ?",
+          options: ["read_csv", "load_file", "open_csv"],
+          answerIndex: 0,
+          explanation: "read_csv est la fonction standard.",
+        },
+        {
+          prompt: "Quelle methode montre les premieres lignes ?",
+          options: ["head", "info", "describe"],
+          answerIndex: 0,
+          explanation: "head affiche un apercu des lignes.",
+        },
+        {
+          prompt: "Vrai ou faux : info aide a voir les types et les NA.",
           options: ["Vrai", "Faux"],
           answerIndex: 0,
-          explanation: "Les doublons biaisent les moyennes et comptages.",
+          explanation: "info affiche types et valeurs manquantes.",
         },
         {
-          prompt: "Quel format est souvent utilise pour les donnees tabulaires ?",
-          options: ["CSV", "MP4", "PNG"],
+          prompt: "Quelle action traite les valeurs manquantes ?",
+          options: ["fillna ou dropna", "groupby", "sort_values"],
           answerIndex: 0,
-          explanation: "CSV est un format simple et courant.",
+          explanation: "fillna et dropna gerent les NA.",
         },
         {
-          prompt: "Que faire avec des valeurs manquantes ?",
-          options: ["Les ignorer toujours", "Les traiter ou les expliquer", "Les remplacer par du texte"],
-          answerIndex: 1,
-          explanation: "On decide selon le contexte : supprimer, imputer, etc.",
-        },
-        {
-          prompt: "Quel outil facilite les jointures en Python ?",
-          options: ["Pandas", "Docker", "Nginx"],
+          prompt: "Pourquoi supprimer les doublons ?",
+          options: ["Eviter les biais de comptage", "Accelerer le navigateur", "Changer les types"],
           answerIndex: 0,
-          explanation: "Pandas propose merge et join pour combiner des tables.",
+          explanation: "Les doublons faussent les indicateurs.",
+        },
+        {
+          prompt: "Quel outil sert a filtrer des lignes ?",
+          options: ["Un masque conditionnel", "sum()", "mean()"],
+          answerIndex: 0,
+          explanation: "On filtre avec des conditions booleennes.",
+        },
+        {
+          prompt: "A quoi sert sort_values ?",
+          options: ["Trier un DataFrame", "Supprimer des colonnes", "Importer un fichier"],
+          answerIndex: 0,
+          explanation: "sort_values trie selon une colonne.",
+        },
+        {
+          prompt: "Que fait groupby ?",
+          options: ["Regrouper et agreger par categorie", "Supprimer des NA", "Creer un fichier Excel"],
+          answerIndex: 0,
+          explanation: "groupby sert a calculer des indicateurs par groupe.",
+        },
+        {
+          prompt: "Quel indicateur simple peut etre calcule avec groupby ?",
+          options: ["Somme par region", "Couleur du logo", "Nom du fichier"],
+          answerIndex: 0,
+          explanation: "La somme par groupe est un cas classique.",
         },
       ],
+      requireReadingConfirmation: true,
+      requireNotebookConfirmation: true,
     },
     {
       id: "sql-bases",

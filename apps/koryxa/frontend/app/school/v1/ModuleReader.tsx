@@ -126,6 +126,30 @@ export default function ModuleReader({
     );
   }
 
+  function renderResourceVideo(video: { label: string; url: string }) {
+    const id = getYoutubeId(video.url);
+    if (!id) return null;
+    return (
+      <div key={video.url} className="space-y-3">
+        <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+          <iframe
+            className="h-full w-full"
+            src={`https://www.youtube.com/embed/${id}`}
+            title={video.label}
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+          <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
+            Voir sur YouTube
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -206,18 +230,12 @@ export default function ModuleReader({
       {module.resources.videos.length > 0 || module.resources.articles.length > 0 ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Ressources externes</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+          <div className="mt-4 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div className="space-y-4">
               <p className="text-sm font-semibold text-slate-900">Videos</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
-                {module.resources.videos.map((video) => (
-                  <li key={video.url}>
-                    <a className="text-sky-700 hover:underline" href={video.url} target="_blank" rel="noreferrer">
-                      {video.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-5">
+                {module.resources.videos.map((video) => renderResourceVideo(video)).filter(Boolean)}
+              </div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <p className="text-sm font-semibold text-slate-900">Articles</p>

@@ -241,8 +241,8 @@ export const foundationalProgram: ProgramContent = {
             "Chez KORYXA School, Python est aborde comme un langage de resolution de problemes. Chaque concept presente dans ce module correspond a un usage reel dans un projet data. L'objectif n'est pas d'accumuler des notions abstraites, mais de construire progressivement une logique de travail claire, reutilisable et orientee livrables.",
           ],
           video: {
-            label: "Grafikart - Python pour la Data Science : introduction",
-            url: "https://www.youtube.com/watch?v=HGOBQPFzWKo",
+            label: "Machine Learnia - Variables + fonctions (debutant)",
+            url: "https://www.youtube.com/watch?v=doFpNjdmsw8",
           },
         },
         {
@@ -252,10 +252,7 @@ export const foundationalProgram: ProgramContent = {
             "Les types de base les plus utilises en data sont les entiers (int), les nombres decimaux (float), les chaines de caracteres (str) et les booleens (bool). Chaque type a un role precis. Par exemple, les entiers servent souvent a representer des quantites, les floats des mesures, les chaines du texte, et les booleens des conditions logiques. Une mauvaise comprehension des types peut conduire a des calculs errones ou a des analyses incoherentes.",
             "Dans un projet data reel, savoir identifier et manipuler correctement les types est essentiel, notamment lors du nettoyage des donnees ou de la lecture de fichiers externes. Cette partie constitue donc une base fondamentale pour tout le reste du parcours.",
           ],
-          video: {
-            label: "Grafikart - Variables et types en Python",
-            url: "https://www.youtube.com/watch?v=khKv-8q7YmY",
-          },
+          video: undefined,
         },
         {
           title: "Conditions (if / else)",
@@ -276,10 +273,7 @@ export const foundationalProgram: ProgramContent = {
             "La boucle for est la plus utilisee en data, car elle permet de parcourir directement des collections de donnees. La boucle while est plus generale, mais doit etre utilisee avec prudence pour eviter les boucles infinies. Comprendre quand et comment utiliser chaque type de boucle est essentiel pour ecrire des scripts efficaces et lisibles.",
             "Meme si certaines bibliotheques data reduisent l'usage explicite des boucles, leur comprehension reste indispensable pour lire, comprendre et maintenir du code existant.",
           ],
-          video: {
-            label: "Grafikart - Les boucles en Python",
-            url: "https://www.youtube.com/watch?v=94UHCEmprCY",
-          },
+          video: undefined,
         },
         {
           title: "Structures de donnees : listes et dictionnaires",
@@ -289,8 +283,8 @@ export const foundationalProgram: ProgramContent = {
             "Savoir manipuler ces structures est fondamental avant de passer a des outils plus avances comme Pandas.",
           ],
           video: {
-            label: "Grafikart - Listes et dictionnaires en Python",
-            url: "https://www.youtube.com/watch?v=ZDa-Z5JzLYM",
+            label: "DAAP - Listes, tuples et dictionnaires",
+            url: "https://www.youtube.com/watch?v=IFaXato82p0",
           },
         },
         {
@@ -300,23 +294,31 @@ export const foundationalProgram: ProgramContent = {
             "Cette partie introduit egalement NumPy et Pandas, deux bibliotheques fondamentales. NumPy permet de manipuler efficacement des tableaux numeriques, tandis que Pandas est concu pour travailler avec des donnees tabulaires. Ces outils seront approfondis dans les modules suivants, mais il est important d'en comprendre des maintenant le role et l'utilite.",
           ],
           video: {
-            label: "Data School - Introduction a Pandas",
-            url: "https://www.youtube.com/watch?v=vmEHCJofslg",
+            label: "DAAP - Bases de Pandas",
+            url: "https://www.youtube.com/watch?v=N4atDiARNeM",
           },
         },
       ],
       resources: {
         articles: [
           {
-            label: "OpenClassrooms - Python pour la data science",
-            url: "https://openclassrooms.com/fr/courses/4444646-initiez-vous-a-python-pour-lanalyse-de-donnees",
+            label: "OpenClassrooms - Initiez-vous a Python pour l'analyse de donnees",
+            url: "https://openclassrooms.com/fr/courses/6204541-initiez-vous-a-python-pour-l-analyse-de-donnees",
           },
           {
-            label: "Coursera - Why Python is used for Data Science",
-            url: "https://www.coursera.org/articles/python-for-data-science",
+            label: "Pandas - 10 minutes to pandas",
+            url: "https://pandas.pydata.org/docs/user_guide/10min.html",
+          },
+          {
+            label: "OpenClassrooms - Decouvrez les librairies Python pour la Data Science",
+            url: "https://openclassrooms.com/fr/courses/7771531-decouvrez-les-librairies-python-pour-la-data-science",
           },
         ],
-        videos: [],
+        videos: [
+          { label: "Machine Learnia - Conditions + boucles (if / for / while)", url: "https://www.youtube.com/watch?v=x_Jeyvw7n9I" },
+          { label: "DAAP - Listes / tuples / dictionnaires", url: "https://www.youtube.com/watch?v=IFaXato82p0" },
+          { label: "DAAP - Bases de Pandas (DataFrame)", url: "https://www.youtube.com/watch?v=N4atDiARNeM" },
+        ],
       },
       notebook: {
         title: "Notebook Module 2 - Bases Python",

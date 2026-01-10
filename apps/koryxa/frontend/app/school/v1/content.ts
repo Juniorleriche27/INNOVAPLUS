@@ -430,8 +430,8 @@ export const foundationalProgram: ProgramContent = {
             "Dans les missions KORYXA, cette etape est souvent la plus critique. Une fois les donnees nettoyees, l'analyse devient fiable et les livrables sont defendables face a un client ou une equipe technique.",
           ],
           video: {
-            label: "Machine Learnia - Nettoyer des donnees avec Pandas",
-            url: "https://www.youtube.com/watch?v=ZQkqZ8hZc8A",
+            label: "dataisto - Pandas : valeurs manquantes",
+            url: "https://www.youtube.com/watch?v=SVPJx_uNVjY",
           },
           articles: [
             {
@@ -448,8 +448,8 @@ export const foundationalProgram: ProgramContent = {
             "Ces operations sont indispensables pour preparer un dataset cible, construire une analyse par segment, ou produire un fichier nettoye pour une autre equipe.",
           ],
           video: {
-            label: "Grafikart - Filtrer et trier des donnees avec Pandas",
-            url: "https://www.youtube.com/watch?v=E6z7Y0a4Z8k",
+            label: "dataisto - Filtrer avec Pandas (.loc)",
+            url: "https://www.youtube.com/watch?v=ZWS6ckhYFKE",
           },
           articles: [
             {
@@ -466,8 +466,8 @@ export const foundationalProgram: ProgramContent = {
             "Dans les projets KORYXA, ces agregats sont souvent le coeur du livrable : ils permettent de produire des insights clairs et d'alimenter des visualisations utiles.",
           ],
           video: {
-            label: "Machine Learnia - GroupBy avec Pandas",
-            url: "https://www.youtube.com/watch?v=R7n0zH6qZ8Y",
+            label: "astro__pat - La methode GROUPBY avec Pandas",
+            url: "https://www.youtube.com/watch?v=J-d-AzyNTTI",
           },
           articles: [
             {

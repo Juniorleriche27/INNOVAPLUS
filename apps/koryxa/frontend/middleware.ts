@@ -98,6 +98,7 @@ const V1_SCHOOL_ALLOWED = [
   "/school/specialisations",
   "/school/validations",
   "/school/parcours",
+  "/school/data-analyst",
 ];
 
 const V1_PUBLIC_PATHS = [

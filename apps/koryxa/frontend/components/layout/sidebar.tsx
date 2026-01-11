@@ -100,9 +100,28 @@ const V1_LINKS = [
   { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
 ];
 
-const V1_SCHOOL_SUBLINKS = [
-  { href: "/school/fondamentaux", label: "Parcours fondamentaux" },
-  { href: "/school/specialisations", label: "Specialisations" },
+const V1_SCHOOL_TREE = [
+  { href: "/school/parcours/fondamental", label: "Parcours fondamentaux" },
+  {
+    href: "/school/specialisations",
+    label: "Specialisations",
+    children: [
+      {
+        href: "/school/data-analyst/module-1",
+        label: "Data Analyst",
+        children: [
+          { href: "/school/data-analyst/module-1/theme-1", label: "Theme 1" },
+          { href: "/school/data-analyst/module-1/theme-2", label: "Theme 2" },
+          { href: "/school/data-analyst/module-1/theme-3", label: "Theme 3" },
+          { href: "/school/data-analyst/module-1/theme-4", label: "Theme 4" },
+          { href: "/school/data-analyst/module-1/theme-5", label: "Theme 5" },
+        ],
+      },
+      { href: "/school/parcours/specialisations/data-engineer", label: "Data Engineer" },
+      { href: "/school/parcours/specialisations/data-scientist", label: "Data Scientist" },
+      { href: "/school/parcours/specialisations/machine-learning-engineer", label: "Machine Learning Engineer" },
+    ],
+  },
   { href: "/school/validations", label: "Projets & validations" },
 ];
 
@@ -111,6 +130,8 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
+  const [specialOpen, setSpecialOpen] = useState(false);
+  const [analystOpen, setAnalystOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("innova.sidebar.collapsed");
@@ -124,6 +145,13 @@ export default function Sidebar({ className, style }: { className?: string; styl
   useEffect(() => {
     if (pathname.startsWith("/school")) {
       setSchoolOpen(true);
+    }
+    if (pathname.startsWith("/school/specialisations") || pathname.startsWith("/school/parcours/specialisations")) {
+      setSpecialOpen(true);
+    }
+    if (pathname.startsWith("/school/data-analyst")) {
+      setSpecialOpen(true);
+      setAnalystOpen(true);
     }
   }, [pathname]);
 
@@ -245,21 +273,89 @@ export default function Sidebar({ className, style }: { className?: string; styl
                 {showSchoolSubs ? (
                   <div className="ml-10 rounded-xl border border-slate-200/70 bg-white/80 p-2 shadow-sm">
                     <div className="space-y-1">
-                      {V1_SCHOOL_SUBLINKS.map((sub) => {
+                      {V1_SCHOOL_TREE.map((sub) => {
                         const subActive = pathname.startsWith(sub.href);
+                        const hasChildren = Boolean(sub.children?.length);
                         return (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            className={clsx(
-                              "flex items-center rounded-lg px-3 py-2 text-[12px] font-semibold transition",
-                              subActive
-                                ? "bg-sky-50 text-sky-700"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                            )}
-                          >
-                            {sub.label}
-                          </Link>
+                          <div key={sub.href} className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <Link
+                                href={sub.href}
+                                className={clsx(
+                                  "flex-1 rounded-lg px-3 py-2 text-[12px] font-semibold transition",
+                                  subActive
+                                    ? "bg-sky-50 text-sky-700"
+                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                )}
+                              >
+                                {sub.label}
+                              </Link>
+                              {hasChildren ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSpecialOpen((prev) => !prev)}
+                                  className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+                                >
+                                  {specialOpen ? "−" : "+"}
+                                </button>
+                              ) : null}
+                            </div>
+                            {hasChildren && specialOpen ? (
+                              <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
+                                {sub.children?.map((child) => {
+                                  const childActive = pathname.startsWith(child.href);
+                                  const hasGrand = Boolean(child.children?.length);
+                                  return (
+                                    <div key={child.href} className="space-y-1">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <Link
+                                          href={child.href}
+                                          className={clsx(
+                                            "flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition",
+                                            childActive
+                                              ? "bg-sky-50 text-sky-700"
+                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                          )}
+                                        >
+                                          {child.label}
+                                        </Link>
+                                        {hasGrand ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setAnalystOpen((prev) => !prev)}
+                                            className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+                                          >
+                                            {analystOpen ? "−" : "+"}
+                                          </button>
+                                        ) : null}
+                                      </div>
+                                      {hasGrand && analystOpen ? (
+                                        <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
+                                          {child.children?.map((theme) => {
+                                            const themeActive = pathname.startsWith(theme.href);
+                                            return (
+                                              <Link
+                                                key={theme.href}
+                                                href={theme.href}
+                                                className={clsx(
+                                                  "block rounded-lg px-2 py-1 text-[11px] font-semibold transition",
+                                                  themeActive
+                                                    ? "bg-sky-50 text-sky-700"
+                                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                                )}
+                                              >
+                                                {theme.label}
+                                              </Link>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+                          </div>
                         );
                       })}
                     </div>

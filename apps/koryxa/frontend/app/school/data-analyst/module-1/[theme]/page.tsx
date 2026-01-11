@@ -1,16 +1,23 @@
+import { redirect } from "next/navigation";
 import { themes } from "../content";
 import VideoBlock from "../components/VideoBlock";
 
 type Props = { params: { theme: string } };
 
 export default function ThemePage({ params }: Props) {
-  const theme = themes.find((t) => t.slug === params.theme);
+  const slug = (params.theme || "").toLowerCase();
+  let theme = themes.find((t) => t.slug === slug);
   if (!theme) {
-    return (
-      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
-        Theme introuvable.
-      </div>
-    );
+    const match = slug.match(/^theme-(\d+)$/);
+    if (match) {
+      const idx = Number(match[1]) - 1;
+      if (idx >= 0 && idx < themes.length) {
+        theme = themes[idx];
+      }
+    }
+  }
+  if (!theme) {
+    redirect("/school/data-analyst/module-1");
   }
 
   return (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { specialisations } from "@/app/school/v1/content";
 
 export function generateStaticParams() {
@@ -7,6 +7,9 @@ export function generateStaticParams() {
 }
 
 export default function SpecialisationEntryPage({ params }: { params: { track: string } }) {
+  if (params.track === "data-analyst") {
+    redirect("/school/data-analyst/module-1");
+  }
   const program = specialisations[params.track];
   if (!program) {
     notFound();

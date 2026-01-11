@@ -150,13 +150,19 @@ export default function ModuleReader({
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold text-slate-900">{label}</p>
           {video.tag ? (
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+            <span className="rounded-full border border-slate-300 bg-slate-900 px-2.5 py-0.5 text-[11px] font-semibold text-white">
               {video.tag}
             </span>
           ) : null}
           {video.lang ? (
-            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold uppercase text-slate-500">
-              {video.lang}
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
+                video.lang === "fr"
+                  ? "border-amber-300 bg-amber-100 text-amber-900"
+                  : "border-sky-300 bg-sky-100 text-sky-900"
+              }`}
+            >
+              {video.lang === "fr" ? "FR" : "EN"}
             </span>
           ) : null}
         </div>

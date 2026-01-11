@@ -37,7 +37,7 @@ export default function ModuleReader({
   const requiresReading = Boolean(module.requireReadingConfirmation);
   const requiresNotebook = Boolean(module.requireNotebookConfirmation);
   const confirmationsOk = (!requiresReading || readingConfirmed) && (!requiresNotebook || notebookConfirmed);
-  const canValidate = Object.keys(answers).length === totalQuestions && confirmationsOk;
+  const canValidate = totalQuestions > 0 && Object.keys(answers).length === totalQuestions && confirmationsOk;
   const answeredCount = Object.keys(answers).length;
   const incorrectQuestions = module.quiz
     .map((question, idx) => ({
@@ -309,6 +309,60 @@ export default function ModuleReader({
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </div>
+                {section.dataset ? (
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{section.dataset.label}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {section.dataset.rows} lignes · {section.dataset.size} · mis a jour {section.dataset.updatedAt}
+                        </p>
+                      </div>
+                      <a
+                        className="inline-flex items-center rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700"
+                        href={section.dataset.url}
+                        download
+                      >
+                        Telecharger le dataset (CSV)
+                      </a>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Data dictionary</p>
+                      <ul className="mt-2 space-y-2 text-sm text-slate-600">
+                        {section.dataset.columns.map((col) => (
+                          <li key={col.name}>
+                            <span className="font-semibold text-slate-800">{col.name}</span> — {col.description}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : null}
+                {section.actions && section.actions.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {section.actions.map((action) =>
+                      action.external ? (
+                        <a
+                          key={action.href}
+                          href={action.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                          {action.label}
+                        </a>
+                      ) : (
+                        <Link
+                          key={action.href}
+                          href={action.href}
+                          className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-slate-900/20"
+                        >
+                          {action.label}
+                        </Link>
+                      )
+                    )}
+                  </div>
+                ) : null}
                 {(() => {
                   const videos = section.videos ?? (section.video ? [section.video] : []);
                   return videos.length > 0 ? renderSectionVideos(videos) : null;
@@ -422,102 +476,119 @@ export default function ModuleReader({
         </section>
       )}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Mini-test de validation</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Minimum requis : {MIN_PASS_PERCENT}%. Sans reussite, pas de module suivant.
-        </p>
-        {(requiresReading || requiresNotebook) && (
-          <p className="mt-2 text-xs text-slate-500">
-            Validation complete si texte lu, notebook consulte et mini-test reussi.
+      {module.quiz.length > 0 ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Mini-test de validation</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Minimum requis : {MIN_PASS_PERCENT}%. Sans reussite, pas de module suivant.
           </p>
-        )}
-        {(requiresReading || requiresNotebook) && (
-          <div className="mt-3 space-y-2 text-sm text-slate-700">
-            {requiresReading && (
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={readingConfirmed}
-                  onChange={(event) => setReadingConfirmed(event.target.checked)}
-                />
-                J'ai lu le texte du module
-              </label>
-            )}
-            {requiresNotebook && (
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={notebookConfirmed}
-                  onChange={(event) => setNotebookConfirmed(event.target.checked)}
-                />
-                J'ai consulte le notebook
-              </label>
-            )}
-          </div>
-        )}
-        <div className="mt-4 space-y-4">
-          {module.quiz.map((question, idx) => (
-            <div key={question.prompt} className="rounded-2xl border border-slate-200 p-4">
-              <p className="text-sm font-semibold text-slate-900">{idx + 1}. {question.prompt}</p>
-              <div className="mt-3 space-y-2">
-                {shuffledOptions[idx].map((opt) => (
-                  <label key={`${question.prompt}-${opt.originalIndex}`} className="flex items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="radio"
-                      name={`q-${idx}`}
-                      checked={answers[idx] === opt.originalIndex}
-                      onChange={() => setAnswers((prev) => ({ ...prev, [idx]: opt.originalIndex }))}
-                    />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
-              {score !== null && (
-                <p className="mt-2 text-xs text-slate-500">{question.explanation}</p>
+          {(requiresReading || requiresNotebook) && (
+            <p className="mt-2 text-xs text-slate-500">
+              Validation complete si texte lu, notebook consulte et mini-test reussi.
+            </p>
+          )}
+          {(requiresReading || requiresNotebook) && (
+            <div className="mt-3 space-y-2 text-sm text-slate-700">
+              {requiresReading && (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={readingConfirmed}
+                    onChange={(event) => setReadingConfirmed(event.target.checked)}
+                  />
+                  J'ai lu le texte du module
+                </label>
+              )}
+              {requiresNotebook && (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={notebookConfirmed}
+                    onChange={(event) => setNotebookConfirmed(event.target.checked)}
+                  />
+                  J'ai consulte le notebook
+                </label>
               )}
             </div>
-          ))}
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleValidate}
-            disabled={!canValidate}
-          >
-            Valider le module
-          </button>
-          {!canValidate && (
-            <span className="text-xs text-slate-500">
-              {answeredCount < totalQuestions
-                ? `Reponds a toutes les questions (${answeredCount}/${totalQuestions}).`
-                : "Coche le texte lu et le notebook consulte pour valider."}
-            </span>
           )}
-          {score !== null && (
-            <span className={`text-sm font-semibold ${validated ? "text-emerald-600" : "text-rose-600"}`}>
-              Score {percent}% {validated ? "— Module valide" : "— Reessaie"}
-            </span>
-          )}
-        </div>
-        {score !== null && incorrectQuestions.length > 0 ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
-            <p className="font-semibold">Questions ratees</p>
-            <ul className="mt-2 list-disc pl-5 space-y-2">
-              {incorrectQuestions.map(({ idx, question }) => (
-                <li key={question.prompt}>
-                  <span className="font-semibold">{idx + 1}.</span> {question.prompt}
-                  <div className="text-xs text-amber-800">
-                    Bonne reponse : {question.options[question.answerIndex]}
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-4 space-y-4">
+            {module.quiz.map((question, idx) => (
+              <div key={question.prompt} className="rounded-2xl border border-slate-200 p-4">
+                <p className="text-sm font-semibold text-slate-900">{idx + 1}. {question.prompt}</p>
+                <div className="mt-3 space-y-2">
+                  {shuffledOptions[idx].map((opt) => (
+                    <label key={`${question.prompt}-${opt.originalIndex}`} className="flex items-center gap-2 text-sm text-slate-600">
+                      <input
+                        type="radio"
+                        name={`q-${idx}`}
+                        checked={answers[idx] === opt.originalIndex}
+                        onChange={() => setAnswers((prev) => ({ ...prev, [idx]: opt.originalIndex }))}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+                {score !== null && (
+                  <p className="mt-2 text-xs text-slate-500">{question.explanation}</p>
+                )}
+              </div>
+            ))}
           </div>
-        ) : null}
-      </section>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleValidate}
+              disabled={!canValidate}
+            >
+              Valider le module
+            </button>
+            {!canValidate && (
+              <span className="text-xs text-slate-500">
+                {answeredCount < totalQuestions
+                  ? `Reponds a toutes les questions (${answeredCount}/${totalQuestions}).`
+                  : "Coche le texte lu et le notebook consulte pour valider."}
+              </span>
+            )}
+            {score !== null && (
+              <span className={`text-sm font-semibold ${validated ? "text-emerald-600" : "text-rose-600"}`}>
+                Score {percent}% {validated ? "— Module valide" : "— Reessaie"}
+              </span>
+            )}
+          </div>
+          {score !== null && incorrectQuestions.length > 0 ? (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+              <p className="font-semibold">Questions ratees</p>
+              <ul className="mt-2 list-disc pl-5 space-y-2">
+                {incorrectQuestions.map(({ idx, question }) => (
+                  <li key={question.prompt}>
+                    <span className="font-semibold">{idx + 1}.</span> {question.prompt}
+                    <div className="text-xs text-amber-800">
+                      Bonne reponse : {question.options[question.answerIndex]}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {module.advancedTest ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Test final</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {module.advancedTest.questions} questions · seuil {module.advancedTest.minScore}%.
+          </p>
+          <Link
+            href={module.advancedTest.href}
+            className="mt-4 inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-slate-900/20"
+          >
+            Lancer le test final
+          </Link>
+        </section>
+      ) : null}
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-700">

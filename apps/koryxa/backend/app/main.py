@@ -38,6 +38,7 @@ from app.routers.studio import router as studio_router
 from app.routers.myplanning import router as myplanning_router
 from app.routers import studio_missions as studio_missions_router
 from app.routers.skills import router as skills_router
+from app.routers.module6 import router as module6_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
@@ -201,6 +202,7 @@ else:
     innova_api.include_router(skills_router)
     innova_api.include_router(studio_missions_router.router)
     innova_api.include_router(school_router.router)
+    innova_api.include_router(module6_router)
     innova_api.include_router(auth_router)
     app.include_router(innova_api)
     # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*

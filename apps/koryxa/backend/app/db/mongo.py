@@ -65,6 +65,10 @@ async def connect_to_mongo() -> None:
             await _db["issued_certificates"].create_index([("certificate_id", 1), ("user_id", 1)], unique=True)
             await _db["certificate_skill_links"].create_index([("certificate_id", 1), ("skill_slug", 1)], unique=True)
             await _db["user_certificate_skills"].create_index([("user_id", 1), ("skill_slug", 1)], unique=True)
+            await _db["module_submissions"].create_index([("user_id", 1), ("module_id", 1), ("created_at", -1)])
+            await _db["module_test_sessions"].create_index([("test_id", 1)], unique=True)
+            await _db["module_test_sessions"].create_index([("user_id", 1), ("created_at", -1)])
+            await _db["module_test_attempts"].create_index([("user_id", 1), ("module_id", 1), ("created_at", -1)])
 
             # Auth & Chatlaya collections
             await _db["sessions"].create_index("token_hash", unique=True)

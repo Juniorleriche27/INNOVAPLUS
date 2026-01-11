@@ -1,11 +1,22 @@
 export type ResourceLink = { label: string; url: string; description?: string };
 export type SectionVideo = { title?: string; label?: string; url: string; lang?: "fr" | "en"; tag?: string };
+export type SectionAction = { label: string; href: string; external?: boolean };
+export type DatasetInfo = {
+  label: string;
+  url: string;
+  rows: number;
+  size: string;
+  updatedAt: string;
+  columns: { name: string; description: string }[];
+};
 export type ModuleSection = {
   title: string;
   text: string[];
   video?: SectionVideo;
   videos?: SectionVideo[];
   articles?: ResourceLink[];
+  actions?: SectionAction[];
+  dataset?: DatasetInfo;
 };
 export type NotebookBlock = { title: string; description: string; code: string; download?: string };
 export type QuizQuestion = {
@@ -23,6 +34,7 @@ export type ModuleContent = {
   sections?: ModuleSection[];
   notebook?: NotebookBlock;
   quiz: QuizQuestion[];
+  advancedTest?: { href: string; minScore: number; questions: number };
   requireReadingConfirmation?: boolean;
   requireNotebookConfirmation?: boolean;
 };
@@ -1572,13 +1584,34 @@ export const foundationalProgram: ProgramContent = {
       text: [],
       sections: [
         {
-          title: "Brief + livrables + bareme",
+          title: "Brief (objectif + livrables + dataset)",
           text: [
-            "Contexte (mission KORYXA) : une ONG / startup EdTech veut identifier 3 priorites d'action sur l'education dans 5 pays, sur 2000–2022. Tu dois transformer un besoin flou en livrables concrets et exploitables.",
-            "Livrables obligatoires : 1) notebook .ipynb reproductible, 2) export CSV nettoye (sample_clean.csv), 3) base SQLite (sample.db) OU script create_db.sql, 4) rapport PDF (2 pages max) : resultats + recommandations (3 actions).",
-            "Bareme (100 points) : reproductibilite notebook (20), qualite nettoyage + coherence variables (20), SQL : tables + 10 requetes correctes (25), visualisation : 5 graphiques + interpretation (20), rapport : clarte + recommandations (15).",
-            "Seuil de validation : 70/100 + mini-test final >= 70%.",
+            "Objectif : livrer un projet data complet et reproductible en enchainant Python + Pandas, SQL, visualisation et un mini-rapport.",
+            "Livrables obligatoires : 1) notebook .ipynb, 2) cleaned.csv, 3) queries.sql (5 requetes), 4) mini-rapport PDF (1 page) OU README.md.",
+            "Option recommande : un zip unique contenant tous les livrables.",
           ],
+          dataset: {
+            label: "Dataset projet (sales)",
+            url: "/datasets/koryxa_project_sales.csv",
+            rows: 800,
+            size: "70 KB",
+            updatedAt: "2026-01-11",
+            columns: [
+              { name: "order_id", description: "Identifiant unique de la commande." },
+              { name: "order_date", description: "Date de commande (YYYY-MM-DD)." },
+              { name: "country", description: "Pays de la commande." },
+              { name: "country_code", description: "Code ISO du pays." },
+              { name: "region", description: "Region commerciale." },
+              { name: "city", description: "Ville principale." },
+              { name: "product_category", description: "Categorie du produit/service." },
+              { name: "product", description: "Nom du produit." },
+              { name: "quantity", description: "Quantite vendue." },
+              { name: "unit_price", description: "Prix unitaire." },
+              { name: "revenue", description: "Montant total (quantity * unit_price)." },
+              { name: "channel", description: "Canal de vente." },
+              { name: "customer_type", description: "Type de client (NGO, Startup, SME, School)." },
+            ],
+          },
           videos: [
             {
               title: "Portfolio Data Science: Creez un Projet Complet et Irresistible!",
@@ -1603,59 +1636,10 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "Ingestion + cadrage",
+          title: "Nettoyage (Pandas)",
           text: [
-            "Dataset V1 : utilise le sample fourni dans le repo : /school/assets/datasets/edstats_sample.csv. Il contient 5 pays (Togo, Benin, Ghana, Senegal, Nigeria), 8–12 indicateurs et les annees 2000–2022.",
-            "Cadrage : construis un tableau de questions de mission (au moins 6). Exemples : evolution du taux de scolarisation secondaire, comparaison filles/garcons, depenses publiques education vs resultats, evolution par pays, indicateur le plus critique, etc.",
-            "Option FULL (bonus) : si tu veux travailler sur le dataset complet, utilise EdStats World Bank et filtre pour recreer un sample avant de poursuivre.",
-            "Liens full download : CSV zip https://databank.worldbank.org/data/download/EdStats_CSV.zip ; Excel zip https://databank.worldbank.org/data/download/EdStats_EXCEL.zip.",
-          ],
-          videos: [
-            {
-              title: "Analyser des donnees Excel avec Pandas",
-              url: "https://www.youtube.com/watch?v=ZAL5tsyjeAg",
-              lang: "fr",
-            },
-            {
-              title: "Importer CSV/Excel avec Pandas",
-              url: "https://www.youtube.com/watch?v=-T2dA7k706E",
-              lang: "fr",
-            },
-            {
-              title: "Importing Data (CSV, Excel, JSON)",
-              url: "https://www.youtube.com/watch?v=N6hyN6BW6ao",
-              lang: "en",
-            },
-            {
-              title: "Pandas Tutorial (Corey Schafer – serie)",
-              url: "https://www.youtube.com/watch?v=ZyhVh-qRZPA",
-              lang: "en",
-            },
-          ],
-          articles: [
-            {
-              label: "Pandas read_csv (docs)",
-              url: "https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html",
-            },
-            {
-              label: "Pandas read_excel (docs)",
-              url: "https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html",
-            },
-            {
-              label: "EdStats CSV zip (World Bank)",
-              url: "https://databank.worldbank.org/data/download/EdStats_CSV.zip",
-            },
-            {
-              label: "EdStats Excel zip (World Bank)",
-              url: "https://databank.worldbank.org/data/download/EdStats_EXCEL.zip",
-            },
-          ],
-        },
-        {
-          title: "Nettoyage & preparation",
-          text: [
-            "Exigences : gestion des valeurs manquantes (regle claire), suppression des doublons, conversion des types (annee en int, valeurs en float), normalisation des colonnes (snake_case), creation d'un data dictionary (3–5 lignes) pour les variables principales.",
-            "Mini-exercice : trouver 3 anomalies dans les donnees et expliquer pourquoi elles posent probleme.",
+            "Exiger : gestion des valeurs manquantes (regle claire), suppression doublons, conversion des types (date en format date, valeurs numeriques en float), normalisation des colonnes (snake_case).",
+            "Livrable : cleaned.csv + notes sur 3 anomalies detectees et corrigees.",
           ],
           videos: [
             {
@@ -1686,10 +1670,10 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "SQL (modele + 10 requetes)",
+          title: "SQL (SQLite) : 5 requetes obligatoires",
           text: [
-            "Modelisation minimale (3 tables) : dim_country(country_code, country_name), dim_indicator(indicator_code, indicator_name), fact_education(country_code, indicator_code, year, value).",
-            "Exiger un chargement SQLite + fichier queries.sql. Les 10 requetes a produire : 1) top 5 valeurs par indicateur et annee, 2) moyenne 2000–2005 vs 2018–2022, 3) evolution (delta) par pays, 4) gender gap si indicateur disponible, 5) top 3 pays par indicateur, 6) tendance moyenne par region, 7) annee de rupture par pays, 8) distribution des valeurs par indicateur, 9) pays avec plus forte progression, 10) pays en decroissance continue.",
+            "Exiger un fichier queries.sql avec 5 requetes : 1) top 5 revenus par produit, 2) revenus par pays, 3) ventes mensuelles, 4) panier moyen par type de client, 5) top 3 produits par region.",
+            "Livrable : base SQLite + queries.sql.",
           ],
           videos: [
             {
@@ -1719,20 +1703,16 @@ export const foundationalProgram: ProgramContent = {
               url: "https://docs.python.org/3/library/sqlite3.html",
             },
             {
-              label: "Pandas read_sql (FR)",
-              url: "https://datascientest.com/pandas-read-sql-tout-savoir",
-            },
-            {
               label: "SQLBolt (exercices)",
               url: "https://sqlbolt.com/",
             },
           ],
         },
         {
-          title: "Visualisation (5 graphiques minimum)",
+          title: "Visualisation : 3 graphiques obligatoires",
           text: [
-            "Exiger 5 graphiques minimum + 1 phrase d'interpretation chacun : 2 courbes d'evolution, 1 bar chart comparatif entre pays, 1 heatmap (pays x annee) OU (indicateur x pays), 1 graphique insight (avant/apres).",
-            "Regle : pas de graphiques sans legende, titres et source.",
+            "Exiger 3 graphiques + interpretation : 1) courbe d'evolution des revenus, 2) bar chart comparatif entre pays, 3) graphique insight (avant/apres).",
+            "Regle : pas de graphiques sans legende / titres / source.",
           ],
           videos: [
             {
@@ -1768,37 +1748,64 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "Rapport final + validation + soumission",
+          title: "Soumettre le livrable",
           text: [
-            "Rapport PDF (2 pages max) : Contexte, methode, resultats (3 insights), recommandations (3 actions), limites.",
-            "Validation : checklist de soumission (notebook, sample_clean.csv, sample.db ou create_db.sql, queries.sql, rapport PDF).",
-            "Soumission V1 : si aucun systeme d'upload, fournir un lien GitHub/Drive (champ texte) ou envoyer par email/WhatsApp selon la procedure V1.",
+            "Soumission obligatoire : lien GitHub/Drive + (optionnel) upload .zip.",
+            "Chaque soumission genere un numero (submission_id) a conserver.",
+          ],
+          actions: [
+            {
+              label: "Soumettre le livrable",
+              href: "/school/module-6/submit",
+            },
           ],
           videos: [
             {
-              title: "Data Storytelling : Reapprenez a valoriser vos donnees",
-              url: "https://www.youtube.com/watch?v=SJvGMuWZTYQ",
+              title: "Comment partager un fichier sur Google Drive (guide complet)",
+              url: "https://www.youtube.com/watch?v=iYMc6r3ZwC4",
               lang: "fr",
             },
             {
-              title: "Data Storytelling: 5 Astuces Pratiques Pour Bien Demarrer",
-              url: "https://www.youtube.com/watch?v=QlwwxK3t_4U",
-              lang: "fr",
-            },
-            {
-              title: "Elevate Your Data Storytelling Skills in 10 Minutes",
-              url: "https://www.youtube.com/watch?v=kU2lOgrM0YQ",
+              title: "How to Share Google Drive Files and Folders",
+              url: "https://www.youtube.com/watch?v=ElabHPB3Urw",
               lang: "en",
             },
           ],
           articles: [
             {
-              label: "Storytelling with Data - Principles",
-              url: "https://www.storytellingwithdata.com/blog",
+              label: "Google Drive - share files",
+              url: "https://support.google.com/drive/answer/2494822",
+            },
+          ],
+        },
+        {
+          title: "Test final (50 questions) + validation",
+          text: [
+            "Test avance : 50 questions, seuil 70%. Le score est calcule cote serveur.",
+            "Le module est valide si la soumission est enregistree ET si le test est reussi.",
+          ],
+          actions: [
+            {
+              label: "Lancer le test final",
+              href: "/school/module-6/test",
+            },
+          ],
+          videos: [
+            {
+              title: "Simulation d'entretien d'embauche : Data Analyst",
+              url: "https://www.youtube.com/watch?v=DgDwLG8hZpk",
+              lang: "fr",
             },
             {
-              label: "Rapport data : bonnes pratiques (FR)",
-              url: "https://www.data-to-viz.com/",
+              title: "How To Answer Data Analyst Interview Questions",
+              url: "https://www.youtube.com/watch?v=5RzGOqZe-Gk",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Guide entretien data (FR)",
+              url: "https://datascientest.com/metier-data-analyst",
             },
           ],
         },
@@ -1807,68 +1814,12 @@ export const foundationalProgram: ProgramContent = {
         videos: [],
         articles: [],
       },
-      quiz: [
-        {
-          prompt: "Le contexte du projet concerne :",
-          options: ["Priorites education dans 5 pays", "Marketing produit tech", "Segmentation e-commerce"],
-          answerIndex: 0,
-          explanation: "Le brief impose 5 pays et 2000–2022.",
-        },
-        {
-          prompt: "Quels livrables sont obligatoires ?",
-          options: ["Notebook + CSV nettoye + DB/SQL + rapport PDF", "Notebook uniquement", "Slides uniquement"],
-          answerIndex: 0,
-          explanation: "Tous les livrables sont requis.",
-        },
-        {
-          prompt: "Le seuil de validation est :",
-          options: ["70/100 + mini-test >= 70%", "50/100", "90/100 uniquement"],
-          answerIndex: 0,
-          explanation: "Le seuil fixe est 70/100 + mini-test.",
-        },
-        {
-          prompt: "Le sample dataset V1 est :",
-          options: ["edstats_sample.csv", "full_edstats.csv", "random_data.csv"],
-          answerIndex: 0,
-          explanation: "Le sample est fourni dans le repo.",
-        },
-        {
-          prompt: "Le modele SQL minimal contient :",
-          options: ["2 dimensions + 1 fact", "1 table unique", "4 tables sans cles"],
-          answerIndex: 0,
-          explanation: "dim_country, dim_indicator, fact_education.",
-        },
-        {
-          prompt: "Combien de requetes SQL sont exigees ?",
-          options: ["10", "3", "20"],
-          answerIndex: 0,
-          explanation: "Le projet exige 10 requetes.",
-        },
-        {
-          prompt: "Combien de graphiques minimum ?",
-          options: ["5", "2", "8"],
-          answerIndex: 0,
-          explanation: "5 graphiques minimum.",
-        },
-        {
-          prompt: "Une heatmap valide peut etre :",
-          options: ["Pays x annee", "Logo x couleur", "Nom x prenom"],
-          answerIndex: 0,
-          explanation: "La heatmap doit montrer des donnees.",
-        },
-        {
-          prompt: "Le rapport final doit contenir :",
-          options: ["Resultats + recommandations", "Liste des outils uniquement", "Code brut"],
-          answerIndex: 0,
-          explanation: "Le rapport doit etre actionnable.",
-        },
-        {
-          prompt: "Si pas d'upload V1, la soumission se fait via :",
-          options: ["Lien GitHub/Drive", "SMS", "Aucun envoi"],
-          answerIndex: 0,
-          explanation: "La V1 accepte un lien partage.",
-        },
-      ],
+      quiz: [],
+      advancedTest: {
+        href: "/school/module-6/test",
+        minScore: 70,
+        questions: 50,
+      },
       requireReadingConfirmation: true,
     },
   ],

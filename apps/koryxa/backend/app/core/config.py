@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     SMTP_PASS: str | None = os.getenv("SMTP_PASS")
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", os.getenv("SMTP_STARTTLS", "true")).lower() in {"1", "true", "yes"}
     SMTP_FROM_EMAIL: str | None = os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER")
+    SUBMISSION_NOTIFY_EMAILS: str | None = os.getenv("SUBMISSION_NOTIFY_EMAILS")
     CHAT_PROVIDER: str = os.getenv("PROVIDER", "cohere")
     CHAT_MODEL: str | None = os.getenv("CHAT_MODEL")
     CHAT_MAX_NEW_TOKENS: int = int(os.getenv("CHAT_MAX_NEW_TOKENS", "900"))
@@ -65,6 +66,8 @@ class Settings(BaseSettings):
     RAG_API_TIMEOUT: float = float(os.getenv("RAG_API_TIMEOUT", "8.0"))
     UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "20"))
     ALLOWED_UPLOAD_MIME: str | None = os.getenv("ALLOWED_UPLOAD_MIME")
+    UPLOADS_DIR: str = os.getenv("UPLOADS_DIR", "/srv/koryxa_uploads")
+    MODULE6_TEST_COOLDOWN_HOURS: int = int(os.getenv("MODULE6_TEST_COOLDOWN_HOURS", "6"))
     # Matching / Fairness (INNOVA)
     MATCH_ALPHA: float = float(os.getenv("MATCH_ALPHA", "0.5"))
     MATCH_BETA: float = float(os.getenv("MATCH_BETA", "0.3"))

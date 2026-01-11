@@ -554,51 +554,182 @@ export const foundationalProgram: ProgramContent = {
     {
       id: "sql-bases",
       title: "Bases SQL",
-      text: [
-        "SQL permet d'interroger et structurer des bases de donnees.",
-        "On y retrouve les requetes essentielles : SELECT, WHERE, JOIN, GROUP BY.",
-        "Le but est de passer d'une question business a une requete claire.",
+      text: [],
+      sections: [
+        {
+          title: "Introduction generale",
+          text: [
+            "Le SQL est le langage central de la donnee structuree. Dans la plupart des organisations, les informations utiles vivent dans des bases relationnelles : commandes, utilisateurs, stocks, operations, finances. Savoir ecrire une requete SQL fiable permet d'extraire, filtrer, agreger et structurer l'information au plus pres de la source, sans dependance a des outils intermediaires.",
+            "Ce module pose les fondations indispensables : comprendre les notions de tables, colonnes, cles et relations, puis ecrire des requetes claires (SELECT, WHERE, JOIN, GROUP BY). L'objectif n'est pas la performance extreme, mais la justesse, la lisibilite et la reproductibilite des requetes. Ce sont trois criteres essentiels pour produire des livrables professionnels defendables.",
+            "Un bon analyste ne se contente pas de recuperer des chiffres : il sait expliquer d'ou ils viennent, comment ils ont ete calculees, et pourquoi ils sont fiables. SQL donne cette capacite en rendant chaque etape du raisonnement explicite. C'est pour cela que SQL est un prerequis central en data, quel que soit le role.",
+            "Enfin, ce module introduit un premier pont entre SQL et Python. Beaucoup de missions demandent d'extraire des donnees en SQL puis de les analyser ou de les visualiser en Python. Tu apprendras donc a relier les deux sans complexite inutile, pour produire rapidement des resultats exploitables.",
+            "Dans un contexte KORYXA, cette maitrise permet de repondre a des besoins concrets : extraire des ventes par region, verifier la qualite d'un jeu de donnees, mesurer l'impact d'une campagne, ou preparer un tableau de bord. Les decisions business reposent sur ces extractions, donc la rigueur de la requete est decisive.",
+            "SQL est aussi un langage de collaboration. Une requete claire peut etre relue, verifiee et amelioree par un autre membre de l'equipe. Cette transparence est essentielle pour garantir des livrables utilisables et defendables devant une organisation.",
+          ],
+        },
+        {
+          title: "Mise en place de l'environnement SQL",
+          text: [
+            "Pour la V1, nous utilisons SQLite. C'est une base relationnelle legere, integrable directement dans un fichier et supportee nativement par Python. Aucune installation serveur SQL n'est requise pour la V1.",
+            "L'idee est simple : tu crees une base locale, tu definis des tables, puis tu ecris des requetes SQL pour interroger les donnees. Cette approche suffit pour apprendre les fondamentaux et produire des exercices realistes sans complexite d'infrastructure.",
+            "Dans les missions KORYXA, SQLite est souvent suffisante pour les prototypes et les preuves de concept. Les notions apprises ici seront identiques quand tu passeras a MySQL, PostgreSQL ou d'autres bases en entreprise.",
+          ],
+          video: {
+            label: "Machine Learnia - Utiliser SQL avec Python (sqlite3)",
+            url: "https://www.youtube.com/watch?v=Zx8n2bYv4eI",
+          },
+          articles: [
+            {
+              label: "Python - sqlite3",
+              url: "https://docs.python.org/3/library/sqlite3.html",
+              description: "Documentation officielle pour creer, interroger et manipuler une base SQLite en Python.",
+            },
+          ],
+        },
+        {
+          title: "Concepts fondamentaux des bases de donnees",
+          text: [
+            "Une base relationnelle organise la donnee en tables. Chaque table contient des lignes (enregistrements) et des colonnes (champs). Les cles primaires identifient chaque ligne de maniere unique, et les cles etrangeres relient les tables entre elles.",
+            "Le schema relationnel definit comment les tables se connectent. C'est ce qui garantit la coherence de la donnee et permet d'eviter les duplications inutiles. SQL est le langage qui permet de parcourir ce schema avec precision.",
+            "SQL se distingue d'un tableur : un tableur est manuel et fragile, alors qu'une base relationnelle impose des regles claires et des contraintes. C'est cette rigueur qui rend les resultats fiables dans un contexte professionnel.",
+          ],
+          video: {
+            label: "Grafikart - Introduction aux bases de donnees & SQL",
+            url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+          },
+          articles: [
+            {
+              label: "SQLite - About SQLite",
+              url: "https://www.sqlite.org/about.html",
+              description: "Presentation officielle de SQLite et de son fonctionnement.",
+            },
+          ],
+        },
+        {
+          title: "Requetes SQL de base",
+          text: [
+            "Les requetes SQL de base permettent de selectionner les bonnes informations rapidement. La clause SELECT choisit les colonnes, FROM precise la table, et WHERE filtre les lignes selon des conditions.",
+            "ORDER BY sert a trier les resultats, LIMIT a restreindre le volume, et les operateurs logiques (AND, OR, NOT) permettent de combiner plusieurs conditions. Ces elements suffisent pour produire des extractions utiles dans la plupart des missions.",
+            "Une requete doit rester lisible : un bon SQL est court, clair et verifiable. Cela facilite la relecture et la collaboration avec d'autres membres de l'equipe.",
+          ],
+          video: {
+            label: "Grafikart - SQL : requetes de base",
+            url: "https://www.youtube.com/watch?v=7S_tz1z_5bA",
+          },
+          articles: [
+            {
+              label: "SQLite - SELECT statement",
+              url: "https://www.sqlite.org/lang_select.html",
+              description: "Reference officielle sur SELECT, WHERE, ORDER BY et LIMIT.",
+            },
+          ],
+        },
+        {
+          title: "Jointures et agregations",
+          text: [
+            "Les jointures permettent de combiner des informations provenant de plusieurs tables. INNER JOIN garde les lignes qui matchent dans les deux tables, alors que LEFT JOIN garde toutes les lignes de la table principale.",
+            "Les agregations (COUNT, SUM, AVG) transforment des lignes detaillees en indicateurs. Avec GROUP BY, tu peux calculer des totaux par categorie, par region ou par periode.",
+            "Les erreurs frequentes viennent d'une jointure mal definie ou d'un GROUP BY incomplet. Apprendre a verifier le resultat est essentiel pour eviter des conclusions fausses.",
+          ],
+          video: {
+            label: "Grafikart - SQL : jointures et GROUP BY",
+            url: "https://www.youtube.com/watch?v=9yeOJ0ZMUYw",
+          },
+          articles: [
+            {
+              label: "SQLite - JOIN clause",
+              url: "https://www.sqlite.org/lang_select.html#joins",
+              description: "Reference officielle sur les jointures dans SQLite.",
+            },
+          ],
+        },
+        {
+          title: "SQL et Python",
+          text: [
+            "SQLite se manipule directement depuis Python via le module sqlite3. Tu peux creer des tables, executer des requetes SQL, puis charger les resultats dans Pandas pour analyser ou visualiser.",
+            "Cette passerelle est tres utile : tu recuperes des donnees propres avec SQL, puis tu produis des analyses rapides avec Python. C'est une competence cle pour livrer vite et bien sur des missions reelles.",
+            "Dans la pratique, on alterne souvent entre SQL et Python. Ce module te donne un premier workflow simple et reproductible pour cela.",
+          ],
+        },
       ],
       resources: {
         videos: [
-          { label: "SQL pour debutants", url: "https://www.youtube.com/watch?v=HXV3zeQKqGY" },
+          {
+            label: "Optionnel - MySQL avec Grafikart",
+            url: "https://www.youtube.com/watch?v=K6wK0FZKk1Y",
+          },
         ],
-        articles: [
-          { label: "SQL basics cheat sheet", url: "https://www.sqltutorial.org/sql-cheat-sheet/" },
-        ],
+        articles: [],
+      },
+      notebook: {
+        title: "Notebook Module 4 - SQL avec SQLite",
+        description: "Creation de tables, requetes SQL, jointures, agregations et lecture via Pandas.",
+        code: "import sqlite3\nimport pandas as pd\n\n# Creation de la base SQLite\nconn = sqlite3.connect(\":memory:\")\ncur = conn.cursor()\n\n# Tables\ndef create_tables():\n    cur.execute(\"\"\"\n        CREATE TABLE clients (\n            id INTEGER PRIMARY KEY,\n            nom TEXT,\n            region TEXT\n        );\n    \"\"\")\n    cur.execute(\"\"\"\n        CREATE TABLE commandes (\n            id INTEGER PRIMARY KEY,\n            client_id INTEGER,\n            montant REAL,\n            statut TEXT,\n            FOREIGN KEY(client_id) REFERENCES clients(id)\n        );\n    \"\"\")\n\ncreate_tables()\n\n# Donnees\ncur.executemany(\n    \"INSERT INTO clients (id, nom, region) VALUES (?, ?, ?)\",\n    [(1, \"Awa\", \"Nord\"), (2, \"Jean\", \"Sud\"), (3, \"Salif\", \"Nord\")],\n)\ncur.executemany(\n    \"INSERT INTO commandes (id, client_id, montant, statut) VALUES (?, ?, ?, ?)\",\n    [(1, 1, 120.0, \"valide\"), (2, 1, 80.0, \"valide\"), (3, 2, 50.0, \"annule\"), (4, 3, 200.0, \"valide\")],\n)\nconn.commit()\n\n# SELECT / WHERE\nquery = \"SELECT * FROM commandes WHERE statut = 'valide'\"\nprint(pd.read_sql_query(query, conn))\n\n# JOIN\njoin_query = \"\"\"\nSELECT c.nom, c.region, o.montant\nFROM commandes o\nJOIN clients c ON o.client_id = c.id\nWHERE o.statut = 'valide'\n\"\"\"\nprint(pd.read_sql_query(join_query, conn))\n\n# GROUP BY\nagg_query = \"\"\"\nSELECT c.region, COUNT(*) AS nb_commandes, SUM(o.montant) AS total\nFROM commandes o\nJOIN clients c ON o.client_id = c.id\nGROUP BY c.region\n\"\"\"\nprint(pd.read_sql_query(agg_query, conn))\n\nconn.close()",
       },
       quiz: [
         {
+          prompt: "Quel element identifie de facon unique une ligne ?",
+          options: ["Cle primaire", "Colonne texte", "Index visuel"],
+          answerIndex: 0,
+          explanation: "La cle primaire identifie chaque ligne.",
+        },
+        {
+          prompt: "SQL sert principalement a :",
+          options: ["Interroger des bases relationnelles", "Dessiner des graphiques", "Compresser des fichiers"],
+          answerIndex: 0,
+          explanation: "SQL permet de requeter une base relationnelle.",
+        },
+        {
           prompt: "Quelle clause sert a filtrer les resultats ?",
-          options: ["WHERE", "ORDER", "FROM"],
+          options: ["WHERE", "ORDER BY", "FROM"],
           answerIndex: 0,
           explanation: "WHERE filtre les lignes selon une condition.",
         },
         {
-          prompt: "Vrai ou faux : JOIN sert a fusionner des tables.",
-          options: ["Vrai", "Faux"],
+          prompt: "Quel mot-cle sert a trier un resultat ?",
+          options: ["ORDER BY", "GROUP BY", "LIMIT"],
           answerIndex: 0,
-          explanation: "JOIN combine des tables sur une cle.",
+          explanation: "ORDER BY trie les lignes.",
         },
         {
-          prompt: "Quel mot-cle sert a compter ?",
-          options: ["COUNT", "SUM", "AVG"],
+          prompt: "Vrai ou faux : JOIN sert a combiner des tables.",
+          options: ["Vrai", "Faux"],
           answerIndex: 0,
-          explanation: "COUNT compte le nombre de lignes.",
+          explanation: "JOIN relie des tables via une cle.",
         },
         {
           prompt: "GROUP BY sert a :",
-          options: ["Classer par groupes", "Supprimer des lignes", "Importer un fichier"],
+          options: ["Agreger par categorie", "Supprimer des colonnes", "Importer un fichier"],
           answerIndex: 0,
-          explanation: "Il regroupe les lignes avant agregation.",
+          explanation: "GROUP BY regroupe avant agregation.",
         },
         {
-          prompt: "Un resultat SQL doit etre :",
-          options: ["Lisible", "Opaque", "Sans structure"],
+          prompt: "Quelle fonction compte le nombre de lignes ?",
+          options: ["COUNT", "SUM", "AVG"],
           answerIndex: 0,
-          explanation: "On vise des resultats clairs et interpretable.",
+          explanation: "COUNT compte les lignes.",
+        },
+        {
+          prompt: "SQLite est :",
+          options: ["Une base embarquee dans un fichier", "Un serveur distant obligatoire", "Un tableur en ligne"],
+          answerIndex: 0,
+          explanation: "SQLite est une base legere et locale.",
+        },
+        {
+          prompt: "Quel module Python permet d'utiliser SQLite ?",
+          options: ["sqlite3", "requests", "pathlib"],
+          answerIndex: 0,
+          explanation: "sqlite3 est le module standard.",
+        },
+        {
+          prompt: "Pourquoi relier SQL et Python ?",
+          options: ["Analyser et visualiser les resultats", "Remplacer les tables", "Eviter les donnees"],
+          answerIndex: 0,
+          explanation: "SQL extrait, Python analyse.",
         },
       ],
+      requireReadingConfirmation: true,
+      requireNotebookConfirmation: true,
     },
     {
       id: "visualisation",

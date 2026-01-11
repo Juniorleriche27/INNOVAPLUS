@@ -1569,51 +1569,307 @@ export const foundationalProgram: ProgramContent = {
     {
       id: "projet-synthese",
       title: "Projet commun de synthese",
-      text: [
-        "Ce projet rassemble les competences apprises. Vous traitez un besoin simple de bout en bout.",
-        "Le livrable final doit etre clair, documente et reutilisable par une organisation.",
-        "C'est la validation du parcours fondamental.",
+      text: [],
+      sections: [
+        {
+          title: "Brief + livrables + bareme",
+          text: [
+            "Contexte (mission KORYXA) : une ONG / startup EdTech veut identifier 3 priorites d'action sur l'education dans 5 pays, sur 2000–2022. Tu dois transformer un besoin flou en livrables concrets et exploitables.",
+            "Livrables obligatoires : 1) notebook .ipynb reproductible, 2) export CSV nettoye (sample_clean.csv), 3) base SQLite (sample.db) OU script create_db.sql, 4) rapport PDF (2 pages max) : resultats + recommandations (3 actions).",
+            "Bareme (100 points) : reproductibilite notebook (20), qualite nettoyage + coherence variables (20), SQL : tables + 10 requetes correctes (25), visualisation : 5 graphiques + interpretation (20), rapport : clarte + recommandations (15).",
+            "Seuil de validation : 70/100 + mini-test final >= 70%.",
+          ],
+          videos: [
+            {
+              title: "Portfolio Data Science: Creez un Projet Complet et Irresistible!",
+              url: "https://www.youtube.com/watch?v=X-vVY6lTy-0",
+              lang: "fr",
+            },
+            {
+              title: "Data Science Life Cycle | Life Cycle Of A Data Science Project",
+              url: "https://www.youtube.com/watch?v=4Cp6PkBKqX4",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "CRISP-DM (FR)",
+              url: "https://fr.wikipedia.org/wiki/CRISP-DM",
+            },
+            {
+              label: "CRISP-DM (EN)",
+              url: "https://en.wikipedia.org/wiki/Cross-industry_standard_process_for_data_mining",
+            },
+          ],
+        },
+        {
+          title: "Ingestion + cadrage",
+          text: [
+            "Dataset V1 : utilise le sample fourni dans le repo : /school/assets/datasets/edstats_sample.csv. Il contient 5 pays (Togo, Benin, Ghana, Senegal, Nigeria), 8–12 indicateurs et les annees 2000–2022.",
+            "Cadrage : construis un tableau de questions de mission (au moins 6). Exemples : evolution du taux de scolarisation secondaire, comparaison filles/garcons, depenses publiques education vs resultats, evolution par pays, indicateur le plus critique, etc.",
+            "Option FULL (bonus) : si tu veux travailler sur le dataset complet, utilise EdStats World Bank et filtre pour recreer un sample avant de poursuivre.",
+            "Liens full download : CSV zip https://databank.worldbank.org/data/download/EdStats_CSV.zip ; Excel zip https://databank.worldbank.org/data/download/EdStats_EXCEL.zip.",
+          ],
+          videos: [
+            {
+              title: "Analyser des donnees Excel avec Pandas",
+              url: "https://www.youtube.com/watch?v=ZAL5tsyjeAg",
+              lang: "fr",
+            },
+            {
+              title: "Importer CSV/Excel avec Pandas",
+              url: "https://www.youtube.com/watch?v=-T2dA7k706E",
+              lang: "fr",
+            },
+            {
+              title: "Importing Data (CSV, Excel, JSON)",
+              url: "https://www.youtube.com/watch?v=N6hyN6BW6ao",
+              lang: "en",
+            },
+            {
+              title: "Pandas Tutorial (Corey Schafer – serie)",
+              url: "https://www.youtube.com/watch?v=ZyhVh-qRZPA",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Pandas read_csv (docs)",
+              url: "https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html",
+            },
+            {
+              label: "Pandas read_excel (docs)",
+              url: "https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html",
+            },
+            {
+              label: "EdStats CSV zip (World Bank)",
+              url: "https://databank.worldbank.org/data/download/EdStats_CSV.zip",
+            },
+            {
+              label: "EdStats Excel zip (World Bank)",
+              url: "https://databank.worldbank.org/data/download/EdStats_EXCEL.zip",
+            },
+          ],
+        },
+        {
+          title: "Nettoyage & preparation",
+          text: [
+            "Exigences : gestion des valeurs manquantes (regle claire), suppression des doublons, conversion des types (annee en int, valeurs en float), normalisation des colonnes (snake_case), creation d'un data dictionary (3–5 lignes) pour les variables principales.",
+            "Mini-exercice : trouver 3 anomalies dans les donnees et expliquer pourquoi elles posent probleme.",
+          ],
+          videos: [
+            {
+              title: "Valeurs manquantes",
+              url: "https://www.youtube.com/watch?v=BcWRljjAAfY",
+              lang: "fr",
+            },
+            {
+              title: "Doublons",
+              url: "https://www.youtube.com/watch?v=Gguc9pEjYac",
+              lang: "fr",
+            },
+            {
+              title: "Missing values (dropna/fillna)",
+              url: "https://www.youtube.com/watch?v=EjZhV8qOges",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Pandas - Missing data (docs)",
+              url: "https://pandas.pydata.org/docs/user_guide/missing_data.html",
+            },
+            {
+              label: "DataCamp (FR) – guide pandas",
+              url: "https://www.datacamp.com/fr/tutorial/pandas",
+            },
+          ],
+        },
+        {
+          title: "SQL (modele + 10 requetes)",
+          text: [
+            "Modelisation minimale (3 tables) : dim_country(country_code, country_name), dim_indicator(indicator_code, indicator_name), fact_education(country_code, indicator_code, year, value).",
+            "Exiger un chargement SQLite + fichier queries.sql. Les 10 requetes a produire : 1) top 5 valeurs par indicateur et annee, 2) moyenne 2000–2005 vs 2018–2022, 3) evolution (delta) par pays, 4) gender gap si indicateur disponible, 5) top 3 pays par indicateur, 6) tendance moyenne par region, 7) annee de rupture par pays, 8) distribution des valeurs par indicateur, 9) pays avec plus forte progression, 10) pays en decroissance continue.",
+          ],
+          videos: [
+            {
+              title: "Apprendre SQL : SELECT, WHERE, ORDER BY, DISTINCT & LIMIT (FR)",
+              url: "https://www.youtube.com/watch?v=A0pvBsI7smw",
+              lang: "fr",
+            },
+            {
+              title: "Apprendre SQL : Les jointures (FR)",
+              url: "https://www.youtube.com/watch?v=j33AJNGoJak",
+              lang: "fr",
+            },
+            {
+              title: "Learn SQL for Beginners - COMPLETE SQL Tutorial (EN)",
+              url: "https://www.youtube.com/watch?v=eL80VI4QGTg",
+              lang: "en",
+            },
+            {
+              title: "SQL Joins Tutorial for Beginners (EN)",
+              url: "https://www.youtube.com/watch?v=2HVMiPPuPIM",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Docs Python sqlite3 (officiel)",
+              url: "https://docs.python.org/3/library/sqlite3.html",
+            },
+            {
+              label: "Pandas read_sql (FR)",
+              url: "https://datascientest.com/pandas-read-sql-tout-savoir",
+            },
+            {
+              label: "SQLBolt (exercices)",
+              url: "https://sqlbolt.com/",
+            },
+          ],
+        },
+        {
+          title: "Visualisation (5 graphiques minimum)",
+          text: [
+            "Exiger 5 graphiques minimum + 1 phrase d'interpretation chacun : 2 courbes d'evolution, 1 bar chart comparatif entre pays, 1 heatmap (pays x annee) OU (indicateur x pays), 1 graphique insight (avant/apres).",
+            "Regle : pas de graphiques sans legende, titres et source.",
+          ],
+          videos: [
+            {
+              title: "C'est quoi la Data Visualisation ? (DataScientest)",
+              url: "https://www.youtube.com/watch?v=dd6H7kaqU48",
+              lang: "fr",
+            },
+            {
+              title: "Initiation a Matplotlib pour la visualisation des donnees",
+              url: "https://www.youtube.com/watch?v=HcxRxmvOXkg",
+              lang: "fr",
+            },
+            {
+              title: "The beauty of data visualization (TED - David McCandless)",
+              url: "https://www.youtube.com/watch?v=5Zg-C8AAIGg",
+              lang: "en",
+            },
+            {
+              title: "Storytelling with Data — Which graph should I use?",
+              url: "https://www.youtube.com/watch?v=c-XkYOfifeY",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Data to Viz - From data to visualization",
+              url: "https://www.data-to-viz.com/",
+            },
+            {
+              label: "Matplotlib - Pyplot tutorial",
+              url: "https://matplotlib.org/stable/tutorials/introductory/pyplot.html",
+            },
+          ],
+        },
+        {
+          title: "Rapport final + validation + soumission",
+          text: [
+            "Rapport PDF (2 pages max) : Contexte, methode, resultats (3 insights), recommandations (3 actions), limites.",
+            "Validation : checklist de soumission (notebook, sample_clean.csv, sample.db ou create_db.sql, queries.sql, rapport PDF).",
+            "Soumission V1 : si aucun systeme d'upload, fournir un lien GitHub/Drive (champ texte) ou envoyer par email/WhatsApp selon la procedure V1.",
+          ],
+          videos: [
+            {
+              title: "Data Storytelling : Reapprenez a valoriser vos donnees",
+              url: "https://www.youtube.com/watch?v=SJvGMuWZTYQ",
+              lang: "fr",
+            },
+            {
+              title: "Data Storytelling: 5 Astuces Pratiques Pour Bien Demarrer",
+              url: "https://www.youtube.com/watch?v=QlwwxK3t_4U",
+              lang: "fr",
+            },
+            {
+              title: "Elevate Your Data Storytelling Skills in 10 Minutes",
+              url: "https://www.youtube.com/watch?v=kU2lOgrM0YQ",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Storytelling with Data - Principles",
+              url: "https://www.storytellingwithdata.com/blog",
+            },
+            {
+              label: "Rapport data : bonnes pratiques (FR)",
+              url: "https://www.data-to-viz.com/",
+            },
+          ],
+        },
       ],
       resources: {
-        videos: [
-          { label: "Exemple de projet data", url: "https://www.youtube.com/watch?v=ua-CiDNNj30" },
-        ],
-        articles: [
-          { label: "Comment structurer un livrable data", url: "https://towardsdatascience.com/how-to-structure-a-data-project-3f5f3c3f3b21" },
-        ],
+        videos: [],
+        articles: [],
       },
       quiz: [
         {
-          prompt: "Un livrable data doit contenir :",
-          options: ["Contexte, methode, resultats", "Uniquement des graphiques", "Aucune explication"],
+          prompt: "Le contexte du projet concerne :",
+          options: ["Priorites education dans 5 pays", "Marketing produit tech", "Segmentation e-commerce"],
           answerIndex: 0,
-          explanation: "Le contexte et la methodologie sont essentiels.",
+          explanation: "Le brief impose 5 pays et 2000–2022.",
         },
         {
-          prompt: "Vrai ou faux : un projet final peut rester non documente.",
-          options: ["Vrai", "Faux"],
-          answerIndex: 1,
-          explanation: "La documentation est indispensable.",
+          prompt: "Quels livrables sont obligatoires ?",
+          options: ["Notebook + CSV nettoye + DB/SQL + rapport PDF", "Notebook uniquement", "Slides uniquement"],
+          answerIndex: 0,
+          explanation: "Tous les livrables sont requis.",
         },
         {
-          prompt: "L'objectif du projet commun est :",
-          options: ["Valider les acquis", "Faire du marketing", "Ecrire du code sans but"],
+          prompt: "Le seuil de validation est :",
+          options: ["70/100 + mini-test >= 70%", "50/100", "90/100 uniquement"],
           answerIndex: 0,
-          explanation: "Le projet confirme les competences acquises.",
+          explanation: "Le seuil fixe est 70/100 + mini-test.",
         },
         {
-          prompt: "Un livrable exploitable doit etre :",
-          options: ["Clair et reutilisable", "Complexe", "Sans sources"],
+          prompt: "Le sample dataset V1 est :",
+          options: ["edstats_sample.csv", "full_edstats.csv", "random_data.csv"],
           answerIndex: 0,
-          explanation: "On vise l'utilisabilite.",
+          explanation: "Le sample est fourni dans le repo.",
         },
         {
-          prompt: "Une conclusion doit rappeler :",
-          options: ["Les resultats et recommandations", "La liste des outils", "Les erreurs uniquement"],
+          prompt: "Le modele SQL minimal contient :",
+          options: ["2 dimensions + 1 fact", "1 table unique", "4 tables sans cles"],
           answerIndex: 0,
-          explanation: "On synthétise résultats et prochaines etapes.",
+          explanation: "dim_country, dim_indicator, fact_education.",
+        },
+        {
+          prompt: "Combien de requetes SQL sont exigees ?",
+          options: ["10", "3", "20"],
+          answerIndex: 0,
+          explanation: "Le projet exige 10 requetes.",
+        },
+        {
+          prompt: "Combien de graphiques minimum ?",
+          options: ["5", "2", "8"],
+          answerIndex: 0,
+          explanation: "5 graphiques minimum.",
+        },
+        {
+          prompt: "Une heatmap valide peut etre :",
+          options: ["Pays x annee", "Logo x couleur", "Nom x prenom"],
+          answerIndex: 0,
+          explanation: "La heatmap doit montrer des donnees.",
+        },
+        {
+          prompt: "Le rapport final doit contenir :",
+          options: ["Resultats + recommandations", "Liste des outils uniquement", "Code brut"],
+          answerIndex: 0,
+          explanation: "Le rapport doit etre actionnable.",
+        },
+        {
+          prompt: "Si pas d'upload V1, la soumission se fait via :",
+          options: ["Lien GitHub/Drive", "SMS", "Aucun envoi"],
+          answerIndex: 0,
+          explanation: "La V1 accepte un lien partage.",
         },
       ],
+      requireReadingConfirmation: true,
     },
   ],
 };

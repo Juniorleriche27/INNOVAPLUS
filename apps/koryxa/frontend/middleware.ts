@@ -180,6 +180,11 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/resources";
     return NextResponse.rewrite(url);
   }
+  if (pathname === "/school/parcours/specialisations/data-analyst") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/school/data-analyst/module-1";
+    return NextResponse.redirect(url);
+  }
 
   if (isProtectedPath(pathname) && !hasSession) {
     const loginUrl = request.nextUrl.clone();

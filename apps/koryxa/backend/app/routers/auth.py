@@ -211,6 +211,10 @@ async def request_otp(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     email = normalize_email(payload.email)
+    if payload.intent == "login":
+        existing = await db["users"].find_one({"email": email})
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compte introuvable. Merci de vous inscrire.")
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(minutes=settings.OTP_TTL_MIN)
     code = _generate_otp()

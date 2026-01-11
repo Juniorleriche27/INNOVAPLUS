@@ -40,10 +40,18 @@ export default function LoginClient() {
       const resp = await fetch(`${INNOVA_API_BASE}/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, intent: "login" }),
       });
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(typeof data?.detail === "string" ? data.detail : "Impossible d'envoyer le code.");
+      if (!resp.ok) {
+        const msg =
+          typeof data?.detail === "string"
+            ? data.detail
+            : typeof data?.detail?.detail === "string"
+              ? data.detail.detail
+              : "Impossible d'envoyer le code.";
+        throw new Error(msg);
+      }
       setStep("verify");
       setInfo("Code envoyé ! Consulte ta boîte mail (ou le canal configuré).");
       if (data?.debug_code) setDebugCode(data.debug_code);
@@ -69,7 +77,15 @@ export default function LoginClient() {
         }),
       });
       const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(typeof data?.detail === "string" ? data.detail : "Code invalide.");
+      if (!resp.ok) {
+        const msg =
+          typeof data?.detail === "string"
+            ? data.detail
+            : typeof data?.detail?.detail === "string"
+              ? data.detail.detail
+              : "Code invalide.";
+        throw new Error(msg);
+      }
       await refresh();
       router.replace(redirect);
     } catch (err) {

@@ -1,4 +1,3 @@
-"use client";
 import { themes } from "../content";
 import VideoBlock from "../components/VideoBlock";
 

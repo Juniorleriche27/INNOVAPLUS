@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { INNOVA_API_BASE } from "@/lib/env";
 
-export async function GET(request: Request) {
-  const cookieStore = cookies();
-  const session = cookieStore.get("innova_session");
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
+export async function GET(request: Request) {
   try {
     await fetch(`${INNOVA_API_BASE}/auth/logout`, {
       method: "POST",
-      headers: session ? { cookie: `${session.name}=${session.value}` } : undefined,
+      headers: request.headers.get("cookie") ? { cookie: request.headers.get("cookie") as string } : undefined,
       cache: "no-store",
     });
   } catch {
@@ -18,11 +17,9 @@ export async function GET(request: Request) {
 
   const url = new URL("/login", request.url);
   const response = NextResponse.redirect(url);
-  response.cookies.set({
-    name: "innova_session",
-    value: "",
-    path: "/",
-    maxAge: 0,
-  });
+  response.headers.append(
+    "Set-Cookie",
+    "innova_session=; Path=/; Max-Age=0; SameSite=Lax"
+  );
   return response;
 }

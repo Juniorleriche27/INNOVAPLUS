@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { INNOVA_API_BASE } from "@/lib/env";
+import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
 import { FormEvent, useState } from "react";
 
 type Step = "request" | "verify";
@@ -22,6 +22,14 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
+  const isPreviewDomain =
+    typeof window !== "undefined" && window.location.hostname.endsWith("vercel.app");
+
+  useEffect(() => {
+    if (!isPreviewDomain) return;
+    const target = `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(redirect)}`;
+    window.location.href = target;
+  }, [isPreviewDomain, redirect]);
 
   // If already logged in, redirect client-side (avoids server-side fetch failure).
   useEffect(() => {
@@ -87,6 +95,10 @@ export default function LoginClient() {
         throw new Error(msg);
       }
       await refresh();
+      if (isPreviewDomain) {
+        window.location.href = `${SITE_BASE_URL}${redirect}`;
+        return;
+      }
       router.replace(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
@@ -100,6 +112,12 @@ export default function LoginClient() {
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
         <h1 className="text-2xl font-semibold text-slate-900">Connexion sécurisée</h1>
         <p className="mt-2 text-sm text-slate-600">Rentre ton email, reçois un code OTP et connecte-toi sans mot de passe.</p>
+        {isPreviewDomain && (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Vous êtes sur un domaine de prévisualisation. Après connexion, vous serez redirigé vers {SITE_BASE_URL} pour
+            que la session fonctionne correctement.
+          </div>
+        )}
 
         {step === "request" ? (
           <form onSubmit={requestOtp} className="mt-6 space-y-4">

@@ -47,7 +47,6 @@ const V1_SCHOOL_ALLOWED = [
 ];
 
 const V1_PUBLIC_PATHS = [
-  "/",
   "/login",
   "/signup",
   "/about",

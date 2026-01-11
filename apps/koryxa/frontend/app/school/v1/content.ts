@@ -733,21 +733,118 @@ export const foundationalProgram: ProgramContent = {
     },
     {
       id: "visualisation",
-      title: "Visualisation des donnees",
-      text: [
-        "Une bonne visualisation transforme les donnees en decisions.",
-        "On apprend a choisir le bon graphique, et a expliquer ce qu'on montre.",
-        "Le but est de rendre l'information compréhensible en quelques secondes.",
+      title: "Visualisation & reporting",
+      text: [],
+      sections: [
+        {
+          title: "Introduction generale",
+          text: [
+            "Visualiser les donnees n'est pas une etape decorative. Dans les projets data reels, la visualisation est un outil de comprehension, de communication et de decision. Un bon graphique permet de detecter une tendance, une anomalie ou une relation que des tableaux de chiffres ne montrent pas. A l'inverse, une mauvaise visualisation peut induire en erreur, meme si les donnees sont correctes.",
+            "Dans les entreprises, les livrables data sont rarement des scripts Python ou des requetes SQL brutes. Ce sont des graphiques, des tableaux de bord et des rapports qui doivent etre compris par des profils non techniques. Le role du data analyst ou du data scientist est donc de transformer une analyse en message clair, fidele aux donnees et adapte au public.",
+            "Ce module introduit les principes fondamentaux de la visualisation : quels graphiques utiliser, comment les lire, et comment eviter les erreurs classiques. Tu apprendras a produire des graphiques simples avec Python, en te concentrant sur la lisibilite, la coherence et le sens. L'objectif n'est pas de maitriser tous les outils existants, mais de developper un raisonnement visuel solide, reutilisable dans tous les projets KORYXA.",
+            "La visualisation sert aussi a verifier son propre travail. Avant de presenter un resultat, on observe s'il y a des ruptures, des valeurs aberrantes ou des distributions etranges. Cette verification visuelle evite des conclusions hasardeuses et renforce la qualite du livrable.",
+            "Un bon reporting n'est pas un decor. Il rassemble des graphiques utiles, des commentaires clairs et une conclusion actionnable. C'est cette logique de decision qui guide ce module.",
+          ],
+        },
+        {
+          title: "Pourquoi visualiser les donnees",
+          text: [
+            "Dans un projet data, la visualisation intervient a deux moments : l'exploration et la communication. L'exploration sert a comprendre rapidement les donnees et a decouvrir des patterns. La communication sert a expliquer un resultat a un public qui ne lit pas du code.",
+            "Les erreurs courantes sont les graphiques inutiles, les axes trompeurs, ou les visuels surcharges. Un bon visuel simplifie sans masquer, et reste fidele a ce que disent les donnees.",
+            "L'objectif est d'aider la decision. Si un graphique ne permet pas d'agir, il doit etre repense.",
+          ],
+          video: {
+            label: "Machine Learnia - Pourquoi visualiser les donnees ?",
+            url: "https://www.youtube.com/watch?v=Z6g7Y9Zt6n4",
+          },
+          articles: [
+            {
+              label: "Data to Viz - From data to visualization",
+              url: "https://www.data-to-viz.com/",
+              description: "Guide pour relier un type de donnee au bon graphique.",
+            },
+          ],
+        },
+        {
+          title: "Types de graphiques et cas d'usage",
+          text: [
+            "Chaque type de graphique porte un message specifique. Un bar chart compare des categories, un line chart suit une evolution dans le temps, et un scatter plot montre une relation entre deux variables.",
+            "Le mauvais choix de graphique est une source d'erreurs. Par exemple, utiliser un camembert pour trop de categories ou une courbe pour des donnees non temporelles.",
+            "Savoir choisir le bon graphique, c'est deja reussir la moitie du reporting.",
+          ],
+          video: {
+            label: "DataScientest - Les graphiques essentiels en data analysis",
+            url: "https://www.youtube.com/watch?v=9ZxP4F0yZxE",
+          },
+          articles: [
+            {
+              label: "Data to Viz - Choose the right chart",
+              url: "https://www.data-to-viz.com/chart_types.html",
+              description: "Panorama des types de graphiques et leurs usages.",
+            },
+          ],
+        },
+        {
+          title: "Visualisation avec Python (Matplotlib & Seaborn)",
+          text: [
+            "Matplotlib est la bibliotheque de base pour tracer des graphiques en Python. Seaborn vient dessus pour ameliorer la lisibilite et proposer des graphiques statistiques plus propres.",
+            "L'objectif ici est de produire des visuels simples : bar chart, line chart, scatter plot. On y ajoute des titres, des labels et des legendes pour que le message soit clair.",
+            "Ces graphiques servent ensuite de base pour des rapports plus complets ou des dashboards.",
+          ],
+          video: {
+            label: "Machine Learnia - Visualisation avec Matplotlib et Seaborn",
+            url: "https://www.youtube.com/watch?v=Z6g7Y9Zt6n4",
+          },
+          articles: [
+            {
+              label: "Matplotlib - Pyplot tutorial",
+              url: "https://matplotlib.org/stable/tutorials/introductory/pyplot.html",
+              description: "Documentation officielle pour creer des graphiques simples.",
+            },
+          ],
+        },
+        {
+          title: "Lire et interpreter un graphique",
+          text: [
+            "Lire un graphique, c'est comprendre l'axe, l'echelle et le message principal. Une tendance peut etre montante, stable ou en rupture.",
+            "Il faut aussi repere les anomalies : points isoles, pics anormaux, ou effets de saisonnalite. Ces elements orientent l'analyse.",
+            "Une mauvaise interpretation vient souvent d'une echelle trompeuse ou d'un graphique mal choisi. L'important est de rester fidele a la realite des donnees.",
+          ],
+          video: {
+            label: "Science4All - Lire et interpreter des graphiques",
+            url: "https://www.youtube.com/watch?v=9Jm9jzZ0p4U",
+          },
+          articles: [
+            {
+              label: "Storytelling with Data - Principles",
+              url: "https://www.storytellingwithdata.com/blog",
+              description: "Principes de lecture et de narration a partir de graphiques.",
+            },
+          ],
+        },
       ],
       resources: {
-        videos: [
-          { label: "Data viz basics", url: "https://www.youtube.com/watch?v=6V5pZl1b5wM" },
-        ],
-        articles: [
-          { label: "Guide des graphiques", url: "https://www.data-to-viz.com/" },
-        ],
+        videos: [],
+        articles: [],
+      },
+      notebook: {
+        title: "Notebook Module 5 - Visualisation & reporting",
+        description: "Import CSV, bar chart, line chart, scatter plot et interpretation ecrite.",
+        code: "import pandas as pd\nimport matplotlib.pyplot as plt\n\n# Donnees exemple\nraw = {\n    \"mois\": [\"Jan\", \"Fev\", \"Mar\", \"Avr\", \"Mai\", \"Juin\"],\n    \"ventes\": [120, 150, 130, 180, 210, 190],\n    \"visites\": [300, 280, 320, 360, 400, 390],\n}\n\ndf = pd.DataFrame(raw)\n\n# Bar chart\nplt.figure()\nplt.bar(df[\"mois\"], df[\"ventes\"])\nplt.title(\"Ventes par mois\")\nplt.xlabel(\"Mois\")\nplt.ylabel(\"Ventes\")\nplt.show()\n\n# Line chart\nplt.figure()\nplt.plot(df[\"mois\"], df[\"visites\"], marker=\"o\")\nplt.title(\"Visites par mois\")\nplt.xlabel(\"Mois\")\nplt.ylabel(\"Visites\")\nplt.show()\n\n# Scatter plot\nplt.figure()\nplt.scatter(df[\"visites\"], df[\"ventes\"])\nplt.title(\"Relation visites vs ventes\")\nplt.xlabel(\"Visites\")\nplt.ylabel(\"Ventes\")\nplt.show()\n\n# Interpretation ecrite (exemple)\nprint(\"Les ventes augmentent globalement avec les visites, avec un pic en mai.\")",
       },
       quiz: [
+        {
+          prompt: "Pourquoi visualiser les donnees ?",
+          options: ["Comprendre et communiquer clairement", "Remplacer les donnees", "Ajouter un decor"],
+          answerIndex: 0,
+          explanation: "La visualisation sert a comprendre et a expliquer.",
+        },
+        {
+          prompt: "Quelle difference entre exploration et communication ?",
+          options: ["Explorer pour comprendre, communiquer pour convaincre", "Aucune difference", "Explorer uniquement pour coder"],
+          answerIndex: 0,
+          explanation: "On explore pour comprendre, on communique pour expliquer.",
+        },
         {
           prompt: "Quel graphique est adapte pour une evolution dans le temps ?",
           options: ["Courbe", "Camembert", "Table brute"],
@@ -755,30 +852,50 @@ export const foundationalProgram: ProgramContent = {
           explanation: "Une courbe montre une evolution.",
         },
         {
-          prompt: "Vrai ou faux : un graphique doit etre lisible sans legenda complexe.",
+          prompt: "Quel graphique compare des categories ?",
+          options: ["Bar chart", "Scatter plot", "Histogramme temporel"],
+          answerIndex: 0,
+          explanation: "Le bar chart compare des categories.",
+        },
+        {
+          prompt: "Vrai ou faux : un graphique peut etre trompeur si l'echelle est mal choisie.",
           options: ["Vrai", "Faux"],
           answerIndex: 0,
-          explanation: "On vise la clarté immediatement.",
+          explanation: "Une echelle mal choisie peut induire en erreur.",
         },
         {
-          prompt: "Quel outil est souvent utilise pour les dashboards ?",
-          options: ["Power BI", "Word", "Notepad"],
+          prompt: "Quel type de graphique montre une relation entre deux variables ?",
+          options: ["Scatter plot", "Pie chart", "Table brute"],
           answerIndex: 0,
-          explanation: "Power BI est un outil de BI courant.",
+          explanation: "Le scatter plot montre la relation entre deux variables.",
         },
         {
-          prompt: "Une bonne visualisation doit :",
-          options: ["Raconter une histoire claire", "Multiplier les couleurs", "Eviter le contexte"],
+          prompt: "Matplotlib sert a :",
+          options: ["Tracer des graphiques en Python", "Faire des requetes SQL", "Nettoyer les donnees"],
           answerIndex: 0,
-          explanation: "Elle explique une histoire simplement.",
+          explanation: "Matplotlib est une bibliotheque de visualisation.",
         },
         {
-          prompt: "Un histogramme sert a :",
-          options: ["Voir une distribution", "Dessiner une carte", "Coder un algorithme"],
+          prompt: "Seaborn est utile car :",
+          options: ["Il ameliore la lisibilite des graphiques", "Il remplace Python", "Il stocke les donnees"],
           answerIndex: 0,
-          explanation: "Histogramme = distribution des valeurs.",
+          explanation: "Seaborn propose des graphiques plus lisibles.",
+        },
+        {
+          prompt: "Lire un graphique implique de verifier :",
+          options: ["Axes, echelle, message", "Couleur du logo", "Nom du fichier"],
+          answerIndex: 0,
+          explanation: "Axes, echelle et message sont essentiels.",
+        },
+        {
+          prompt: "Un bon reporting doit etre :",
+          options: ["Clair et actionnable", "Long et complexe", "Sans conclusion"],
+          answerIndex: 0,
+          explanation: "Le reporting doit guider la decision.",
         },
       ],
+      requireReadingConfirmation: true,
+      requireNotebookConfirmation: true,
     },
     {
       id: "projet-synthese",

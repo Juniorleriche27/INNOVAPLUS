@@ -26,7 +26,11 @@ from app.services.module6_tests import generate_test_questions
 router = APIRouter(tags=["module6"])
 
 UPLOADS_ROOT = Path(settings.UPLOADS_DIR)
-UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
+try:
+    UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    UPLOADS_ROOT = Path("/tmp/koryxa_uploads")
+    UPLOADS_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def _now() -> datetime:

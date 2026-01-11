@@ -553,7 +553,7 @@ def _paraphrase(question: str) -> str:
         f"Question: {question}"
     )
     try:
-        result = generate_answer(prompt, provider=\"cohere\").strip()
+        result = generate_answer(prompt, provider="cohere").strip()
         if result and len(result) > 10:
             return result
     except Exception:

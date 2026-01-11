@@ -111,6 +111,7 @@ export default function ModuleReader({
     if (!id) return null;
     return (
       <div className="mt-4 space-y-3">
+        <p className="text-sm font-semibold text-slate-900">{video.label}</p>
         <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
           <iframe
             className="h-full w-full"
@@ -194,7 +195,9 @@ export default function ModuleReader({
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </div>
-                {renderVideo(section.video)}
+                {(section.videos ?? (section.video ? [section.video] : [])).map((video) => (
+                  <div key={video.url}>{renderVideo(video)}</div>
+                ))}
                 {section.articles && section.articles.length > 0 ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
                     <p className="text-sm font-semibold text-slate-900">Pour aller plus loin</p>

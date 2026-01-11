@@ -1,6 +1,12 @@
 export type ResourceLink = { label: string; url: string; description?: string };
 export type SectionVideo = { label: string; url: string };
-export type ModuleSection = { title: string; text: string[]; video?: SectionVideo; articles?: ResourceLink[] };
+export type ModuleSection = {
+  title: string;
+  text: string[];
+  video?: SectionVideo;
+  videos?: SectionVideo[];
+  articles?: ResourceLink[];
+};
 export type NotebookBlock = { title: string; description: string; code: string; download?: string };
 export type QuizQuestion = {
   prompt: string;
@@ -571,13 +577,20 @@ export const foundationalProgram: ProgramContent = {
           title: "Mise en place de l'environnement SQL",
           text: [
             "Pour la V1, KORYXA utilise SQLite, inclus par defaut avec Python. Aucune installation serveur SQL n'est requise.",
+            "Deux videos sont proposees pour la mise en place SQL. SQLite est utilise pour la V1 et ne necessite aucune installation serveur. Choisissez la video qui vous convient le mieux.",
             "L'idee est simple : tu crees une base locale, tu definis des tables, puis tu ecris des requetes SQL pour interroger les donnees. Cette approche suffit pour apprendre les fondamentaux et produire des exercices realistes sans complexite d'infrastructure.",
             "Dans les missions KORYXA, SQLite est souvent suffisante pour les prototypes et les preuves de concept. Les notions apprises ici seront identiques quand tu passeras a MySQL, PostgreSQL ou d'autres bases en entreprise.",
           ],
-          video: {
-            label: "Machine Learnia - Utiliser SQL avec Python (sqlite3)",
-            url: "https://www.youtube.com/watch?v=Zx8n2bYv4eI",
-          },
+          videos: [
+            {
+              label: "Utiliser SQLite avec Python (aucune installation serveur)",
+              url: "https://www.youtube.com/watch?v=Zx8n2bYv4eI",
+            },
+            {
+              label: "SQLite / SQL pour debutants (FR)",
+              url: "https://www.youtube.com/watch?v=JiEoZ8Z9oUQ",
+            },
+          ],
           articles: [
             {
               label: "Python - sqlite3",

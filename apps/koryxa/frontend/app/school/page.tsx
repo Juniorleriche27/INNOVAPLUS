@@ -232,6 +232,17 @@ export default function SchoolCatalogPage() {
                 Ouvrir le parcours →
               </Link>
             </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+              <p className="text-sm font-semibold text-slate-900">Certificat Data Analyst (Module 1)</p>
+              <p className="mt-2 text-sm text-slate-600">Cadrage du besoin, KPIs et validation metier.</p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+                <span className="rounded-full border border-slate-200 px-2 py-1">1 module</span>
+                <span className="rounded-full border border-slate-200 px-2 py-1">5 themes</span>
+              </div>
+              <Link href="/school/data-analyst/module-1" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+                Ouvrir le module →
+              </Link>
+            </div>
           </div>
         </section>
 

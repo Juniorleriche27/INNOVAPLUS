@@ -10,7 +10,8 @@
     "prebuild": "node scripts/check_unicode.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "validate:resources": "node scripts/validate_resources.js"
   },
   "dependencies": {
     "clsx": "^2.1.1",

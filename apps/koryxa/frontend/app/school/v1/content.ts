@@ -1,5 +1,5 @@
 export type ResourceLink = { label: string; url: string; description?: string };
-export type SectionVideo = { label: string; url: string };
+export type SectionVideo = { label: string; url: string; tag?: string };
 export type ModuleSection = {
   title: string;
   text: string[];
@@ -585,10 +585,12 @@ export const foundationalProgram: ProgramContent = {
             {
               label: "Utiliser SQLite avec Python (aucune installation serveur)",
               url: "https://www.youtube.com/watch?v=Zx8n2bYv4eI",
+              tag: "Principale",
             },
             {
               label: "SQLite / SQL pour debutants (FR)",
               url: "https://www.youtube.com/watch?v=JiEoZ8Z9oUQ",
+              tag: "Alternative (FR)",
             },
           ],
           articles: [

@@ -111,7 +111,14 @@ export default function ModuleReader({
     if (!id) return null;
     return (
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+          {video.tag ? (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+              {video.tag}
+            </span>
+          ) : null}
+        </div>
         <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
           <iframe
             className="h-full w-full"

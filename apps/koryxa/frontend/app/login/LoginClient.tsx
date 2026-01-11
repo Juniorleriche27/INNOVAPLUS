@@ -22,8 +22,6 @@ export default function LoginClient() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
 
   // If already logged in, redirect client-side (avoids server-side fetch failure).
   useEffect(() => {
@@ -68,8 +66,6 @@ export default function LoginClient() {
         body: JSON.stringify({
           email,
           code: otp,
-          first_name: firstName || undefined,
-          last_name: lastName || undefined,
         }),
       });
       const data = await resp.json().catch(() => ({}));
@@ -145,27 +141,6 @@ export default function LoginClient() {
                 onChange={(event) => setOtp(event.target.value)}
                 className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
               />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Prénom (optionnel)</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Nom (optionnel)</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
-                />
-              </div>
             </div>
 
             {info && <p className="text-sm text-slate-500">{info}</p>}

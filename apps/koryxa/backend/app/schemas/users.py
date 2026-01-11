@@ -11,6 +11,8 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=256)
     first_name: str = Field(..., min_length=1, max_length=120)
     last_name: str = Field(..., min_length=1, max_length=120)
+    country: str = Field(..., min_length=2, max_length=120)
+    account_type: Literal["learner", "company", "organization"]
 
 
 class LoginPayload(BaseModel):
@@ -36,6 +38,8 @@ class UserPublic(BaseModel):
     roles: List[str] = Field(default_factory=list)
     created_at: datetime
     workspace_role: Optional[Literal["demandeur", "prestataire"]] = None
+    country: Optional[str] = None
+    account_type: Optional[Literal["learner", "company", "organization"]] = None
 
 
 class OTPRequestPayload(BaseModel):

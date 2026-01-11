@@ -32,6 +32,7 @@ from app.routers import school as school_router
 from app.routers.marketplace import router as market_router
 from app.routers.meet_api import router as meet_router
 from app.routers.profiles import router as profiles_router
+from app.routers.profiles_v1 import router as profiles_v1_router
 from app.routers.missions import router as missions_router
 from app.routers.studio import router as studio_router
 from app.routers.myplanning import router as myplanning_router
@@ -193,6 +194,7 @@ else:
     innova_api.include_router(invite_router)
     innova_api.include_router(engine_router)
     innova_api.include_router(profiles_router)
+    innova_api.include_router(profiles_v1_router)
     innova_api.include_router(missions_router)
     innova_api.include_router(studio_router)
     innova_api.include_router(myplanning_router)

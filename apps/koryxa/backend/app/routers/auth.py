@@ -119,6 +119,8 @@ def _public_user(user: dict) -> UserPublic:
         roles=roles,
         created_at=created_at,
         workspace_role=workspace_role,
+        country=user.get("country"),
+        account_type=user.get("account_type"),
     )
 
 
@@ -168,6 +170,8 @@ async def register(
         "password_hash": hash_password(payload.password),
         "first_name": payload.first_name.strip(),
         "last_name": payload.last_name.strip(),
+        "country": payload.country.strip(),
+        "account_type": payload.account_type,
         "roles": ["user"],
         "created_at": now,
     }
@@ -265,20 +269,10 @@ async def login_with_otp(
 
     user = await db["users"].find_one({"email": email})
     if not user:
-        derived = email.split("@", 1)[0]
-        default_first = payload.first_name or derived.replace(".", " ").replace("_", " ").title()
-        default_last = payload.last_name or ""
-        user_doc = {
-            "email": email,
-            "password_hash": hash_password(secrets.token_urlsafe(12)),
-            "first_name": (default_first or "Membre").strip(),
-            "last_name": default_last.strip(),
-            "roles": ["user"],
-            "created_at": now,
-        }
-        res = await db["users"].insert_one(user_doc)
-        user_doc["_id"] = res.inserted_id
-        user = user_doc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Compte introuvable. Merci de vous inscrire d'abord.",
+        )
     else:
         updates = {}
         if payload.first_name and not user.get("first_name"):

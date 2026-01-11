@@ -339,14 +339,10 @@ export default function Headbar() {
                       </Link>
                     )}
                     <button 
-                      onClick={async () => { 
-                        try { 
-                          await fetch(`${AUTH_API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' }); 
-                        } finally { 
-                          setAccountOpen(false); 
-                          clear();
-                          location.href = '/login'; 
-                        } 
+                      onClick={() => { 
+                        setAccountOpen(false); 
+                        clear();
+                        location.href = "/logout";
                       }} 
                   className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
                     >

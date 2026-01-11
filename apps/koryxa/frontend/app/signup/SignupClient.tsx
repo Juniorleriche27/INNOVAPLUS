@@ -12,7 +12,10 @@ export default function SignupClient() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [country, setCountry] = useState("");
+  const [accountType, setAccountType] = useState<"learner" | "company" | "organization">("learner");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,14 +33,18 @@ export default function SignupClient() {
     setError(null);
 
     try {
-      const [firstRaw, ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
-      const first_name = firstRaw || email.split("@")[0];
-      const last_name = (rest.join(" ") || first_name).slice(0, 120);
       const resp = await fetch(`${INNOVA_API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, password, first_name, last_name }),
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          country: country.trim(),
+          account_type: accountType,
+        }),
       });
 
       type ApiError = { detail?: unknown };
@@ -65,7 +72,9 @@ export default function SignupClient() {
       setTimeout(() => router.replace("/onboarding"), 300);
       setEmail("");
       setPassword("");
-      setFullName("");
+      setFirstName("");
+      setLastName("");
+      setCountry("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue");
     } finally {
@@ -82,17 +91,33 @@ export default function SignupClient() {
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-slate-700">
-              Nom complet (optionnel)
-            </label>
-            <input
-              id="full_name"
-              type="text"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="first_name" className="block text-sm font-medium text-slate-700">
+                Prénom
+              </label>
+              <input
+                id="first_name"
+                type="text"
+                required
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
+            <div>
+              <label htmlFor="last_name" className="block text-sm font-medium text-slate-700">
+                Nom
+              </label>
+              <input
+                id="last_name"
+                type="text"
+                required
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+              />
+            </div>
           </div>
 
           <div>
@@ -107,6 +132,36 @@ export default function SignupClient() {
               onChange={(event) => setEmail(event.target.value)}
               className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
+          </div>
+
+          <div>
+            <label htmlFor="country" className="block text-sm font-medium text-slate-700">
+              Pays
+            </label>
+            <input
+              id="country"
+              type="text"
+              required
+              value={country}
+              onChange={(event) => setCountry(event.target.value)}
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="account_type" className="block text-sm font-medium text-slate-700">
+              Type de compte
+            </label>
+            <select
+              id="account_type"
+              value={accountType}
+              onChange={(event) => setAccountType(event.target.value as "learner" | "company" | "organization")}
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            >
+              <option value="learner">Apprenant</option>
+              <option value="company">Entreprise</option>
+              <option value="organization">Organisation</option>
+            </select>
           </div>
 
           <div>

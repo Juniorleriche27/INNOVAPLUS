@@ -94,7 +94,7 @@ export default function Headbar() {
     return user.email ?? "";
   }, [user]);
   const userInitial = useMemo(() => (displayName ? displayName.charAt(0).toUpperCase() : "I"), [displayName]);
-  const showAccount = loading || initialLoggedIn || Boolean(user);
+  const showAccount = initialLoggedIn || Boolean(user);
   const accountTitle = displayName || (loading ? "Chargement..." : "Mon espace");
   const accountEmail = user?.email ?? (loading ? "Connexion en cours..." : "");
   const [searchOpen, setSearchOpen] = useState(false);

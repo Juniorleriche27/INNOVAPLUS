@@ -38,6 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     abortRef.current = controller;
 
     setLoading(true);
+    const timeout = setTimeout(() => {
+      if (!controller.signal.aborted) {
+        controller.abort();
+      }
+    }, 8000);
     try {
       const res = await fetch(`${INNOVA_API_BASE}/auth/me`, {
         cache: "no-store",
@@ -54,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setInitialLoggedIn(false);
       }
     } finally {
+      clearTimeout(timeout);
       if (abortRef.current === controller) {
         setLoading(false);
       }

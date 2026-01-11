@@ -94,7 +94,7 @@ export default function LoginClient() {
               : "Code invalide.";
         throw new Error(msg);
       }
-      await refresh();
+      void refresh();
       if (isPreviewDomain) {
         window.location.href = `${SITE_BASE_URL}${redirect}`;
         return;

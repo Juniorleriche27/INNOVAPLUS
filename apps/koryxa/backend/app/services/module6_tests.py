@@ -548,9 +548,9 @@ def _paraphrase(question: str) -> str:
     if not settings.COHERE_API_KEY:
         return question
     prompt = (
-        \"Paraphrase la question suivante en gardant exactement le meme sens et la meme langue. \"\n
-        \"Ne change pas la reponse correcte. Donne uniquement la question reformulee.\\n\"\n
-        f\"Question: {question}\"\n
+        "Paraphrase la question suivante en gardant exactement le meme sens et la meme langue. "
+        "Ne change pas la reponse correcte. Donne uniquement la question reformulee.\n"
+        f"Question: {question}"
     )
     try:
         result = generate_answer(prompt, provider=\"cohere\").strip()

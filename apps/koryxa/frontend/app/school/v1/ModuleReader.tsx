@@ -154,6 +154,11 @@ export default function ModuleReader({
               {video.tag}
             </span>
           ) : null}
+          {videoAvailability[video.url] === false ? (
+            <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700">
+              Indisponible
+            </span>
+          ) : null}
           {video.lang ? (
             <span
               className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase ${
@@ -174,7 +179,7 @@ export default function ModuleReader({
           <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
             <iframe
               className="h-full w-full"
-              src={`https://www.youtube.com/embed/${id}`}
+              src={`https://www.youtube-nocookie.com/embed/${id}`}
               title={label}
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -206,7 +211,7 @@ export default function ModuleReader({
           <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
             <iframe
               className="h-full w-full"
-              src={`https://www.youtube.com/embed/${id}`}
+              src={`https://www.youtube-nocookie.com/embed/${id}`}
               title={video.label}
               allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -218,7 +223,14 @@ export default function ModuleReader({
           </div>
         )}
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+            {availability === false ? (
+              <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700">
+                Indisponible
+              </span>
+            ) : null}
+          </div>
           <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
             Ouvrir sur YouTube
           </a>
@@ -252,6 +264,33 @@ export default function ModuleReader({
     [module.quiz]
   );
 
+  function renderVideoGroup(title: string, videos: SectionVideo[]) {
+    if (videos.length === 0) return null;
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <div className="space-y-4">
+          {videos.map((video) => (
+            <div key={video.url}>{renderVideo(video)}</div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderSectionVideos(videos: SectionVideo[]) {
+    const fr = videos.filter((video) => video.lang === "fr");
+    const en = videos.filter((video) => video.lang === "en");
+    const other = videos.filter((video) => !video.lang);
+    return (
+      <div className="mt-4 space-y-6">
+        {renderVideoGroup("Francais", fr)}
+        {renderVideoGroup("English", en)}
+        {renderVideoGroup("Autres", other)}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -270,9 +309,10 @@ export default function ModuleReader({
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </div>
-                {(section.videos ?? (section.video ? [section.video] : [])).map((video) => (
-                  <div key={video.url}>{renderVideo(video)}</div>
-                ))}
+                {(() => {
+                  const videos = section.videos ?? (section.video ? [section.video] : []);
+                  return videos.length > 0 ? renderSectionVideos(videos) : null;
+                })()}
                 {section.articles && section.articles.length > 0 ? (
                   <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
                     <p className="text-sm font-semibold text-slate-900">Pour aller plus loin</p>

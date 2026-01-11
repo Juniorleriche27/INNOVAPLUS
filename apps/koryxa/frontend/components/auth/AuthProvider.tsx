@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setInitialLoggedIn(false);
       }
     } finally {
-      if (!controller.signal.aborted) {
+      if (abortRef.current === controller) {
         setLoading(false);
       }
     }
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     abortRef.current?.abort();
     setUser(null);
     setInitialLoggedIn(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {

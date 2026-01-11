@@ -33,10 +33,10 @@ export default function LoginClient() {
 
   // If already logged in, redirect client-side (avoids server-side fetch failure).
   useEffect(() => {
-    if (!loading && (user || initialLoggedIn)) {
+    if (user || initialLoggedIn) {
       router.replace(redirect);
     }
-  }, [user, initialLoggedIn, loading, redirect, router]);
+  }, [user, initialLoggedIn, redirect, router]);
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

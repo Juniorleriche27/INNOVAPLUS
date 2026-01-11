@@ -531,7 +531,7 @@ def build_templates() -> List[TestTemplate]:
         for idx, prefix in enumerate(VARIANT_PREFIXES, start=1):
             prompt = f"{prefix}, {base['question']}"
             template = TestTemplate(
-                id=f\"{base['id']}-{idx}\",
+                id=f"{base['id']}-{idx}",
                 topic=base["topic"],
                 concept=base["concept"],
                 question=prompt,

@@ -55,20 +55,38 @@ export const foundationalProgram: ProgramContent = {
             "Pour avancer efficacement, il est essentiel de comprendre qui fait quoi. Chaque metier de la data a une responsabilite precise, mais aucun ne travaille isolement. Un livrable data de qualite est toujours le resultat d'une chaine complete, allant de la collecte des donnees a l'analyse, puis a la prise de decision. Ce module pose les bases necessaires pour comprendre cette chaine et s'y integrer intelligemment.",
             "Un principe fondamental doit etre retenu des le depart : l'intelligence artificielle n'est utile que si elle repose sur des donnees fiables et un objectif clairement defini. Sans cadre, elle produit du bruit. Avec un cadre rigoureux, elle produit un livrable exploitable. C'est cette logique que KORYXA met en place des les premieres etapes de la formation.",
           ],
-          video: {
-            label: "IBM – What is Data Science",
-            url: "https://www.youtube.com/watch?v=X3paOmcrTjQ",
-          },
-          articles: [
+          videos: [
             {
-              label: "HETIC – Data Engineer, Data Scientist ou Data Analyst : quel metier ?",
-              url: "https://www.hetic.net/actualites/data-engineer-data-scientist-ou-data-analyst",
-              description: "Clarifie les differences de missions et de competences entre les trois roles.",
+              title: "Difference Data Analyst / Data Scientist / Data Engineer",
+              url: "https://www.youtube.com/watch?v=dlSyb_spQCA",
+              lang: "fr",
             },
             {
-              label: "PositiveThinking.tech – Data jobs, part 1: Data Scientist, Data Engineer, Data Analyst",
-              url: "https://positivethinking.tech/insights/data-jobs-part-1/",
-              description: "Vue d'ensemble en anglais pour comparer les roles cote missions et attentes.",
+              title: "Data Scientist vs Data Analyst vs Data Engineer",
+              url: "https://www.youtube.com/watch?v=mEZIHFxUFEc",
+              lang: "fr",
+            },
+            {
+              title: "Data Roles Explained in 3 Minutes",
+              url: "https://www.youtube.com/watch?v=8qSwh_r6wg8",
+              lang: "en",
+            },
+            {
+              title: "Data Analyst vs Data Engineer vs Data Scientist (2025)",
+              url: "https://www.youtube.com/watch?v=YJCeA8cUC90",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "APEC (PDF) – Les metiers de la data",
+              url: "https://corporate.apec.fr/files/live/sites/corporate/files/Nos%20%C3%A9tudes/pdf/Les-metiers-de-la-data.pdf",
+              description: "Panorama officiel des metiers data.",
+            },
+            {
+              label: "France Travail – Les metiers de la data",
+              url: "https://www.francetravail.fr/actualites/le-dossier/les-metiers-de-demain/les-metiers-de-la-data.html",
+              description: "Dossier de reference sur les roles data.",
             },
           ],
         },
@@ -80,15 +98,43 @@ export const foundationalProgram: ProgramContent = {
             "Le Data Analyst travaille sur des cas reels : reporting, suivi de performance, segmentation client, analyse de couts. Il sert d'interface entre la data et les equipes operationnelles. C'est souvent le premier role data dans une entreprise qui veut progresser vers l'IA.",
             "Dans une mission KORYXA, le Data Analyst pose le cadre du livrable : quels indicateurs suivre, quels niveaux de detail, et quelles actions en sortent. Son travail doit etre clair, lisible et directement utilisable par l'organisation.",
           ],
-          video: {
-            label: "IBM – What does a Data Analyst do?",
-            url: "https://www.youtube.com/watch?v=ywZXpfdqg1o",
-          },
+          videos: [
+            {
+              title: "Valentin, Data analyst, presente son metier",
+              url: "https://www.youtube.com/watch?v=cP4DTLbp38A",
+              lang: "fr",
+            },
+            {
+              title: "What Does a Data Analyst Do?",
+              url: "https://www.youtube.com/watch?v=mCSbYbXWmH0",
+              lang: "en",
+            },
+            {
+              title: "What Does a Data Analyst Actually Do?",
+              url: "https://www.youtube.com/watch?v=ywZXpfdqg1o",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "DataScientist.fr – Top 10 des metiers de la Data a surveiller en 2025",
-              url: "https://datascientist.fr/blog/top-10-des-metiers-de-la-data-a-surveiller-en-2025",
-              description: "Panorama des roles data pour situer le Data Analyst dans l'ecosysteme.",
+              label: "APEC – Data analyst (fiche metier)",
+              url: "https://www.apec.fr/tous-nos-metiers/informatique/data-analyst.html",
+              description: "Fiche metier officielle.",
+            },
+            {
+              label: "Onisep – Data analyst (analyste de donnees)",
+              url: "https://www.onisep.fr/ressources/univers-metier/metiers/data-analyst-analyste-de-donnees",
+              description: "Presentation du metier et des competences.",
+            },
+            {
+              label: "France Travail (MetierScope) – Data analyst",
+              url: "https://candidat.francetravail.fr/metierscope/fiche-metier/M1419/data-analyst",
+              description: "Fiche metier et missions.",
+            },
+            {
+              label: "Coursera – What does a data analyst do?",
+              url: "https://www.coursera.org/articles/what-does-a-data-analyst-do",
+              description: "Point de vue international.",
             },
           ],
         },
@@ -100,15 +146,38 @@ export const foundationalProgram: ProgramContent = {
             "Dans un besoin reel, le Data Engineer intervient des le debut : il transforme un probleme flou en flux clair. Exemple : une entreprise a des donnees disperses. Le Data Engineer les rassemble, les structure, puis les rend exploitables pour le reste de l'equipe.",
             "Le Data Engineer assure aussi la durabilite : un pipeline bien concu evite les erreurs silencieuses et facilite le passage a l'echelle. C'est la difference entre un test ponctuel et un systeme qui fonctionne chaque semaine.",
           ],
-          video: {
-            label: "DataScientest – Qu'est-ce qu'un Data Engineer ?",
-            url: "https://www.youtube.com/watch?v=IeyYWxaMP3M",
-          },
+          videos: [
+            {
+              title: "Qu'est-ce que le Data Engineering ? (Willis / Data From Scratch)",
+              url: "https://www.youtube.com/watch?v=hvWKLij_NAE",
+              lang: "fr",
+            },
+            {
+              title: "La verite sur le metier de Data Engineer (Wild Code School)",
+              url: "https://www.youtube.com/watch?v=m7hgJRM39T8",
+              lang: "fr",
+            },
+            {
+              title: "What Does a Data Engineer Do? Explained Simply",
+              url: "https://www.youtube.com/watch?v=JUws0cMnL78",
+              lang: "en",
+            },
+            {
+              title: "What is a Data Engineer (in 3 minutes)",
+              url: "https://www.youtube.com/watch?v=D1V6t--9tt8",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Medium – Exploring the Roles of Data Engineer, Analyst, Scientist & ML Engineer",
-              url: "https://medium.com/@adilshamim8/exploring-the-roles-of-data-engineer-analyst-scientist-ml-engineer-b4a2c8205d4d",
-              description: "Comparaison detaillee des responsabilites et des competences attendues.",
+              label: "APEC – Data engineer (fiche metier)",
+              url: "https://www.apec.fr/tous-nos-metiers/informatique/data-engineer.html",
+              description: "Fiche metier officielle.",
+            },
+            {
+              label: "Coursera – What Is a Data Engineer?",
+              url: "https://www.coursera.org/articles/what-does-a-data-engineer-do-and-how-do-i-become-one",
+              description: "Vue internationale et competences.",
             },
           ],
         },
@@ -120,15 +189,43 @@ export const foundationalProgram: ProgramContent = {
             "L'IA est au coeur du metier de Data Scientist, mais elle reste un outil. L'objectif n'est pas de faire un modele impressionnant, mais un modele utile. Un bon Data Scientist traduit la complexite en decisions simples.",
             "Dans une mission, il documente les hypotheses, les limites et les risques. Cela permet a l'entreprise de comprendre pourquoi le modele fonctionne, et dans quels cas il ne doit pas etre utilise.",
           ],
-          video: {
-            label: "DataScientest – Que fait un Data Scientist ?",
-            url: "https://www.youtube.com/watch?v=ixVR8uPetHQ",
-          },
+          videos: [
+            {
+              title: "Que fait un Data Scientist ? (DataScientest)",
+              url: "https://www.youtube.com/watch?v=ixVR8uPetHQ",
+              lang: "fr",
+            },
+            {
+              title: "What Does a Data Scientist Actually Do?",
+              url: "https://www.youtube.com/watch?v=XWetgrNas-k",
+              lang: "en",
+            },
+            {
+              title: "What Does a Data Scientist Actually Do?",
+              url: "https://www.youtube.com/watch?v=umI0DpJEqPE",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Coursera – Data Engineer vs Data Scientist: What's the Difference?",
-              url: "https://www.coursera.org/articles/data-engineer-vs-data-scientist",
-              description: "Differencie les deux roles et leurs responsabilites en contexte pro.",
+              label: "APEC – Data scientist (fiche metier)",
+              url: "https://www.apec.fr/tous-nos-metiers/informatique/data-scientist.html",
+              description: "Fiche metier officielle.",
+            },
+            {
+              label: "BLS – Data Scientists",
+              url: "https://www.bls.gov/ooh/math/data-scientists.htm",
+              description: "Perspective internationale (US).",
+            },
+            {
+              label: "O*NET – Data Scientists (15-2051.00)",
+              url: "https://www.onetonline.org/link/summary/15-2051.00",
+              description: "Base de reference sur les taches et competences.",
+            },
+            {
+              label: "France Travail (MetierScope) – Data scientist",
+              url: "https://candidat.francetravail.fr/metierscope/fiche-metier/M1405/data-scientist",
+              description: "Fiche metier et missions.",
             },
           ],
         },
@@ -141,15 +238,38 @@ export const foundationalProgram: ProgramContent = {
             "Il pense aussi a la securite, aux couts et aux performances. L'objectif est d'avoir une IA qui produit un resultat utile sans perturber l'organisation.",
             "Un MLE s'assure que le modele reste utile dans le temps : il mesure les derives, ajuste les versions et met en place des alertes. C'est ce travail qui rend un livrable vraiment fiable.",
           ],
-          video: {
-            label: "Google Developers – Machine Learning Engineer explained",
-            url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
-          },
+          videos: [
+            {
+              title: "C'est quoi un Ingenieur Machine Learning ?",
+              url: "https://www.youtube.com/watch?v=6Af5NBllnXo",
+              lang: "fr",
+            },
+            {
+              title: "Decouvrez le metier du Machine Learning Engineer",
+              url: "https://www.youtube.com/watch?v=cuFxq-SEZm4",
+              lang: "fr",
+            },
+            {
+              title: "What is a Machine Learning Engineer",
+              url: "https://www.youtube.com/watch?v=GDCnydDWRnM",
+              lang: "en",
+            },
+            {
+              title: "What I actually do as a Machine Learning Engineer",
+              url: "https://www.youtube.com/watch?v=PFbXCIMlfc8",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Aivancity – Les metiers de l'Intelligence Artificielle (IA) et de la Data",
-              url: "https://www.aivancity.ai/les-metiers-de-lintelligence-artificielle-ia-et-de-la-data",
-              description: "Explique comment les metiers s'articulent autour de l'IA et de la data.",
+              label: "DataScientest – Machine Learning Engineer : tout savoir",
+              url: "https://datascientest.com/machine-learning-engineer-tout-savoir",
+              description: "Presentation claire du metier en francais.",
+            },
+            {
+              label: "Coursera – Machine Learning Engineer",
+              url: "https://www.coursera.org/articles/machine-learning-engineer",
+              description: "Vue internationale et competences.",
             },
           ],
         },
@@ -162,11 +282,40 @@ export const foundationalProgram: ProgramContent = {
             "C'est cette coordination qui fait la difference : chaque role se concentre sur sa responsabilite, mais le livrable final reste coherent, valide et exploitable.",
             "Quand la chaine est claire, les decisions sont plus rapides et les erreurs diminuent. La collaboration n'est pas une option : c'est la condition pour produire un resultat concret.",
           ],
-          video: {
-            label: "L'Atelier Data – Data Scientist vs Data Analyst vs Data Engineer : quelles differences ?",
-            url: "https://www.youtube.com/watch?v=mEZIHFxUFEc",
-          },
-          articles: [],
+          videos: [
+            {
+              title: "Data Engineer vs Data Analyst vs Data Scientist : quelles differences ?",
+              url: "https://www.youtube.com/watch?v=1pARcazj-Mc",
+              lang: "fr",
+            },
+            {
+              title: "Differences entre metiers data (francais)",
+              url: "https://www.youtube.com/watch?v=dlSyb_spQCA",
+              lang: "fr",
+            },
+            {
+              title: "Data Engineer vs Data Analyst vs Data Scientist",
+              url: "https://www.youtube.com/watch?v=0tuMz6RWGJA",
+              lang: "en",
+            },
+            {
+              title: "What's the difference between analyst/engineer/scientist",
+              url: "https://www.youtube.com/watch?v=ZyRH6FMcVlw",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "APEC (PDF) – Les metiers de la data",
+              url: "https://corporate.apec.fr/files/live/sites/corporate/files/Nos%20%C3%A9tudes/pdf/Les-metiers-de-la-data.pdf",
+              description: "Panorama officiel des metiers data.",
+            },
+            {
+              label: "France Travail – Les metiers de la data",
+              url: "https://www.francetravail.fr/actualites/le-dossier/les-metiers-de-demain/les-metiers-de-la-data.html",
+              description: "Dossier de reference sur les roles data.",
+            },
+          ],
         },
       ],
       resources: { videos: [], articles: [] },

@@ -30,6 +30,7 @@ export default function ModuleReader({
   const [showHelp, setShowHelp] = useState(false);
   const [readingConfirmed, setReadingConfirmed] = useState(false);
   const [notebookConfirmed, setNotebookConfirmed] = useState(false);
+  const [videoAvailability, setVideoAvailability] = useState<Record<string, boolean | undefined>>({});
   const storageKey = `koryxa.module.${module.id}.quiz`;
 
   const totalQuestions = module.quiz.length;
@@ -105,54 +106,115 @@ export default function ModuleReader({
     return null;
   }
 
+  const allVideoUrls = useMemo(() => {
+    const urls: string[] = [];
+    module.sections?.forEach((section) => {
+      if (section.video?.url) urls.push(section.video.url);
+      section.videos?.forEach((vid) => urls.push(vid.url));
+    });
+    module.resources.videos.forEach((video) => urls.push(video.url));
+    return Array.from(new Set(urls));
+  }, [module.sections, module.resources.videos]);
+
+  useEffect(() => {
+    let active = true;
+    async function checkVideo(url: string) {
+      try {
+        const resp = await fetch(`/api/video/check?url=${encodeURIComponent(url)}`);
+        const data = await resp.json().catch(() => ({}));
+        if (!active) return;
+        setVideoAvailability((prev) => ({ ...prev, [url]: Boolean(data?.ok) }));
+      } catch {
+        if (!active) return;
+        setVideoAvailability((prev) => ({ ...prev, [url]: false }));
+      }
+    }
+    allVideoUrls.forEach((url) => {
+      if (videoAvailability[url] === undefined) {
+        checkVideo(url);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [allVideoUrls, videoAvailability]);
+
   function renderVideo(video?: SectionVideo) {
     if (!video) return null;
+    const availability = videoAvailability[video.url];
     const id = getYoutubeId(video.url);
     if (!id) return null;
+    const label = video.title || video.label || video.url;
     return (
       <div className="mt-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-slate-900">{video.label}</p>
+          <p className="text-sm font-semibold text-slate-900">{label}</p>
           {video.tag ? (
             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
               {video.tag}
             </span>
           ) : null}
+          {video.lang ? (
+            <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold uppercase text-slate-500">
+              {video.lang}
+            </span>
+          ) : null}
         </div>
-        <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-          <iframe
-            className="h-full w-full"
-            src={`https://www.youtube.com/embed/${id}`}
-            title={video.label}
-            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        {availability === undefined ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600">
+            Verification de la video en cours...
+          </div>
+        ) : availability ? (
+          <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube.com/embed/${id}`}
+              title={label}
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+            Video indisponible — utilisez le lien externe ou choisissez une autre ressource.
+          </div>
+        )}
         <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
-          Voir sur YouTube
+          Ouvrir sur YouTube
         </a>
       </div>
     );
   }
 
   function renderResourceVideo(video: { label: string; url: string }) {
+    const availability = videoAvailability[video.url];
     const id = getYoutubeId(video.url);
     if (!id) return null;
     return (
       <div key={video.url} className="space-y-3">
-        <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-          <iframe
-            className="h-full w-full"
-            src={`https://www.youtube.com/embed/${id}`}
-            title={video.label}
-            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        {availability === undefined ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm text-slate-600">
+            Verification de la video en cours...
+          </div>
+        ) : availability ? (
+          <div className="aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube.com/embed/${id}`}
+              title={video.label}
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900">
+            Video indisponible — utilisez le lien externe ou choisissez une autre ressource.
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-slate-900">{video.label}</p>
           <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
-            Voir sur YouTube
+            Ouvrir sur YouTube
           </a>
         </div>
       </div>

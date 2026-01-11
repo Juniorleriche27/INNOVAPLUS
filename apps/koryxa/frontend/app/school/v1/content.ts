@@ -1,5 +1,5 @@
 export type ResourceLink = { label: string; url: string; description?: string };
-export type SectionVideo = { label: string; url: string; tag?: string };
+export type SectionVideo = { title?: string; label?: string; url: string; lang?: "fr" | "en"; tag?: string };
 export type ModuleSection = {
   title: string;
   text: string[];
@@ -768,10 +768,18 @@ export const foundationalProgram: ProgramContent = {
             "Les erreurs courantes sont les graphiques inutiles, les axes trompeurs, ou les visuels surcharges. Un bon visuel simplifie sans masquer, et reste fidele a ce que disent les donnees.",
             "L'objectif est d'aider la decision. Si un graphique ne permet pas d'agir, il doit etre repense.",
           ],
-          video: {
-            label: "Machine Learnia - Pourquoi visualiser les donnees ?",
-            url: "https://www.youtube.com/watch?v=Z6g7Y9Zt6n4",
-          },
+          videos: [
+            {
+              title: "C'est quoi la Data Visualisation ? (DataScientest)",
+              url: "https://www.youtube.com/watch?v=dd6H7kaqU48",
+              lang: "fr",
+            },
+            {
+              title: "The beauty of data visualization (TED - David McCandless)",
+              url: "https://www.youtube.com/watch?v=5Zg-C8AAIGg",
+              lang: "en",
+            },
+          ],
           articles: [
             {
               label: "Data to Viz - From data to visualization",
@@ -787,10 +795,18 @@ export const foundationalProgram: ProgramContent = {
             "Le mauvais choix de graphique est une source d'erreurs. Par exemple, utiliser un camembert pour trop de categories ou une courbe pour des donnees non temporelles.",
             "Savoir choisir le bon graphique, c'est deja reussir la moitie du reporting.",
           ],
-          video: {
-            label: "DataScientest - Les graphiques essentiels en data analysis",
-            url: "https://www.youtube.com/watch?v=9ZxP4F0yZxE",
-          },
+          videos: [
+            {
+              title: "From Data to Viz : Comment choisir la bonne representation ?",
+              url: "https://www.youtube.com/watch?v=IKnkU9rFqCE",
+              lang: "fr",
+            },
+            {
+              title: "Storytelling with Data — #17 Which graph should I use?",
+              url: "https://www.youtube.com/watch?v=c-XkYOfifeY",
+              lang: "en",
+            },
+          ],
           articles: [
             {
               label: "Data to Viz - Choose the right chart",
@@ -800,16 +816,23 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "Visualisation avec Python (Matplotlib & Seaborn)",
+          title: "Matplotlib (bases + premiers graphiques)",
           text: [
-            "Matplotlib est la bibliotheque de base pour tracer des graphiques en Python. Seaborn vient dessus pour ameliorer la lisibilite et proposer des graphiques statistiques plus propres.",
-            "L'objectif ici est de produire des visuels simples : bar chart, line chart, scatter plot. On y ajoute des titres, des labels et des legendes pour que le message soit clair.",
-            "Ces graphiques servent ensuite de base pour des rapports plus complets ou des dashboards.",
+            "Matplotlib est la bibliotheque de base pour tracer des graphiques en Python. Elle permet de creer des bar charts, line charts et scatter plots en quelques lignes.",
+            "L'objectif ici est de produire des visuels simples et corrects, avec des titres, des labels et des legendes lisibles.",
           ],
-          video: {
-            label: "Machine Learnia - Visualisation avec Matplotlib et Seaborn",
-            url: "https://www.youtube.com/watch?v=Z6g7Y9Zt6n4",
-          },
+          videos: [
+            {
+              title: "Initiation a Matplotlib pour la visualisation des donnees avec Python",
+              url: "https://www.youtube.com/watch?v=HcxRxmvOXkg",
+              lang: "fr",
+            },
+            {
+              title: "Matplotlib Tutorial (Part 1): Creating and Customizing Our First Plots (Corey Schafer)",
+              url: "https://www.youtube.com/watch?v=UO98lJQ3QGI",
+              lang: "en",
+            },
+          ],
           articles: [
             {
               label: "Matplotlib - Pyplot tutorial",
@@ -819,21 +842,50 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "Lire et interpreter un graphique",
+          title: "Seaborn (graphiques statistiques)",
           text: [
-            "Lire un graphique, c'est comprendre l'axe, l'echelle et le message principal. Une tendance peut etre montante, stable ou en rupture.",
-            "Il faut aussi repere les anomalies : points isoles, pics anormaux, ou effets de saisonnalite. Ces elements orientent l'analyse.",
-            "Une mauvaise interpretation vient souvent d'une echelle trompeuse ou d'un graphique mal choisi. L'important est de rester fidele a la realite des donnees.",
+            "Seaborn apporte des graphiques statistiques plus propres et plus rapides a lire. Il repose sur Matplotlib mais ajoute des styles coherents et des fonctions pratiques.",
+            "On l'utilise pour des distributions, des comparaisons de groupes et des relations entre variables.",
           ],
-          video: {
-            label: "Science4All - Lire et interpreter des graphiques",
-            url: "https://www.youtube.com/watch?v=9Jm9jzZ0p4U",
-          },
-          articles: [
+          videos: [
             {
-              label: "Storytelling with Data - Principles",
-              url: "https://www.storytellingwithdata.com/blog",
-              description: "Principes de lecture et de narration a partir de graphiques.",
+              title: "SEABORN PYTHON TUTORIAL… (tutoriel Python francais)",
+              url: "https://www.youtube.com/watch?v=xYgfIRzNPlo",
+              lang: "fr",
+            },
+            {
+              title: "Seaborn Tutorial for Beginners in Python (freeCodeCamp)",
+              url: "https://www.youtube.com/watch?v=MyhBYkWarBE",
+              lang: "en",
+            },
+          ],
+        },
+        {
+          title: "Dashboards (Power BI + Looker Studio)",
+          text: [
+            "Un dashboard rassemble plusieurs graphiques pour suivre une activite. Il doit etre lisible, coherent et oriente decision.",
+            "Power BI et Looker Studio sont deux outils courants pour transformer une analyse en reporting partageable.",
+          ],
+          videos: [
+            {
+              title: "Creez un Tableau de Bord Professionnel avec Power BI",
+              url: "https://www.youtube.com/watch?v=Kk6QtM8dWus",
+              lang: "fr",
+            },
+            {
+              title: "Power BI Tutorial: Create Your First Dashboard (20 min)",
+              url: "https://www.youtube.com/watch?v=c7LrqSxjJQQ",
+              lang: "en",
+            },
+            {
+              title: "Looker Studio : Creer un Tableau de bord Etape par Etape",
+              url: "https://www.youtube.com/watch?v=BVBvo9eKK40",
+              lang: "fr",
+            },
+            {
+              title: "Looker Studio Tutorial for Beginners 2025",
+              url: "https://www.youtube.com/watch?v=qCl-HHVBRsU",
+              lang: "en",
             },
           ],
         },

@@ -110,11 +110,17 @@ const V1_SCHOOL_TREE = [
         href: "/school/data-analyst/module-1",
         label: "Data Analyst",
         children: [
-          { href: "/school/data-analyst/module-1/theme-1", label: "Theme 1" },
-          { href: "/school/data-analyst/module-1/theme-2", label: "Theme 2" },
-          { href: "/school/data-analyst/module-1/theme-3", label: "Theme 3" },
-          { href: "/school/data-analyst/module-1/theme-4", label: "Theme 4" },
-          { href: "/school/data-analyst/module-1/theme-5", label: "Theme 5" },
+          {
+            href: "/school/data-analyst/module-1",
+            label: "Module 1 — Cadrage & KPIs",
+            children: [
+              { href: "/school/data-analyst/module-1/theme-1", label: "Theme 1" },
+              { href: "/school/data-analyst/module-1/theme-2", label: "Theme 2" },
+              { href: "/school/data-analyst/module-1/theme-3", label: "Theme 3" },
+              { href: "/school/data-analyst/module-1/theme-4", label: "Theme 4" },
+              { href: "/school/data-analyst/module-1/theme-5", label: "Theme 5" },
+            ],
+          },
         ],
       },
       { href: "/school/parcours/specialisations/data-engineer", label: "Data Engineer" },
@@ -132,6 +138,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);
   const [analystOpen, setAnalystOpen] = useState(false);
+  const [module1Open, setModule1Open] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("innova.sidebar.collapsed");
@@ -152,6 +159,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
     if (pathname.startsWith("/school/data-analyst")) {
       setSpecialOpen(true);
       setAnalystOpen(true);
+      setModule1Open(true);
     }
   }, [pathname]);
 
@@ -290,12 +298,12 @@ export default function Sidebar({ className, style }: { className?: string; styl
                               >
                                 {sub.label}
                               </Link>
-                              {hasChildren ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setSpecialOpen((prev) => !prev)}
-                                  className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
-                                >
+                            {hasChildren ? (
+                              <button
+                                type="button"
+                                onClick={() => setSpecialOpen((prev) => !prev)}
+                                className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+                              >
                                   {specialOpen ? "−" : "+"}
                                 </button>
                               ) : null}
@@ -331,21 +339,55 @@ export default function Sidebar({ className, style }: { className?: string; styl
                                       </div>
                                       {hasGrand && analystOpen ? (
                                         <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
-                                          {child.children?.map((theme) => {
-                                            const themeActive = pathname.startsWith(theme.href);
+                                          {child.children?.map((module) => {
+                                            const moduleActive = pathname.startsWith(module.href);
+                                            const moduleHasChildren = Boolean(module.children?.length);
                                             return (
-                                              <Link
-                                                key={theme.href}
-                                                href={theme.href}
-                                                className={clsx(
-                                                  "block rounded-lg px-2 py-1 text-[11px] font-semibold transition",
-                                                  themeActive
-                                                    ? "bg-sky-50 text-sky-700"
-                                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                                )}
-                                              >
-                                                {theme.label}
-                                              </Link>
+                                              <div key={module.href} className="space-y-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                  <Link
+                                                    href={module.href}
+                                                    className={clsx(
+                                                      "flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition",
+                                                      moduleActive
+                                                        ? "bg-sky-50 text-sky-700"
+                                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                                    )}
+                                                  >
+                                                    {module.label}
+                                                  </Link>
+                                                  {moduleHasChildren ? (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => setModule1Open((prev) => !prev)}
+                                                      className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+                                                    >
+                                                      {module1Open ? "−" : "+"}
+                                                    </button>
+                                                  ) : null}
+                                                </div>
+                                                {moduleHasChildren && module1Open ? (
+                                                  <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
+                                                    {module.children?.map((theme) => {
+                                                      const themeActive = pathname.startsWith(theme.href);
+                                                      return (
+                                                        <Link
+                                                          key={theme.href}
+                                                          href={theme.href}
+                                                          className={clsx(
+                                                            "block rounded-lg px-2 py-1 text-[11px] font-semibold transition",
+                                                            themeActive
+                                                              ? "bg-sky-50 text-sky-700"
+                                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                                          )}
+                                                        >
+                                                          {theme.label}
+                                                        </Link>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                ) : null}
+                                              </div>
                                             );
                                           })}
                                         </div>

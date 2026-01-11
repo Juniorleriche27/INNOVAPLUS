@@ -570,7 +570,7 @@ export const foundationalProgram: ProgramContent = {
         {
           title: "Mise en place de l'environnement SQL",
           text: [
-            "Pour la V1, nous utilisons SQLite. C'est une base relationnelle legere, integrable directement dans un fichier et supportee nativement par Python. Aucune installation serveur SQL n'est requise pour la V1.",
+            "Pour la V1, KORYXA utilise SQLite, inclus par defaut avec Python. Aucune installation serveur SQL n'est requise.",
             "L'idee est simple : tu crees une base locale, tu definis des tables, puis tu ecris des requetes SQL pour interroger les donnees. Cette approche suffit pour apprendre les fondamentaux et produire des exercices realistes sans complexite d'infrastructure.",
             "Dans les missions KORYXA, SQLite est souvent suffisante pour les prototypes et les preuves de concept. Les notions apprises ici seront identiques quand tu passeras a MySQL, PostgreSQL ou d'autres bases en entreprise.",
           ],

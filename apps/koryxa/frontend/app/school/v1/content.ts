@@ -991,60 +991,99 @@ export const foundationalProgram: ProgramContent = {
       text: [],
       sections: [
         {
-          title: "Introduction generale",
-          text: [
-            "Le SQL est le langage central de la donnee structuree. Dans la plupart des organisations, les informations utiles vivent dans des bases relationnelles : commandes, utilisateurs, stocks, operations, finances. Savoir ecrire une requete SQL fiable permet d'extraire, filtrer, agreger et structurer l'information au plus pres de la source, sans dependance a des outils intermediaires.",
-            "Ce module pose les fondations indispensables : comprendre les notions de tables, colonnes, cles et relations, puis ecrire des requetes claires (SELECT, WHERE, JOIN, GROUP BY). L'objectif n'est pas la performance extreme, mais la justesse, la lisibilite et la reproductibilite des requetes. Ce sont trois criteres essentiels pour produire des livrables professionnels defendables.",
-            "Un bon analyste ne se contente pas de recuperer des chiffres : il sait expliquer d'ou ils viennent, comment ils ont ete calculees, et pourquoi ils sont fiables. SQL donne cette capacite en rendant chaque etape du raisonnement explicite. C'est pour cela que SQL est un prerequis central en data, quel que soit le role.",
-            "Enfin, ce module introduit un premier pont entre SQL et Python. Beaucoup de missions demandent d'extraire des donnees en SQL puis de les analyser ou de les visualiser en Python. Tu apprendras donc a relier les deux sans complexite inutile, pour produire rapidement des resultats exploitables.",
-            "Dans un contexte KORYXA, cette maitrise permet de repondre a des besoins concrets : extraire des ventes par region, verifier la qualite d'un jeu de donnees, mesurer l'impact d'une campagne, ou preparer un tableau de bord. Les decisions business reposent sur ces extractions, donc la rigueur de la requete est decisive.",
-            "SQL est aussi un langage de collaboration. Une requete claire peut etre relue, verifiee et amelioree par un autre membre de l'equipe. Cette transparence est essentielle pour garantir des livrables utilisables et defendables devant une organisation.",
-          ],
-        },
-        {
           title: "Mise en place de l'environnement SQL",
           text: [
             "Pour la V1, KORYXA utilise SQLite, inclus par defaut avec Python. Aucune installation serveur SQL n'est requise.",
-            "Deux videos sont proposees pour la mise en place SQL. SQLite est utilise pour la V1 et ne necessite aucune installation serveur. Choisissez la video qui vous convient le mieux.",
             "L'idee est simple : tu crees une base locale, tu definis des tables, puis tu ecris des requetes SQL pour interroger les donnees. Cette approche suffit pour apprendre les fondamentaux et produire des exercices realistes sans complexite d'infrastructure.",
             "Dans les missions KORYXA, SQLite est souvent suffisante pour les prototypes et les preuves de concept. Les notions apprises ici seront identiques quand tu passeras a MySQL, PostgreSQL ou d'autres bases en entreprise.",
           ],
           videos: [
             {
-              label: "Utiliser SQLite avec Python (aucune installation serveur)",
-              url: "https://www.youtube.com/watch?v=Zx8n2bYv4eI",
-              tag: "Principale",
+              title: "Installer SQLite et SQLite Browser (FR)",
+              url: "https://www.youtube.com/watch?v=C1I6RYr823s",
+              lang: "fr",
             },
             {
-              label: "SQLite / SQL pour debutants (FR)",
+              title: "Prise en main de DB Browser for SQLite (FR)",
+              url: "https://www.youtube.com/watch?v=PCia6dev4mQ",
+              lang: "fr",
+            },
+            {
+              title: "Utiliser Python pour interagir avec une base (sqlite3) (FR)",
               url: "https://www.youtube.com/watch?v=JiEoZ8Z9oUQ",
-              tag: "Alternative (FR)",
+              lang: "fr",
+            },
+            {
+              title: "Install SQLite on Windows (EN)",
+              url: "https://www.youtube.com/watch?v=wPyyY-sekiI",
+              lang: "en",
+            },
+            {
+              title: "Install DB Browser for SQLite on Windows (EN)",
+              url: "https://www.youtube.com/watch?v=l04gLdoPpV0",
+              lang: "en",
             },
           ],
           articles: [
             {
-              label: "Python - sqlite3",
-              url: "https://docs.python.org/3/library/sqlite3.html",
-              description: "Documentation officielle pour creer, interroger et manipuler une base SQLite en Python.",
+              label: "SQLite - Download",
+              url: "https://www.sqlite.org/download.html",
+              description: "Page officielle pour telecharger SQLite.",
+            },
+            {
+              label: "DB Browser for SQLite - Downloads",
+              url: "https://sqlitebrowser.org/dl/",
+              description: "Telechargements officiels DB Browser.",
+            },
+            {
+              label: "SQLite Docs",
+              url: "https://www.sqlite.org/docs.html",
+              description: "Documentation officielle SQLite.",
             },
           ],
         },
         {
           title: "Concepts fondamentaux des bases de donnees",
           text: [
+            "Le SQL est le langage central de la donnee structuree. Dans la plupart des organisations, les informations utiles vivent dans des bases relationnelles : commandes, utilisateurs, stocks, operations, finances. Savoir ecrire une requete SQL fiable permet d'extraire, filtrer, agreger et structurer l'information au plus pres de la source, sans dependance a des outils intermediaires.",
+            "Ce module pose les fondations indispensables : comprendre les notions de tables, colonnes, cles et relations, puis ecrire des requetes claires. L'objectif n'est pas la performance extreme, mais la justesse, la lisibilite et la reproductibilite des requetes.",
+            "Un bon analyste ne se contente pas de recuperer des chiffres : il sait expliquer d'ou ils viennent, comment ils ont ete calculees, et pourquoi ils sont fiables. SQL donne cette capacite en rendant chaque etape du raisonnement explicite.",
             "Une base relationnelle organise la donnee en tables. Chaque table contient des lignes (enregistrements) et des colonnes (champs). Les cles primaires identifient chaque ligne de maniere unique, et les cles etrangeres relient les tables entre elles.",
             "Le schema relationnel definit comment les tables se connectent. C'est ce qui garantit la coherence de la donnee et permet d'eviter les duplications inutiles. SQL est le langage qui permet de parcourir ce schema avec precision.",
             "SQL se distingue d'un tableur : un tableur est manuel et fragile, alors qu'une base relationnelle impose des regles claires et des contraintes. C'est cette rigueur qui rend les resultats fiables dans un contexte professionnel.",
           ],
-          video: {
-            label: "Grafikart - Introduction aux bases de donnees & SQL",
-            url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
-          },
+          videos: [
+            {
+              title: "Cours SQL complet / Introduction (FR)",
+              url: "https://www.youtube.com/watch?v=8NU6pTtQo2I",
+              lang: "fr",
+            },
+            {
+              title: "SQL (vue d'ensemble, roles, logique relationnelle) (FR)",
+              url: "https://www.youtube.com/watch?v=paxyrZBzRK8",
+              lang: "fr",
+            },
+            {
+              title: "SQL Tutorial - Full Database Course for Beginners (EN)",
+              url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+              lang: "en",
+            },
+            {
+              title: "Learn SQL Beginner to Advanced (EN)",
+              url: "https://www.youtube.com/watch?v=OT1RErkfLNQ",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "SQLite - About SQLite",
-              url: "https://www.sqlite.org/about.html",
-              description: "Presentation officielle de SQLite et de son fonctionnement.",
+              label: "SQLBolt - cours interactif",
+              url: "https://sqlbolt.com/",
+              description: "Exercices interactifs pour comprendre SQL.",
+            },
+            {
+              label: "FreeCodeCamp - intro SQL",
+              url: "https://www.freecodecamp.org/news/an-animated-introduction-to-sql-learn-to-query-relational-databases/",
+              description: "Introduction claire et visuelle.",
             },
           ],
         },
@@ -1055,53 +1094,188 @@ export const foundationalProgram: ProgramContent = {
             "ORDER BY sert a trier les resultats, LIMIT a restreindre le volume, et les operateurs logiques (AND, OR, NOT) permettent de combiner plusieurs conditions. Ces elements suffisent pour produire des extractions utiles dans la plupart des missions.",
             "Une requete doit rester lisible : un bon SQL est court, clair et verifiable. Cela facilite la relecture et la collaboration avec d'autres membres de l'equipe.",
           ],
-          video: {
-            label: "Grafikart - SQL : requetes de base",
-            url: "https://www.youtube.com/watch?v=7S_tz1z_5bA",
-          },
+          videos: [
+            {
+              title: "Apprendre SQL : SELECT, WHERE, ORDER BY, DISTINCT & LIMIT (FR)",
+              url: "https://www.youtube.com/watch?v=A0pvBsI7smw",
+              lang: "fr",
+            },
+            {
+              title: "Learn and master SQL: Order and Limit (FR)",
+              url: "https://www.youtube.com/watch?v=OL9T7pI-m84",
+              lang: "fr",
+            },
+            {
+              title: "SELECT, UPDATE & INSERT (Grafikart) (FR)",
+              url: "https://www.youtube.com/watch?v=YgyB6ZRbX9w",
+              lang: "fr",
+            },
+            {
+              title: "Learn SQL for Beginners - COMPLETE SQL Tutorial (EN)",
+              url: "https://www.youtube.com/watch?v=eL80VI4QGTg",
+              lang: "en",
+            },
+            {
+              title: "SQL Tutorial - Full Database Course for Beginners (EN)",
+              url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "SQLite - SELECT statement",
-              url: "https://www.sqlite.org/lang_select.html",
-              description: "Reference officielle sur SELECT, WHERE, ORDER BY et LIMIT.",
+              label: "WHERE (cours clair)",
+              url: "https://sql.sh/cours/where",
+              description: "Guide clair sur WHERE en SQL.",
+            },
+            {
+              label: "Guide complet WHERE (FR)",
+              url: "https://learnsql.fr/blog/le-guide-complet-de-la-clause-where-en-sql/",
+              description: "Exemples pratiques de WHERE.",
             },
           ],
         },
         {
-          title: "Jointures et agregations",
+          title: "Agregation + GROUP BY / HAVING",
+          text: [
+            "Les agregations (COUNT, SUM, AVG) transforment des lignes detaillees en indicateurs. Avec GROUP BY, tu peux calculer des totaux par categorie, par region ou par periode.",
+            "HAVING permet de filtrer apres aggregation, alors que WHERE filtre avant. Bien comprendre cette difference est essentiel pour obtenir les bons resultats.",
+          ],
+          videos: [
+            {
+              title: "Learn and master SQL: Aggregate data (FR)",
+              url: "https://www.youtube.com/watch?v=NXZEWKftBM0",
+              lang: "fr",
+            },
+            {
+              title: "Les fonctions d'agregation / GROUP BY (FR)",
+              url: "https://www.youtube.com/watch?v=FhvTxTGGrQc",
+              lang: "fr",
+            },
+            {
+              title: "GROUP BY / HAVING (FR)",
+              url: "https://www.youtube.com/watch?v=d58UngiIl0U",
+              lang: "fr",
+            },
+            {
+              title: "Student Database Part 2 (GROUP BY, HAVING, etc.) (EN)",
+              url: "https://www.youtube.com/watch?v=y3TCtu-TaTk",
+              lang: "en",
+            },
+            {
+              title: "SQL and Databases course (sections aggregates) (EN)",
+              url: "https://www.youtube.com/watch?v=HXV3zeQKqGY",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "GROUP BY (W3Schools)",
+              url: "https://www.w3schools.com/sql/sql_groupby.asp",
+              description: "Explications simples et exemples.",
+            },
+            {
+              label: "GROUP BY + HAVING (Microsoft Learn)",
+              url: "https://learn.microsoft.com/en-us/sql/t-sql/queries/select-group-by-transact-sql?view=sql-server-ver17",
+              description: "Reference officielle Microsoft.",
+            },
+            {
+              label: "Grafikart - Agregations",
+              url: "https://grafikart.fr/tutoriels/sql-aggregate-count-1991",
+              description: "Article FR sur les fonctions d'agregation.",
+            },
+          ],
+        },
+        {
+          title: "Jointures (INNER/LEFT/RIGHT) + cles etrangeres",
           text: [
             "Les jointures permettent de combiner des informations provenant de plusieurs tables. INNER JOIN garde les lignes qui matchent dans les deux tables, alors que LEFT JOIN garde toutes les lignes de la table principale.",
-            "Les agregations (COUNT, SUM, AVG) transforment des lignes detaillees en indicateurs. Avec GROUP BY, tu peux calculer des totaux par categorie, par region ou par periode.",
-            "Les erreurs frequentes viennent d'une jointure mal definie ou d'un GROUP BY incomplet. Apprendre a verifier le resultat est essentiel pour eviter des conclusions fausses.",
+            "Les cles etrangeres garantissent la coherence entre les tables. Une jointure bien definie est essentielle pour eviter des doublons ou des resultats incomplets.",
           ],
-          video: {
-            label: "Grafikart - SQL : jointures et GROUP BY",
-            url: "https://www.youtube.com/watch?v=9yeOJ0ZMUYw",
-          },
+          videos: [
+            {
+              title: "Apprendre SQL : Les jointures (FR)",
+              url: "https://www.youtube.com/watch?v=j33AJNGoJak",
+              lang: "fr",
+            },
+            {
+              title: "Cles etrangeres et jointures (Grafikart) (FR)",
+              url: "https://www.youtube.com/watch?v=0vJoRP6_5tI",
+              lang: "fr",
+            },
+            {
+              title: "SQL Joins Tutorial for Beginners (EN)",
+              url: "https://www.youtube.com/watch?v=2HVMiPPuPIM",
+              lang: "en",
+            },
+            {
+              title: "SQL JOINS Tutorial (EN)",
+              url: "https://www.youtube.com/watch?v=0OQJDd3QqQM",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "SQLite - JOIN clause",
-              url: "https://www.sqlite.org/lang_select.html#joins",
-              description: "Reference officielle sur les jointures dans SQLite.",
+              label: "PostgreSQL - tutorial join",
+              url: "https://www.postgresql.org/docs/current/tutorial-join.html",
+              description: "Documentation officielle PostgreSQL sur les jointures.",
+            },
+            {
+              label: "MySQL JOIN (doc)",
+              url: "https://dev.mysql.com/doc/en/join.html",
+              description: "Reference officielle MySQL.",
             },
           ],
         },
         {
-          title: "SQL et Python",
+          title: "Python ↔ SQL (sqlite3 + pandas read_sql)",
           text: [
             "SQLite se manipule directement depuis Python via le module sqlite3. Tu peux creer des tables, executer des requetes SQL, puis charger les resultats dans Pandas pour analyser ou visualiser.",
             "Cette passerelle est tres utile : tu recuperes des donnees propres avec SQL, puis tu produis des analyses rapides avec Python. C'est une competence cle pour livrer vite et bien sur des missions reelles.",
             "Dans la pratique, on alterne souvent entre SQL et Python. Ce module te donne un premier workflow simple et reproductible pour cela.",
           ],
+          videos: [
+            {
+              title: "Base de donnees : SQLite et Python (FR)",
+              url: "https://www.youtube.com/watch?v=gCe-B27qzEs",
+              lang: "fr",
+            },
+            {
+              title: "Creation d'une base sqlite3 en Python (FR)",
+              url: "https://www.youtube.com/watch?v=SHwPvepwKkc",
+              lang: "fr",
+            },
+            {
+              title: "Python SQLite Tutorial (Corey Schafer) (EN)",
+              url: "https://www.youtube.com/watch?v=pd-0G0MigUA",
+              lang: "en",
+            },
+            {
+              title: "Read/Write data from Database with Pandas (EN)",
+              url: "https://www.youtube.com/watch?v=M-4EpNdlSuY",
+              lang: "en",
+            },
+          ],
+          articles: [
+            {
+              label: "Docs Python sqlite3 (officiel)",
+              url: "https://docs.python.org/3/library/sqlite3.html",
+              description: "Reference officielle sqlite3.",
+            },
+            {
+              label: "Pandas read_sql (FR)",
+              url: "https://datascientest.com/pandas-read-sql-tout-savoir",
+              description: "Guide FR sur read_sql.",
+            },
+            {
+              label: "IONOS SQLite3 avec Python (FR)",
+              url: "https://www.ionos.fr/digitalguide/sites-internet/developpement-web/sqlite3-avec-python/",
+              description: "Tutoriel SQLite3 + Python.",
+            },
+          ],
         },
       ],
       resources: {
-        videos: [
-          {
-            label: "Optionnel - MySQL avec Grafikart",
-            url: "https://www.youtube.com/watch?v=K6wK0FZKk1Y",
-          },
-        ],
+        videos: [],
         articles: [],
       },
       notebook: {

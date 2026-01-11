@@ -770,20 +770,37 @@ export const foundationalProgram: ProgramContent = {
           ],
         },
         {
-          title: "Lecture et inspection des donnees",
+          title: "Lire / ecrire des donnees (CSV, Excel, JSON)",
           text: [
-            "La premiere etape consiste a charger correctement les donnees. En Python, on utilise principalement read_csv et read_excel pour importer des fichiers. Une fois le fichier charge, il faut verifier rapidement son contenu : combien de lignes, quelles colonnes, quels types, et quelles valeurs.",
-            "Les methodes head, info et describe donnent une vue rapide et fiable. head permet de voir les premieres lignes, info affiche les types et les valeurs manquantes, et describe donne des statistiques utiles. Ces commandes simples evitent des erreurs couteuses plus tard.",
+            "La premiere etape consiste a charger correctement les donnees. En Python, on utilise read_csv et read_excel pour importer des fichiers, puis read_json pour travailler avec des sources API ou des exports JSON.",
+            "Une fois le fichier charge, il faut verifier rapidement son contenu : combien de lignes, quelles colonnes, quels types, et quelles valeurs. Les methodes head, info et describe donnent une vue fiable en quelques secondes.",
             "Dans un contexte professionnel, cette inspection est essentielle pour detecter des colonnes mal typees, des valeurs inattendues, ou des formats non standards. Une bonne lecture des donnees permet de gagner un temps considerable sur le nettoyage.",
           ],
-          video: {
-            label: "Machine Learnia - Lire et explorer des donnees avec Pandas",
-            url: "https://www.youtube.com/watch?v=vmEHCJofslg",
-          },
+          videos: [
+            {
+              title: "Analyser des donnees Excel avec Pandas",
+              url: "https://www.youtube.com/watch?v=ZAL5tsyjeAg",
+              lang: "fr",
+            },
+            {
+              title: "Importer CSV/Excel avec Pandas",
+              url: "https://www.youtube.com/watch?v=-T2dA7k706E",
+              lang: "fr",
+            },
+            {
+              title: "Importing Data (CSV, Excel, JSON)",
+              url: "https://www.youtube.com/watch?v=N6hyN6BW6ao",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Pandas - Intro to data structures",
-              url: "https://pandas.pydata.org/docs/user_guide/dsintro.html",
+              label: "Pandas - 10 minutes to pandas",
+              url: "https://pandas.pydata.org/docs/user_guide/10min.html",
+            },
+            {
+              label: "Pandas read_json",
+              url: "https://pandas.pydata.org/docs/reference/api/pandas.read_json.html",
             },
           ],
         },
@@ -794,50 +811,102 @@ export const foundationalProgram: ProgramContent = {
             "Les operations courantes sont dropna, fillna, drop_duplicates et astype. L'idee n'est pas de supprimer au hasard, mais de choisir une strategie coherente : supprimer quand l'information est irreparable, imputer quand une estimation est acceptable, ou corriger les formats quand l'erreur est evidente.",
             "Dans les missions KORYXA, cette etape est souvent la plus critique. Une fois les donnees nettoyees, l'analyse devient fiable et les livrables sont defendables face a un client ou une equipe technique.",
           ],
-          video: {
-            label: "dataisto - Pandas : valeurs manquantes",
-            url: "https://www.youtube.com/watch?v=SVPJx_uNVjY",
-          },
+          videos: [
+            {
+              title: "Valeurs manquantes",
+              url: "https://www.youtube.com/watch?v=BcWRljjAAfY",
+              lang: "fr",
+            },
+            {
+              title: "Doublons",
+              url: "https://www.youtube.com/watch?v=Gguc9pEjYac",
+              lang: "fr",
+            },
+            {
+              title: "Missing values (dropna/fillna)",
+              url: "https://www.youtube.com/watch?v=EjZhV8qOges",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Pandas - Missing data",
-              url: "https://pandas.pydata.org/docs/user_guide/missing_data.html",
+              label: "DataCamp (FR) – guide pandas",
+              url: "https://www.datacamp.com/fr/tutorial/pandas",
+            },
+            {
+              label: "IONOS (FR) – fillna()",
+              url: "https://www.ionos.fr/digitalguide/sites-internet/developpement-web/python-pandas-dataframe-fillna/",
             },
           ],
         },
         {
-          title: "Filtrage, tri et selection",
+          title: "Filtrer / selectionner / trier",
           text: [
             "Une fois les donnees propres, il faut pouvoir selectionner ce qui est utile. Le filtrage permet de garder uniquement les lignes pertinentes, le tri aide a ordonner les observations, et la selection de colonnes evite de manipuler des informations inutiles.",
             "Les filtres conditionnels en Pandas utilisent des expressions logiques : df[df['col'] > seuil], df[df['statut'] == 'actif'], etc. Le tri se fait avec sort_values, et la selection avec des listes de colonnes ou l'indexation par nom.",
             "Ces operations sont indispensables pour preparer un dataset cible, construire une analyse par segment, ou produire un fichier nettoye pour une autre equipe.",
           ],
-          video: {
-            label: "dataisto - Filtrer avec Pandas (.loc)",
-            url: "https://www.youtube.com/watch?v=ZWS6ckhYFKE",
-          },
+          videos: [
+            {
+              title: ".loc filtrer",
+              url: "https://www.youtube.com/watch?v=8FCp4uwT4Fw",
+              lang: "fr",
+            },
+            {
+              title: "Trier un DataFrame",
+              url: "https://www.youtube.com/watch?v=hHYS-m3vGSI",
+              lang: "fr",
+            },
+            {
+              title: "Filtering (Corey Schafer)",
+              url: "https://www.youtube.com/watch?v=Lw2rlcxScZY",
+              lang: "en",
+            },
+            {
+              title: "Sorting (Corey Schafer)",
+              url: "https://www.youtube.com/watch?v=T11QYVfZoD0",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Pandas - Indexing and selecting data",
-              url: "https://pandas.pydata.org/docs/user_guide/indexing.html",
+              label: "DataCamp – loc vs iloc",
+              url: "https://www.datacamp.com/tutorial/loc-vs-iloc",
             },
           ],
         },
         {
-          title: "Agregations et groupby",
+          title: "Jointures / fusion / concat",
           text: [
-            "L'agregation permet de resumer un jeu de donnees. Avec groupby, on peut calculer des moyennes, des sommes ou des comptes par categorie. C'est la base des indicateurs qu'on retrouve dans les tableaux de bord.",
-            "Exemples : moyenne des ventes par region, nombre de clients par segment, total par periode. Les fonctions d'agregation (mean, sum, count, min, max) transforment la donnee brute en information decisionnelle.",
-            "Dans les projets KORYXA, ces agregats sont souvent le coeur du livrable : ils permettent de produire des insights clairs et d'alimenter des visualisations utiles.",
+            "Dans la pratique, les donnees sont souvent reparties sur plusieurs fichiers ou tables. On doit donc les fusionner pour obtenir un dataset complet. Pandas propose merge, join et concat pour assembler ces sources.",
+            "merge permet de relier des tables sur une cle commune, join sert a rattacher des informations par index, et concat empile des donnees similaires. Bien choisir la cle de jointure est essentiel pour eviter des doublons ou des pertes d'information.",
+            "Ces operations permettent de construire un dataset complet et coherent, pret pour l'analyse ou le reporting.",
           ],
-          video: {
-            label: "astro__pat - La methode GROUPBY avec Pandas",
-            url: "https://www.youtube.com/watch?v=J-d-AzyNTTI",
-          },
+          videos: [
+            {
+              title: "Jointures pandas",
+              url: "https://www.youtube.com/watch?v=NGctb9O1DG4",
+              lang: "fr",
+            },
+            {
+              title: "Concat / fusion",
+              url: "https://www.youtube.com/watch?v=8sso30p_YNs",
+              lang: "fr",
+            },
+            {
+              title: "Merge / join DataFrames",
+              url: "https://www.youtube.com/watch?v=Zv3pQZn9wrk",
+              lang: "en",
+            },
+          ],
           articles: [
             {
-              label: "Pandas - Group by",
-              url: "https://pandas.pydata.org/docs/user_guide/groupby.html",
+              label: "Pandas - Merging (docs)",
+              url: "https://pandas.pydata.org/docs/user_guide/merging.html",
+            },
+            {
+              label: "pandas.merge reference",
+              url: "https://pandas.pydata.org/docs/reference/api/pandas.merge.html",
             },
           ],
         },
@@ -848,8 +917,8 @@ export const foundationalProgram: ProgramContent = {
       },
       notebook: {
         title: "Notebook Module 3 - Nettoyage et preparation",
-        description: "Lecture CSV, inspection, nettoyage, filtres, et agregations.",
-        code: "import pandas as pd\nfrom io import StringIO\n\n# Chargement CSV (exemple)\nraw = StringIO(\"\"\"region,produit,vente,statut\\nNord,A,120,actif\\nNord,A,120,actif\\nSud,B,,inactif\\nOuest,C,90,actif\\n\"\"\")\n\ndf = pd.read_csv(raw)\nprint(df.head())\nprint(df.info())\nprint(df.describe(include=\"all\"))\n\n# Nettoyage\nprint(df.isna().sum())\ndf = df.drop_duplicates()\ndf[\"vente\"] = df[\"vente\"].fillna(df[\"vente\"].median())\ndf[\"statut\"] = df[\"statut\"].astype(\"category\")\n\n# Filtrage et selection\nactifs = df[df[\"statut\"] == \"actif\"]\nactifs = actifs.sort_values(by=\"vente\", ascending=False)\nactifs = actifs[[\"region\", \"produit\", \"vente\"]]\n\n# Aggregations\ntotal_par_region = actifs.groupby(\"region\")[\"vente\"].sum().reset_index()\nprint(total_par_region)",
+        description: "Lecture CSV/JSON, nettoyage, filtres, et jointures.",
+        code: "import pandas as pd\nfrom io import StringIO\n\n# Chargement CSV (exemple)\nraw = StringIO(\"\"\"region,produit,vente,statut\\nNord,A,120,actif\\nNord,A,120,actif\\nSud,B,,inactif\\nOuest,C,90,actif\\n\"\"\")\n\ndf = pd.read_csv(raw)\nprint(df.head())\nprint(df.info())\n\n# Nettoyage\nprint(df.isna().sum())\ndf = df.drop_duplicates()\ndf[\"vente\"] = df[\"vente\"].fillna(df[\"vente\"].median())\n\n# Filtrage et selection\nactifs = df[df[\"statut\"] == \"actif\"]\nactifs = actifs.sort_values(by=\"vente\", ascending=False)\n\n# Jointures (exemple)\nclients = pd.DataFrame({\n    \"region\": [\"Nord\", \"Sud\", \"Ouest\"],\n    \"manager\": [\"Awa\", \"Jean\", \"Salif\"],\n})\n\nmerged = actifs.merge(clients, on=\"region\", how=\"left\")\nprint(merged)",
       },
       quiz: [
         {
@@ -901,16 +970,16 @@ export const foundationalProgram: ProgramContent = {
           explanation: "sort_values trie selon une colonne.",
         },
         {
-          prompt: "Que fait groupby ?",
-          options: ["Regrouper et agreger par categorie", "Supprimer des NA", "Creer un fichier Excel"],
+          prompt: "Quel outil sert a fusionner deux DataFrames sur une cle ?",
+          options: ["merge", "fillna", "dropna"],
           answerIndex: 0,
-          explanation: "groupby sert a calculer des indicateurs par groupe.",
+          explanation: "merge sert a joindre des tables sur une cle.",
         },
         {
-          prompt: "Quel indicateur simple peut etre calcule avec groupby ?",
-          options: ["Somme par region", "Couleur du logo", "Nom du fichier"],
+          prompt: "concat permet de :",
+          options: ["Empiler des tableaux similaires", "Supprimer des NA", "Changer les types"],
           answerIndex: 0,
-          explanation: "La somme par groupe est un cas classique.",
+          explanation: "concat assemble plusieurs DataFrames.",
         },
       ],
       requireReadingConfirmation: true,

@@ -15,6 +15,15 @@ function clampPage(raw: unknown, total: number): number {
   return Math.min(Math.floor(n), total);
 }
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
 export default async function Theme1Paged({ params }: Props) {
   const { page: pageParam } = await params;
   const total = theme1Pages.length;
@@ -24,87 +33,137 @@ export default async function Theme1Paged({ params }: Props) {
 
   const prevPage = Math.max(1, pageNumber - 1);
   const nextPage = Math.min(total, pageNumber + 1);
+  const progressPct = Math.round((pageNumber / total) * 100);
+  const inPageToc = page.sections.map((s) => ({
+    id: `section-${pageNumber}-${slugify(s.heading)}`,
+    label: s.heading,
+  }));
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{theme1Meta.module}</p>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-900">{theme1Meta.title}</h1>
-        <p className="mt-2 text-sm text-slate-600">Temps estime : {theme1Meta.readingTime}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="rounded-full border border-slate-200 px-3 py-1">
-            Page {pageNumber} / {total}
-          </span>
-          <Link className="text-sky-700" href="/school/data-analyst/module-1/theme-1/notebook">
-            Notebook obligatoire
-          </Link>
-          <Link className="text-sky-700" href="/school/data-analyst/module-1/theme-1/submit">
-            Soumettre
-          </Link>
-          <Link className="text-sky-700" href="/school/data-analyst/module-1/theme-1/quiz">
-            Quiz
-          </Link>
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">{theme1Meta.module}</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900">{theme1Meta.title}</h1>
+            <p className="mt-2 text-sm text-slate-600">{page.title}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
+              Page {pageNumber}/{total}
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1">{progressPct}%</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1">{theme1Meta.readingTime}</span>
+          </div>
         </div>
-      </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">{page.title}</h2>
-        <div className="mt-4 space-y-6 text-sm text-slate-700">
-          {page.sections.map((section, sectionIndex) => (
-            <div key={`${pageIndex}-${sectionIndex}`} className="space-y-2">
-              <h3 className="text-base font-semibold text-slate-900">{section.heading}</h3>
-              {section.body.map((paragraph, paragraphIndex) => (
-                <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
-              ))}
-            </div>
-          ))}
+        <div className="mt-4">
+          <div className="h-2 w-full rounded-full bg-slate-100">
+            <div
+              className="h-2 rounded-full bg-sky-600 transition-[width] duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
-      </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Navigation</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
           <Link
-            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
+            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             href={`/school/data-analyst/module-1/theme-1/page/${prevPage}`}
           >
-            ← Page precedente
+            ← Page précédente
           </Link>
           <Link
-            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
+            className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
             href={`/school/data-analyst/module-1/theme-1/page/${nextPage}`}
           >
             Page suivante →
           </Link>
-        </div>
-        <div className="mt-6 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
-          {theme1Pages.map((entry, idx) => (
-            <Link
-              key={`${idx}-${entry.title}`}
-              className="rounded-2xl border border-slate-200 px-3 py-2 hover:border-slate-300"
-              href={`/school/data-analyst/module-1/theme-1/page/${idx + 1}`}
-            >
-              {idx + 1}. {entry.title}
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-1/theme-1/notebook">
+              Notebook
             </Link>
-          ))}
+            <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-1/theme-1/submit">
+              Soumettre
+            </Link>
+            <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-1/theme-1/quiz">
+              Quiz
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Ressources du theme</h2>
-        <div className="mt-4">
-          <VideoBlock videos={theme1Videos} />
-        </div>
-        <ul className="mt-6 space-y-2 text-sm text-slate-600">
-          {theme1Articles.map((article) => (
-            <li key={article.url}>
-              <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
-                {article.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+            {page.sections.map((section, sectionIndex) => {
+              const id = `section-${pageNumber}-${slugify(section.heading)}`;
+              return (
+                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
+                  <h3 id={id}>{section.heading}</h3>
+                  {section.body.map((paragraph, paragraphIndex) => (
+                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        </article>
+
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Dans cette page</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              {inPageToc.map((item) => (
+                <li key={item.id}>
+                  <a className="hover:text-slate-900 hover:underline" href={`#${item.id}`}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
+            <div className="mt-3 grid gap-2 text-sm text-slate-600">
+              {theme1Pages.map((entry, idx) => {
+                const active = idx + 1 === pageNumber;
+                return (
+                  <Link
+                    key={`${idx}-${entry.title}`}
+                    className={[
+                      "rounded-2xl border px-3 py-2 transition-colors",
+                      active
+                        ? "border-sky-200 bg-sky-50 text-slate-900"
+                        : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+                    ].join(" ")}
+                    href={`/school/data-analyst/module-1/theme-1/page/${idx + 1}`}
+                  >
+                    <span className="font-semibold">{idx + 1}.</span> {entry.title}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Ressources</h2>
+            <div className="mt-4">
+              <VideoBlock videos={theme1Videos} />
+            </div>
+            <ul className="mt-5 space-y-2 text-sm text-slate-600">
+              {theme1Articles.map((article) => (
+                <li key={article.url}>
+                  <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
+                    {article.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

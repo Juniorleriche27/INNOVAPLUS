@@ -170,6 +170,7 @@ if MYPLANNING_ONLY:
     minimal.include_router(auth_router)
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
+    minimal.include_router(youtube_router)
     app.include_router(minimal)
     # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
     app.include_router(minimal, prefix="/innova/api", include_in_schema=False)

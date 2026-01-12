@@ -177,7 +177,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
     <aside
       className={clsx(
         // Modern sticky sidebar with glass effect
-        "sticky top-0 z-30 h-screen shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-hidden",
+        "z-30 h-full shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-hidden",
         "transition-all duration-300 ease-in-out",
         // Smooth width transitions
         collapsed ? "w-[72px]" : "w-[280px]",
@@ -191,7 +191,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
     >
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-slate-200/60">
+        <div className="relative flex items-center gap-3 p-3 border-b border-slate-200/60">
           {isExpanded && (
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
@@ -207,9 +207,9 @@ export default function Sidebar({ className, style }: { className?: string; styl
           <button
             onClick={toggle}
             className={clsx(
-              "p-2 rounded-lg hover:bg-slate-100 transition-colors",
+              "absolute right-2 top-2 z-50 p-2 rounded-lg hover:bg-slate-100 transition-colors",
               "text-slate-600 hover:text-slate-900",
-              collapsed && "mx-auto"
+              collapsed && "bg-white/80 backdrop-blur"
             )}
             aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
           >

@@ -328,5 +328,354 @@ export const theme2Pages: ThemePage[] = [
       },
     ],
   },
+  {
+    title: "Exemple complet 1 : KORYXA School (cas formation vendue)",
+    sections: [
+      {
+        heading: "1) Contexte (ce qui se passe)",
+        body: [
+          "KORYXA School vend une formation structurée en modules et thèmes. Une partie importante des apprenants commence le Module 1, mais n’arrive pas au bout.",
+          "Le symptôme visible est : “les apprenants abandonnent”. Mais cette phrase ne suffit pas pour agir. L’équipe doit répondre à des questions concrètes :",
+          "• Où exactement ils abandonnent ?",
+          "• Pourquoi ils abandonnent ?",
+          "• Qu’est-ce qu’on peut changer sans casser la qualité ?",
+          "• Qu’est-ce qu’on peut changer sans surcharger les mentors ?",
+          "• Comment vérifier que ça marche ?",
+        ],
+      },
+      {
+        heading: "2) Besoin (la douleur)",
+        body: [
+          "“Les apprenants abandonnent le Module 1.”",
+          "Le besoin exprime une inquiétude et une perte :",
+          "• perte de revenus (moins de renouvellement, moins de recommandation),",
+          "• perte d’impact (moins de personnes formées),",
+          "• perte d’image (formation jugée trop dure ou mal expliquée),",
+          "• surcharge support (questions répétitives, tickets),",
+          "• difficulté à vendre la suite (si Module 1 déçoit, personne n’achète Module 2).",
+        ],
+      },
+      {
+        heading: "3) Décision à changer (la question qui révèle tout)",
+        body: [
+          "Avant de parler d’objectif, il faut clarifier la décision : “Qu’est-ce qu’on va décider si on a l’analyse ?”",
+          "Décision réaliste dans ce cas :",
+          "“Décider quelles leçons du Module 1 doivent être simplifiées, enrichies, ou restructurées pour augmenter la complétion, sans augmenter la charge du support/mentors.”",
+          "Cette décision impose une logique : on ne cherche pas juste “où ça baisse”, on cherche “quoi changer” dans le contenu, le parcours et les supports.",
+        ],
+      },
+      {
+        heading: "4) Périmètre (scope) : indispensable",
+        body: [
+          "Le périmètre évite la confusion.",
+          "Exemple de périmètre :",
+          "• Population : nouveaux inscrits au Module 1",
+          "• Zone : Togo + Bénin",
+          "• Période : cohorte des 8 dernières semaines (baseline) + 8 prochaines semaines (suivi)",
+          "• Format : parcours standard (même plan de cours)",
+          "• Contrainte : pas de changement majeur d’offre en plein test (sinon l’impact est mélangé)",
+          "Pourquoi c’est important ? Parce que “tous les apprenants depuis 2 ans” mélange des versions de cours, des périodes marketing différentes, des changements de plateforme, etc. Tu perds la clarté.",
+        ],
+      },
+      {
+        heading: "5) Baseline (obligatoire) : mesurer l’état actuel",
+        body: [
+          "Tu dois figer un chiffre de départ. Ici, le baseline principal est la complétion du Module 1.",
+          "Définition simple (à adapter selon votre logique interne) : “Compléter le Module 1” = atteindre la dernière étape définie (dernière page / dernier quiz / mini-projet soumis / validation finale).",
+          "Exemple baseline (à calculer via notebook) : Completion_Rate_M1 = 0,35 (35%).",
+          "Baselines secondaires utiles : taux de complétion par thème, point de chute le plus fréquent, temps médian entre inscription et dernière action, taux de soumission mini-projet.",
+          "Le baseline doit être calculé sur une période cohérente (ex. 8 semaines) pour éviter un chiffre trompeur.",
+        ],
+      },
+      {
+        heading: "6) Objectif SMART (version vendable)",
+        body: [
+          "Objectif SMART complet (avec garde-fou) :",
+          "“Augmenter le taux de complétion du Module 1 de 35% à 50% d’ici 8 semaines, sur les nouveaux inscrits (Togo + Bénin), sans augmenter de plus de 10% le volume de tickets support.”",
+          "Pourquoi cet objectif fonctionne : il est mesurable, a un point de départ, une cible, un délai, un périmètre, et une contrainte qualité.",
+          "Second garde-fou possible : “sans faire baisser le taux de réussite au mini-projet” ou “sans diminuer le score moyen aux évaluations”.",
+        ],
+      },
+      {
+        heading: "7) Questions d’analyse (3 à 6, testables, orientées action)",
+        body: [
+          "Les questions doivent servir la décision “quoi changer”. Exemples recommandés :",
+          "• À quel thème les apprenants décrochent-ils le plus ?",
+          "• À quelle étape précise (page, exercice, notebook, mini-projet) la chute est-elle maximale ?",
+          "• Exécuter le notebook dans les 48h après inscription augmente-t-il la probabilité de compléter ?",
+          "• Quels canaux d’acquisition amènent les apprenants qui complètent le plus ?",
+          "• La complétion varie-t-elle selon pays / appareil / langue de la vidéo (FR vs EN) ?",
+          "• Quel est le temps médian entre inscription et soumission mini-projet ?",
+          "Ces questions couvrent : descriptive (où), parcours (à quelle étape), segmentation (qui), leviers (qu’est-ce qui change si X).",
+        ],
+      },
+      {
+        heading: "8) Hypothèses testables (2 exemples solides)",
+        body: [
+          "H1 : “Les apprenants qui exécutent le notebook dans les 48h ont un taux de complétion plus élevé.”",
+          "Mesure : comparer complétion entre “notebook_48h = oui” et “non”, en contrôlant si possible par cohorte/pays.",
+          "H2 : “Le point de chute principal est lié au manque d’exemples concrets dans le Thème 2.”",
+          "Mesure : repérer pages à forte sortie + signaux (temps long, retours, tickets), puis tester un correctif (exemple guidé) et mesurer avant/après.",
+        ],
+      },
+      {
+        heading: "9) Données minimales à collecter",
+        body: [
+          "Tu n’as pas besoin de 200 colonnes. Tu as besoin du minimum fiable :",
+          "• user_id, cohort_id, country, device, acquisition_channel",
+          "• module_id / theme_id / step_id, event_type, timestamp",
+          "• notebook_executed + notebook_first_exec_time",
+          "• support_ticket_count, project_submitted + project_submit_time",
+          "Avec ça, tu peux calculer : complétion, points de chute, durées, segmentations, effets de leviers simples.",
+        ],
+      },
+      {
+        heading: "10) Plan d’action (ce que l’analyse doit permettre de décider)",
+        body: [
+          "Le livrable final n’est pas “des graphes”. Il doit proposer des actions priorisées, par exemple :",
+          "• Découper une page trop dense du Thème 2 en 2 pages + ajouter un exemple guidé",
+          "• Clarifier le mini-projet avec un template de rendu + exemple",
+          "• Ajouter une mini-checklist “ce que tu dois retenir” à la fin de chaque sous-partie",
+          "• Rendre le notebook plus guidé (exécution étape par étape)",
+          "• Ajuster l’acquisition vers des canaux qui apportent des cohortes plus stables",
+          "Puis mesurer : impact complétion, impact tickets support, et éventuellement réussite mini-projet.",
+        ],
+      },
+      {
+        heading: "11) Résumé de l’exemple",
+        body: [
+          "Besoin : abandon · Décision : quoi changer dans le contenu/parcours · Baseline : 35%",
+          "Objectif SMART : 35% → 50% en 8 semaines, garde-fou tickets +10% max",
+          "Questions : 6 · Hypothèses : 2 · Données : événements + segments + support",
+          "Résultat attendu : plan d’action priorisé + suivi avant/après.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "Exemple complet 2 : Business local (vente & livraison)",
+    sections: [
+      {
+        heading: "1) Contexte",
+        body: [
+          "Un business vend des produits et livre en ville. Les clients se plaignent des retards. Les retards entraînent : baisse de satisfaction, annulations, baisse de réachat, stress opérationnel, réputation négative.",
+          "L’équipe dit : “On a trop de retards.” Pour agir, il faut répondre : où les retards se concentrent-ils ? stock vs trajet ? livreurs ? jours/heures ? actions efficaces sans exploser les coûts ?",
+        ],
+      },
+      {
+        heading: "2) Besoin",
+        body: ["“On a trop de retards de livraison.”"],
+      },
+      {
+        heading: "3) Décision",
+        body: [
+          "Décision réaliste : “Décider quelles actions opérationnelles prioriser (tournées, zones, préparation, charge, horaires) pour réduire le % de retards intra-ville, sans dépasser une limite de coût carburant.”",
+        ],
+      },
+      {
+        heading: "4) Périmètre (scope)",
+        body: [
+          "Exemple : livraisons intra-ville uniquement, baseline sur 6 dernières semaines, objectif sur 6 semaines.",
+          "Exclure les livraisons exceptionnelles. Définir “retard” explicitement (après l’heure promise / après le jour promis).",
+        ],
+      },
+      {
+        heading: "5) Baseline",
+        body: [
+          "Exemple : % retards = 22%. Mesurer aussi : retards par zone, par livreur, par tranche horaire, par volume/jour.",
+        ],
+      },
+      {
+        heading: "6) Objectif SMART",
+        body: [
+          "“Réduire le % de livraisons en retard de 22% à 12% en 6 semaines, sur les livraisons intra-ville, sans augmenter les coûts carburant de plus de 5%.”",
+          "Garde-fou optionnel : sans augmenter les annulations ou sans réduire la productivité au-delà de X%.",
+        ],
+      },
+      {
+        heading: "7) Questions d’analyse (orientées action)",
+        body: [
+          "• Quelles zones ont le plus de retards ?",
+          "• Quels jours/heures concentrent les retards ?",
+          "• Quel livreur/transporteur est le plus associé aux retards (à volume comparable) ?",
+          "• Lien charge (livraisons/jour) → retard ?",
+          "• Stock (préparation) vs trajet (transport) : où se crée le retard ?",
+          "• Quel type de commande est le plus associé aux retards ?",
+        ],
+      },
+      {
+        heading: "8) Hypothèses testables",
+        body: [
+          "H1 : “Les retards augmentent fortement au-delà de N livraisons/jour/livreur.”",
+          "H2 : “Les retards sont concentrés sur 2 zones à cause du trafic et d’un mauvais découpage de tournée.”",
+          "H3 : “Une part importante des retards vient de la préparation stock (commande prête trop tard).”",
+        ],
+      },
+      {
+        heading: "9) Données minimales",
+        body: [
+          "order_id, customer_zone, promised_time/date, dispatch_time, pickup_time, delivered_time, courier_id, distance (si possible), fuel_cost (ou proxy), charge/jour, type commande, annulation.",
+          "Avec ces champs, tu calcules : retard, durées, segmentation zone/livreur/jour/heure, effet charge, estimation coût.",
+        ],
+      },
+      {
+        heading: "10) Sorties attendues (actionnables)",
+        body: [
+          "Plan en 3 niveaux : Quick wins (semaine 1–2), optimisation tournées (semaine 2–4), stabilisation (semaine 4–6).",
+          "Mesurer : % retards (objectif), coût carburant (garde-fou), annulations/satisfaction (si dispo).",
+        ],
+      },
+    ],
+  },
+  {
+    title: "Attention : objectifs et KPI peuvent être “manipulés”",
+    sections: [
+      {
+        heading: "1) Deux formes de manipulation (souvent involontaires)",
+        body: [
+          "A) Contournement : on améliore le chiffre en changeant la mesure, pas la réalité (tickets fermés vite, complétion “cliquable”, retards réduits en promettant plus tard…).",
+          "B) Dégradation ailleurs : on améliore un KPI au prix d’un autre (retards ↓ mais coût carburant ↑, complétion ↑ mais compétence ↓, conversion ↑ mais marge ↓…).",
+        ],
+      },
+      {
+        heading: "2) Pourquoi ça arrive",
+        body: [
+          "Les équipes sont sous pression et cherchent le chemin le plus facile. Sans garde-fou, tu crées une route directe vers un résultat artificiel.",
+        ],
+      },
+      {
+        heading: "3) La solution : KPI principal + garde-fou + cohérence",
+        body: [
+          "KPI principal : ce que tu veux améliorer (complétion, % retards).",
+          "KPI garde-fou : ce que tu refuses de dégrader (tickets support, coût carburant, satisfaction…).",
+          "KPI de cohérence : confirme que l’amélioration est réelle (réussite mini-projet, annulations, productivité…).",
+        ],
+      },
+      {
+        heading: "4) Clarifier les définitions",
+        body: [
+          "Beaucoup de manipulations viennent de définitions floues. Fixe : définition, formule, source, période, exclusions.",
+          "Exemple : “retard” par rapport à quoi ? “complétion” = dernier clic ou validation réelle ?",
+        ],
+      },
+      {
+        heading: "5) Ajouter des contraintes anti-triche dans l’objectif",
+        body: [
+          "Exemples : “sans réduire la réussite au mini-projet”, “sans augmenter coût carburant > 5%”, “sans réduire la marge sous X”, “sans augmenter le taux de réouverture tickets”.",
+        ],
+      },
+      {
+        heading: "6) Vérifier la cohérence par segmentation",
+        body: [
+          "Une amélioration globale peut cacher une dégradation locale. Vérifie : pays/zone, canal, appareil, cohorte, type commande.",
+        ],
+      },
+      {
+        heading: "7) Contrôle avant/après",
+        body: [
+          "Comparer proprement : même définition KPI, même périmètre, période comparable, attention aux événements exceptionnels. Suivre semaine par semaine aide à éviter les fausses victoires.",
+        ],
+      },
+      {
+        heading: "8) Résumé",
+        body: [
+          "Un KPI peut être amélioré sans améliorer la réalité. Solution : garde-fou + cohérence + définitions + segmentation + suivi avant/après.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "Exercices + notebook obligatoire (structure complète)",
+    sections: [
+      {
+        heading: "Exercice A — 2 objectifs SMART complets",
+        body: [
+          "Écrire 2 objectifs SMART : un pour KORYXA School et un pour un business réel.",
+          "Pour chaque objectif : besoin, périmètre, baseline (ou “à mesurer”), cible, délai, garde-fou, 5 questions d’analyse, 2 hypothèses testables.",
+        ],
+      },
+      {
+        heading: "Exercice B — Notebook obligatoire (baseline + export JSON)",
+        body: [
+          "Objectif : calculer un baseline sur un dataset et générer un fichier JSON contenant tes objectifs SMART finalisés.",
+          "Structure recommandée du notebook :",
+          "1) Contexte + objectif",
+          "2) Chargement des données",
+          "3) Nettoyage minimal",
+          "4) Définition des KPI (formules + fonctions)",
+          "5) Baseline (KPI principal + garde-fou + secondaires)",
+          "6) Analyse rapide (points de chute + segmentation + 1–2 visus)",
+          "7) Finalisation objectif SMART (baseline réel + cible justifiée)",
+          "8) Questions + hypothèses",
+          "9) Export JSON (objectifs_smart.json)",
+        ],
+      },
+      {
+        heading: "Exemple de format JSON attendu",
+        body: [
+          "projet, periode_baseline, objectif, baseline, cible, delai, perimetre, garde_fou, questions[], hypotheses[].",
+          "Le but est de structurer : même si ton dataset n’a pas tout, tu remplis ce qui est possible.",
+        ],
+      },
+      {
+        heading: "Critères de réussite",
+        body: [
+          "Objectifs lisibles en 1 phrase vendable, baselines calculés (ou “à mesurer”), questions testables, hypothèses mesurables, JSON généré proprement.",
+        ],
+      },
+      {
+        heading: "Erreurs à éviter",
+        body: [
+          "Objectif sans baseline, baseline sur période incohérente, questions trop vagues, hypothèse non mesurable, garde-fou oublié, périmètre absent.",
+        ],
+      },
+    ],
+  },
+  {
+    title: "Checklist + mini-projet à soumettre (validation du thème)",
+    sections: [
+      {
+        heading: "1) Livrables obligatoires",
+        body: [
+          "A) 2 objectifs SMART complets (KORYXA School + business) avec baseline/cible/délai/périmètre/garde-fou/questions/hypothèses.",
+          "B) Notebook : chargement dataset, nettoyage minimal, baselines, segmentation, finalisation objectif SMART, export JSON.",
+          "C) Export : objectifs_smart.json (obligatoire). Optionnel : baseline_summary.csv.",
+        ],
+      },
+      {
+        heading: "2) Checklist de validation",
+        body: [
+          "• 2 objectifs SMART complets",
+          "• garde-fou pour chaque objectif",
+          "• 5 questions par objectif",
+          "• 2 hypothèses par objectif",
+          "• baseline calculé via notebook",
+          "• définitions KPI dans notebook",
+          "• export JSON propre",
+          "• objectifs reliés à une décision claire",
+          "• questions testables avec les données disponibles",
+        ],
+      },
+      {
+        heading: "3) Mini-projet à soumettre",
+        body: [
+          "Titre : Objectifs SMART + questions d’analyse (cas formation + cas business).",
+          "Dossier de rendu : README.md (objectifs finalisés) + notebook.ipynb + objectifs_smart.json.",
+          "Bonus : risques + mitigation (5 risques, 1 action chacun).",
+        ],
+      },
+      {
+        heading: "4) Barème (optionnel)",
+        body: [
+          "Objectifs SMART (30%), questions testables (20%), hypothèses mesurables (10%), notebook + baseline (30%), export JSON (10%).",
+        ],
+      },
+      {
+        heading: "5) Résultat final attendu",
+        body: [
+          "Après validation : tu sais refuser un objectif flou, imposer un périmètre, calculer baseline, fixer une cible réaliste, protéger l’objectif (garde-fou), écrire des questions orientées action, structurer un notebook propre, livrer une sortie réutilisable (JSON).",
+        ],
+      },
+    ],
+  },
 ];
-

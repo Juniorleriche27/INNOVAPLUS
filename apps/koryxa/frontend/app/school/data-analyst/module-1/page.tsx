@@ -40,6 +40,8 @@ export default function Module1LandingPage() {
                 ? "/school/data-analyst/module-1/theme-1/page/1"
                 : theme.slug === "theme-2"
                   ? "/school/data-analyst/module-1/theme-2/page/1"
+                  : theme.slug === "theme-3"
+                    ? "/school/data-analyst/module-1/theme-3/page/1"
                   : `/school/data-analyst/module-1/${theme.slug}`;
             return (
             <div key={theme.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">

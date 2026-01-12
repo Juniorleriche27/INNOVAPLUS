@@ -114,7 +114,7 @@ const V1_SCHOOL_TREE = [
             href: "/school/data-analyst/module-1",
             label: "Module 1 — Cadrage & KPIs",
             children: [
-              { href: "/school/data-analyst/module-1/theme-1?page=1", label: "Theme 1" },
+              { href: "/school/data-analyst/module-1/theme-1/page/1", label: "Theme 1" },
               { href: "/school/data-analyst/module-1/theme-2", label: "Theme 2" },
               { href: "/school/data-analyst/module-1/theme-3", label: "Theme 3" },
               { href: "/school/data-analyst/module-1/theme-4", label: "Theme 4" },

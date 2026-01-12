@@ -22,7 +22,7 @@ export default function Module1LandingPage() {
           ))}
         </ul>
         <div className="mt-6 flex flex-wrap gap-2">
-          <Link href="/school/data-analyst/module-1/theme-1" className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
+          <Link href="/school/data-analyst/module-1/theme-1/page/1" className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white">
             Commencer la lecture
           </Link>
           <Link href="/school/data-analyst/module-1/notebooks" className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">
@@ -37,7 +37,7 @@ export default function Module1LandingPage() {
           {themes.map((theme) => {
             const href =
               theme.slug === "theme-1"
-                ? "/school/data-analyst/module-1/theme-1?page=1"
+                ? "/school/data-analyst/module-1/theme-1/page/1"
                 : `/school/data-analyst/module-1/${theme.slug}`;
             return (
             <div key={theme.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">

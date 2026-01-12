@@ -134,7 +134,6 @@ const V1_SCHOOL_TREE = [
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);
   const [analystOpen, setAnalystOpen] = useState(false);
@@ -142,11 +141,13 @@ export default function Sidebar({ className, style }: { className?: string; styl
 
   useEffect(() => {
     const saved = localStorage.getItem("innova.sidebar.collapsed");
+    if (saved === null) {
+      // Default: collapsed on tablets, expanded on desktop
+      const defaultCollapsed = window.matchMedia("(min-width: 640px) and (max-width: 1023.98px)").matches;
+      setCollapsed(defaultCollapsed);
+      return;
+    }
     setCollapsed(saved === "1");
-    // Initialize CSS var according to saved preference
-    const root = document.documentElement;
-    const w = saved === "1" ? "72px" : "280px";
-    root.style.setProperty("--sidebar-w", w);
   }, []);
 
   useEffect(() => {
@@ -167,11 +168,9 @@ export default function Sidebar({ className, style }: { className?: string; styl
     const next = !collapsed;
     setCollapsed(next);
     localStorage.setItem("innova.sidebar.collapsed", next ? "1" : "0");
-    // Update CSS var so grid column adjusts instantly
-    document.documentElement.style.setProperty("--sidebar-w", next ? "72px" : "280px");
   }
 
-  const isExpanded = !collapsed || hovered;
+  const isExpanded = !collapsed;
 
   return (
     <aside
@@ -181,13 +180,9 @@ export default function Sidebar({ className, style }: { className?: string; styl
         "transition-all duration-300 ease-in-out",
         // Smooth width transitions
         collapsed ? "w-[72px]" : "w-[280px]",
-        // Hover expansion for collapsed state
-        collapsed && hovered && "w-[280px] shadow-xl",
         className
       )}
       style={style}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <div className="flex h-full flex-col">
         {/* Header */}
@@ -239,9 +234,9 @@ export default function Sidebar({ className, style }: { className?: string; styl
                     "hover:bg-slate-50 hover:shadow-sm",
                     active
                       ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60 ring-1 ring-sky-100"
-                      : "text-slate-600 hover:text-slate-900",
+                  : "text-slate-600 hover:text-slate-900",
                     // Collapsed state
-                    collapsed && !hovered && "justify-center px-2"
+                    collapsed && "justify-center px-2"
                   )}
                 >
                   <div className={clsx(
@@ -271,7 +266,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                   )}
 
                   {/* Tooltip for collapsed state */}
-                  {collapsed && !hovered && (
+                  {collapsed && (
                     <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                       {link.label}
                     </div>

@@ -45,7 +45,7 @@ export default function RootLayout(props: { children: ReactNode }) {
             </div>
             <div
               className="grid flex-1 gap-0 overflow-hidden"
-              style={{ gridTemplateColumns: "var(--sidebar-w) minmax(0,1fr)" }}
+              style={{ gridTemplateColumns: "auto minmax(0,1fr)" }}
             >
               <div className="hidden h-full overflow-hidden sm:block">
                 <Sidebar />

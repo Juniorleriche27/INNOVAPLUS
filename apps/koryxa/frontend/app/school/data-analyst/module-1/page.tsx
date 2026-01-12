@@ -38,7 +38,9 @@ export default function Module1LandingPage() {
             const href =
               theme.slug === "theme-1"
                 ? "/school/data-analyst/module-1/theme-1/page/1"
-                : `/school/data-analyst/module-1/${theme.slug}`;
+                : theme.slug === "theme-2"
+                  ? "/school/data-analyst/module-1/theme-2/page/1"
+                  : `/school/data-analyst/module-1/${theme.slug}`;
             return (
             <div key={theme.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
               <p className="text-sm font-semibold text-slate-900">{theme.title}</p>

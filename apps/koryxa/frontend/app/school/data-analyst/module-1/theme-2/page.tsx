@@ -1,5 +1,9 @@
-import ThemeContent from "../ThemeContent";
+import { redirect } from "next/navigation";
 
-export default function Theme2Page() {
-  return <ThemeContent slug="theme-2" />;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function Theme2Index() {
+  redirect("/school/data-analyst/module-1/theme-2/page/1");
 }
+

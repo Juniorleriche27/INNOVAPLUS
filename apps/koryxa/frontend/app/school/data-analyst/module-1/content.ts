@@ -1,4 +1,4 @@
-export type ThemeVideo = { title: string; url: string; lang: "fr" | "en" };
+export type ThemeVideo = { title: string; youtubeId: string; lang: "fr" | "en" };
 export type ThemeArticle = { label: string; url: string };
 
 export type ThemeContent = {
@@ -38,8 +38,8 @@ export const themes: ThemeContent[] = [
       "Questions posees au sponsor.",
     ],
     videos: [
-      { title: "Analyse des parties prenantes – Grille des acteurs (ZOPP)", url: "https://www.youtube.com/watch?v=W6Y8BYdLrS0", lang: "fr" },
-      { title: "Stakeholder Analysis: Winning Support for Your Projects (MindTools)", url: "https://www.youtube.com/watch?v=9Fzfrcqqv5o", lang: "en" },
+      { title: "Parties Prenantes et matrice Pouvoir-Interet", youtubeId: "fbxZAHgAxi8", lang: "fr" },
+      { title: "Stakeholder Analysis: Winning Support for Your Projects (MindTools)", youtubeId: "9Fzfrcqqv5o", lang: "en" },
     ],
     articles: [
       { label: "Stakeholder Analysis (MindTools)", url: "https://www.mindtools.com/aol0rms/stakeholder-analysis/" },
@@ -70,8 +70,8 @@ export const themes: ThemeContent[] = [
       "2 hypotheses + donnees necessaires.",
     ],
     videos: [
-      { title: "L'objectif SMART, c'est quoi ? (Infonet)", url: "https://www.youtube.com/watch?v=N1Dqpq8RvfM", lang: "fr" },
-      { title: "How to Set SMART Goals (MindTools)", url: "https://www.youtube.com/watch?v=OXA6gfzFA24", lang: "en" },
+      { title: "Methode SMART : definir des objectifs clairs", youtubeId: "sD_dyR76KNM", lang: "fr" },
+      { title: "How to Set SMART Goals (MindTools)", youtubeId: "OXA6gfzFA24", lang: "en" },
     ],
     articles: [
       { label: "SMART criteria (historique + variations)", url: "https://en.wikipedia.org/wiki/SMART_criteria" },
@@ -99,8 +99,8 @@ export const themes: ThemeContent[] = [
       "Dictionnaire KPI complete.",
     ],
     videos: [
-      { title: "K comme KPI – comprendre les indicateurs", url: "https://www.youtube.com/watch?v=fcjWQn2pFJ8", lang: "fr" },
-      { title: "What is a KPI? Key Performance Indicators", url: "https://www.youtube.com/watch?v=soiChkomKmo", lang: "en" },
+      { title: "Definition KPI - Qu'est-ce qu'un KPI", youtubeId: "Da_nZwIDWLk", lang: "fr" },
+      { title: "What is a KPI? Key Performance Indicators", youtubeId: "soiChkomKmo", lang: "en" },
     ],
     articles: [
       { label: "What is a KPI? (Bernard Marr)", url: "https://bernardmarr.com/what-is-a-kpi/" },
@@ -130,8 +130,8 @@ export const themes: ThemeContent[] = [
       "Criteres d'acceptation poses.",
     ],
     videos: [
-      { title: "Comment reussir votre projet BI : outils, methode, tips (Jedha)", url: "https://www.youtube.com/watch?v=64lu6-EdTSE", lang: "fr" },
-      { title: "How to Gather Data Requirements That Deliver Real Business Value", url: "https://www.youtube.com/watch?v=R-2ScLdTP6w", lang: "en" },
+      { title: "Comment etre sur de recueillir TOUS les besoins metier ?", youtubeId: "iGCnaZdoG_o", lang: "fr" },
+      { title: "How to Gather Data Requirements That Deliver Real Business Value", youtubeId: "dD0b73Qjf6s", lang: "en" },
     ],
     articles: [
       { label: "Etapes d'un projet BI", url: "https://www.myreport.fr/blog/etapes-projet-de-business-intelligence/" },
@@ -160,8 +160,8 @@ export const themes: ThemeContent[] = [
       "Compte-rendu de validation.",
     ],
     videos: [
-      { title: "MERISE – Initiation au dictionnaire de donnees", url: "https://www.youtube.com/watch?v=HuMjRMW4m4o", lang: "fr" },
-      { title: "Data Dictionary 101 | What is Data Dictionary", url: "https://www.youtube.com/watch?v=zyrqeP0viUs", lang: "en" },
+      { title: "Le dictionnaire de donnees : fonctionnement & exemple", youtubeId: "MO1_kbSxuyw", lang: "fr" },
+      { title: "How to Build a Data Dictionary", youtubeId: "_1PI0vrQSk8", lang: "en" },
     ],
     articles: [
       { label: "Qu'est-ce qu'un dictionnaire de donnees ? (Pure Storage)", url: "https://www.purestorage.com/fr/knowledge/what-is-a-data-dictionary.html" },

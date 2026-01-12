@@ -92,6 +92,7 @@ class Settings(BaseSettings):
     WHATSAPP_SENDER: str | None = os.getenv("WHATSAPP_SENDER")
     USER_HASH_SECRET: str = os.getenv("USER_HASH_SECRET", "dev-user-hash-secret-change-me")
     SIGNUP_NOTIFY_EMAILS: str | None = os.getenv("SIGNUP_NOTIFY_EMAILS")
+    YOUTUBE_API_KEY: str | None = os.getenv("YOUTUBE_API_KEY")
 
     class Config:
         env_file = ".env"

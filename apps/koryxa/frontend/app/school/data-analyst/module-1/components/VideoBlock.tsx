@@ -5,17 +5,13 @@ import type { ThemeVideo } from "../content";
 
 type Props = { videos: ThemeVideo[] };
 
-function getYoutubeId(url: string): string | null {
-  const match = url.match(/v=([a-zA-Z0-9_-]+)/);
-  if (match?.[1]) return match[1];
-  const short = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
-  if (short?.[1]) return short[1];
-  return null;
+function toUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
 export default function VideoBlock({ videos }: Props) {
   const [availability, setAvailability] = useState<Record<string, boolean | undefined>>({});
-  const urls = useMemo(() => Array.from(new Set(videos.map((v) => v.url))), [videos]);
+  const urls = useMemo(() => Array.from(new Set(videos.map((v) => toUrl(v.youtubeId)))), [videos]);
 
   useEffect(() => {
     let active = true;
@@ -47,11 +43,11 @@ export default function VideoBlock({ videos }: Props) {
       <div className="space-y-4">
         <p className="text-sm font-semibold text-slate-900">{label}</p>
         {list.map((video) => {
-          const id = getYoutubeId(video.url);
-          if (!id) return null;
-          const state = availability[video.url];
+          const id = video.youtubeId;
+          const url = toUrl(id);
+          const state = availability[url];
           return (
-            <div key={video.url} className="space-y-2">
+            <div key={video.youtubeId} className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-slate-900">{video.title}</p>
                 {state === false ? (
@@ -79,7 +75,7 @@ export default function VideoBlock({ videos }: Props) {
                   Video indisponible — utilisez le lien externe ou choisissez une autre ressource.
                 </div>
               )}
-              <a className="inline-flex text-sm font-semibold text-sky-700" href={video.url} target="_blank" rel="noreferrer">
+              <a className="inline-flex text-sm font-semibold text-sky-700" href={url} target="_blank" rel="noreferrer">
                 Ouvrir sur YouTube
               </a>
             </div>

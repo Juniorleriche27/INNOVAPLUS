@@ -1,4 +1,6 @@
-const DEFAULT_API_BASE = "https://api.innovaplus.africa";
+// Default to the same domain as the app unless explicitly overridden in env.
+// This avoids prod breakage when api.* is not configured.
+const DEFAULT_API_BASE = "https://innovaplus.africa";
 
 function normalize(base: string | undefined, fallback: string): string {
   return (base && base.trim() ? base : fallback).replace(/\/+$/, "");

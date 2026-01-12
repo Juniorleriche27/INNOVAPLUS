@@ -1,12 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import VideoBlock from "../components/VideoBlock";
 import { theme1Articles, theme1Meta, theme1Pages, theme1Videos } from "./content";
 
-type Props = { searchParams?: { page?: string } };
-
-export default function Theme1Page({ searchParams }: Props) {
+export default function Theme1Page() {
+  const searchParams = useSearchParams();
   const total = theme1Pages.length;
-  const raw = Number(searchParams?.page ?? "1");
+  const raw = Number(searchParams?.get("page") ?? "1");
   const pageIndex = Number.isFinite(raw) && raw > 0 ? Math.min(raw, total) - 1 : 0;
   const page = theme1Pages[pageIndex];
 

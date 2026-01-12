@@ -1,0 +1,11 @@
+name,role,type,power,interest,expectation
+Sponsor,Business owner,internal,5,4,Improve completion rate
+DevOps,Platform maintainer,internal,4,3,Keep system stable
+Marketing,Acquisition lead,internal,3,4,Increase activation
+Learners,End users,external,2,5,Clear learning path
+Support,Customer support,internal,2,4,Reduce tickets
+Compliance,Legal advisor,internal,4,2,Protect user data
+DataOwner,CRM admin,internal,4,4,Data access governance
+Mentor,Learning coach,internal,2,4,Reduce drop-offs
+Finance,Budget owner,internal,5,2,ROI clarity
+Partners,Company partners,external,3,3,Visible impact

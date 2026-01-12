@@ -34,18 +34,23 @@ export default function Module1LandingPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Themes du module</h2>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {themes.map((theme) => (
+          {themes.map((theme) => {
+            const href =
+              theme.slug === "theme-1"
+                ? "/school/data-analyst/module-1/theme-1?page=1"
+                : `/school/data-analyst/module-1/${theme.slug}`;
+            return (
             <div key={theme.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
               <p className="text-sm font-semibold text-slate-900">{theme.title}</p>
               <p className="mt-2 text-sm text-slate-600">{theme.objectives.join(" ")}</p>
               <Link
-                href={`/school/data-analyst/module-1/${theme.slug}`}
+                href={href}
                 className="mt-4 inline-flex text-sm font-semibold text-sky-700"
               >
-                Ouvrir la lecture →
+                Ouvrir le cours →
               </Link>
             </div>
-          ))}
+          )})}
         </div>
       </section>
     </div>

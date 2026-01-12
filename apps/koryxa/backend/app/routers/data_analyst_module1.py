@@ -21,6 +21,8 @@ COLL_SUBMISSIONS = "module1_submissions"
 COLL_VALIDATIONS = "module1_notebook_validations"
 COLL_QUIZ_SESSIONS = "module1_quiz_sessions"
 COLL_QUIZ_ATTEMPTS = "module1_quiz_attempts"
+COLL_THEME1_SUBMISSIONS = "module1_theme1_submissions"
+COLL_THEME1_QUIZ_ATTEMPTS = "module1_theme1_quiz_attempts"
 
 LESSONS = ["Theme 1", "Theme 2", "Theme 3", "Theme 4", "Theme 5"]
 COUNTRIES = ["Togo", "Benin", "Ghana", "Senegal", "Nigeria"]
@@ -112,6 +114,107 @@ def _compute_kpis(rows: List[Dict[str, str | int | float]]) -> Dict[str, float |
         "avg_lessons_completed": round(avg_lessons, 2),
         "active_users_7d": len(active_users),
     }
+
+
+def _parse_theme1_csv(text: str) -> Dict[str, object]:
+    reader = csv.DictReader(io.StringIO(text))
+    rows = list(reader)
+    required = {
+        "name",
+        "role",
+        "type",
+        "power",
+        "interest",
+        "expectation",
+        "quadrant",
+        "strategy",
+        "priority_score",
+    }
+    if not rows:
+        raise HTTPException(status_code=422, detail="CSV vide.")
+    missing = required - set(rows[0].keys() or [])
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Colonnes manquantes: {sorted(missing)}")
+    if len(rows) < 10:
+        raise HTTPException(status_code=422, detail="Au moins 10 lignes sont requises.")
+
+    def _to_float(value: str) -> float:
+        try:
+            return float(str(value).strip())
+        except Exception:
+            return 0.0
+
+    normalized = []
+    for row in rows:
+        item = {k: (v or "").strip() for k, v in row.items()}
+        item["priority_score"] = _to_float(item.get("priority_score", "0"))
+        normalized.append(item)
+
+    keep_satisfied_count = sum(
+        1
+        for r in normalized
+        if "keep satisfied" in (r.get("quadrant", "").lower())
+    )
+    top_row = max(normalized, key=lambda r: r.get("priority_score", 0.0))
+    top_name = top_row.get("name") or "Inconnu"
+    devops_row = next(
+        (r for r in normalized if r.get("name", "").lower() in {"devops", "dev-ops"}), None
+    )
+    devops_strategy = devops_row.get("strategy") if devops_row else "Non defini"
+
+    names = [r.get("name") or "Inconnu" for r in normalized]
+    strategies = list({r.get("strategy") or "" for r in normalized if r.get("strategy")})
+
+    return {
+        "rows_count": len(normalized),
+        "keep_satisfied_count": keep_satisfied_count,
+        "top_name": top_name,
+        "devops_strategy": devops_strategy,
+        "names": names,
+        "strategies": strategies,
+    }
+
+
+def _build_theme1_quiz(summary: Dict[str, object]) -> List[Dict[str, object]]:
+    keep_count = int(summary.get("keep_satisfied_count", 0))
+    top_name = str(summary.get("top_name", "Inconnu"))
+    devops_strategy = str(summary.get("devops_strategy", "Non defini"))
+    names = [n for n in summary.get("names", []) if isinstance(n, str)]
+    strategies = [s for s in summary.get("strategies", []) if isinstance(s, str)]
+
+    def _unique(items: List[str]) -> List[str]:
+        seen = set()
+        result = []
+        for item in items:
+            if item not in seen:
+                seen.add(item)
+                result.append(item)
+        return result
+
+    count_options = _unique([str(keep_count), str(max(0, keep_count - 1)), str(keep_count + 1), str(keep_count + 2)])
+    name_options = _unique([top_name] + [n for n in names if n != top_name][:3])
+    strategy_options = _unique([devops_strategy] + [s for s in strategies if s != devops_strategy][:3])
+
+    return [
+        {
+            "id": "q1",
+            "prompt": "Combien de stakeholders sont dans Keep satisfied ?",
+            "options": count_options,
+            "answer_index": count_options.index(str(keep_count)) if str(keep_count) in count_options else 0,
+        },
+        {
+            "id": "q2",
+            "prompt": "Quel acteur a le priority_score le plus eleve ?",
+            "options": name_options,
+            "answer_index": name_options.index(top_name) if top_name in name_options else 0,
+        },
+        {
+            "id": "q3",
+            "prompt": "Donne la strategie associee au quadrant du DevOps.",
+            "options": strategy_options,
+            "answer_index": strategy_options.index(devops_strategy) if devops_strategy in strategy_options else 0,
+        },
+    ]
 
 
 @router.get("/dataset")
@@ -327,4 +430,97 @@ async def submit_quiz(
         "passed": passed,
     }
     await db[COLL_QUIZ_ATTEMPTS].insert_one(attempt)
+    return {"score": correct, "percent": percent, "passed": passed}
+
+
+@router.get("/theme-1/status")
+async def theme1_status(
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME1_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    return {
+        "validated": bool(submission and submission.get("validated")),
+        "rows_count": submission.get("rows_count") if submission else None,
+    }
+
+
+@router.post("/theme-1/submit")
+async def theme1_submit(
+    stakeholder_register: UploadFile | None = File(None),
+    engagement_plan: UploadFile | None = File(None),
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    if stakeholder_register is None or engagement_plan is None:
+        raise HTTPException(status_code=422, detail="Les deux fichiers sont requis.")
+
+    try:
+        csv_text = (await stakeholder_register.read()).decode("utf-8")
+    except Exception:
+        raise HTTPException(status_code=422, detail="CSV invalide.")
+
+    summary = _parse_theme1_csv(csv_text)
+    user_id = str(current.get("_id"))
+
+    doc = {
+        "user_id": user_id,
+        "created_at": _iso(_now()),
+        "validated": True,
+        "rows_count": summary.get("rows_count"),
+        "summary": summary,
+        "files": {
+            "register": stakeholder_register.filename,
+            "plan": engagement_plan.filename,
+        },
+    }
+    await db[COLL_THEME1_SUBMISSIONS].insert_one(doc)
+    return {"validated": True, "rows_count": summary.get("rows_count")}
+
+
+@router.get("/theme-1/quiz")
+async def theme1_quiz(
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME1_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    if not submission or not submission.get("validated"):
+        raise HTTPException(status_code=403, detail="Quiz verrouille. Soumets d'abord les preuves.")
+
+    summary = submission.get("summary") or {}
+    questions = _build_theme1_quiz(summary)
+    return {"questions": [{"id": q["id"], "prompt": q["prompt"], "options": q["options"]} for q in questions]}
+
+
+@router.post("/theme-1/quiz/submit")
+async def theme1_quiz_submit(
+    payload: dict,
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME1_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    if not submission or not submission.get("validated"):
+        raise HTTPException(status_code=403, detail="Quiz verrouille. Soumets d'abord les preuves.")
+
+    summary = submission.get("summary") or {}
+    questions = _build_theme1_quiz(summary)
+    answers = {item["question_id"]: item["answer_index"] for item in payload.get("answers", [])}
+    total = len(questions)
+    correct = 0
+    for q in questions:
+        if answers.get(q["id"]) == q["answer_index"]:
+            correct += 1
+    percent = int(round((correct / total) * 100)) if total else 0
+    passed = percent >= 70
+    attempt = {
+        "user_id": user_id,
+        "created_at": _iso(_now()),
+        "score": correct,
+        "percent": percent,
+        "passed": passed,
+    }
+    await db[COLL_THEME1_QUIZ_ATTEMPTS].insert_one(attempt)
     return {"score": correct, "percent": percent, "passed": passed}

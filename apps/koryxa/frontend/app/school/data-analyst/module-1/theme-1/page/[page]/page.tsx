@@ -38,6 +38,7 @@ export default async function Theme1Paged({ params }: Props) {
     id: `section-${pageNumber}-${slugify(s.heading)}`,
     label: s.heading,
   }));
+  const maxPaneHeight = "calc(100vh - 320px)";
 
   return (
     <div className="space-y-6">
@@ -74,7 +75,7 @@ export default async function Theme1Paged({ params }: Props) {
             ← Page précédente
           </Link>
           <Link
-            className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50 min-w-36"
             href={`/school/data-analyst/module-1/theme-1/page/${nextPage}`}
           >
             Page suivante →
@@ -93,37 +94,8 @@ export default async function Theme1Paged({ params }: Props) {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
-            {page.sections.map((section, sectionIndex) => {
-              const id = `section-${pageNumber}-${slugify(section.heading)}`;
-              return (
-                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
-                  <h3 id={id}>{section.heading}</h3>
-                  {section.body.map((paragraph, paragraphIndex) => (
-                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
-                  ))}
-                </section>
-              );
-            })}
-          </div>
-        </article>
-
-        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">Dans cette page</h2>
-            <ul className="mt-3 space-y-2 text-sm text-slate-600">
-              {inPageToc.map((item) => (
-                <li key={item.id}>
-                  <a className="hover:text-slate-900 hover:underline" href={`#${item.id}`}>
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-
+      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:overflow-hidden" style={{ height: maxPaneHeight }}>
+        <aside className="space-y-6 overflow-y-auto lg:h-full">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
             <div className="mt-3 grid gap-2 text-sm text-slate-600">
@@ -148,6 +120,19 @@ export default async function Theme1Paged({ params }: Props) {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Dans cette page</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              {inPageToc.map((item) => (
+                <li key={item.id}>
+                  <a className="hover:text-slate-900 hover:underline" href={`#${item.id}`}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Ressources</h2>
             <div className="mt-4">
               <VideoBlock videos={theme1Videos} />
@@ -163,6 +148,22 @@ export default async function Theme1Paged({ params }: Props) {
             </ul>
           </section>
         </aside>
+
+        <article className="overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:h-full">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+            {page.sections.map((section, sectionIndex) => {
+              const id = `section-${pageNumber}-${slugify(section.heading)}`;
+              return (
+                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
+                  <h3 id={id}>{section.heading}</h3>
+                  {section.body.map((paragraph, paragraphIndex) => (
+                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        </article>
       </div>
     </div>
   );

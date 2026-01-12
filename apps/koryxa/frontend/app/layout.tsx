@@ -36,22 +36,21 @@ export default function RootLayout(props: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+      <body className="h-screen overflow-hidden bg-slate-50 text-slate-900 antialiased">
         <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
-        <div className="relative min-h-screen">
+        <div className="relative flex h-screen flex-col">
           <AuthProvider>
-            <Headbar />
-            {/* Grid wrapper: sidebar | main. No gap. */}
+            <div className="sticky top-0 z-40">
+              <Headbar />
+            </div>
             <div
-              className="grid w-full gap-0"
+              className="grid flex-1 gap-0 overflow-hidden"
               style={{ gridTemplateColumns: "var(--sidebar-w) minmax(0,1fr)" }}
             >
-              {/* Sidebar column: off-canvas on <640px via CSS var = 0 */}
-              <div className="hidden sm:block">
+              <div className="hidden h-full overflow-y-auto sm:block">
                 <Sidebar />
               </div>
-              {/* Main column */}
-              <div className="min-w-0">
+              <div className="min-w-0 h-full overflow-y-auto">
                 <main id="content" className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-6">
                   {children}
                 </main>

@@ -107,7 +107,7 @@ const V1_SCHOOL_TREE = [
     label: "Specialisations",
     children: [
       {
-        href: "/school/data-analyst/module-1",
+        href: "/school/data-analyst",
         label: "Data Analyst",
         children: [
           {
@@ -121,6 +121,12 @@ const V1_SCHOOL_TREE = [
               { href: "/school/data-analyst/module-1/theme-5", label: "Theme 5" },
             ],
           },
+          { href: "/school/data-analyst/module-2", label: "Module 2 — Collecte" },
+          { href: "/school/data-analyst/module-3", label: "Module 3 — Nettoyage" },
+          { href: "/school/data-analyst/module-4", label: "Module 4 — Preparation" },
+          { href: "/school/data-analyst/module-5", label: "Module 5 — EDA" },
+          { href: "/school/data-analyst/module-6", label: "Module 6 — Reporting" },
+          { href: "/school/data-analyst/module-7", label: "Module 7 — Capstone" },
         ],
       },
       { href: "/school/parcours/specialisations/data-engineer", label: "Data Engineer" },

@@ -406,97 +406,336 @@ export const theme1Pages: ThemePage[] = [
     ],
   },
   {
-    title: "Matrice Pouvoir / Interet",
+    title: "Matrice Pouvoir / Intérêt (le cœur du cadrage)",
     sections: [
       {
-        heading: "Definir pouvoir et interet",
+        heading: "Pourquoi cette matrice existe",
         body: [
-          "Pouvoir : capacite a imposer, bloquer ou financer.",
-          "Interet : degre auquel la personne se sent concernee et va suivre le projet.",
-          "Important : pouvoir et interet ne sont pas des qualites morales, ce sont des facteurs d'influence.",
+          "La matrice Pouvoir / Intérêt est un outil simple qui évite des problèmes très coûteux : travailler avec les mauvaises personnes, ignorer un bloqueur, ou livrer un résultat qui ne sera jamais utilisé.",
+          "Son but n’est pas de “faire joli” dans un document. Son but est de décider, dès le départ, où tu mets ton temps et comment tu communiques.",
+          "Dans un projet Data Analysis, ton temps est limité. Tu ne peux pas faire des réunions longues avec tout le monde. Tu dois choisir : qui impliquer fortement, qui rassurer, qui informer, et qui surveiller.",
+          "La matrice te donne une logique claire pour faire ces choix.",
         ],
       },
       {
-        heading: "Pourquoi la matrice aide",
+        heading: "1) Définition simple des deux axes",
         body: [
-          "Elle evite d'investir trop de temps sur des acteurs qui ne decident pas.",
-          "Elle assure que les decisionnaires clefs sont impliques au bon moment.",
+          "A. Pouvoir",
+          "Le pouvoir, c’est la capacité réelle d’une personne (ou d’une équipe) à influencer le projet. Ça peut être : valider/refuser le projet, donner/retirer des ressources (temps, budget, accès), bloquer l’accès aux données, imposer des règles (sécurité, conformité), imposer des priorités (stratégie, roadmap), orienter la décision finale.",
+          "Le pouvoir n’est pas seulement “être chef”. Parfois une personne technique, un gestionnaire de base, ou un responsable de process a un pouvoir de blocage énorme, même sans titre prestigieux.",
+          "B. Intérêt",
+          "L’intérêt, c’est à quel point la personne est concernée par le résultat, ou veut vraiment suivre le projet. L’intérêt est élevé quand : le résultat change son travail, ses KPI, ses décisions, peut l’aider (ou le mettre en difficulté), impacte directement ses objectifs.",
+          "Une personne peut avoir un intérêt élevé même si elle n’a pas de pouvoir. Par exemple : une équipe terrain qui souffre d’un problème chaque jour.",
+        ],
+      },
+      {
+        heading: "2) Comment remplir une matrice sans se tromper",
+        body: [
+          "Le piège, c’est d’évaluer au feeling. Pour être plus solide, tu peux utiliser une logique rapide :",
+          "Indices de pouvoir (questions) :",
+          "• Peut-elle dire “oui/non” au projet ?",
+          "• Contrôle-t-elle l’accès à une ressource critique ?",
+          "• Peut-elle imposer une règle ou un veto ?",
+          "• Son avis influence-t-il le décideur final ?",
+          "• Peut-elle ralentir le projet par simple non-collaboration ?",
+          "Indices d’intérêt (questions) :",
+          "• Le résultat change-t-il son quotidien ?",
+          "• Le résultat change-t-il ses KPI ?",
+          "• Le sujet est-il urgent pour elle ?",
+          "• Le sujet touche-t-il sa responsabilité ?",
+          "• Est-elle prête à donner du temps pour suivre ?",
+          "Tu ne cherches pas la perfection. Tu cherches une classification utile.",
+        ],
+      },
+      {
+        heading: "3) Pourquoi cette matrice est indispensable",
+        body: [
+          "Parce qu’un projet data échoue souvent pour une raison humaine : tu n’as pas parlé au vrai décideur, tu n’as pas impliqué les utilisateurs, tu as ignoré un bloqueur (IT / conformité / data owner), tu as communiqué trop ou pas assez.",
+          "Avec la matrice, tu anticipes ces problèmes et tu sécurises ton projet.",
+        ],
+      },
+      {
+        heading: "4) Exemple rapide (formation / plateforme)",
+        body: [
+          "Objectif : réduire l’abandon au Thème 2.",
+          "Sponsor (direction programme) : fort pouvoir, fort intérêt (car il veut un résultat rapide).",
+          "Responsable pédagogique : fort intérêt, pouvoir moyen/fort (il influence les décisions contenu).",
+          "Mentors : intérêt élevé, pouvoir faible (ils subissent et remontent les difficultés).",
+          "IT : pouvoir fort, intérêt parfois faible (peut bloquer, mais ne suit pas le contenu).",
+          "Data owner (admin plateforme) : pouvoir moyen/fort (accès / tracking), intérêt moyen.",
+          "Apprenants : intérêt élevé, pouvoir faible (mais impact indirect via abandon / réputation).",
+          "Tu vois déjà comment ton plan doit s’organiser.",
+        ],
+      },
+      {
+        heading: "5) Livrable attendu (format texte prêt)",
+        body: [
+          "Liste des parties prenantes.",
+          "Pour chacune : Pouvoir (faible/moyen/fort) et Intérêt (faible/moyen/fort).",
+          "Positionnement dans la matrice.",
+          "Implication recommandée.",
+          "Ce livrable doit être court, clair, actionnable.",
+        ],
+      },
+      {
+        heading: "6) Mini-exercice",
+        body: [
+          "Prends un projet réel. Fais une liste de 10 parties prenantes.",
+          "Puis classe chaque personne avec : Pouvoir (1 à 5) et Intérêt (1 à 5).",
+          "Ensuite, place-les mentalement dans la matrice.",
+          "Tu verras souvent une surprise : une personne que tu croyais “secondaire” est en réalité un bloqueur, ou un utilisateur essentiel que tu avais oublié.",
         ],
       },
     ],
   },
   {
-    title: "Quadrant A — Gerer de pres",
+    title: "Quadrant A : Gérer de près (Fort pouvoir + fort intérêt)",
     sections: [
       {
-        heading: "Fort pouvoir / fort interet",
+        heading: "Pourquoi ce quadrant est le plus critique",
         body: [
-          "Ce sont les key players.",
-          "Reunions regulieres, validation frequente, transparence sur limites et risques.",
+          "Ce quadrant est le plus critique. C’est ici que se trouvent les personnes qui peuvent faire avancer le projet très vite, ou le faire échouer si elles ne sont pas satisfaites.",
+          "Dans un projet de Data Analysis, “gérer de près” ne signifie pas faire des réunions inutiles. Cela signifie : valider rapidement les décisions clés, éviter les surprises, obtenir des arbitrages et protéger le projet.",
         ],
       },
       {
-        heading: "Actions concretes",
+        heading: "1) Qui se trouve généralement dans ce quadrant ?",
         body: [
-          "Definition des KPIs validee par ecrit.",
-          "Rendez-vous court hebdomadaire pour ajuster le scope.",
+          "Sponsor / direction directement concernée.",
+          "Responsable métier avec autorité.",
+          "Product owner ou responsable du service.",
+          "Chef de programme.",
+          "Parfois conformité / sécurité si le sujet est sensible.",
+          "Parfois data owner si l’accès est complexe et critique.",
+        ],
+      },
+      {
+        heading: "2) Comment travailler avec eux (stratégie)",
+        body: [
+          "A. Clarifier le contrat dès le départ : valider la décision à améliorer, le succès mesurable, le périmètre, la deadline, les actions possibles, les limites acceptables. Sinon tu risques d’entendre à la fin : “ce n’est pas ce que je voulais”.",
+          "B. Réduire le bruit, augmenter la valeur : garder le focus sur ce qui bloque la décision, ce qui change le résultat, ce qui change l’action.",
+          "C. Obtenir des arbitrages rapidement : quand il y a un obstacle (données manquantes, conflit de définition KPI, priorités contradictoires), remonter au sponsor pour arbitrer vite.",
+        ],
+      },
+      {
+        heading: "3) Formats de communication efficaces",
+        body: [
+          "• Un point hebdomadaire très court (15–20 min).",
+          "• Un document “1 page” : décisions, risques, prochaines étapes.",
+          "• Un prototype rapide (ex : premier tableau de bord) pour valider la direction.",
+          "• Un message clair quand il y a blocage : “Voici 2 options, choisissez”.",
+        ],
+      },
+      {
+        heading: "4) Exemple concret (KORYXA School)",
+        body: [
+          "Objectif : augmenter la complétion du Module 1.",
+          "Sponsor (Quadrant A) veut : savoir où ça bloque, savoir quoi changer, voir un plan d’action simple.",
+          "Toi, tu dois livrer : les étapes où l’abandon explose, les hypothèses principales (difficulté, manque d’exemples, charge du projet), 2–3 actions testables, et la mesure d’impact attendue.",
+          "Le sponsor n’a pas besoin d’un rapport de 30 pages. Il veut une décision claire.",
+        ],
+      },
+      {
+        heading: "5) Erreurs classiques",
+        body: [
+          "• Attendre la fin pour présenter un résultat “final” → surprise, rejet, perte de temps.",
+          "• Présenter trop de détails techniques → le sponsor se déconnecte.",
+          "• Ne pas proposer d’options d’action → le sponsor reste bloqué.",
+          "• Confondre validation “polie” (“ok intéressant”) et validation réelle (“on décide X”).",
+        ],
+      },
+      {
+        heading: "6) Checklist Quadrant A",
+        body: [
+          "Le sponsor a validé l’objectif et le KPI.",
+          "La décision à prendre est claire.",
+          "Les options d’action sont explicites.",
+          "Les risques et limites sont partagés.",
+          "Il y a un rythme de validation simple.",
         ],
       },
     ],
   },
   {
-    title: "Quadrant B — Satisfaire",
+    title: "Quadrant B : Satisfaire (Fort pouvoir + faible intérêt)",
     sections: [
       {
-        heading: "Fort pouvoir / faible interet",
+        heading: "Le but : éviter un veto tardif",
         body: [
-          "Ils peuvent bloquer mais ne veulent pas perdre du temps.",
-          "Messages courts, focus sur benefices business, pas de details techniques.",
+          "Ce quadrant est souvent sous-estimé. Les personnes ici peuvent bloquer ton projet, mais elles n’ont pas envie d’y passer du temps.",
+          "Ton objectif n’est pas de les transformer en fans du projet. Ton objectif est d’éviter qu’elles deviennent un obstacle tardif.",
         ],
       },
       {
-        heading: "Actions concretes",
+        heading: "1) Qui se trouve généralement dans ce quadrant ?",
         body: [
-          "Synthese executive mensuelle.",
-          "Alerte uniquement si risque ou depassement budget.",
+          "DSI / IT très occupé, pas focus sur ton sujet.",
+          "Finance / contrôle de gestion (si pas directement concerné).",
+          "Direction générale (si ce n’est pas un projet stratégique).",
+          "Responsable sécurité / conformité (si la contrainte est standard).",
+          "Partenaires internes qui doivent valider un point précis.",
+        ],
+      },
+      {
+        heading: "2) La règle d’or : communication courte, orientée risques/valeur",
+        body: [
+          "Ces personnes n’ont pas le temps. Si tu envoies des messages longs, elles ne lisent pas.",
+          "Ton message doit répondre à : qu’est-ce que vous devez valider ? quel est le risque si on ne valide pas ? quel est le délai ? qu’est-ce que vous gagnez à dire oui ?",
+        ],
+      },
+      {
+        heading: "3) Exemple (IT)",
+        body: [
+          "Tu dois déployer un dashboard, mais IT s’en fiche du contenu. Ce que IT veut savoir : sécurité, permissions, charge serveur, compatibilité, effort technique.",
+          "Donc tu envoies : objectif (1 phrase), données utilisées (1 ligne), besoin d’accès (liste), fréquence de mise à jour, effort estimé. Puis tu demandes une validation claire.",
+        ],
+      },
+      {
+        heading: "4) Stratégie pratique : “demande minimale”",
+        body: [
+          "Ne leur demande pas d’assister à tous les ateliers.",
+          "Demande : une validation sur l’accès, une validation sur la sécurité, une validation sur l’intégration, et un point contact si problème.",
+        ],
+      },
+      {
+        heading: "5) Erreurs classiques",
+        body: [
+          "• Les ignorer complètement → veto final.",
+          "• Les sur-solliciter → ils deviennent opposants.",
+          "• Ne pas documenter la demande → confusion, lenteur.",
+          "• Arriver trop tard → “on n’a pas de créneau”, projet bloqué.",
+        ],
+      },
+      {
+        heading: "6) Checklist Quadrant B",
+        body: [
+          "Tu sais exactement ce qu’ils doivent valider.",
+          "Tu as préparé un message court.",
+          "Tu as un délai et un rappel.",
+          "Tu as documenté la décision.",
         ],
       },
     ],
   },
   {
-    title: "Quadrant C — Informer",
+    title: "Quadrant C : Informer (Faible pouvoir + fort intérêt)",
     sections: [
       {
-        heading: "Faible pouvoir / fort interet",
+        heading: "Le quadrant de l’adoption",
         body: [
-          "Ils sont concernes mais ne decident pas.",
-          "Newsletter projet, demos, feedback structure.",
+          "Ce quadrant est celui de l’adoption. Les personnes ici ne peuvent pas bloquer ton projet par un veto officiel, mais elles peuvent faire échouer ton projet dans la réalité : si elles n’utilisent pas le résultat, si elles ne comprennent pas, si elles ne font pas confiance, ou si le livrable n’est pas adapté à leur travail.",
+          "C’est souvent ici que se trouve le “terrain”.",
         ],
       },
       {
-        heading: "Actions concretes",
+        heading: "1) Qui se trouve généralement dans ce quadrant ?",
         body: [
-          "Tableau de bord partage.",
-          "Session de questions reponses a chaque jalon.",
+          "Utilisateurs opérationnels (support, terrain, agents, mentors).",
+          "Analysts métiers juniors.",
+          "Coordinateurs sans pouvoir de décision final.",
+          "Groupes d’utilisateurs finaux (si externes consultés via feedback).",
+        ],
+      },
+      {
+        heading: "2) Objectif : compréhension + utilité + confiance",
+        body: [
+          "Pour ce quadrant, ton travail est de : comprendre leurs besoins concrets, tester la lisibilité de tes indicateurs, vérifier que tes recommandations sont réalisables, améliorer la forme du livrable (clarté, simplicité, actions).",
+        ],
+      },
+      {
+        heading: "3) Méthodes efficaces",
+        body: [
+          "A. Prototypes rapides : montre un premier tableau/graphique/segmentation tôt, et demande : “qu’est-ce que vous comprenez ? qu’est-ce qui manque ?”",
+          "B. Définitions communes : standardiser les termes (“abandon”, “actif”, etc.) pour éviter les conflits.",
+          "C. Feedback sur les actions : le terrain dira ce qui est faisable, ce qui ne l’est pas, et ce qui est irréaliste.",
+        ],
+      },
+      {
+        heading: "4) Exemple (mentors dans une formation)",
+        body: [
+          "Si ton analyse dit : “ajoutez 3 devoirs supplémentaires”, les mentors vont dire : “impossible, on est déjà saturés”.",
+          "Donc tu dois intégrer une contrainte réelle : améliorer la réussite sans augmenter la charge.",
+          "Le terrain protège ton projet contre les recommandations irréalistes.",
+        ],
+      },
+      {
+        heading: "5) Erreurs classiques",
+        body: [
+          "• Les informer uniquement à la fin → rejet.",
+          "• Faire des KPI complexes → incompréhension.",
+          "• Ne pas expliquer les changements → perte de confiance.",
+          "• Ignorer leurs retours → adoption faible.",
+        ],
+      },
+      {
+        heading: "6) Checklist Quadrant C",
+        body: [
+          "Tu as au moins 1 session de feedback.",
+          "Tes KPI sont compris sans interprétation.",
+          "Tu as validé la faisabilité des actions.",
+          "Tu as prévu une mini documentation / guide.",
         ],
       },
     ],
   },
   {
-    title: "Quadrant D — Surveiller",
+    title: "Quadrant D : Surveiller (Faible pouvoir + faible intérêt)",
     sections: [
       {
-        heading: "Faible pouvoir / faible interet",
+        heading: "Surveiller sans surinvestir",
         body: [
-          "Minimum de communication.",
-          "Garder un oeil au cas ou leur pouvoir change.",
+          "Ce quadrant ne doit pas absorber ton énergie. Mais il ne doit pas être ignoré complètement.",
+          "Certaines parties prenantes sont aujourd’hui peu concernées, mais peuvent devenir importantes demain : changement d’organisation, incident, nouvelle priorité, crise, audit, arrivée d’un partenaire.",
+          "Ton objectif ici : garder un œil, sans surinvestir.",
         ],
       },
       {
-        heading: "Actions concretes",
+        heading: "1) Qui se trouve généralement dans ce quadrant ?",
         body: [
-          "Mise a jour trimestrielle.",
-          "Point rapide si changement d'organisation.",
+          "Équipes éloignées du périmètre.",
+          "Partenaires internes non concernés.",
+          "Certains prestataires hors scope.",
+          "Acteurs “informés par défaut” mais non impliqués.",
+        ],
+      },
+      {
+        heading: "2) Stratégie : communication minimale mais intelligente",
+        body: [
+          "Un message de lancement (si nécessaire).",
+          "Un point à mi-parcours (si impact potentiel).",
+          "Une note finale (résultats + actions).",
+          "Tu veux éviter : “je découvre ça maintenant” alors qu’il aurait dû être vaguement au courant.",
+        ],
+      },
+      {
+        heading: "3) Quand ce quadrant devient dangereux",
+        body: [
+          "Si le sujet devient sensible (données personnelles), si une crise arrive (bug/incident), si un audit externe démarre, si le projet change de périmètre.",
+          "Dans ces cas, certains acteurs du Quadrant D peuvent passer en Quadrant B ou A. D’où l’importance de “surveiller”.",
+        ],
+      },
+      {
+        heading: "4) Exemple simple",
+        body: [
+          "Au départ, une équipe “communication” est en Quadrant D.",
+          "Mais si le projet touche l’image publique (municipal, service, association), elle peut passer rapidement en Quadrant B ou A. Tu dois anticiper ce basculement.",
+        ],
+      },
+      {
+        heading: "5) Erreurs classiques",
+        body: [
+          "• Les spammer → perte de temps.",
+          "• Les ignorer totalement → surprise + conflits.",
+          "• Ne pas mettre à jour la matrice quand le contexte change.",
+        ],
+      },
+      {
+        heading: "6) Checklist Quadrant D",
+        body: [
+          "Tu sais pourquoi ils sont là.",
+          "Tu as défini une communication minimale.",
+          "Tu surveilles les signaux de changement.",
+          "Tu peux les reclasser rapidement si besoin.",
         ],
       },
     ],

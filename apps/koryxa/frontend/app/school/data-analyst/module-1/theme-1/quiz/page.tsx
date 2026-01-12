@@ -20,7 +20,19 @@ export default function Theme1QuizPage() {
           credentials: "include",
         });
         const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error("Etat indisponible.");
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            setStatus("locked");
+            setMessage("Connexion requise pour acceder au quiz.");
+            return;
+          }
+          if (resp.status === 403) {
+            setStatus("locked");
+            setMessage("Soumets d'abord les preuves du notebook.");
+            return;
+          }
+          throw new Error("Etat indisponible.");
+        }
         if (!data?.validated) {
           setStatus("locked");
           return;
@@ -31,6 +43,11 @@ export default function Theme1QuizPage() {
         const quizData = await quizResp.json().catch(() => ({}));
         if (!quizResp.ok) {
           const detail = typeof quizData?.detail === "string" ? quizData.detail : "Quiz indisponible.";
+          if (quizResp.status === 401 || quizResp.status === 403) {
+            setStatus("locked");
+            setMessage(detail);
+            return;
+          }
           throw new Error(detail);
         }
         setQuestions(quizData?.questions || []);

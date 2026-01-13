@@ -77,7 +77,6 @@ const V1_HIDDEN_PREFIXES = [
   "/meet",
   "/missions",
   "/marketplace",
-  "/myplanning",
   "/chatlaya",
   "/studio",
   "/products",
@@ -183,7 +182,7 @@ export async function middleware(request: NextRequest) {
   }
   if (pathname === "/school/parcours/specialisations/data-analyst") {
     const url = request.nextUrl.clone();
-    url.pathname = "/school/data-analyst/module-1";
+    url.pathname = "/school/data-analyst";
     return NextResponse.redirect(url);
   }
 

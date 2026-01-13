@@ -1,5 +1,9 @@
-import ThemeContent from "../ThemeContent";
+import { redirect } from "next/navigation";
 
-export default function Theme5Page() {
-  return <ThemeContent slug="theme-5" />;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function Theme5Entry() {
+  redirect("/school/data-analyst/module-1/theme-5/page/1");
 }
+

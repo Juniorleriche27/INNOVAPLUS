@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import random
+import zipfile
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
@@ -23,6 +24,8 @@ COLL_QUIZ_SESSIONS = "module1_quiz_sessions"
 COLL_QUIZ_ATTEMPTS = "module1_quiz_attempts"
 COLL_THEME1_SUBMISSIONS = "module1_theme1_submissions"
 COLL_THEME1_QUIZ_ATTEMPTS = "module1_theme1_quiz_attempts"
+COLL_THEME5_SUBMISSIONS = "module1_theme5_submissions"
+COLL_THEME5_QUIZ_ATTEMPTS = "module1_theme5_quiz_attempts"
 
 LESSONS = ["Theme 1", "Theme 2", "Theme 3", "Theme 4", "Theme 5"]
 COUNTRIES = ["Togo", "Benin", "Ghana", "Senegal", "Nigeria"]
@@ -215,6 +218,201 @@ def _build_theme1_quiz(summary: Dict[str, object]) -> List[Dict[str, object]]:
             "answer_index": strategy_options.index(devops_strategy) if devops_strategy in strategy_options else 0,
         },
     ]
+
+
+def _zip_pick_members(names: List[str], required: List[str]) -> Dict[str, str]:
+    lower_names = {n.lower(): n for n in names}
+    mapping: Dict[str, str] = {}
+    for req in required:
+        req_lower = req.lower()
+        if req_lower in lower_names:
+            mapping[req] = lower_names[req_lower]
+            continue
+        # allow files nested in a folder inside the zip
+        found = next((n for n in names if n.lower().endswith("/" + req_lower)), None)
+        if found:
+            mapping[req] = found
+    return mapping
+
+
+def _zip_read_file(z: zipfile.ZipFile, member: str, max_bytes: int = 2_000_000) -> bytes:
+    data = z.read(member)
+    if len(data) > max_bytes:
+        raise HTTPException(status_code=422, detail=f"Fichier trop volumineux dans le ZIP: {member}")
+    return data
+
+
+def _count_csv_rows(text: str) -> int:
+    reader = csv.DictReader(io.StringIO(text))
+    return sum(1 for _ in reader)
+
+
+def _parse_capstone_from_zip(zip_bytes: bytes) -> Dict[str, object]:
+    required_files = [
+        "capstone_brief.md",
+        "theme2_baseline_metrics.json",
+        "theme3_kpi_dictionary.csv",
+        "theme4_analysis_plan.md",
+        "theme4_data_requirements.csv",
+        "theme4_acceptance_criteria.json",
+        "capstone_checklist.json",
+        "README.md",
+    ]
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+        members = z.namelist()
+        picked = _zip_pick_members(members, required_files)
+        missing = [f for f in required_files if f not in picked]
+        if missing:
+            return {"missing_files": missing, "passed": False, "checks": []}
+
+        checklist_raw = _zip_read_file(z, picked["capstone_checklist.json"]).decode("utf-8", errors="ignore")
+        try:
+            checklist = json.loads(checklist_raw)
+        except Exception:
+            raise HTTPException(status_code=422, detail="capstone_checklist.json invalide.")
+
+        passed = bool(checklist.get("passed"))
+        checks = checklist.get("checks") if isinstance(checklist.get("checks"), list) else []
+
+        baseline_raw = _zip_read_file(z, picked["theme2_baseline_metrics.json"]).decode("utf-8", errors="ignore")
+        try:
+            baseline = json.loads(baseline_raw)
+        except Exception:
+            baseline = {}
+
+        acc_raw = _zip_read_file(z, picked["theme4_acceptance_criteria.json"]).decode("utf-8", errors="ignore")
+        try:
+            acceptance = json.loads(acc_raw)
+        except Exception:
+            acceptance = {}
+
+        req_csv = _zip_read_file(z, picked["theme4_data_requirements.csv"]).decode("utf-8", errors="ignore")
+        kpi_csv = _zip_read_file(z, picked["theme3_kpi_dictionary.csv"]).decode("utf-8", errors="ignore")
+
+        completion = baseline.get("completion_rate")
+        if completion is None:
+            completion = baseline.get("completion_rate_m1")
+
+        acceptance_criteria = acceptance.get("acceptance_criteria") if isinstance(acceptance.get("acceptance_criteria"), list) else []
+
+        # KPI row count
+        kpi_rows = _count_csv_rows(kpi_csv)
+        req_rows = _count_csv_rows(req_csv)
+
+        # brief check from checklist (if present)
+        brief_ok = None
+        for item in checks:
+            if isinstance(item, dict) and str(item.get("check", "")).lower().startswith("brief word count"):
+                brief_ok = bool(item.get("ok"))
+                break
+
+        return {
+            "missing_files": [],
+            "passed": passed,
+            "checks": checks,
+            "metrics": {
+                "requirements_rows": req_rows,
+                "acceptance_criteria_count": len(acceptance_criteria),
+                "completion_rate": completion,
+                "kpi_rows": kpi_rows,
+                "brief_wordcount_ok": brief_ok,
+            },
+        }
+
+
+def _build_theme5_quiz(metrics: Dict[str, object]) -> List[Dict[str, object]]:
+    req_rows = int(metrics.get("requirements_rows") or 0)
+    acc_count = int(metrics.get("acceptance_criteria_count") or 0)
+    kpi_rows = int(metrics.get("kpi_rows") or 0)
+    completion = metrics.get("completion_rate")
+    try:
+        completion_float = float(completion) if completion is not None else None
+    except Exception:
+        completion_float = None
+
+    brief_ok = metrics.get("brief_wordcount_ok")
+    brief_ok_str = "true" if brief_ok else "false"
+
+    def _opts_int(value: int) -> List[str]:
+        return list(dict.fromkeys([str(value), str(max(0, value - 1)), str(value + 1), str(value + 2)]))
+
+    def _opts_bool(value: bool) -> List[str]:
+        return ["true", "false"] if value else ["false", "true"]
+
+    def _opts_float(value: float) -> List[str]:
+        base = round(value, 4)
+        return list(
+            dict.fromkeys(
+                [
+                    f"{base}",
+                    f"{round(max(base - 0.05, 0.0), 4)}",
+                    f"{round(min(base + 0.05, 1.0), 4)}",
+                    f"{round(min(base + 0.1, 1.0), 4)}",
+                ]
+            )
+        )
+
+    questions: List[Dict[str, object]] = [
+        {
+            "id": "q1",
+            "prompt": "Combien de lignes contient theme4_data_requirements.csv ?",
+            "options": _opts_int(req_rows),
+            "answer_index": _opts_int(req_rows).index(str(req_rows)),
+        },
+        {
+            "id": "q2",
+            "prompt": "Combien de critères d’acceptation sont dans theme4_acceptance_criteria.json ?",
+            "options": _opts_int(acc_count),
+            "answer_index": _opts_int(acc_count).index(str(acc_count)),
+        },
+        {
+            "id": "q3",
+            "prompt": "Combien de KPI y a-t-il dans theme3_kpi_dictionary.csv ?",
+            "options": _opts_int(kpi_rows),
+            "answer_index": _opts_int(kpi_rows).index(str(kpi_rows)),
+        },
+        {
+            "id": "q4",
+            "prompt": "Le checklist final est-il passed (true/false) ?",
+            "options": _opts_bool(True),
+            "answer_index": 0,
+        },
+        {
+            "id": "q5",
+            "prompt": "Le brief respecte-t-il 500–800 mots (true/false) ?",
+            "options": _opts_bool(brief_ok is True),
+            "answer_index": 0 if brief_ok is True else 1,
+        },
+    ]
+
+    if completion_float is not None:
+        opts = _opts_float(completion_float)
+        questions.insert(
+            3,
+            {
+                "id": "q3b",
+                "prompt": "Quelle est la valeur du baseline completion_rate (ou completion_rate_m1) ?",
+                "options": opts,
+                "answer_index": opts.index(f"{round(completion_float, 4)}") if f"{round(completion_float, 4)}" in opts else 0,
+            },
+        )
+
+    while len(questions) < 10:
+        idx = len(questions) + 1
+        questions.append(
+            {
+                "id": f"q{idx}",
+                "prompt": "Le Capstone Pack sert principalement à :",
+                "options": [
+                    "Verrouiller alignement, exécutabilité et validation",
+                    "Ajouter plus de graphiques sans cadrage",
+                    "Remplacer les KPI par des impressions",
+                ],
+                "answer_index": 0,
+            }
+        )
+
+    return questions
 
 
 @router.get("/dataset")
@@ -523,4 +721,116 @@ async def theme1_quiz_submit(
         "passed": passed,
     }
     await db[COLL_THEME1_QUIZ_ATTEMPTS].insert_one(attempt)
+    return {"score": correct, "percent": percent, "passed": passed}
+
+
+@router.get("/theme-5/status")
+async def theme5_status(
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME5_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    return {
+        "validated": bool(submission and submission.get("validated")),
+        "passed": submission.get("passed") if submission else None,
+    }
+
+
+@router.post("/theme-5/submit")
+async def theme5_submit(
+    capstone_zip: UploadFile | None = File(None),
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    if capstone_zip is None:
+        raise HTTPException(status_code=422, detail="Le fichier ZIP est requis.")
+
+    try:
+        zip_bytes = await capstone_zip.read()
+    except Exception:
+        raise HTTPException(status_code=422, detail="ZIP invalide.")
+
+    try:
+        parsed = _parse_capstone_from_zip(zip_bytes)
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=422, detail="ZIP invalide (archive corrompue).")
+
+    missing_files = parsed.get("missing_files") if isinstance(parsed, dict) else []
+    passed = bool(parsed.get("passed")) if isinstance(parsed, dict) else False
+    checks = parsed.get("checks") if isinstance(parsed, dict) else []
+    metrics = parsed.get("metrics") if isinstance(parsed, dict) else {}
+
+    failed_checks = []
+    if isinstance(checks, list):
+        failed_checks = [
+            {"check": str(c.get("check", "")), "detail": str(c.get("detail", ""))}
+            for c in checks
+            if isinstance(c, dict) and not bool(c.get("ok"))
+        ]
+
+    if isinstance(missing_files, list) and missing_files:
+        failed_checks.insert(0, {"check": "ZIP contient tous les fichiers requis", "detail": f"missing={missing_files}"})
+
+    validated = bool(passed and not (isinstance(missing_files, list) and missing_files))
+
+    doc = {
+        "user_id": str(current.get("_id")),
+        "created_at": _iso(_now()),
+        "validated": validated,
+        "passed": passed,
+        "missing_files": missing_files,
+        "failed_checks": failed_checks,
+        "metrics": metrics,
+        "filename": capstone_zip.filename,
+    }
+    await db[COLL_THEME5_SUBMISSIONS].insert_one(doc)
+
+    return {"validated": validated, "passed": passed, "failed_checks": failed_checks}
+
+
+@router.get("/theme-5/quiz")
+async def theme5_quiz(
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME5_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    if not submission or not submission.get("validated"):
+        raise HTTPException(status_code=403, detail="Quiz verrouille. Soumets d'abord le ZIP valide.")
+
+    metrics = submission.get("metrics") or {}
+    questions = _build_theme5_quiz(metrics)
+    return {"questions": [{"id": q["id"], "prompt": q["prompt"], "options": q["options"]} for q in questions]}
+
+
+@router.post("/theme-5/quiz/submit")
+async def theme5_quiz_submit(
+    payload: dict,
+    current: dict = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    user_id = str(current.get("_id"))
+    submission = await db[COLL_THEME5_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
+    if not submission or not submission.get("validated"):
+        raise HTTPException(status_code=403, detail="Quiz verrouille. Soumets d'abord le ZIP valide.")
+
+    metrics = submission.get("metrics") or {}
+    questions = _build_theme5_quiz(metrics)
+    answers = {item["question_id"]: item["answer_index"] for item in payload.get("answers", [])}
+    total = len(questions)
+    correct = 0
+    for q in questions:
+        if answers.get(q["id"]) == q["answer_index"]:
+            correct += 1
+    percent = int(round((correct / total) * 100)) if total else 0
+    passed = percent >= 70
+    attempt = {
+        "user_id": user_id,
+        "created_at": _iso(_now()),
+        "score": correct,
+        "percent": percent,
+        "passed": passed,
+    }
+    await db[COLL_THEME5_QUIZ_ATTEMPTS].insert_one(attempt)
     return {"score": correct, "percent": percent, "passed": passed}

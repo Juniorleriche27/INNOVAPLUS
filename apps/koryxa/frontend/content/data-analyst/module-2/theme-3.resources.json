@@ -1,0 +1,43 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "paxyrZBzRK8",
+      "title": "Apprendre le SQL en 30 minutes — Cours complet pour débutants"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "HXV3zeQKqGY",
+      "title": "SQL Tutorial - Full Database Course for Beginners (freeCodeCamp)"
+    }
+  ],
+  "articles": [
+    {
+      "title": "GROUP BY (concept + syntaxe)",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/queries/select-group-by-transact-sql?view=sql-server-ver17"
+    },
+    {
+      "title": "Joins (concepts + pièges)",
+      "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/joins?view=sql-server-ver17"
+    },
+    {
+      "title": "HAVING (filtre sur agrégats)",
+      "url": "https://learn.microsoft.com/en-us/sql/t-sql/queries/select-having-transact-sql?view=sql-server-ver17"
+    },
+    {
+      "title": "WHERE vs HAVING (même requête, deux rôles différents)",
+      "url": "https://learn.microsoft.com/en-us/ssms/visual-db-tools/use-having-and-where-clauses-in-the-same-query-visual-database-tools"
+    },
+    {
+      "title": "PostgreSQL COPY (export CSV, y compris depuis un SELECT)",
+      "url": "https://www.postgresql.org/docs/current/sql-copy.html"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 3 — SQL extraction (deck)",
+      "note": "Optionnel : slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
+  ]
+}
+

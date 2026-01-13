@@ -1,0 +1,16 @@
+user_id;event_time;event_type;theme;country;channel
+u001;13/01/2026 10:05;ENROLLED;1; TOGO ;Mobile
+u001;13/01/2026 10:08;Opened_Theme;1;Togo; mobile
+u001;2026-01-13T10:12:00;OPENED_NOTEBOOK;1;Togo ;WEB
+u002;01/13/2026 09:40;opened theme;2;BENIN;WEB
+u002;13/01/2026 09:43;opened_theme;2;Bénin ; web
+u003;2026-01-14T08:00:00;OPENED_NOTEBOOK;2;  Togo;Web
+u003;14/01/2026 08:10;submitted;theme3;Togo ; web
+u003;14/01/2026 08:30;VALIDATED;2;Togo;Web
+u004;;validated;1;Togo;Mobile
+u004;14/01/2026 11:00;opened-theme; 2 ;  togo ; mobile
+u005;15/01/2026 07:30;Opened Theme;3;BENIN; Mobile
+u006;15/01/2026 07:31;opened_theme;3;;Web
+u006;15/01/2026 07:35;opened_theme;3;Benin;WEB
+u007;2026-01-16 13:05:00;enrolled;1;Togo;cellulaire
+u007;16/01/2026 13:40;opened_notebook;1;Togo;smartphone

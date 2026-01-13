@@ -1,0 +1,298 @@
+# Thème 3 — SQL pour extraction : SELECT, JOIN, GROUP BY, HAVING, exports
+
+# 1) Pourquoi le SQL est indispensable en Data Analyst
+
+Même si tu travailles souvent avec Excel, Power BI ou Python, le SQL revient toujours dans le réel.
+Dès que les données vivent dans une base (PostgreSQL, MySQL, SQL Server, BigQuery…), le SQL devient le moyen le plus direct pour :
+
+- extraire les bonnes lignes (filtrer proprement),
+- relier plusieurs tables (JOIN),
+- calculer des indicateurs (GROUP BY, agrégats),
+- contrôler la cohérence (comptages, duplications),
+- produire un dataset “propre” pour le notebook / le dashboard.
+
+Ce thème te donne une méthode terrain : **écrire des requêtes lisibles, éviter les pièges, et produire des exports reproductibles**.
+
+Objectifs du thème :
+1) écrire des requêtes SQL correctes (SELECT / WHERE / JOIN / GROUP BY / HAVING),
+2) protéger tes chiffres (grain, duplications, clés),
+3) sortir 3 datasets d’extraction + preuve d’exécution,
+4) savoir exporter (notebook + mention COPY pour PostgreSQL).
+
+---
+
+# 2) Avant d’écrire une requête : penser “grain” (la règle qui évite les KPI faux)
+
+Le grain répond à une seule question :
+**“1 ligne de mon résultat final = quoi ?”**
+
+Exemples fréquents :
+- 1 ligne = 1 événement (event)
+- 1 ligne = 1 utilisateur (user)
+- 1 ligne = 1 commande (order)
+- 1 ligne = 1 ticket support (ticket)
+
+Pourquoi c’est vital ?
+Parce que le SQL te laisse tout faire… même mélanger des niveaux de détail sans t’en rendre compte.
+
+## 2.1 Le piège classique : la duplication silencieuse
+
+Tu as :
+- une table `events` : plusieurs lignes par utilisateur
+- une table `profiles` : 1 ligne par utilisateur
+
+Tu fais un JOIN et ensuite tu comptes “des utilisateurs”.
+Si `profiles` n’est pas vraiment unique par `user_id`, ou si tu joins au mauvais moment, tu peux multiplier les lignes et gonfler tes chiffres.
+
+Règles pro :
+- annonce ton grain dans un commentaire en haut de la requête,
+- vérifie l’unicité des clés côté “dimension” (profiles, marketing),
+- si nécessaire : déduplique avant la jointure,
+- pour compter des utilisateurs : utilise `COUNT(DISTINCT user_id)` au bon niveau.
+
+---
+
+# 3) SELECT : le minimum “pro” (et pourquoi éviter SELECT \*)
+
+## 3.1 Un SELECT propre
+
+Un bon SELECT :
+- liste explicitement les colonnes,
+- filtre avec une condition claire,
+- trie si besoin,
+- limite si tu explores.
+
+```sql
+-- Grain: 1 ligne = 1 événement
+SELECT
+  user_id,
+  event_time,
+  event_type,
+  theme
+FROM events
+WHERE event_time >= '2026-01-01'
+ORDER BY event_time DESC
+LIMIT 100;
+```
+
+Pourquoi éviter `SELECT *` ?
+- tu récupères des colonnes inutiles,
+- tu risques de casser ton pipeline si le schéma change,
+- tu rends la relecture difficile.
+
+## 3.2 DISTINCT : utile, mais dangereux si tu l’utilises comme “pansement”
+
+`DISTINCT` peut :
+- enlever des doublons “normaux” (ex: événements répétés),
+- masquer un vrai problème (ex: duplication due à une jointure).
+
+Bonne pratique :
+- utilise `DISTINCT` quand tu sais exactement ce que tu veux dédupliquer,
+- sinon, commence par diagnostiquer :
+  - d’où viennent les doublons ?
+  - est-ce un problème de données ou un comportement normal ?
+
+---
+
+# 4) WHERE vs HAVING : la différence qui revient en entretien
+
+La règle :
+- `WHERE` filtre les lignes avant agrégation,
+- `HAVING` filtre les groupes après `GROUP BY`.
+
+## 4.1 Exemple simple
+
+Tu veux le nombre d’événements `opened_theme` par thème, mais tu gardes seulement les thèmes avec au moins 100 événements.
+
+```sql
+SELECT
+  theme,
+  COUNT(*) AS n_events
+FROM events
+WHERE event_type = 'opened_theme'
+GROUP BY theme
+HAVING COUNT(*) >= 100
+ORDER BY n_events DESC;
+```
+
+Ici :
+- `WHERE event_type = 'opened_theme'` filtre les lignes,
+- `HAVING COUNT(*) >= 100` filtre les groupes.
+
+---
+
+# 5) GROUP BY : calculer des KPI (sans te tromper)
+
+Le `GROUP BY` sert à regrouper et agréger.
+Dans la pratique Data Analyst, tu vas l’utiliser pour :
+- répartitions (par pays, canal, thème),
+- entonnoirs (funnel),
+- ratios (taux),
+- évolutions (par jour/semaine).
+
+## 5.1 Comptage par segment (simple)
+
+```sql
+-- Grain: 1 ligne = 1 utilisateur (résultat)
+SELECT
+  country,
+  COUNT(*) AS users
+FROM profiles
+GROUP BY country
+ORDER BY users DESC;
+```
+
+## 5.2 Compter des utilisateurs dans une table d’événements
+
+```sql
+-- Grain: 1 ligne = 1 pays (résultat)
+SELECT
+  p.country,
+  COUNT(DISTINCT e.user_id) AS users_with_events
+FROM events e
+LEFT JOIN profiles p ON e.user_id = p.user_id
+GROUP BY p.country
+ORDER BY users_with_events DESC;
+```
+
+## 5.3 KPI ratio : éviter la division par zéro
+
+```sql
+SELECT
+  p.country,
+  COUNT(DISTINCT CASE WHEN e.event_type = 'validated' THEN e.user_id END) * 1.0
+    / NULLIF(COUNT(DISTINCT CASE WHEN e.event_type = 'enrolled' THEN e.user_id END), 0)
+    AS completion_rate
+FROM events e
+LEFT JOIN profiles p ON e.user_id = p.user_id
+GROUP BY p.country
+ORDER BY completion_rate DESC;
+```
+
+Notes :
+- `* 1.0` force un résultat décimal,
+- `NULLIF(..., 0)` évite une division par zéro.
+
+---
+
+# 6) JOIN : joindre sans détruire tes chiffres
+
+## 6.1 INNER JOIN vs LEFT JOIN
+
+- `INNER JOIN` : garde seulement ce qui match dans les deux tables.
+- `LEFT JOIN` : garde tout ce qui est à gauche, même si la table de droite n’a pas de correspondance.
+
+En Data Analysis, `LEFT JOIN` est souvent préféré au début, car tu ne veux pas “perdre” des lignes sans comprendre pourquoi.
+
+```sql
+SELECT
+  e.user_id,
+  e.event_time,
+  e.event_type,
+  p.country
+FROM events e
+LEFT JOIN profiles p
+  ON e.user_id = p.user_id;
+```
+
+## 6.2 Le test “anti-désastre” après un JOIN
+
+Après une jointure, fais au moins un contrôle :
+- le nombre de lignes a-t-il explosé ?
+- le nombre d’utilisateurs distincts a-t-il augmenté de façon illogique ?
+
+```sql
+SELECT
+  COUNT(*) AS rows_after_join,
+  COUNT(DISTINCT e.user_id) AS users_after_join
+FROM events e
+LEFT JOIN profiles p ON e.user_id = p.user_id;
+```
+
+Si `rows_after_join` devient énorme et inattendu, c’est souvent :
+- une clé non unique dans `profiles`,
+- ou une jointure mal définie.
+
+---
+
+# 7) CTE (WITH) : rendre tes requêtes lisibles (et maintenir le grain)
+
+Les CTE (`WITH`) te permettent de :
+- séparer les étapes,
+- rendre la logique claire,
+- éviter des sous-requêtes illisibles.
+
+## 7.1 Exemple : cohorte “enrolled” puis calcul complétion
+
+```sql
+WITH enrolled AS (
+  SELECT DISTINCT user_id
+  FROM events
+  WHERE event_type = 'enrolled'
+),
+validated AS (
+  SELECT DISTINCT user_id
+  FROM events
+  WHERE event_type = 'validated'
+)
+SELECT
+  COUNT(validated.user_id) * 1.0 / NULLIF(COUNT(enrolled.user_id), 0) AS completion_rate
+FROM enrolled
+LEFT JOIN validated
+  ON enrolled.user_id = validated.user_id;
+```
+
+---
+
+# 8) Exports : comment sortir tes résultats en CSV
+
+## 8.1 Export “universel” (via notebook)
+
+Dans ce thème, tu vas exécuter tes requêtes dans un notebook qui :
+- lit les CSV,
+- charge tout dans SQLite,
+- exécute tes requêtes,
+- exporte les résultats en CSV.
+
+C’est la méthode la plus simple pour une plateforme pédagogique.
+
+## 8.2 Export PostgreSQL (quand tu es en production)
+
+PostgreSQL propose `COPY` pour exporter une table ou un `SELECT`.
+
+```sql
+COPY (
+  SELECT
+    country,
+    COUNT(*) AS n_users
+  FROM profiles
+  GROUP BY country
+) TO '/tmp/users_by_country.csv'
+WITH (FORMAT csv, HEADER true);
+```
+
+Important :
+- `COPY` écrit côté serveur (dans beaucoup d’environnements).
+- En `psql`, on utilise souvent `\\copy` pour écrire côté client.
+
+---
+
+# 9) Exercices obligatoires (avant quiz)
+
+Tu dois produire 3 extractions SQL sur le mini-schéma KORYXA :
+1) Funnel par thème : nombre d’événements `opened_theme` par `theme`.
+2) Completion rate par pays : `validated_users / enrolled_users`.
+3) Segment `opened_notebook_48h` vs `not_opened_48h` et comparaison de la complétion.
+
+Tu dois aussi produire une preuve d’exécution via le notebook :
+- exports CSV,
+- `m2t3_run_report.json` (durées, lignes, outputs).
+
+---
+
+# 10) Checklist validation Thème 3
+
+- `m2t3_queries.sql` rempli (contient JOIN + GROUP BY + HAVING + CTE)
+- 3 exports CSV générés
+- `m2t3_run_report.json` généré par notebook
+- mini-projet soumis + validé

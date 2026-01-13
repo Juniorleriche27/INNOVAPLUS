@@ -35,10 +35,36 @@ export default function DataAnalystModule2Placeholder() {
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">Module 2 — Collecte</h1>
-      <p className="mt-2 text-sm text-slate-600">Bientot disponible.</p>
-    </section>
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Certificat Data Analyst</p>
+        <h1 className="mt-2 text-2xl font-semibold text-slate-900">Module 2 — Collecte</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Objectif : identifier les sources, produire un inventaire, un data mapping minimal et un plan de collecte reproductible.
+        </p>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Thème 2 — CSV/Excel + Power Query</p>
+          <p className="mt-2 text-sm text-slate-600">Lecture paginée + notebook.</p>
+          <div className="mt-4">
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-2">
+              Ouvrir →
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Thème 3 — SQL extraction (SELECT/JOIN/GROUP BY)</p>
+          <p className="mt-2 text-sm text-slate-600">Lecture MDX + SQL lab (SQLite) + preuves d’exécution.</p>
+          <div className="mt-4">
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-3">
+              Ouvrir →
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
-

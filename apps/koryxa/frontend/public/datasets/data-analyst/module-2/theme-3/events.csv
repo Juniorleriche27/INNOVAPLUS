@@ -1,0 +1,33 @@
+user_id,event_time,event_type,theme
+u001,2026-01-01 09:00:00,enrolled,
+u001,2026-01-01 10:00:00,opened_theme,1
+u001,2026-01-01 12:00:00,opened_notebook,1
+u001,2026-01-03 09:30:00,validated,
+u002,2026-01-01 09:05:00,enrolled,
+u002,2026-01-01 11:10:00,opened_theme,2
+u002,2026-01-04 08:00:00,validated,
+u003,2026-01-01 09:10:00,enrolled,
+u003,2026-01-01 14:00:00,opened_theme,1
+u003,2026-01-03 09:00:00,opened_notebook,1
+u004,2026-01-01 09:15:00,enrolled,
+u004,2026-01-02 08:30:00,opened_theme,3
+u004,2026-01-02 09:20:00,opened_notebook,3
+u004,2026-01-06 10:00:00,validated,
+u005,2026-01-01 09:20:00,enrolled,
+u005,2026-01-02 11:00:00,opened_theme,2
+u006,2026-01-01 09:25:00,enrolled,
+u006,2026-01-01 09:50:00,opened_theme,4
+u006,2026-01-02 12:00:00,opened_notebook,4
+u006,2026-01-05 16:00:00,validated,
+u007,2026-01-01 09:30:00,enrolled,
+u007,2026-01-02 09:00:00,opened_theme,5
+u008,2026-01-01 09:35:00,enrolled,
+u008,2026-01-01 10:15:00,opened_theme,4
+u008,2026-01-04 18:00:00,opened_notebook,4
+u009,2026-01-01 09:40:00,enrolled,
+u009,2026-01-01 13:00:00,opened_theme,5
+u010,2026-01-01 09:45:00,enrolled,
+u010,2026-01-02 15:00:00,opened_theme,3
+u010,2026-01-03 16:00:00,opened_notebook,3
+u010,2026-01-06 07:30:00,validated,
+

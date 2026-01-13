@@ -40,6 +40,7 @@ from app.routers import studio_missions as studio_missions_router
 from app.routers.skills import router as skills_router
 from app.routers.module6 import router as module6_router
 from app.routers.data_analyst_module1 import router as da_module1_router
+from app.routers.data_analyst_module2 import router as da_module2_router
 from app.routers.youtube import router as youtube_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -171,6 +172,7 @@ if MYPLANNING_ONLY:
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
+    minimal.include_router(da_module2_router)
     app.include_router(minimal)
     # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
     app.include_router(minimal, prefix="/innova/api", include_in_schema=False)
@@ -207,6 +209,7 @@ else:
     innova_api.include_router(school_router.router)
     innova_api.include_router(module6_router)
     innova_api.include_router(da_module1_router)
+    innova_api.include_router(da_module2_router)
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
     app.include_router(innova_api)

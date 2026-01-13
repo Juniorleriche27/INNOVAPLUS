@@ -6,7 +6,7 @@ import json
 import random
 import zipfile
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
@@ -40,7 +40,23 @@ def _iso(dt: datetime) -> str:
 
 
 def _seeded_rng(seed: str) -> random.Random:
-    return random.Random(abs(hash(seed)) % (2**32))
+    # IMPORTANT: do not use Python's built-in hash() for seeding, as it's salted per-process
+    # (PYTHONHASHSEED), which would make the generated dataset change across restarts.
+    rng = random.Random()
+    rng.seed(seed, version=2)
+    return rng
+
+
+def _serialize_mongo(doc: Optional[dict]) -> Optional[dict]:
+    if not doc:
+        return None
+    out: Dict[str, Any] = {}
+    for key, value in doc.items():
+        if key == "_id":
+            out[key] = str(value)
+        else:
+            out[key] = value
+    return out
 
 
 def _generate_dataset(seed: str) -> List[Dict[str, str | int | float]]:
@@ -463,7 +479,8 @@ async def get_status(
     return {
         "notebooks_validated": bool(validation),
         "quiz_passed": bool(quiz_pass),
-        "validation": validation,
+        # Avoid leaking raw Mongo ObjectId (not JSON-serializable).
+        "validation": _serialize_mongo(validation),
     }
 
 

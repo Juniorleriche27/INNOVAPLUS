@@ -22,7 +22,7 @@ const NAV_LINKS_V1 = [
   { href: "/", label: "Accueil" },
   { href: "/school", label: "KORYXA School" },
   { href: "/entreprise", label: "Entreprise" },
-  { href: "/myfinance", label: "MyFinance" },
+  { href: "/myplanning", label: "MyPlanning" },
   { href: "/about", label: "À propos" },
 ];
 
@@ -30,7 +30,6 @@ const PRODUCT_LINKS = [
   { href: "/studio", label: "CHATLAYA Studio", hint: "Rédaction, missions contenu, académie IA" },
   { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
   { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
-  { href: "/myfinance", label: "MyFinance", hint: "Gestion finance, reporting, suivi" },
   { href: "/myplanning", label: "MyPlanning", hint: "Planification temps & IA Llama (beta)" },
   { href: "/marketplace", label: "Marketplace social", hint: "Publier talents, services, produits" },
   { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },

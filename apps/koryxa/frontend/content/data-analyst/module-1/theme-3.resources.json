@@ -1,0 +1,45 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "44U0pr9CczM",
+      "title": "Comprendre les KPI (indicateurs clés de performance)"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "soiChkomKmo",
+      "title": "What is a KPI? What are KPIs? Key Performance Indicators"
+    }
+  ],
+  "articles": [
+    {
+      "title": "KPIs: What Are Key Performance Indicators? (Investopedia)",
+      "url": "https://www.investopedia.com/terms/k/kpi.asp"
+    },
+    {
+      "title": "What is a Key Performance Indicator (KPI)? (Qlik)",
+      "url": "https://www.qlik.com/us/kpi"
+    },
+    {
+      "title": "Goodhart’s Law: Recognizing and Mitigating the Manipulation of Measures in Analysis (CNA, PDF)",
+      "url": "https://www.cna.org/reports/2022/09/Goodharts-Law-Recognizing-Mitigating-Manipulation-Measures-in-Analysis.pdf"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 3 — KPIs & KPI Dictionary (Deck)",
+      "note": "Optionnel : intégrer un Google Slides embed URL ici si créé par l’admin."
+    }
+  ],
+  "citations": [
+    {
+      "item": "Définition KPI (mesure quantifiable liée à un objectif, suivie dans le temps)",
+      "sources": ["Investopedia", "Qlik"]
+    },
+    {
+      "item": "Risque Goodhart (quand une mesure devient une cible)",
+      "sources": ["CNA"]
+    }
+  ]
+}
+

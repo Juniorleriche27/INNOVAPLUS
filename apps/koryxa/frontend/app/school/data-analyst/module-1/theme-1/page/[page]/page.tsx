@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type Props = {
-  params: Promise<{ page: string }>;
+  params: { page: string };
 };
 
 function clampPage(raw: unknown, total: number): number {
@@ -24,8 +24,12 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
-export default async function Theme1Paged({ params }: Props) {
-  const { page: pageParam } = await params;
+export function generateStaticParams() {
+  return theme1Pages.map((_, idx) => ({ page: String(idx + 1) }));
+}
+
+export default function Theme1Paged({ params }: Props) {
+  const { page: pageParam } = params;
   const total = theme1Pages.length;
   const pageNumber = clampPage(pageParam, total);
   const pageIndex = pageNumber - 1;
@@ -38,10 +42,9 @@ export default async function Theme1Paged({ params }: Props) {
     id: `section-${pageNumber}-${slugify(s.heading)}`,
     label: s.heading,
   }));
-  const maxPaneHeight = "calc(100vh - 320px)";
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-[calc(100vh-220px)] flex-col gap-6 overflow-hidden" key={pageNumber}>
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -68,18 +71,31 @@ export default async function Theme1Paged({ params }: Props) {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
-          <Link
-            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            href={`/school/data-analyst/module-1/theme-1/page/${prevPage}`}
-          >
-            ← Page précédente
-          </Link>
-          <Link
-            className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-800 shadow-sm hover:bg-emerald-50 min-w-36"
-            href={`/school/data-analyst/module-1/theme-1/page/${nextPage}`}
-          >
-            Page suivante →
-          </Link>
+          {pageNumber === 1 ? (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-400">
+              ← Page précédente
+            </span>
+          ) : (
+            <Link
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              href={`/school/data-analyst/module-1/theme-1/page/${prevPage}`}
+            >
+              ← Page précédente
+            </Link>
+          )}
+
+          {pageNumber === total ? (
+            <span className="inline-flex min-w-36 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+              Page suivante →
+            </span>
+          ) : (
+            <Link
+              className="inline-flex min-w-36 items-center justify-center rounded-full border border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
+              href={`/school/data-analyst/module-1/theme-1/page/${nextPage}`}
+            >
+              Page suivante →
+            </Link>
+          )}
           <div className="ml-auto flex flex-wrap gap-2">
             <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-1/theme-1/notebook">
               Notebook
@@ -94,8 +110,24 @@ export default async function Theme1Paged({ params }: Props) {
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:overflow-hidden" style={{ height: maxPaneHeight }}>
-        <aside className="space-y-6 overflow-y-auto lg:h-full">
+      <div className="grid flex-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
+        <article className="order-1 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+            {page.sections.map((section, sectionIndex) => {
+              const id = `section-${pageNumber}-${slugify(section.heading)}`;
+              return (
+                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
+                  <h3 id={id}>{section.heading}</h3>
+                  {section.body.map((paragraph, paragraphIndex) => (
+                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        </article>
+
+        <aside className="order-2 space-y-6 overflow-y-auto overscroll-contain">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
             <div className="mt-3 grid gap-2 text-sm text-slate-600">
@@ -148,22 +180,6 @@ export default async function Theme1Paged({ params }: Props) {
             </ul>
           </section>
         </aside>
-
-        <article className="overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:h-full">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
-            {page.sections.map((section, sectionIndex) => {
-              const id = `section-${pageNumber}-${slugify(section.heading)}`;
-              return (
-                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
-                  <h3 id={id}>{section.heading}</h3>
-                  {section.body.map((paragraph, paragraphIndex) => (
-                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
-                  ))}
-                </section>
-              );
-            })}
-          </div>
-        </article>
       </div>
     </div>
   );

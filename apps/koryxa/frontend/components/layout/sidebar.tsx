@@ -66,6 +66,14 @@ function IconBook(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+function IconCalendar(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v2m8-2v2M4 7h16M6 21h12a2 2 0 002-2V7H4v12a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 11h2m4 0h2M8 15h2m4 0h2" />
+    </svg>
+  );
+}
 function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -98,6 +106,7 @@ const WORKSPACE_LINKS = [
 const V1_LINKS = [
   { href: "/school", label: "KORYXA School", description: "Programme de formation", icon: IconBook },
   { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
+  { href: "/myplanning", label: "MyPlanning", description: "Organisation & suivi", icon: IconCalendar },
 ];
 
 const V1_SCHOOL_TREE = [
@@ -182,7 +191,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
     <aside
       className={clsx(
         // Modern sticky sidebar with glass effect
-        "z-30 h-full shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-hidden",
+        "z-30 h-full shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-visible",
         "transition-all duration-300 ease-in-out",
         // Smooth width transitions
         collapsed ? "w-[72px]" : "w-[280px]",
@@ -190,7 +199,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
       )}
       style={style}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col overflow-hidden">
         {/* Header */}
         <div className="relative flex items-center gap-3 p-3 border-b border-slate-200/60">
           {isExpanded && (
@@ -208,9 +217,9 @@ export default function Sidebar({ className, style }: { className?: string; styl
           <button
             onClick={toggle}
             className={clsx(
-              "absolute right-2 top-2 z-50 p-2 rounded-lg hover:bg-slate-100 transition-colors",
-              "text-slate-600 hover:text-slate-900",
-              collapsed && "bg-white/80 backdrop-blur"
+              "absolute right-2 top-2 z-[60] p-2 rounded-lg transition-colors pointer-events-auto",
+              "bg-white/90 backdrop-blur border border-slate-200/70 shadow-sm",
+              "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
             )}
             aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
           >

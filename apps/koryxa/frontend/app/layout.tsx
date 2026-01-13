@@ -50,11 +50,14 @@ export default function RootLayout(props: { children: ReactNode }) {
               <div className="hidden h-full overflow-hidden sm:block">
                 <Sidebar />
               </div>
-              <div className="min-w-0 h-full overflow-y-auto">
-                <main id="content" className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-6">
+              <div className="min-w-0 flex h-full flex-col overflow-hidden">
+                <main
+                  id="content"
+                  className="mx-auto w-full max-w-[1200px] flex-1 overflow-y-auto overscroll-contain px-4 pb-10 pt-6 sm:px-6 lg:px-8"
+                >
                   {children}
+                  <Footer />
                 </main>
-                <Footer />
               </div>
             </div>
           </AuthProvider>

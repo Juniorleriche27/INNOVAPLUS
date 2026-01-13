@@ -217,7 +217,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
           <button
             onClick={toggle}
             className={clsx(
-              "absolute right-2 top-2 z-[60] p-2 rounded-lg transition-colors pointer-events-auto",
+              "absolute right-2 top-2 z-[80] p-2 rounded-lg transition-colors pointer-events-auto",
               "bg-white/90 backdrop-blur border border-slate-200/70 shadow-sm",
               "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
             )}
@@ -228,7 +228,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
         </div>
 
         {/* Navigation */}
-        <nav className="sidebar-nav flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="sidebar-nav flex-1 p-4 space-y-2 overflow-y-auto overscroll-contain">
           {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;

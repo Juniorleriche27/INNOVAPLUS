@@ -44,7 +44,7 @@ export default function Theme1Paged({ params }: Props) {
   }));
 
   return (
-    <div className="flex h-[calc(100vh-220px)] flex-col gap-6 overflow-hidden" key={pageNumber}>
+    <div className="flex min-h-0 flex-col gap-6 overflow-hidden" key={pageNumber}>
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -90,7 +90,7 @@ export default function Theme1Paged({ params }: Props) {
             </span>
           ) : (
             <Link
-              className="inline-flex min-w-36 items-center justify-center rounded-full border border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"
+              className="inline-flex min-w-36 items-center justify-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50"
               href={`/school/data-analyst/module-1/theme-1/page/${nextPage}`}
             >
               Page suivante →
@@ -110,24 +110,8 @@ export default function Theme1Paged({ params }: Props) {
         </div>
       </section>
 
-      <div className="grid flex-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
-        <article className="order-1 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
-            {page.sections.map((section, sectionIndex) => {
-              const id = `section-${pageNumber}-${slugify(section.heading)}`;
-              return (
-                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
-                  <h3 id={id}>{section.heading}</h3>
-                  {section.body.map((paragraph, paragraphIndex) => (
-                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
-                  ))}
-                </section>
-              );
-            })}
-          </div>
-        </article>
-
-        <aside className="order-2 space-y-6 overflow-y-auto overscroll-contain">
+      <div className="grid h-[calc(100dvh-340px)] min-h-[420px] gap-6 overflow-hidden lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-8">
+        <aside className="order-1 space-y-6 overflow-y-auto overscroll-contain">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
             <div className="mt-3 grid gap-2 text-sm text-slate-600">
@@ -180,6 +164,22 @@ export default function Theme1Paged({ params }: Props) {
             </ul>
           </section>
         </aside>
+
+        <article className="order-2 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+            {page.sections.map((section, sectionIndex) => {
+              const id = `section-${pageNumber}-${slugify(section.heading)}`;
+              return (
+                <section key={`${pageIndex}-${sectionIndex}`} className="space-y-3">
+                  <h3 id={id}>{section.heading}</h3>
+                  {section.body.map((paragraph, paragraphIndex) => (
+                    <p key={`${pageIndex}-${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>
+                  ))}
+                </section>
+              );
+            })}
+          </div>
+        </article>
       </div>
     </div>
   );

@@ -1,0 +1,12 @@
+field,needed_for,source,grain,refresh,notes
+user_id,joins,platform_events,event,daily,unique learner id
+event_time,cohorting,platform_events,event,daily,timestamp (timezone to confirm)
+event_type,funnel,platform_events,event,daily,enrolled/opened_theme/opened_notebook/submitted/validated
+theme,funnel_step,platform_events,event,daily,theme number or slug
+validated_at,conversion_time,validations,validation,daily,validation timestamp
+country,segmentation,profile,user,weekly,user country
+channel,segmentation,marketing,user,weekly,acquisition channel
+ticket_id,guardrail,support_tickets,ticket,daily,unique ticket id
+ticket_created_at,guardrail_time,support_tickets,ticket,daily,ticket timestamp
+lesson_id,content_link,content_catalog,lesson,manual,optional mapping to themes
+

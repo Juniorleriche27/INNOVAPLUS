@@ -46,6 +46,19 @@ export default function DataAnalystModule2Placeholder() {
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Thème 1 — Panorama des sources & plan de collecte</p>
+          <p className="mt-2 text-sm text-slate-600">Cours (16 pages) + notebook + soumission + quiz.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/page/1">
+              Ouvrir →
+            </Link>
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/notebook">
+              Notebook →
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold text-slate-900">Thème 2 — CSV/Excel + Power Query</p>
           <p className="mt-2 text-sm text-slate-600">Lecture paginée + notebook.</p>
           <div className="mt-4">

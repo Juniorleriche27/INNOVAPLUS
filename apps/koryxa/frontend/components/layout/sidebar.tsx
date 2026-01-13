@@ -130,7 +130,15 @@ const V1_SCHOOL_TREE = [
               { href: "/school/data-analyst/module-1/theme-5/page/1", label: "Theme 5" },
             ],
           },
-          { href: "/school/data-analyst/module-2", label: "Module 2 — Collecte" },
+          {
+            href: "/school/data-analyst/module-2",
+            label: "Module 2 — Collecte",
+            children: [
+              { href: "/school/data-analyst/module-2/theme-1/page/1", label: "Theme 1" },
+              { href: "/school/data-analyst/module-2/theme-2", label: "Theme 2" },
+              { href: "/school/data-analyst/module-2/theme-3", label: "Theme 3" },
+            ],
+          },
           { href: "/school/data-analyst/module-3", label: "Module 3 — Nettoyage" },
           { href: "/school/data-analyst/module-4", label: "Module 4 — Preparation" },
           { href: "/school/data-analyst/module-5", label: "Module 5 — EDA" },

@@ -1,0 +1,236 @@
+# Thème 2 — CSV/Excel + Power Query : import, types, profiling, transformations
+
+# 1) Pourquoi ce thème est critique
+
+Dans la vraie vie, la majorité des données arrivent sous forme de fichiers :
+- CSV exportés d’un outil (CRM, paiement, formulaires, support…),
+- Excel multi-feuilles (reporting manuel),
+- fichiers “sales” (dates incohérentes, séparateurs bizarres, encodage douteux, totaux au mauvais endroit).
+
+Le problème : si tu importes “vite fait”, tu fabriques des erreurs invisibles.
+Et ces erreurs finissent toujours par :
+- casser les KPI (mauvais calculs),
+- faire perdre du temps (réparations tardives),
+- créer des conflits (“nos chiffres ne sont pas les mêmes”).
+
+Objectif du thème :
+1) importer proprement (CSV/Excel),
+2) fixer les types + la locale (dates, décimales),
+3) profiler la qualité (column quality / distribution / profile),
+4) transformer (clean, split, merge, append, pivot/unpivot),
+5) produire un dataset final + preuves (exports notebook + script Power Query M + rapport qualité).
+
+---
+
+# 2) CSV vs Excel : différences pratiques (et pourquoi ça change tout)
+
+## 2.1 CSV : ce qui casse le plus souvent
+
+Un CSV peut être “simple”… ou être un piège total.
+
+### Les 6 pièges les plus courants
+1) **Séparateur** : `;` vs `,`
+2) **Encodage** : UTF-8 vs ANSI/Latin-1 (accents qui deviennent bizarres)
+3) **Décimales** : `1,25` vs `1.25`
+4) **Dates** : `13/01/2026` vs `01/13/2026`
+5) **Champs texte contenant le séparateur** : `"Lomé, Togo"` dans un CSV séparé par virgule
+6) **Colonnes qui changent** d’un export à l’autre (un outil ajoute un champ, renomme un titre…)
+
+### Règle pro (facile)
+Avant de toucher aux analyses :
+- tu identifies séparateur + encodage + format de dates,
+- tu forces les types,
+- et tu documentes ce choix.
+
+## 2.2 Excel : le fichier “humain”, donc instable
+
+Excel est souvent préparé “à la main”. Donc tu vois :
+- multi-feuilles,
+- lignes de titre au-dessus du tableau,
+- colonnes fusionnées,
+- totaux en bas,
+- cellules vides “juste pour le style”.
+
+### Règle pro (modèle tabulaire)
+Power Query doit transformer Excel en un format clair :
+- **1 ligne = 1 observation**
+- **1 colonne = 1 variable**
+- **pas de totaux** dans la table source
+- **pas de titres décoratifs** au-dessus des en-têtes
+
+Astuce terrain : si tu peux, transforme la plage en **Table Excel (Ctrl+T)** avant d’importer.
+
+---
+
+# 3) Importer avec Power Query (Excel / Power BI) : le bon réflexe
+
+Power Query sert à faire un pipeline stable :
+1) connecter/importer,
+2) transformer,
+3) charger (dans Excel / modèle Power BI).
+
+## 3.1 Import CSV (Excel)
+Chemin typique :
+**Données → Obtenir des données → À partir d’un fichier → À partir d’un texte/CSV**
+
+Contrôles obligatoires au moment de l’import :
+- bon séparateur détecté,
+- encodage correct,
+- première ligne = en-têtes,
+- attention aux types auto-déduits si le fichier est “instable”.
+
+## 3.2 Import Excel
+Power Query te liste :
+- feuilles,
+- tables,
+- plages nommées.
+
+Bon réflexe :
+- choisir une **Table** (si elle existe),
+- sinon nettoyer la feuille : supprimer lignes décoratives / totaux.
+
+---
+
+# 4) Typage + locale : le point qui ruine les KPI
+
+Tu peux avoir une colonne “montant” qui a l’air correcte… et être complètement fausse.
+
+## 4.1 Exemple simple (nombres)
+La chaîne `"1,234"` peut vouloir dire :
+- mille deux cent trente-quatre (séparateur milliers),
+- ou 1.234 (décimales).
+
+## 4.2 Exemple simple (dates)
+La date `"01/02/2026"` peut vouloir dire :
+- 1 février (format jour/mois),
+- ou 2 janvier (format mois/jour).
+
+## 4.3 La pratique Power Query qui sauve tout
+Dans Power Query :
+- **Change Type** → parfois insuffisant,
+- utiliser **Change Type → Using Locale** quand il y a un doute.
+
+Règle pro :
+- les colonnes **date** et **nombre** doivent être converties explicitement,
+- et la locale choisie doit être notée dans tes “refresh notes”.
+
+---
+
+# 5) Profilage (Column quality / distribution / profile) : contrôler avant de nettoyer
+
+Power Query te permet de voir la qualité sans écrire de code.
+
+Onglet **Affichage (View)** :
+- **Column quality** : % valide / erreur / vide
+- **Column distribution** : valeurs fréquentes / rares
+- **Column profile** : statistiques + distribution (plus détaillé)
+
+Ce que tu détectes vite :
+- erreurs de conversion (dates impossibles),
+- colonnes quasi vides,
+- valeurs incohérentes (outliers),
+- catégories sales (“Togo ” vs “TOGO” vs “togo”).
+
+---
+
+# 6) Transformations essentielles (celles que tu utilises tout le temps)
+
+## 6.1 Nettoyage texte (obligatoire)
+Objectif : enlever les erreurs “invisibles”.
+- Trim (espaces début/fin)
+- Clean (caractères non imprimables)
+- remplacer doubles espaces
+- standardiser la casse
+
+Exemples :
+- `"  Lomé "` → `"Lomé"`
+- `"TOGO "` → `"Togo"`
+- `" Mobile  "` → `"mobile"`
+
+## 6.2 Split / Extract (très fréquent)
+Cas typique :
+- `full_name = "Nom Prénom"` → tu veux 2 colonnes.
+Ou :
+- `location = "Lomé - Togo"` → tu veux `city`, `country`.
+
+## 6.3 Pivot / Unpivot (super fréquent en Excel)
+Excel adore le format “large” :
+- colonnes Jan, Feb, Mar…
+
+Mais l’analyse/BI préfère souvent le format “long” :
+- une colonne `month`, une colonne `value`.
+
+Règle :
+- si tu dois filtrer/segmenter facilement : **unpivot** est souvent plus robuste.
+
+## 6.4 Merge vs Append (à ne pas confondre)
+- **Merge (jointure)** : ajoute des colonnes via une clé (ex: `user_id`)
+- **Append (empiler)** : empile des tables identiques (ex: ventes 2024 + 2025)
+
+---
+
+# 7) Reproductibilité : finir le “copier-coller éternel”
+
+Le but est que ton import soit re-exécutable demain.
+
+Un pipeline fichier doit être :
+- ré-exécutable (refresh),
+- documenté (data dictionary),
+- versionné (date d’extraction),
+- vérifiable (rapport qualité / checks).
+
+Sinon, tu n’as pas un pipeline : tu as une opération manuelle fragile.
+
+---
+
+# 8) Mini-cas complet (KORYXA School)
+
+Tu reçois :
+1) `raw_events_messy.csv` (événements apprenants, sale)
+2) `raw_profiles_messy.xlsx` (profils apprenants, multi-feuilles + titres décoratifs)
+
+But :
+produire `m2t2_clean_learning_dataset.csv` avec exactement :
+- user_id (string)
+- event_time (datetime ISO, UTC)
+- event_type (categorical)
+- theme (int)
+- country (string standardisée)
+- channel (string standardisée)
+
+Preuves attendues :
+- conversions dates/nombres correctes,
+- rapport qualité (missing, doublons, min/max dates),
+- script Power Query (M) exporté,
+- refresh notes (5–10 lignes).
+
+---
+
+# 9) Exercices obligatoires (avant quiz)
+
+A) Power Query
+1) Importer `raw_events_messy.csv`
+2) Importer `raw_profiles_messy.xlsx`
+3) Forcer les types (avec locale si nécessaire)
+4) Activer Column quality/distribution/profile
+5) Nettoyer (trim/clean, standardiser pays/canal)
+6) Exporter le script **M** (Advanced Editor)
+
+B) Notebook
+1) Charger les fichiers bruts
+2) Produire le dataset final propre (6 colonnes)
+3) Générer un rapport qualité JSON
+4) Générer un data dictionary (md)
+5) Joindre le script M dans `m2t2_powerquery.m`
+
+---
+
+# 10) Checklist validation (Thème 2)
+
+- [ ] Dataset final propre exporté : `m2t2_clean_learning_dataset.csv` (6 colonnes exactes)
+- [ ] Rapport qualité : `m2t2_quality_report.json`
+- [ ] Data dictionary : `m2t2_data_dictionary.md`
+- [ ] Script Power Query : `m2t2_powerquery.m` (non vide)
+- [ ] Refresh notes : `m2t2_refresh_notes.md`
+- [ ] Soumission validée → quiz débloqué
+

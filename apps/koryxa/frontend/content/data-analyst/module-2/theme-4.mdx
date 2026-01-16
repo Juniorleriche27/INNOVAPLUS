@@ -1,0 +1,146 @@
+# Thème 4 — APIs + Python : auth, paramètres, pagination, rate limit, logs
+
+# 1) Pourquoi ce thème est central
+
+Les données “réelles” viennent souvent :
+- d’outils externes (paiement, CRM, analytics),
+- de services internes (microservices),
+- d’open data.
+
+Dans tous les cas, tu dois savoir :
+1) appeler une API proprement,
+2) récupérer toutes les pages,
+3) gérer les erreurs + rate limits,
+4) produire un dataset fiable + traçable (logs).
+
+---
+
+# 2) Rappel express : HTTP + REST (sans blabla)
+
+Une API REST expose des endpoints (URLs) et répond souvent en JSON.
+
+## 2.1 Méthodes courantes
+- GET : lire des données
+- POST : créer (souvent non-idempotent)
+- PUT/PATCH : mettre à jour
+- DELETE : supprimer
+
+Pour un Data Analyst, 80% = GET + params + headers.
+
+---
+
+# 3) Les 4 composants d’un appel API (pro)
+
+## 3.1 URL + endpoint
+Ex : `/transactions`
+
+## 3.2 Query params (filtrer/paginer)
+Ex : `?page=1&page_size=100&start_date=2026-01-01`
+
+## 3.3 Headers (auth + format)
+Ex :
+- `X-API-Key: ...`
+- `Authorization: Bearer ...`
+- `Accept: application/json`
+
+## 3.4 Body (souvent pour POST)
+Ex : JSON payload.
+
+---
+
+# 4) Authentification : 3 niveaux utiles à connaître
+
+## 4.1 API Key (simple)
+Header : `X-API-Key: ...`
+
+## 4.2 Bearer token
+Header : `Authorization: Bearer <token>`
+
+## 4.3 OAuth 2.0
+Cadre standard pour obtenir un accès limité à une ressource protégée (tu n’implémentes pas forcément le flow complet, mais tu dois comprendre le principe).
+
+---
+
+# 5) Pagination : récupérer "tout" (sinon dataset faux)
+
+Beaucoup d’API limitent le nombre d’éléments retournés.
+Tu dois gérer :
+- page/page_size
+- offset/limit
+- cursor pagination
+
+**Règle pro (simple et robuste)** :
+- si l’API fournit un champ `next`, **tu suis `next`** jusqu’à ce qu’il soit null.
+
+---
+
+# 6) Rate limiting (429) : ce n’est pas une erreur “rare”
+
+Si tu fais trop de requêtes, l’API peut répondre :
+- **429 Too Many Requests**
+et te donner un header `Retry-After`.
+
+Règle pro :
+- si 429 => attendre `Retry-After` => reprendre
+- logger le nombre de 429
+- limiter ton débit (sleep entre pages)
+
+---
+
+# 7) Robustesse : erreurs, timeouts, retries, logs
+
+## 7.1 Timeouts obligatoires
+Jamais de requêtes sans timeout.
+
+## 7.2 Retries intelligents
+- retry sur 429/5xx/timeouts (avec backoff)
+- pas de retry aveugle sur 4xx (souvent erreur client)
+
+## 7.3 Logs obligatoires
+Pour chaque requête :
+- endpoint + params
+- status_code
+- elapsed_ms
+- bytes
+- timestamp
+- (si erreur) message d’erreur
+
+---
+
+# 8) Lab KORYXA : mock API stable (reproductible)
+
+KORYXA fournit un Mock API :
+- auth via `X-API-Key`
+- pagination via `next`
+- rate limit simulé (429 + Retry-After)
+
+Tu vas :
+1) récupérer toutes les transactions,
+2) produire un CSV brut + un CSV clean,
+3) générer un run report JSON + request log CSV,
+4) produire un mini “contrat API” (markdown).
+
+---
+
+# 9) Exercices obligatoires (avant quiz)
+A) Exécuter le notebook Thème 4  
+B) Produire les exports (raw + clean + logs + report + contract)  
+C) Soumettre sur la plateforme
+
+---
+
+# 10) Checklist validation
+- [ ] pagination gérée (toutes les pages)
+- [ ] auth via header
+- [ ] gestion 429 + Retry-After (au moins 1 cas simulé)
+- [ ] request_log.csv présent
+- [ ] run_report.json présent
+- [ ] dataset final clean (types + dates)
+
+---
+
+# Références (preuve forte)
+- Requests (params/headers/json/raise_for_status)  
+- HTTP 429 + Retry-After  
+- OAuth 2.0 (RFC 6749)  
+- httpbin (test HTTP)

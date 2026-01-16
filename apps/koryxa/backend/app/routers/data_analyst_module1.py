@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.responses import Response
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.core.config import settings
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user
 
@@ -29,6 +30,16 @@ COLL_THEME5_QUIZ_ATTEMPTS = "module1_theme5_quiz_attempts"
 
 LESSONS = ["Theme 1", "Theme 2", "Theme 3", "Theme 4", "Theme 5"]
 COUNTRIES = ["Togo", "Benin", "Ghana", "Senegal", "Nigeria"]
+
+
+def _is_admin_user(user: dict | None) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    if not email:
+        return False
+    allowed = [(e.strip().lower()) for e in (settings.ADMIN_EMAILS or "").split(",") if e.strip()]
+    return email in allowed
 
 
 def _now() -> datetime:
@@ -472,6 +483,12 @@ async def get_status(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     user_id = str(current.get("_id"))
+    if _is_admin_user(current):
+        return {
+            "notebooks_validated": True,
+            "quiz_passed": True,
+            "validation": None,
+        }
     validation = await db[COLL_VALIDATIONS].find_one({"user_id": user_id})
     quiz_pass = await db[COLL_QUIZ_ATTEMPTS].find_one(
         {"user_id": user_id, "passed": True}, sort=[("created_at", -1)]
@@ -654,6 +671,8 @@ async def theme1_status(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     user_id = str(current.get("_id"))
+    if _is_admin_user(current):
+        return {"validated": True, "rows_count": None}
     submission = await db[COLL_THEME1_SUBMISSIONS].find_one({"user_id": user_id}, sort=[("created_at", -1)])
     return {
         "validated": bool(submission and submission.get("validated")),

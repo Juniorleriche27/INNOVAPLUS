@@ -45,7 +45,7 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
   }, [pathname]);
 
   return (
-    <aside className="w-full">
+    <aside className="w-full min-h-0">
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <div>

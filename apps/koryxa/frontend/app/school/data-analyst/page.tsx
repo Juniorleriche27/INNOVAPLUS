@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { INNOVA_API_BASE } from "@/lib/env";
 import { themes as module1Themes } from "./module-1/content";
 
@@ -97,6 +98,7 @@ export default function DataAnalystLandingPage() {
   const [module2, setModule2] = useState<Module2Status>({});
   const [activeModule, setActiveModule] = useState<number>(1);
   const [statusNote, setStatusNote] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     async function load() {
@@ -128,6 +130,14 @@ export default function DataAnalystLandingPage() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    const raw = searchParams.get("module");
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= MODULES.length) {
+      setActiveModule(parsed);
+    }
+  }, [searchParams]);
 
   const module1Completed = useMemo(() => Boolean(module1?.notebooks_validated && module1?.quiz_passed), [module1]);
   const module2Completed = useMemo(() => Boolean(module2?.validated), [module2]);

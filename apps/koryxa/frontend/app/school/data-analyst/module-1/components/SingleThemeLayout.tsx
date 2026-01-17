@@ -29,6 +29,8 @@ export default function SingleThemeLayout({
 }: Props) {
   const chips = [meta.readingTime].filter(Boolean) as string[];
 
+  const showToc = toc.length > 0;
+
   return (
     <div className="flex min-h-0 flex-col gap-6 overflow-hidden">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -60,7 +62,7 @@ export default function SingleThemeLayout({
         ) : null}
       </section>
 
-      <div className="grid h-[calc(100dvh-320px)] min-h-[420px] gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+      <div className="grid h-[calc(100dvh-320px)] min-h-[420px] gap-6 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-8">
         <article className="order-1 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
             {children}
@@ -68,9 +70,9 @@ export default function SingleThemeLayout({
         </article>
 
         <aside className="order-2 space-y-6 overflow-y-auto overscroll-contain">
-          {toc.length > 0 ? (
+          {showToc ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">Dans cette page</h2>
+              <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
               <ul className="mt-3 space-y-2 text-sm text-slate-600">
                 {toc.map((item) => (
                   <li key={item.id}>

@@ -118,7 +118,7 @@ export default function PagedThemeLayout(props: {
         </div>
       </section>
 
-      <div className="grid flex-1 min-h-0 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
+      <div className="grid h-[calc(100dvh-320px)] min-h-[420px] gap-6 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-8">
         <article className="order-1 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
             {page.sections.map((section, sectionIndex) => {
@@ -156,7 +156,6 @@ export default function PagedThemeLayout(props: {
               })}
             </div>
           </section>
-
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Dans cette page</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-600">

@@ -8,6 +8,7 @@ export const revalidate = 0;
 type ResourceSchema = {
   videos?: Array<{ lang: "fr" | "en"; youtubeId: string; title: string }>;
   articles?: Array<{ title: string; url: string }>;
+  toc?: string[];
 };
 
 const typedResources = resources as ResourceSchema;
@@ -15,6 +16,7 @@ const typedResources = resources as ResourceSchema;
 export default function Module2Theme3Page() {
   const videos = typedResources.videos || [];
   const articles = typedResources.articles || [];
+  const toc = typedResources.toc || [];
 
   return (
     <SingleThemeLayout
@@ -31,6 +33,7 @@ export default function Module2Theme3Page() {
       ]}
       videos={videos}
       articles={articles}
+      toc={toc.map((label) => ({ label }))}
       sidebarSections={[
         {
           title: "Livrables attendus",

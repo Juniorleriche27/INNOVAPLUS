@@ -33,6 +33,18 @@
       "url": "https://www.postgresql.org/docs/current/sql-copy.html"
     }
   ],
+  "toc": [
+    "Pourquoi le SQL est indispensable",
+    "Penser le grain avant la requête",
+    "SELECT propre et DISTINCT",
+    "WHERE vs HAVING",
+    "GROUP BY et KPI",
+    "JOIN sans casser les chiffres",
+    "CTE (WITH) pour la lisibilité",
+    "Exports CSV",
+    "Exercices obligatoires",
+    "Checklist validation"
+  ],
   "slides": [
     {
       "title": "Theme 3 — SQL extraction (deck)",
@@ -40,4 +52,3 @@
     }
   ]
 }
-

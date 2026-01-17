@@ -85,12 +85,12 @@ export default function PagedThemeLayout(props: {
               ← Page précédente
             </span>
           ) : (
-            <Link
+            <a
               className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               href={hrefForPage(prevPage)}
             >
               ← Page précédente
-            </Link>
+            </a>
           )}
 
           {pageNumber === total ? (
@@ -98,12 +98,12 @@ export default function PagedThemeLayout(props: {
               Page suivante →
             </span>
           ) : (
-            <Link
+            <a
               className="inline-flex min-w-36 items-center justify-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50"
               href={hrefForPage(nextPage)}
             >
               Page suivante →
-            </Link>
+            </a>
           )}
 
           {actions && actions.length > 0 ? (

@@ -29,6 +29,11 @@
       "url": "https://infoscience.epfl.ch/entities/publication/f45d580a-6e1e-406e-b0c0-7bb2e22e037e?ln=en"
     }
   ],
+  "toc": [
+    "Objectif du capstone collecte",
+    "Livrables et structure du pack",
+    "Notebook packager et preuves"
+  ],
   "slides": [
     {
       "title": "Theme 5 — Capstone collecte (deck)",
@@ -36,4 +41,3 @@
     }
   ]
 }
-

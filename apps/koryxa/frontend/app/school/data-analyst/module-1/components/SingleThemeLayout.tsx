@@ -3,7 +3,7 @@ import Link from "next/link";
 import VideoBlock from "./VideoBlock";
 import type { ThemeArticle, ThemeMeta, ThemeVideo } from "./PagedThemeLayout";
 
-type TocItem = { id: string; label: string };
+type TocItem = { id?: string; href?: string; label: string };
 type SidebarSection = { title: string; content: ReactNode };
 
 type Props = {
@@ -68,13 +68,20 @@ export default function SingleThemeLayout({
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
               <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                {toc.map((item) => (
-                  <li key={item.id}>
-                    <a className="hover:text-slate-900 hover:underline" href={`#${item.id}`}>
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
+                {toc.map((item, idx) => {
+                  const href = item.href || (item.id ? `#${item.id}` : "");
+                  return (
+                    <li key={`${item.label}-${idx}`}>
+                      {href ? (
+                        <a className="hover:text-slate-900 hover:underline" href={href}>
+                          {item.label}
+                        </a>
+                      ) : (
+                        <span>{item.label}</span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           ) : null}

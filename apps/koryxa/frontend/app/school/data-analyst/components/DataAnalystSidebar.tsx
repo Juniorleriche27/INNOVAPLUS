@@ -20,11 +20,11 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const tracks = [
-    { label: "Data Analyst", href: "/school/data-analyst" },
-    { label: "Data Engineer", href: "/school/parcours/specialisations/data-engineer" },
-    { label: "Data Scientist", href: "/school/parcours/specialisations/data-scientist" },
-    { label: "ML Engineer", href: "/school/parcours/specialisations/machine-learning-engineer" },
-  ];
+    { value: "data-analyst", label: "Data Analyst", href: "/school/data-analyst" },
+    { value: "data-engineer", label: "Data Engineer", href: "/school/parcours/specialisations/data-engineer" },
+    { value: "data-scientist", label: "Data Scientist", href: "/school/parcours/specialisations/data-scientist" },
+    { value: "machine-learning-engineer", label: "ML Engineer", href: "/school/parcours/specialisations/machine-learning-engineer" },
+  ] as const;
 
   const activeModule = useMemo(() => {
     const match = modules.find((module) => {
@@ -39,9 +39,14 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
     [modules, activeModule]
   );
 
+  const selectedTrackValue = useMemo(() => {
+    const hit = tracks.find((track) => isActivePath(pathname, track.href));
+    return hit?.value ?? "data-analyst";
+  }, [pathname]);
+
   return (
-    <aside className="w-full shrink-0 lg:w-[280px]">
-      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-6">
+    <aside className="w-full">
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">KORYXA School</p>
@@ -64,24 +69,20 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
         >
           <section className="rounded-2xl border border-slate-200 bg-white p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Parcours</p>
-            <div className="mt-3 space-y-2 text-sm">
-              {tracks.map((track) => {
-                const active = isActivePath(pathname, track.href);
-                return (
-                  <Link
-                    key={track.href}
-                    href={track.href}
-                    className={`block rounded-xl border px-3 py-2 ${
-                      active
-                        ? "border-sky-200 bg-sky-50 text-slate-900 font-semibold"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    {track.label}
-                  </Link>
-                );
-              })}
-            </div>
+            <select
+              className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+              value={selectedTrackValue}
+              onChange={(event) => {
+                const next = tracks.find((track) => track.value === event.target.value);
+                if (next) router.push(next.href);
+              }}
+            >
+              {tracks.map((track) => (
+                <option key={track.href} value={track.value}>
+                  {track.label}
+                </option>
+              ))}
+            </select>
           </section>
           <section className="rounded-2xl border border-slate-200 bg-white p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Module</p>
@@ -121,10 +122,10 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
                       <Link
                         key={theme.href}
                         href={theme.href}
-                        className={`block rounded-xl border px-3 py-2 text-xs ${
+                        className={`block cursor-pointer rounded-xl border px-3 py-2 text-xs transition ${
                           activeTheme
                             ? "border-sky-200 bg-sky-50 text-slate-900"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                         }`}
                         aria-current={activeTheme ? "page" : undefined}
                       >

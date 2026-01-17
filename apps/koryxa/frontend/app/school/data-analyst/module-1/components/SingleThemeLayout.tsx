@@ -63,13 +63,7 @@ export default function SingleThemeLayout({
       </section>
 
       <div className="grid h-[calc(100dvh-320px)] min-h-[420px] gap-6 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-8">
-        <article className="order-1 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
-            {children}
-          </div>
-        </article>
-
-        <aside className="order-2 space-y-6 overflow-y-auto overscroll-contain">
+        <aside className="order-1 space-y-6 overflow-y-auto overscroll-contain">
           {showToc ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
@@ -114,6 +108,12 @@ export default function SingleThemeLayout({
             </section>
           ))}
         </aside>
+
+        <article className="order-2 overflow-y-auto overscroll-contain rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+            {children}
+          </div>
+        </article>
       </div>
     </div>
   );

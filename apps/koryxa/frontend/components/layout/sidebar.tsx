@@ -137,6 +137,7 @@ const V1_SCHOOL_TREE = [
               { href: "/school/data-analyst/module-2/theme-1/page/1", label: "Theme 1" },
               { href: "/school/data-analyst/module-2/theme-2", label: "Theme 2" },
               { href: "/school/data-analyst/module-2/theme-3", label: "Theme 3" },
+              { href: "/school/data-analyst/module-2/theme-5", label: "Theme 5" },
             ],
           },
           { href: "/school/data-analyst/module-3", label: "Module 3 — Nettoyage" },

@@ -60,7 +60,7 @@ export default function DataAnalystModule2Placeholder() {
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold text-slate-900">Thème 2 — CSV/Excel + Power Query</p>
-          <p className="mt-2 text-sm text-slate-600">Lecture paginée + notebook.</p>
+          <p className="mt-2 text-sm text-slate-600">Lecture + notebook + soumission + quiz.</p>
           <div className="mt-4">
             <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-2">
               Ouvrir →
@@ -73,6 +73,16 @@ export default function DataAnalystModule2Placeholder() {
           <p className="mt-2 text-sm text-slate-600">Lecture MDX + SQL lab (SQLite) + preuves d’exécution.</p>
           <div className="mt-4">
             <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-3">
+              Ouvrir →
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Thème 5 — Capstone collecte</p>
+          <p className="mt-2 text-sm text-slate-600">Pack ZIP reproductible (RAP + lineage + README + dictionary).</p>
+          <div className="mt-4">
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-5">
               Ouvrir →
             </Link>
           </div>

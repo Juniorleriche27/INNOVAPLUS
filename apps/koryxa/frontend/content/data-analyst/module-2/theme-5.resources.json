@@ -1,0 +1,39 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "vdrL_mIrAUc",
+      "title": "Pipelines ETL/ELT (atelier) — concepts + différences"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "BqVSs52B71o",
+      "title": "Data Pipelines for ETL | Build Your Data Engineering Skillset"
+    }
+  ],
+  "articles": [
+    {
+      "title": "RAP strategy and vision (ONS) — reproducible analytical pipelines",
+      "url": "https://www.ons.gov.uk/methodology/reproducibleanalyticalpipelines/rapstrategyandvision"
+    },
+    {
+      "title": "What is Data Lineage? (IBM)",
+      "url": "https://www.ibm.com/think/topics/data-lineage"
+    },
+    {
+      "title": "ODC Data Dictionary templates / codebook guidance (Open Data Commons)",
+      "url": "https://fdilab.gitbook.io/open-data-commons/how-to-guides/prepare-data/odc-standards/metadata-standards/odc-templates/upload-a-dictionary"
+    },
+    {
+      "title": "README file for datasets — Best practices and template (EPFL, 2022)",
+      "url": "https://infoscience.epfl.ch/entities/publication/f45d580a-6e1e-406e-b0c0-7bb2e22e037e?ln=en"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 5 — Capstone collecte (deck)",
+      "note": "Optionnel : slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
+  ]
+}
+

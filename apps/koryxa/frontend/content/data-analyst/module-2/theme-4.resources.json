@@ -1,0 +1,42 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "o-rTY5uHahc",
+      "title": "Interroger une API avec Python (requests)"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "p71SWzjeqtk",
+      "title": "Learn how to access ANY API with Python"
+    }
+  ],
+  "articles": [
+    {
+      "title": "Requests — Quickstart (GET/params/headers/json/raise_for_status)",
+      "url": "https://requests.readthedocs.io/en/latest/user/quickstart/"
+    },
+    {
+      "title": "MDN — 429 Too Many Requests (Retry-After, rate limiting)",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/429"
+    },
+    {
+      "title": "RFC 6749 — OAuth 2.0 Authorization Framework",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6749"
+    },
+    {
+      "title": "httpbin — service de test HTTP (verbs, auth, status)",
+      "url": "https://httpbin.org/"
+    },
+    {
+      "title": "Real Python — Python Requests (guide pratique)",
+      "url": "https://realpython.com/python-requests/"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 4 — APIs + Python (deck)",
+      "note": "Optionnel : slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
+  ]
+}

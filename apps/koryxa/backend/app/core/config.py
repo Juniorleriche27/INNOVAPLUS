@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     USER_HASH_SECRET: str = os.getenv("USER_HASH_SECRET", "dev-user-hash-secret-change-me")
     SIGNUP_NOTIFY_EMAILS: str | None = os.getenv("SIGNUP_NOTIFY_EMAILS")
     YOUTUBE_API_KEY: str | None = os.getenv("YOUTUBE_API_KEY")
+    ADMIN_EMAILS: str | None = os.getenv("ADMIN_EMAILS", "seniorlamadokou@gmail.com")
 
     class Config:
         env_file = ".env"

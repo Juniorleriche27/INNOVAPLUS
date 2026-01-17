@@ -1,8 +1,13 @@
-// innova-frontend/components/layout/footer.tsx
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { IS_V1_SIMPLE } from "@/lib/env";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/school")) return null;
+
   const year = new Date().getFullYear();
 
   return (

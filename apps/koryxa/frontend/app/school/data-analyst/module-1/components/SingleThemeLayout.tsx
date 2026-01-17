@@ -103,7 +103,7 @@ export default function SingleThemeLayout({
 
       {(videos.length > 0 || articles.length > 0) && (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-lg font-semibold text-slate-900">Ressources du theme</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Ressources</h2>
           {videos.length > 0 ? (
             <div className="mt-4">
               <VideoBlock videos={videos} />

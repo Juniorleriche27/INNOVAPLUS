@@ -1,32 +1,42 @@
+import type { CourseModule } from "@/app/school/catalog";
 import { themes as module1Themes } from "./module-1/content";
+import { theme1Pages } from "./module-1/theme-1/content";
+import { theme2Pages } from "./module-1/theme-2/content";
+import { theme3Pages } from "./module-1/theme-3/content";
+import { theme4Pages } from "./module-1/theme-4/content";
+import { theme5Pages } from "./module-1/theme-5/content";
+import { module2Theme2Pages } from "./module-2/theme-2/content";
 
-export type DataAnalystModule = {
-  index: number;
-  title: string;
-  href: string;
-  description: string;
-  themes: Array<{ title: string; href: string; match?: string }>;
-};
+type ThemePageLike = { title: string };
 
-export const DATA_ANALYST_MODULES: DataAnalystModule[] = [
+function buildPagedLessons(base: string, pages: ThemePageLike[]) {
+  return pages.map((page, idx) => ({
+    title: `Page ${idx + 1} — ${page.title}`,
+    href: `${base}/page/${idx + 1}`,
+  }));
+}
+
+export const DATA_ANALYST_MODULES: CourseModule[] = [
   {
     index: 1,
     title: "Module 1 — Cadrage & KPIs",
     href: "/school/data-analyst/module-1",
     description: "Cadrer un besoin, definir KPIs, parties prenantes, validation + preuves.",
     themes: module1Themes.map((theme) => {
-      const href =
+      const base = `/school/data-analyst/module-1/${theme.slug}`;
+      const pages =
         theme.slug === "theme-1"
-          ? "/school/data-analyst/module-1/theme-1/page/1"
+          ? theme1Pages
           : theme.slug === "theme-2"
-            ? "/school/data-analyst/module-1/theme-2/page/1"
+            ? theme2Pages
             : theme.slug === "theme-3"
-              ? "/school/data-analyst/module-1/theme-3/page/1"
-              : theme.slug === "theme-5"
-                ? "/school/data-analyst/module-1/theme-5/page/1"
-              : `/school/data-analyst/module-1/${theme.slug}`;
-      const match = href.replace(/\/page\/1$/, "");
-      return { title: theme.title, href, match };
+              ? theme3Pages
+              : theme.slug === "theme-4"
+                ? theme4Pages
+                : theme.slug === "theme-5"
+                  ? theme5Pages
+                  : [{ title: theme.title }];
+      return { title: theme.title, lessons: buildPagedLessons(base, pages) };
     }),
   },
   {
@@ -37,20 +47,34 @@ export const DATA_ANALYST_MODULES: DataAnalystModule[] = [
     themes: [
       {
         title: "Thème 1 — Panorama des sources & plan de collecte",
-        href: "/school/data-analyst/module-2/theme-1",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-2/theme-1/page/1",
+          },
+        ],
       },
       {
         title: "Thème 2 — CSV/Excel + Power Query",
-        href: "/school/data-analyst/module-2/theme-2/page/1",
-        match: "/school/data-analyst/module-2/theme-2",
+        lessons: buildPagedLessons("/school/data-analyst/module-2/theme-2", module2Theme2Pages),
       },
       {
         title: "Thème 3 — SQL extraction",
-        href: "/school/data-analyst/module-2/theme-3",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-2/theme-3/page/1",
+          },
+        ],
       },
       {
         title: "Thème 5 — Capstone collecte",
-        href: "/school/data-analyst/module-2/theme-5",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-2/theme-5/page/1",
+          },
+        ],
       },
     ],
   },

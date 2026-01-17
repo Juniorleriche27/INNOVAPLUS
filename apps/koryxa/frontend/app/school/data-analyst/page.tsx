@@ -75,6 +75,7 @@ function DataAnalystDashboard() {
 
   const active = MODULES.find((m) => m.index === activeModule) || MODULES[0];
   const activeUnlocked = unlocked(active.index);
+  const firstLesson = active.themes?.[0]?.lessons?.[0] ?? null;
 
   return (
     <div className="space-y-6">
@@ -103,11 +104,11 @@ function DataAnalystDashboard() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Continuer</h3>
-          {active.themes.length > 0 ? (
+          {firstLesson ? (
             <div className="mt-3">
               <p className="text-base font-semibold text-slate-900">{active.themes[0].title}</p>
               <p className="mt-2 text-sm text-slate-600">Reprendre la leçon en cours et garder le rythme.</p>
-              <Link className="mt-3 inline-flex text-sm font-semibold text-sky-700" href={active.themes[0].href}>
+              <Link className="mt-3 inline-flex text-sm font-semibold text-sky-700" href={firstLesson.href}>
                 Continuer →
               </Link>
             </div>
@@ -140,9 +141,9 @@ function DataAnalystDashboard() {
                 Valide le module précédent pour déverrouiller
               </span>
             )}
-            {active.themes.length > 0 ? (
-              <Link className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700" href={active.themes[0].href}>
-                Commencer le premier thème
+            {firstLesson ? (
+              <Link className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700" href={firstLesson.href}>
+                Commencer la première leçon
               </Link>
             ) : null}
           </div>

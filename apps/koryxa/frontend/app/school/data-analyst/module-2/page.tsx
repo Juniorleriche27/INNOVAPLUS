@@ -42,50 +42,16 @@ export default function DataAnalystModule2Placeholder() {
         <p className="mt-2 text-sm text-slate-600">
           Objectif : identifier les sources, produire un inventaire, un data mapping minimal et un plan de collecte reproductible.
         </p>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Thème 1 — Panorama des sources & plan de collecte</p>
-          <p className="mt-2 text-sm text-slate-600">Cours (16 pages) + notebook + soumission + quiz.</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1">
-              Ouvrir →
-            </Link>
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/notebook">
-              Notebook →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Thème 2 — CSV/Excel + Power Query</p>
-          <p className="mt-2 text-sm text-slate-600">Lecture + notebook + soumission + quiz.</p>
-          <div className="mt-4">
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-2">
-              Ouvrir →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Thème 3 — SQL extraction (SELECT/JOIN/GROUP BY)</p>
-          <p className="mt-2 text-sm text-slate-600">Lecture MDX + SQL lab (SQLite) + preuves d’exécution.</p>
-          <div className="mt-4">
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-3">
-              Ouvrir →
-            </Link>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Thème 5 — Capstone collecte</p>
-          <p className="mt-2 text-sm text-slate-600">Pack ZIP reproductible (RAP + lineage + README + dictionary).</p>
-          <div className="mt-4">
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-5">
-              Ouvrir →
-            </Link>
-          </div>
+        <p className="mt-4 text-sm text-slate-600">
+          Choisis une leçon dans la sidebar (Sommaire du module) pour démarrer la lecture.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link
+            className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+            href="/school/data-analyst/module-2/theme-1/page/1"
+          >
+            Commencer la lecture
+          </Link>
         </div>
       </section>
     </div>

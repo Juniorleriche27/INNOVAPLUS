@@ -47,6 +47,12 @@ body.koryxa-data-analyst main#content {
   width: 100vw;
   margin-left: calc(50% - 50vw) !important;
   margin-right: calc(50% - 50vw) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+body.koryxa-data-analyst footer {
+  display: none !important;
 }
 
 a {

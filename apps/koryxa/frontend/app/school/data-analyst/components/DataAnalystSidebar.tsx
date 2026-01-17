@@ -18,6 +18,12 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
   const pathname = usePathname();
   const [openModule, setOpenModule] = useState<number | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const tracks = [
+    { label: "Data Analyst", href: "/school/data-analyst" },
+    { label: "Data Engineer", href: "/school/parcours/specialisations/data-engineer" },
+    { label: "Data Scientist", href: "/school/parcours/specialisations/data-scientist" },
+    { label: "ML Engineer", href: "/school/parcours/specialisations/machine-learning-engineer" },
+  ];
 
   const activeModule = useMemo(() => {
     const match = modules.find((module) => {
@@ -52,15 +58,38 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
 
         <div
           id="data-analyst-sidebar"
-          className={`mt-4 space-y-3 ${mobileOpen ? "block" : "hidden lg:block"}`}
+          className={`mt-4 space-y-4 ${mobileOpen ? "block" : "hidden lg:block"}`}
         >
+          <section className="rounded-2xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Parcours</p>
+            <div className="mt-3 space-y-2 text-sm">
+              {tracks.map((track) => {
+                const active = isActivePath(pathname, track.href);
+                return (
+                  <Link
+                    key={track.href}
+                    href={track.href}
+                    className={`block rounded-xl border px-3 py-2 ${
+                      active
+                        ? "border-sky-200 bg-sky-50 text-slate-900 font-semibold"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                    }`}
+                  >
+                    {track.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Modules du parcours</p>
           {modules.map((module) => {
             const isOpen = openModule === module.index;
             const isActive =
               isActivePath(pathname, module.href) ||
               module.themes.some((theme) => matchesTheme(pathname, theme.href, theme.match));
             return (
-              <div key={module.href} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+              <div key={module.href} className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
                 <button
                   type="button"
                   onClick={() => setOpenModule(isOpen ? null : module.index)}
@@ -83,9 +112,12 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
                   >
                     Vue du module
                   </Link>
+                  <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    Lecons
+                  </p>
                   {module.themes.length > 0 ? (
                     module.themes.map((theme) => {
-                    const activeTheme = matchesTheme(pathname, theme.href, theme.match);
+                      const activeTheme = matchesTheme(pathname, theme.href, theme.match);
                       return (
                         <Link
                           key={theme.href}
@@ -110,6 +142,7 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
               </div>
             );
           })}
+          </section>
         </div>
       </div>
     </aside>

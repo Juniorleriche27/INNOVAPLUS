@@ -29,8 +29,6 @@ export default function SingleThemeLayout({
 }: Props) {
   const chips = [meta.readingTime].filter(Boolean) as string[];
 
-  const showToc = toc.length > 0;
-
   return (
     <div className="flex min-h-0 flex-col gap-6 overflow-hidden">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -62,65 +60,49 @@ export default function SingleThemeLayout({
         ) : null}
       </section>
 
-      <div className="grid min-h-[420px] gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-8">
-        <article className="order-1 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
-            {children}
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+          {children}
+        </div>
+      </section>
+
+      {sidebarSections.length > 0 ? (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="space-y-5 text-sm text-slate-600">
+            {sidebarSections.map((section) => (
+              <div key={section.title} className="space-y-2">
+                <h2 className="text-sm font-semibold text-slate-900">{section.title}</h2>
+                <div>{section.content}</div>
+              </div>
+            ))}
           </div>
-        </article>
-        <aside className="order-2 space-y-6 lg:sticky lg:top-6 lg:self-start">
-          {showToc ? (
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">Sommaire du thème</h2>
-              <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                {toc.map((item, idx) => {
-                  const href = item.href || (item.id ? `#${item.id}` : "");
-                  return (
-                    <li key={`${item.label}-${idx}`}>
-                      {href ? (
-                        <a className="hover:text-slate-900 hover:underline" href={href}>
-                          {item.label}
-                        </a>
-                      ) : (
-                        <span>{item.label}</span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+        </section>
+      ) : null}
+
+      {(videos.length > 0 || articles.length > 0) && (
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 className="text-lg font-semibold text-slate-900">Ressources du theme</h2>
+          {videos.length > 0 ? (
+            <div className="mt-4">
+              <VideoBlock videos={videos} />
+            </div>
           ) : null}
-
-          {(videos.length > 0 || articles.length > 0) && (
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">Ressources</h2>
-              {videos.length > 0 ? (
-                <div className="mt-4">
-                  <VideoBlock videos={videos} />
-                </div>
-              ) : null}
-              {articles.length > 0 ? (
-                <ul className="mt-5 space-y-2 text-sm text-slate-600">
-                  {articles.map((article) => (
-                    <li key={article.url}>
-                      <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
-                        {article.title || article.label || article.url}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </section>
-          )}
-
-          {sidebarSections.map((section) => (
-            <section key={section.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-slate-900">{section.title}</h2>
-              <div className="mt-3 text-sm text-slate-600">{section.content}</div>
-            </section>
-          ))}
-        </aside>
-      </div>
+          {articles.length > 0 ? (
+            <div className="mt-6">
+              <p className="text-sm font-semibold text-slate-900">Lectures complementaires</p>
+              <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                {articles.map((article) => (
+                  <li key={article.url}>
+                    <a className="text-sky-700 hover:underline" href={article.url} target="_blank" rel="noreferrer">
+                      {article.title || article.label || article.url}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      )}
     </div>
   );
 }

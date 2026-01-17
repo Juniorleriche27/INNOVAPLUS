@@ -4,14 +4,15 @@ import { module2Theme2Articles, module2Theme2Meta, module2Theme2Pages, module2Th
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type Props = { params: { page: string } };
+type Props = { params: { page: string } | Promise<{ page: string }> };
 
 export function generateStaticParams() {
   return module2Theme2Pages.map((_, idx) => ({ page: String(idx + 1) }));
 }
 
-export default function Module2Theme2Paged({ params }: Props) {
-  const pageNumber = typeof params.page === "string" ? Number(params.page) : 1;
+export default async function Module2Theme2Paged({ params }: Props) {
+  const resolved = await Promise.resolve(params);
+  const pageNumber = typeof resolved.page === "string" ? Number(resolved.page) : 1;
   return (
     <PagedThemeLayout
       meta={module2Theme2Meta}

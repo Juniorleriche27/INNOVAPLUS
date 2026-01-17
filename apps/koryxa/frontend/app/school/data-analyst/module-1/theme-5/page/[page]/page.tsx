@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type Props = {
-  params: { page: string };
+  params: { page: string } | Promise<{ page: string }>;
 };
 
 function clampPage(raw: unknown, total: number): number {
@@ -28,9 +28,10 @@ export function generateStaticParams() {
   return theme5Pages.map((_, idx) => ({ page: String(idx + 1) }));
 }
 
-export default function Theme5Paged({ params }: Props) {
+export default async function Theme5Paged({ params }: Props) {
+  const resolved = await Promise.resolve(params);
   const total = theme5Pages.length;
-  const pageNumber = clampPage(params.page, total);
+  const pageNumber = clampPage(resolved.page, total);
   const pageIndex = pageNumber - 1;
   const page = theme5Pages[pageIndex];
 

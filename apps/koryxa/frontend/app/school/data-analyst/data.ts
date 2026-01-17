@@ -92,7 +92,17 @@ export const DATA_ANALYST_MODULES: CourseModule[] = [
     title: "Module 3 — Nettoyage",
     href: "/school/data-analyst/module-3",
     description: "Nettoyage, valeurs manquantes, doublons, qualite et regles.",
-    themes: [],
+    themes: [
+      {
+        title: "Thème 1 — Profilage & valeurs manquantes",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-3/theme-1/page/1",
+          },
+        ],
+      },
+    ],
   },
   {
     index: 4,

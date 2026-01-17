@@ -1,0 +1,42 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "Z9GHoLbn1pI",
+      "title": "Tp3 pandas: Nettoyage d'un dataframe et les fonctions statistiques"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "ozKsfsldV7M",
+      "title": "Clean Messy Data in Python (NumPy + Pandas)"
+    }
+  ],
+  "articles": [
+    {
+      "title": "pandas.isna (détecter les valeurs manquantes)",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.isna.html"
+    },
+    {
+      "title": "DataFrame.fillna (imputer des NA)",
+      "url": "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.fillna.html"
+    },
+    {
+      "title": "pandas.to_datetime (fiabiliser les dates)",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html"
+    },
+    {
+      "title": "MCAR / MAR / MNAR (mécanismes de données manquantes)",
+      "url": "https://stefvanbuuren.name/fimd/sec-MCAR.html"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 1 — Profilage & valeurs manquantes (deck)",
+      "note": "Optionnel : slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
+  ],
+  "adminNotes": {
+    "youtubeEmbeddableCheck": "Vérifier status.embeddable==true via YouTube Data API au moment de l’ajout (sinon refuser)."
+  }
+}
+

@@ -1,0 +1,156 @@
+export const meta = {
+  title: "Thème 1 — Profilage & valeurs manquantes : diagnostiquer, choisir une stratégie, prouver",
+  module: "Module 3 — Nettoyage & Qualité des données",
+  estimated_reading_time: "120–150 min",
+};
+
+# 1) Objectif du thème
+
+Dans un projet réel, “nettoyer” ne signifie pas “remplir tout au hasard”.
+Ça signifie :
+1) mesurer la qualité (profilage),
+2) comprendre *pourquoi* ça manque,
+3) choisir une stratégie cohérente avec le métier,
+4) produire des preuves (exports + rapport + plan).
+
+À la fin, tu dois livrer :
+- un dataset nettoyé,
+- un rapport qualité (JSON),
+- un plan de traitement des valeurs manquantes (MD),
+- et une table de profilage.
+
+---
+
+# 2) Profilage : diagnostiquer avant d’agir
+
+## 2.1 Ce qu’on mesure (minimum pro)
+
+Pour chaque colonne :
+- type (numérique/catégorie/date),
+- % manquants (NA),
+- nombre de valeurs uniques,
+- top 3 valeurs (fréquences) si catégorie,
+- min/max si numérique,
+- plage min/max si datetime,
+- valeurs suspectes (ex : âge = 0, 999 ; revenue < 0).
+
+**Pourquoi c’est indispensable**
+Sans profilage, tu ne sais pas :
+- quelles colonnes sont exploitables,
+- quels champs sont critiques,
+- quels problèmes sont “mineurs” vs “bloquants”.
+
+## 2.2 NA ≠ “vide”
+
+En pandas, “manquant” peut être :
+- NaN (num),
+- `<NA>`/None (string/obj),
+- NaT (dates).
+
+Mais une chaîne vide "" n’est pas toujours NA : tu dois la convertir explicitement.
+Et surtout : **ne transforme pas tout en string** au nettoyage, sinon `NaN` devient `"nan"` et tu perds la vérité sur les manquants.
+
+---
+
+# 3) Valeurs manquantes : comprendre le mécanisme (sans magie)
+
+On distingue classiquement :
+- **MCAR** : manque par hasard → biais limité,
+- **MAR** : manque dépend d’une variable observée,
+- **MNAR** : manque dépend de la valeur elle-même → risque de biais majeur.
+
+Tu ne peux pas “prouver” parfaitement MCAR/MAR/MNAR sur un simple export.
+Mais tu peux faire un diagnostic raisonnable :
+- créer un indicateur `is_missing_X`,
+- comparer pays/canal/âge entre “missing” et “non-missing”,
+- vérifier si le missing est concentré sur certains segments.
+
+**Règle :**
+tu documentes ton hypothèse + ton incertitude.
+
+---
+
+# 4) Stratégies de traitement : quoi faire, quand, et pourquoi
+
+## 4.1 Supprimer (drop)
+OK si :
+- la colonne est non critique + trop manquante,
+- la ligne est inexploitable (ex: user_id manquant).
+
+⚠️ Danger :
+supprimer beaucoup de lignes peut changer l’échantillon (biais).
+Toujours mesurer l’impact : “avant/après”.
+
+## 4.2 Imputer (fill)
+Classique (simple, reproductible) :
+- numérique : médiane (robuste),
+- catégoriel : mode, ou "unknown"/"Unknown",
+- dates : souvent garder NA + flag (selon le métier).
+
+⚠️ Règle pro :
+si tu imputes, ajoute un **flag** `missing_<col>` pour garder l’info.
+
+## 4.3 Créer “Unknown”
+Utile pour catégories (channel, city, device).
+Mais “Unknown” devient un vrai segment : il faut l’assumer et le mesurer.
+
+## 4.4 Imputation avancée (hors fondamental)
+KNN/modèles : possible, mais plus risqué si mal expliqué.
+Ici, priorité : clarté + traçabilité + reproductibilité.
+
+---
+
+# 5) Mini-cas KORYXA : `sales_users_messy.csv`
+
+Colonnes :
+- user_id, country, channel, age, signup_date, last_active, revenue
+
+Problèmes injectés :
+- âges manquants + âges aberrants (0, 999),
+- dates en formats mixtes,
+- country vide / espaces / casse incohérente,
+- revenue manquant (MNAR possible) + revenue négatif,
+- doublons sur user_id.
+
+Objectif :
+1) produire `m3t1_dataset_clean.csv`,
+2) produire `m3t1_quality_report.json`,
+3) produire `m3t1_missingness_plan.md`,
+4) produire `m3t1_profiling_table.csv`.
+
+---
+
+# 6) Plan de traitement (format simple obligatoire)
+
+Tu remplis un tableau :
+
+| Colonne | % missing | Hypothèse mécanisme | Décision | Justification |
+|--------|-----------|---------------------|----------|---------------|
+| age    | ...       | MAR possible        | médiane + flag | robuste, variable utile |
+| country| ...       | MCAR/MAR            | Unknown + nettoyage | évite drop |
+| revenue| ...       | MNAR possible       | garder NA + flag | éviter biais |
+
+Tu n’as pas besoin d’être “certain”.
+Tu dois être cohérent + transparent + reproductible.
+
+---
+
+# 7) Exécution obligatoire (notebook)
+
+Le notebook fait :
+- profilage complet,
+- nettoyage minimal,
+- stratégie missingness (simple + flag),
+- dédup contrôlée,
+- exports + rapport + plan.
+
+Le quiz lit uniquement ces fichiers ⇒ impossible de réussir sans exécution.
+
+---
+
+# 8) Checklist validation (Thème 1)
+- [ ] m3t1_profiling_table.csv généré
+- [ ] m3t1_dataset_clean.csv généré
+- [ ] m3t1_quality_report.json généré
+- [ ] m3t1_missingness_plan.md généré
+- [ ] soumission validée + quiz débloqué

@@ -42,17 +42,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-main#content:has(.koryxa-data-analyst-shell) {
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  height: 100% !important;
-}
-
-main#content:has(.koryxa-data-analyst-shell) footer {
-  display: none !important;
-}
 
 a {
   text-decoration: none;

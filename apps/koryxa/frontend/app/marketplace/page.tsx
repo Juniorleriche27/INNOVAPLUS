@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import TelemetryPing from "@/components/util/TelemetryPing";
 import { INNOVA_API_BASE } from "@/lib/env";
 
@@ -171,7 +172,7 @@ export default function MarketplacePage() {
       const data = await res.json();
       setOffers(data.items || []);
       setError(null);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger le marketplace pour le moment.");
     } finally {
       setLoading(false);
@@ -296,7 +297,7 @@ export default function MarketplacePage() {
       setSuccessMessage("Offre publiée. Elle apparaît maintenant dans le fil !");
       fetchOffers();
       formRef.current?.scrollIntoView({ behavior: "smooth" });
-    } catch (err) {
+    } catch {
       setError("Publication impossible. Vérifiez les champs et réessayez.");
     } finally {
       setPublishing(false);
@@ -338,7 +339,7 @@ export default function MarketplacePage() {
         throw new Error(txt || "Echec de la candidature");
       }
       setSuccessMessage("Candidature envoyée. L'auteur sera notifié.");
-    } catch (err) {
+    } catch {
       setError("Impossible d'envoyer votre candidature. Réessayez ou vérifiez votre identifiant.");
     } finally {
       setApplying(null);
@@ -441,11 +442,16 @@ export default function MarketplacePage() {
           <div className="relative">
             <div className="absolute inset-0 rounded-[28px] bg-gradient-to-r from-sky-200 to-indigo-300 opacity-30 blur-3xl" />
             <div className="relative flex h-full items-center justify-center rounded-[28px] border border-white/60 bg-white/70 p-6 backdrop-blur">
-              <img
-                src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=60"
-                alt="Collaboration"
-                className="h-64 w-full rounded-[24px] object-cover shadow-lg"
-              />
+              <div className="relative h-64 w-full overflow-hidden rounded-[24px] shadow-lg">
+                <Image
+                  src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=900&q=60"
+                  alt="Collaboration"
+                  fill
+                  sizes="(min-width: 1024px) 520px, 100vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -912,6 +918,7 @@ export default function MarketplacePage() {
                 </div>
                 {offer.cover_image && (
                   <div className="relative h-64 w-full overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={offer.cover_image} alt="visuel" className="h-full w-full object-cover" />
                   </div>
                 )}

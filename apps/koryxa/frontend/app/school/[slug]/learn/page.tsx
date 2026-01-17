@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiSchool, type CertificateDetail, type Lesson, type ContentResource } from "@/lib/api";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -27,7 +27,7 @@ function ResourceBlock({ res }: { res: ContentResource }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-800">
       <p className="font-semibold">Article / lien externe</p>
-      {res.metadata?.title && <p className="text-slate-600">{String(res.metadata.title)}</p>}
+      {res.metadata?.title != null ? <p className="text-slate-600">{String(res.metadata.title)}</p> : null}
       {res.url && (
         <a href={res.url} target="_blank" rel="noreferrer" className="text-sky-700 underline">
           Ouvrir
@@ -68,11 +68,6 @@ export default function LearnPage() {
       mounted = false;
     };
   }, [params?.slug]);
-
-  const lessonsFlat: Lesson[] = useMemo(() => {
-    if (!data?.modules) return [];
-    return data.modules.flatMap((m) => m.lessons || []);
-  }, [data]);
 
   async function completeCurrent() {
     if (!activeLesson) return;

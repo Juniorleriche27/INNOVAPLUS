@@ -3,7 +3,7 @@ import ModuleReader from "@/app/school/v1/ModuleReader";
 import { foundationalProgram } from "@/app/school/v1/content";
 
 export function generateStaticParams() {
-  return foundationalProgram.modules.map((module) => ({ module: module.id }));
+  return foundationalProgram.modules.map((mod) => ({ module: mod.id }));
 }
 
 export default function FundamentalModulePage({ params }: { params: { module: string } }) {
@@ -21,13 +21,13 @@ export default function FundamentalModulePage({ params }: { params: { module: st
     }
   }
   const activeIndex = moduleIndex === -1 ? 0 : moduleIndex;
-  const module = moduleIndex === -1 ? fallback : foundationalProgram.modules[moduleIndex];
+  const activeModule = moduleIndex === -1 ? fallback : foundationalProgram.modules[moduleIndex];
   const prev = foundationalProgram.modules[activeIndex - 1];
   const next = foundationalProgram.modules[activeIndex + 1];
 
   return (
     <ModuleReader
-      module={module}
+      module={activeModule}
       programTitle={foundationalProgram.title}
       moduleIndex={activeIndex}
       moduleCount={foundationalProgram.modules.length}

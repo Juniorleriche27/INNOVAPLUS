@@ -5,7 +5,6 @@ import { IS_V1_SIMPLE } from "@/lib/env";
 export const dynamic = "force-dynamic";
 
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
-const SECTION_SUBTITLE = "text-base text-slate-500";
 
 export default function HomePage() {
   if (IS_V1_SIMPLE) {

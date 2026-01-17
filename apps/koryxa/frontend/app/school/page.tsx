@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { apiSchool, type CertificateProgram } from "@/lib/api";
-import { useAuth } from "@/components/auth/AuthProvider";
 import { IS_V1_SIMPLE } from "@/lib/env";
 
 const FILTERS: Array<{ label: string; value: string | null }> = [
@@ -203,82 +202,85 @@ const MOCK_CERTIFICATES: CertificateProgram[] = [
   },
 ];
 
-export default function SchoolCatalogPage() {
-  if (IS_V1_SIMPLE) {
-    return (
-      <div className="space-y-6">
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Bibliotheque de parcours</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">KORYXA School</h1>
-          <p className="mt-2 text-base text-slate-600">
-            Des parcours structures comme des livres interactifs. Chaque module se lit comme un chapitre.
-          </p>
-          <p className="mt-2 text-sm text-slate-600">
-            Navigation lineaire : precedent et suivant, sans dispersion.
-          </p>
-        </section>
+function SchoolV1Landing() {
+  return (
+    <div className="space-y-6">
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Bibliotheque de parcours</p>
+        <h1 className="mt-3 text-3xl font-bold text-slate-900">KORYXA School</h1>
+        <p className="mt-2 text-base text-slate-600">
+          Des parcours structures comme des livres interactifs. Chaque module se lit comme un chapitre.
+        </p>
+        <p className="mt-2 text-sm text-slate-600">
+          Navigation lineaire : precedent et suivant, sans dispersion.
+        </p>
+      </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Parcours fondamentaux</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-              <p className="text-sm font-semibold text-slate-900">Parcours Fondamental Commun</p>
-              <p className="mt-2 text-sm text-slate-600">Les bases data + IA appliquees sur des besoins reels.</p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span className="rounded-full border border-slate-200 px-2 py-1">4–6 semaines</span>
-                <span className="rounded-full border border-slate-200 px-2 py-1">6 modules</span>
-              </div>
-              <Link href="/school/parcours/fondamental" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
-                Ouvrir le parcours →
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">Parcours fondamentaux</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <p className="text-sm font-semibold text-slate-900">Parcours Fondamental Commun</p>
+            <p className="mt-2 text-sm text-slate-600">Les bases data + IA appliquees sur des besoins reels.</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+              <span className="rounded-full border border-slate-200 px-2 py-1">4–6 semaines</span>
+              <span className="rounded-full border border-slate-200 px-2 py-1">6 modules</span>
+            </div>
+            <Link href="/school/parcours/fondamental" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+              Ouvrir le parcours →
+            </Link>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+            <p className="text-sm font-semibold text-slate-900">Certificat Data Analyst (Module 1)</p>
+            <p className="mt-2 text-sm text-slate-600">Cadrage du besoin, KPIs et validation metier.</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+              <span className="rounded-full border border-slate-200 px-2 py-1">1 module</span>
+              <span className="rounded-full border border-slate-200 px-2 py-1">5 themes</span>
+            </div>
+            <Link href="/school/data-analyst/module-1" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+              Ouvrir le module →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">Specialisations</h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {[
+            { title: "Data Analyst", slug: "data-analyst", focus: "Analyse et tableaux de bord pour la decision." },
+            { title: "Data Engineer", slug: "data-engineer", focus: "Pipelines fiables et preparation des donnees." },
+            { title: "Data Scientist", slug: "data-scientist", focus: "Modeles et experimentation appliquee." },
+            { title: "Machine Learning Engineer", slug: "machine-learning-engineer", focus: "Industrialisation des modeles ML." },
+          ].map((track) => (
+            <div key={track.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
+              <p className="text-sm font-semibold text-slate-900">{track.title}</p>
+              <p className="mt-2 text-sm text-slate-600">{track.focus}</p>
+              <Link
+                href={`/school/parcours/specialisations/${track.slug}`}
+                className="mt-4 inline-flex text-sm font-semibold text-sky-700"
+              >
+                Ouvrir la specialisation →
               </Link>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-              <p className="text-sm font-semibold text-slate-900">Certificat Data Analyst (Module 1)</p>
-              <p className="mt-2 text-sm text-slate-600">Cadrage du besoin, KPIs et validation metier.</p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                <span className="rounded-full border border-slate-200 px-2 py-1">1 module</span>
-                <span className="rounded-full border border-slate-200 px-2 py-1">5 themes</span>
-              </div>
-              <Link href="/school/data-analyst/module-1" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
-                Ouvrir le module →
-              </Link>
-            </div>
-          </div>
-        </section>
+          ))}
+        </div>
+      </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Specialisations</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {[
-              { title: "Data Analyst", slug: "data-analyst", focus: "Analyse et tableaux de bord pour la decision." },
-              { title: "Data Engineer", slug: "data-engineer", focus: "Pipelines fiables et preparation des donnees." },
-              { title: "Data Scientist", slug: "data-scientist", focus: "Modeles et experimentation appliquee." },
-              { title: "Machine Learning Engineer", slug: "machine-learning-engineer", focus: "Industrialisation des modeles ML." },
-            ].map((track) => (
-              <div key={track.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-                <p className="text-sm font-semibold text-slate-900">{track.title}</p>
-                <p className="mt-2 text-sm text-slate-600">{track.focus}</p>
-                <Link href={`/school/parcours/specialisations/${track.slug}`} className="mt-4 inline-flex text-sm font-semibold text-sky-700">
-                  Ouvrir la specialisation →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">Projets & validations</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Les parcours se valident par des livrables et des preuves de travail. Pas de classement, juste du concret.
+        </p>
+        <Link href="/school/validations" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+          Voir la validation →
+        </Link>
+      </section>
+    </div>
+  );
+}
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Projets & validations</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Les parcours se valident par des livrables et des preuves de travail. Pas de classement, juste du concret.
-          </p>
-          <Link href="/school/validations" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
-            Voir la validation →
-          </Link>
-        </section>
-      </div>
-    );
-  }
-  const { user, loading } = useAuth();
+function SchoolV2Catalog() {
   const [certs, setCerts] = useState<CertificateProgram[]>([]);
   const [filter, setFilter] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -419,4 +421,8 @@ export default function SchoolCatalogPage() {
       )}
     </div>
   );
+}
+
+export default function SchoolCatalogPage() {
+  return IS_V1_SIMPLE ? <SchoolV1Landing /> : <SchoolV2Catalog />;
 }

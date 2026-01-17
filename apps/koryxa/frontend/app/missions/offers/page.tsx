@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { missionsApi } from "@/lib/api-client/missions";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -10,19 +10,20 @@ type OfferRow = {
   mission_id: string;
   title?: string;
   offer_id: string;
+  prestataire_id?: string;
   status: string;
   expires_at?: string;
   wave?: number;
 };
 
 export default function OffersCenterPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [offers, setOffers] = useState<OfferRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyOffer, setBusyOffer] = useState<string | null>(null);
   const [isPublicFeed, setIsPublicFeed] = useState(false);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     try {
       if (user) {
         const data = await missionsApi.list("prestataire");
@@ -30,18 +31,20 @@ export default function OffersCenterPage() {
         setIsPublicFeed(false);
       } else {
         // fallback public demo feed
-        const res = await fetch(`${INNOVA_API_BASE}/missions/offers/public`).then((r) => r.json());
+        const res = (await fetch(`${INNOVA_API_BASE}/missions/offers/public`).then((r) => r.json())) as {
+          items?: OfferRow[];
+        };
         setOffers(res.items || []);
         setIsPublicFeed(true);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de charger les offres");
     }
-  }
+  }, [user]);
 
   useEffect(() => {
-    refresh();
-  }, [user]);
+    void refresh();
+  }, [refresh]);
 
   async function respond(offer: OfferRow, action: "accept" | "refuse") {
     setBusyOffer(offer.offer_id);
@@ -87,8 +90,8 @@ export default function OffersCenterPage() {
           {offers.length === 0 ? (
             <div className="rounded-[28px] border border-dashed border-slate-300 bg-white/70 px-6 py-12 text-center text-slate-500 shadow-sm">
               Aucune offre pour le moment. Revenez un peu plus tard ou contactez le support pour rejoindre la
-                prochaine vague.
-              </div>
+              prochaine vague.
+            </div>
             ) : (
               offers.map((offer) => {
                 const expires = offer.expires_at ? new Date(offer.expires_at).getTime() : null;

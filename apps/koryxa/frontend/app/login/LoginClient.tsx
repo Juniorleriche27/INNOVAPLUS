@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
-import { FormEvent, useState } from "react";
 
 type Step = "request" | "verify";
 
@@ -13,7 +12,7 @@ export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams?.get("redirect") || "/";
-  const { refresh, user, initialLoggedIn, loading } = useAuth();
+  const { refresh, user, initialLoggedIn } = useAuth();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");

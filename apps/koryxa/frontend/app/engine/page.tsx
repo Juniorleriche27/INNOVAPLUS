@@ -11,7 +11,16 @@ type EngineRules = {
   updated_at?: string;
 };
 
-type DecisionLog = { items: Array<{ kind?: string; offer_id?: string; user_id?: string; need_index?: number; quota?: any; ts?: string }> };
+type DecisionLogItem = {
+  kind?: string;
+  offer_id?: string;
+  user_id?: string;
+  need_index?: number;
+  quota?: unknown;
+  ts?: string;
+};
+
+type DecisionLog = { items: DecisionLogItem[] };
 
 function StatPill({ label }: { label: string }) {
   return <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{label}</span>;
@@ -24,16 +33,22 @@ export default function EnginePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    async function load() {
       try {
-        const r = await fetch(`${INNOVA_API_BASE}/engine/rules`, { cache: "no-store" }).then((res) => res.json());
-        setRules(r);
-        const d = await fetch(`${INNOVA_API_BASE}/engine/decisions?limit=10`, { cache: "no-store" }).then((res) => res.json());
-        setDecisions(d.items || []);
-      } catch (e: any) {
-        setError(e?.message || "Impossible de charger les règles");
+        const rulesResp = await fetch(`${INNOVA_API_BASE}/engine/rules`, { cache: "no-store" });
+        if (!rulesResp.ok) throw new Error(await rulesResp.text());
+        const rulesData = (await rulesResp.json()) as EngineRules;
+        setRules(rulesData);
+
+        const decisionsResp = await fetch(`${INNOVA_API_BASE}/engine/decisions?limit=10`, { cache: "no-store" });
+        if (!decisionsResp.ok) throw new Error(await decisionsResp.text());
+        const decisionsData = (await decisionsResp.json()) as DecisionLog;
+        setDecisions(decisionsData.items || []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Impossible de charger les règles");
       }
-    })();
+    }
+    void load();
   }, []);
 
   async function save() {
@@ -48,8 +63,8 @@ export default function EnginePage() {
       }).then(async (res) => {
         if (!res.ok) throw new Error(await res.text());
       });
-    } catch (e: any) {
-      setError(e?.message || "Échec de la sauvegarde");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Échec de la sauvegarde");
     } finally {
       setSaving(false);
     }
@@ -94,16 +109,32 @@ export default function EnginePage() {
               <StatPill label={rules?.llm?.llm_api_enabled ? "API LLM active" : "API LLM inactive"} />
             </div>
             <label className="text-xs text-slate-500">Modèle principal</label>
-            <input
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-sky-300 focus:outline-none"
-              value={rules?.llm?.primary_model || ""}
-              onChange={(e) => setRules((prev) => ({ ...(prev || _emptyRules), llm: { ...(prev?.llm || {}), primary_model: e.target.value } }))}
-            />
+              <input
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-sky-300 focus:outline-none"
+                value={rules?.llm?.primary_model || ""}
+                onChange={(e) =>
+                  setRules((prev) => ({
+                    ...(prev || _emptyRules),
+                    llm: {
+                      primary_model: e.target.value,
+                      llm_api_enabled: prev?.llm?.llm_api_enabled ?? _emptyRules.llm.llm_api_enabled,
+                    },
+                  }))
+                }
+              />
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input
                 type="checkbox"
                 checked={!!rules?.llm?.llm_api_enabled}
-                onChange={(e) => setRules((prev) => ({ ...(prev || _emptyRules), llm: { ...(prev?.llm || {}), llm_api_enabled: e.target.checked } }))}
+                onChange={(e) =>
+                  setRules((prev) => ({
+                    ...(prev || _emptyRules),
+                    llm: {
+                      primary_model: prev?.llm?.primary_model ?? _emptyRules.llm.primary_model,
+                      llm_api_enabled: e.target.checked,
+                    },
+                  }))
+                }
               />
               Activer l&apos;API LLM
             </label>

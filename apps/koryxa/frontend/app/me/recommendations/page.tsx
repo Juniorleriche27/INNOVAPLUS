@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function MeRecommendations() {
-  const jar = cookies();
+  const jar = await cookies();
   const session = jar.get("innova_session")?.value;
   if (!session) redirect("/login?redirect=/me/recommendations");
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { productCatalog } from "../data";
 
 type Props = {
@@ -48,7 +49,7 @@ export default function ProductDetailPage({ params }: Props) {
             )}
           </div>
           <div className="relative h-64 overflow-hidden rounded-[28px]">
-            <img src={product.heroImage} alt={product.name} className="h-full w-full object-cover" />
+            <Image src={product.heroImage} alt={product.name} fill sizes="(min-width: 768px) 520px, 100vw" className="object-cover" />
           </div>
         </header>
 

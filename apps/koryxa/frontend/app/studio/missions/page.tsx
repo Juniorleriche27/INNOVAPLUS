@@ -15,7 +15,7 @@ type Mission = {
   budget?: string;
   devise?: string;
   deadline?: string;
-  statut: "Ouverte" | "En cours";
+  statut: string;
   clientId: string;
   clientName: string;
   redacteurId?: string;
@@ -41,30 +41,39 @@ async function fetchWithFallback(input: RequestInfo | URL, init?: RequestInit) {
   try {
     const res = await fetch(input, init);
     return res;
-  } catch (err) {
+  } catch {
     // Fallback vers chemin relatif (évite CORS si domaine Vercel non autorisé)
     const relative = typeof input === "string" && input.startsWith("http") ? input.replace(API, "/innova/api/studio-missions") : input;
     return fetch(relative, init);
   }
 }
 
-function mapMission(data: any): Mission {
+function pickString(obj: Record<string, unknown>, keys: string[], fallback = ""): string {
+  for (const key of keys) {
+    const value = obj[key];
+    if (typeof value === "string") return value;
+  }
+  return fallback;
+}
+
+function mapMission(data: unknown): Mission {
+  const obj = (data && typeof data === "object" ? (data as Record<string, unknown>) : {}) as Record<string, unknown>;
   return {
-    id: data?.id || data?._id || "",
-    titre: data?.titre || "",
-    type: data?.type || "",
-    description: data?.description || "",
-    public_cible: data?.public_cible || data?.publicCible || "",
-    objectif: data?.objectif || "",
-    ton: data?.ton || "",
-    budget: data?.budget || "",
-    devise: data?.devise || "",
-    deadline: data?.deadline || "",
-    statut: data?.statut || data?.status || "Ouverte",
-    clientId: data?.client_id || data?.clientId || "",
-    clientName: data?.client_name || data?.clientName || "",
-    redacteurId: data?.redacteur_id || data?.redacteurId,
-    redacteurName: data?.redacteur_name || data?.redacteurName,
+    id: pickString(obj, ["id", "_id"]),
+    titre: pickString(obj, ["titre"]),
+    type: pickString(obj, ["type"]),
+    description: pickString(obj, ["description"]),
+    public_cible: pickString(obj, ["public_cible", "publicCible"]),
+    objectif: pickString(obj, ["objectif"]),
+    ton: pickString(obj, ["ton"]),
+    budget: pickString(obj, ["budget"]),
+    devise: pickString(obj, ["devise"]),
+    deadline: pickString(obj, ["deadline"]),
+    statut: pickString(obj, ["statut", "status"], "Ouverte"),
+    clientId: pickString(obj, ["client_id", "clientId"]),
+    clientName: pickString(obj, ["client_name", "clientName"]),
+    redacteurId: pickString(obj, ["redacteur_id", "redacteurId"]) || undefined,
+    redacteurName: pickString(obj, ["redacteur_name", "redacteurName"]) || undefined,
   };
 }
 

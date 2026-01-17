@@ -7,6 +7,7 @@ import Headbar from "@/components/layout/headbar";
 import Sidebar from "@/components/layout/sidebar";
 import Footer from "@/components/layout/footer";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import PWARegister from "@/components/util/PWARegister";
 
 export const metadata: Metadata = {
   title: "KORYXA",
@@ -40,6 +41,7 @@ export default function RootLayout(props: { children: ReactNode }) {
         <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
         <div className="relative flex h-screen flex-col">
           <AuthProvider>
+            <PWARegister />
             <div className="sticky top-0 z-40">
               <Headbar />
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { INNOVA_API_BASE } from "@/lib/env";
 import type { Opportunity, OpportunityListResponse } from "@/lib/types/opportunities";
@@ -37,17 +37,25 @@ export default function OpportunitiesPage() {
   const [source, setSource] = useState("all");
   const [product, setProduct] = useState("");
 
-  const load = async () => {
+  type LoadParams = {
+    search: string;
+    status: string;
+    country: string;
+    source: string;
+    product: string;
+  };
+
+  const load = useCallback(async (paramsInput: LoadParams) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
       params.set("limit", "200");
-      if (search.trim()) params.set("search", search.trim());
-      if (status !== "all") params.set("status", status);
-      if (country.trim()) params.set("country", country.trim());
-       if (source !== "all") params.set("source", source);
-       if (product.trim()) params.set("product", product.trim());
+      if (paramsInput.search.trim()) params.set("search", paramsInput.search.trim());
+      if (paramsInput.status !== "all") params.set("status", paramsInput.status);
+      if (paramsInput.country.trim()) params.set("country", paramsInput.country.trim());
+      if (paramsInput.source !== "all") params.set("source", paramsInput.source);
+      if (paramsInput.product.trim()) params.set("product", paramsInput.product.trim());
       const res = await fetch(`${API}?${params.toString()}`, { credentials: "include" });
       if (!res.ok) {
         const txt = await res.text();
@@ -61,11 +69,11 @@ export default function OpportunitiesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void load();
-  }, []);
+    void load({ search: "", status: "all", country: "", source: "all", product: "" });
+  }, [load]);
 
   const filtered = useMemo(() => items, [items]);
 
@@ -131,7 +139,7 @@ export default function OpportunitiesPage() {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
             <button
-              onClick={() => void load()}
+              onClick={() => void load({ search, status, country, source, product })}
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
             >
               Rafraîchir

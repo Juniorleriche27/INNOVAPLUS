@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { missionsApi, MissionDetail } from "@/lib/api-client/missions";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 type Props = { params: { missionId: string } };
+type JournalEvent = { ts: string; payload?: Record<string, unknown> };
 
 export default function MissionTrackPage({ params }: Props) {
   const { missionId } = params;
   const { user, loading } = useAuth();
   const [mission, setMission] = useState<MissionDetail | null>(null);
-  const [journal, setJournal] = useState<Array<Record<string, unknown>>>([]);
+  const [journal, setJournal] = useState<JournalEvent[]>([]);
   const [waveLoading, setWaveLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [milestoneTitle, setMilestoneTitle] = useState("");
@@ -19,7 +20,7 @@ export default function MissionTrackPage({ params }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     try {
       const data = await missionsApi.detail(missionId);
       setMission(data);
@@ -28,11 +29,11 @@ export default function MissionTrackPage({ params }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de charger la mission");
     }
-  }
+  }, [missionId]);
 
   useEffect(() => {
-    refresh();
-  }, [missionId]);
+    void refresh();
+  }, [refresh]);
 
   if (!loading && !user) {
     return (
@@ -148,8 +149,11 @@ export default function MissionTrackPage({ params }: Props) {
               ) : (
                 journal.map((event) => (
                   <div key={event.ts as string} className="flex items-center justify-between px-4 py-3 text-sm text-slate-600">
-                    <span>Vague envoyée — {event.payload?.count ?? 0} profils</span>
-                    <span className="text-xs text-slate-400">{new Date(event.ts as string).toLocaleString()}</span>
+                    <span>
+                      Vague envoyée —{" "}
+                      {typeof event.payload?.count === "number" ? event.payload.count : 0} profils
+                    </span>
+                    <span className="text-xs text-slate-400">{new Date(event.ts).toLocaleString()}</span>
                   </div>
                 ))
               )}

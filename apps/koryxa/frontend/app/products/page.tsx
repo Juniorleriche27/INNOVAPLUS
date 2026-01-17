@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { productList } from "./data";
 
 export default function ProductsLanding() {
@@ -22,8 +23,8 @@ export default function ProductsLanding() {
               key={product.slug}
               className="flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="h-48 w-full overflow-hidden rounded-t-3xl">
-                <img src={product.heroImage} alt={product.name} className="h-full w-full object-cover" />
+              <div className="relative h-48 w-full overflow-hidden rounded-t-3xl">
+                <Image src={product.heroImage} alt={product.name} fill sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" />
               </div>
               <div className="flex flex-1 flex-col gap-4 p-6">
                 <div>

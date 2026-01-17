@@ -109,7 +109,9 @@ const V1_LINKS = [
   { href: "/myplanning", label: "MyPlanning", description: "Organisation & suivi", icon: IconCalendar },
 ];
 
-const V1_SCHOOL_TREE = [
+type NavNode = { href: string; label: string; children?: NavNode[] };
+
+const V1_SCHOOL_TREE: NavNode[] = [
   { href: "/school/parcours/fondamental", label: "Parcours fondamentaux" },
   {
     href: "/school/specialisations",
@@ -144,9 +146,7 @@ const V1_SCHOOL_TREE = [
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/school/data-analyst")) {
-    return null;
-  }
+  const hideForDataAnalyst = pathname.startsWith("/school/data-analyst");
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);
@@ -154,6 +154,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const [module1Open, setModule1Open] = useState(false);
 
   useEffect(() => {
+    if (hideForDataAnalyst) return;
     const saved = localStorage.getItem("innova.sidebar.collapsed");
     if (saved === null) {
       // Default: collapsed on tablets, expanded on desktop
@@ -162,9 +163,10 @@ export default function Sidebar({ className, style }: { className?: string; styl
       return;
     }
     setCollapsed(saved === "1");
-  }, []);
+  }, [hideForDataAnalyst]);
 
   useEffect(() => {
+    if (hideForDataAnalyst) return;
     if (pathname.startsWith("/school")) {
       setSchoolOpen(true);
     }
@@ -176,7 +178,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
       setAnalystOpen(true);
       setModule1Open(true);
     }
-  }, [pathname]);
+  }, [hideForDataAnalyst, pathname]);
 
   function toggle() {
     const next = !collapsed;
@@ -185,6 +187,10 @@ export default function Sidebar({ className, style }: { className?: string; styl
   }
 
   const isExpanded = !collapsed;
+
+  if (hideForDataAnalyst) {
+    return null;
+  }
 
   return (
     <aside

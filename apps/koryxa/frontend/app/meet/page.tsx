@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import TelemetryPing from "@/components/util/TelemetryPing";
 import { apiMeet, type MeetPost } from "@/lib/api";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -30,6 +29,9 @@ export default function MeetPage() {
   const [openComments, setOpenComments] = useState<Record<string, { loading: boolean; items: Array<{ comment_id: string; user_id: string; author?: string; text: string; created_at: string }>; draft: string }>>({});
   const { user } = useAuth();
   const isConnected = !!user;
+  const userId = user?.id ?? null;
+  const author =
+    user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email : "Utilisateur";
 
   const charCount = useMemo(() => draft.length, [draft]);
   const maxChars = 280;
@@ -56,32 +58,37 @@ export default function MeetPage() {
     return filtered;
   }, [items, filters]);
 
-  useEffect(() => {
-    loadFeed(0, true);
+  const computeTrendingTags = useCallback((posts: MeetPost[]) => {
+    const tagCounts: Record<string, number> = {};
+    posts.forEach((p) => (p.tags || []).forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    return Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t]) => t);
   }, []);
 
-  async function loadFeed(nextPage: number, reset = false) {
+  const loadFeed = useCallback(async (nextPage: number, reset = false) => {
     try {
       setLoading(true);
       setError(null);
       const res = await apiMeet.feed({ limit: 20, offset: nextPage * 20 });
       const newItems = res.items;
-      const combined = reset ? newItems : [...items, ...newItems];
-      setItems(combined);
+      setItems((previous) => {
+        const combined = reset ? newItems : [...previous, ...newItems];
+        setTrendingTags(computeTrendingTags(combined));
+        return combined;
+      });
       setPage(nextPage);
-      // trending from tags
-      const tagCounts: Record<string, number> = {};
-      combined.forEach((p) => (p.tags || []).forEach((t) => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
-      setTrendingTags(Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t]) => t));
-    } catch (e: any) {
-      setError(e?.message || "Impossible de charger le feed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Impossible de charger le feed");
     } finally {
       setLoading(false);
     }
-  }
+  }, [computeTrendingTags]);
+
+  useEffect(() => {
+    void loadFeed(0, true);
+  }, [loadFeed]);
 
   function loadMore() {
-    loadFeed(page + 1, false);
+    void loadFeed(page + 1, false);
   }
 
   async function handlePublish() {
@@ -91,8 +98,8 @@ export default function MeetPage() {
     try {
       const tags = draft.match(/#\w+/g) || [];
       const payload = {
-        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
-        author: (user as any)?.display_name || user?.email || user?.name || "Utilisateur",
+        user_id: userId || "frontend-user",
+        author,
         text: draft.trim(),
         tags,
         country: (filters.country !== "all" ? filters.country : undefined) || "CI",
@@ -111,20 +118,20 @@ export default function MeetPage() {
       };
       setItems((cur) => [created, ...cur]);
       setDraft("");
-    } catch (e: any) {
-      setError(e?.message || "Publication impossible");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Publication impossible");
     } finally {
       setPosting(false);
     }
   }
 
   async function toggleLike(post: MeetPost) {
-    if (!isConnected) return;
+    if (!isConnected || !userId) return;
     const already = liked.has(post.id);
     try {
       await apiMeet.like({
         post_id: post.id,
-        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
+        user_id: userId,
         action: already ? "unlike" : "like",
       });
       setLiked((prev) => {
@@ -138,7 +145,7 @@ export default function MeetPage() {
           p.id === post.id ? { ...p, likes_count: (p.likes_count || 0) + (already ? -1 : 1) } : p
         )
       );
-    } catch (e) {
+    } catch {
       setError("Like impossible");
     }
   }
@@ -148,7 +155,7 @@ export default function MeetPage() {
     try {
       const res = await apiMeet.comments(post.id);
       setOpenComments((prev) => ({ ...prev, [post.id]: { loading: false, items: res.items, draft: "" } }));
-    } catch (e) {
+    } catch {
       setError("Commentaires indisponibles");
       setOpenComments((prev) => ({ ...prev, [post.id]: { loading: false, items: [], draft: "" } }));
     }
@@ -156,12 +163,12 @@ export default function MeetPage() {
 
   async function submitComment(post: MeetPost) {
     const box = openComments[post.id];
-    if (!isConnected || !box || !box.draft.trim()) return;
+    if (!isConnected || !userId || !box || !box.draft.trim()) return;
     try {
       const payload = {
         post_id: post.id,
-        user_id: (user as any)?.id || (user as any)?._id || (user as any)?.user_id || "frontend-user",
-        author: (user as any)?.display_name || user?.email || user?.name || "Utilisateur",
+        user_id: userId,
+        author,
         text: box.draft.trim(),
       };
       const r = await apiMeet.comment(payload);
@@ -178,7 +185,7 @@ export default function MeetPage() {
         [post.id]: { loading: false, draft: "", items: [newItem, ...(prev[post.id]?.items || [])] },
       }));
       setItems((cur) => cur.map((p) => (p.id === post.id ? { ...p, comments_count: (p.comments_count || 0) + 1 } : p)));
-    } catch (e) {
+    } catch {
       setError("Commentaire impossible");
     }
   }
@@ -217,23 +224,29 @@ export default function MeetPage() {
               </svg>
               Filtres
             </button>
-            <Link 
-              href="/meet/new" 
+            <a
+              href="#composer"
               className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Créer un post
-            </Link>
+            </a>
           </div>
         </header>
+
+        {error && (
+          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Composer */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+            <section id="composer" className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="h-10 w-10 rounded-full bg-sky-600 flex items-center justify-center text-white font-semibold text-sm">
                   {isConnected ? "VO" : "?"}
@@ -382,7 +395,12 @@ export default function MeetPage() {
                     <button
                       onClick={() => {
                         if (!openComments[post.id]) loadComments(post);
-                        else setOpenComments((prev) => ({ ...prev, [post.id]: undefined as any }));
+                        else
+                          setOpenComments((prev) => {
+                            const next = { ...prev };
+                            delete next[post.id];
+                            return next;
+                          });
                       }}
                       className="text-xs font-semibold text-slate-600 hover:text-sky-700"
                     >

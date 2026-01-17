@@ -1,4 +1,4 @@
-import type { ThemeArticle, ThemeVideo } from "../../content";
+import type { ThemeArticle, ThemeVideo } from "../content";
 
 export type ThemePageSection = {
   heading: string;
@@ -237,4 +237,3 @@ export const theme1Pages: ThemePage[] = [
     ],
   },
 ];
-

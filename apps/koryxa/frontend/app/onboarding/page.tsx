@@ -1,21 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiMe, apiMetrics } from "@/lib/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const [step, setStep] = useState(1);
   const [country, setCountry] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [goal, setGoal] = useState("find_missions");
-  const userId = "demo-user"; // TODO: remplacer par auth réelle
+  const userId = user?.id ?? null;
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login?next=/onboarding");
+    }
+  }, [loading, router, user]);
 
   function toggleSkill(s: string) {
     setSkills((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   }
 
   async function finish() {
+    if (!userId) return;
     await apiMe.upsertProfile({ user_id: userId, country, skills, goal });
     await apiMetrics.event("onboarding_finished", { country, skills, goal }, userId);
     window.location.href = "/me/recommendations";
@@ -71,4 +82,3 @@ export default function OnboardingPage() {
     </main>
   );
 }
-

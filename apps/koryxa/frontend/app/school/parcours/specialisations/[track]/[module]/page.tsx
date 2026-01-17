@@ -4,9 +4,9 @@ import { specialisations } from "@/app/school/v1/content";
 
 export function generateStaticParams() {
   return Object.values(specialisations).flatMap((program) =>
-    program.modules.map((module) => ({
+    program.modules.map((mod) => ({
       track: program.id,
-      module: module.id,
+      module: mod.id,
     }))
   );
 }
@@ -31,13 +31,13 @@ export default function SpecialisationModulePage({ params }: { params: { track: 
     }
   }
   const activeIndex = moduleIndex === -1 ? 0 : moduleIndex;
-  const module = moduleIndex === -1 ? fallback : program.modules[moduleIndex];
+  const activeModule = moduleIndex === -1 ? fallback : program.modules[moduleIndex];
   const prev = program.modules[activeIndex - 1];
   const next = program.modules[activeIndex + 1];
 
   return (
     <ModuleReader
-      module={module}
+      module={activeModule}
       programTitle={program.title}
       moduleIndex={activeIndex}
       moduleCount={program.modules.length}

@@ -2,6 +2,8 @@ import Link from "next/link";
 import VideoBlock from "./VideoBlock";
 import type { ThemeArticle, ThemeVideo } from "../content";
 
+export type { ThemeArticle, ThemeVideo };
+
 export type ThemePageSection = {
   heading: string;
   body: string[];

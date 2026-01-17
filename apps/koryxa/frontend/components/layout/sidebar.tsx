@@ -144,6 +144,9 @@ const V1_SCHOOL_TREE = [
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
+  if (pathname.startsWith("/school/data-analyst")) {
+    return null;
+  }
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);

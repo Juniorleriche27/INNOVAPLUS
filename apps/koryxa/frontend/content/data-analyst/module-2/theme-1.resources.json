@@ -29,6 +29,19 @@
       "url": "https://usercentrics.com/knowledge-hub/data-map/"
     }
   ],
+  "toc": [
+    "Pourquoi la collecte est un vrai travail",
+    "Types de données : prévoir l’effort",
+    "Grandes familles de sources",
+    "Source → KPI → Décision",
+    "Inventaire des sources",
+    "Data mapping minimal",
+    "Plan de collecte",
+    "Exemple complet (KORYXA School)",
+    "Contrôles qualité express",
+    "Exercices",
+    "Checklist de validation"
+  ],
   "slides": [
     {
       "title": "Theme 1 — Sources de données & plan de collecte",

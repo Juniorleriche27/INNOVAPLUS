@@ -66,7 +66,8 @@ async def mock_transactions(
     if page_size > 200:
         page_size = 200
 
-    _rate_limit_or_429(x_api_key, window_s=1.0, max_requests=1)
+    # Simulate standard rate limiting (429 + Retry-After). Keep it frequent enough to be observable in labs.
+    _rate_limit_or_429(x_api_key, window_s=1.0, max_requests=2)
 
     d0 = _parse_date(start_date) or date(2026, 1, 1)
     d1 = _parse_date(end_date) or date(2026, 1, 31)
@@ -122,8 +123,7 @@ async def mock_transactions(
         ]
         if country:
             params.append(f"country={country}")
-        next_url = f"/labs/mock-api/v1/transactions?{'&'.join(params)}"
+        next_url = f"/api/labs/mock-api/v1/transactions?{'&'.join(params)}"
 
     response.headers["Cache-Control"] = "no-store"
     return {"page": page, "page_size": page_size, "next": next_url, "results": results}
-

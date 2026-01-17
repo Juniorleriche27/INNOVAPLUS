@@ -68,6 +68,15 @@ export const DATA_ANALYST_MODULES: CourseModule[] = [
         ],
       },
       {
+        title: "Thème 4 — APIs + Python (requests)",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-2/theme-4/page/1",
+          },
+        ],
+      },
+      {
         title: "Thème 5 — Capstone collecte",
         lessons: [
           {

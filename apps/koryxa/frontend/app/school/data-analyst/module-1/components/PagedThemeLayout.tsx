@@ -53,7 +53,7 @@ export default function PagedThemeLayout(props: {
   const hasResources = videos.length > 0 || articles.length > 0;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-6 overflow-hidden" key={pageNumber}>
+    <div className="flex min-h-0 flex-col gap-6" key={pageNumber}>
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

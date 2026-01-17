@@ -30,7 +30,7 @@ export default function SingleThemeLayout({
   const chips = [meta.readingTime].filter(Boolean) as string[];
 
   return (
-    <div className="flex min-h-0 flex-col gap-6 overflow-hidden">
+    <div className="flex min-h-0 flex-col gap-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

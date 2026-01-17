@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { INNOVA_API_BASE } from "@/lib/env";
 import { themes as module1Themes } from "./module-1/content";
 
@@ -96,6 +97,8 @@ export default function DataAnalystLandingPage() {
   const [module1, setModule1] = useState<Module1Status>({});
   const [module2, setModule2] = useState<Module2Status>({});
   const [activeModule, setActiveModule] = useState<number>(1);
+  const [statusNote, setStatusNote] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     async function load() {
@@ -106,7 +109,11 @@ export default function DataAnalystLandingPage() {
           return;
         }
         const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error("status");
+        if (!resp.ok) {
+          setStatus("ready");
+          setStatusNote("Statut indisponible pour le moment. Mode lecture libre activé.");
+          return;
+        }
         setModule1({ notebooks_validated: !!data?.notebooks_validated, quiz_passed: !!data?.quiz_passed });
         try {
           const m2resp = await fetch(`${INNOVA_API_BASE}/school/data-analyst/module-2/theme-5/status`, { credentials: "include" });
@@ -117,11 +124,20 @@ export default function DataAnalystLandingPage() {
         }
         setStatus("ready");
       } catch {
-        setStatus("error");
+        setStatus("ready");
+        setStatusNote("Statut indisponible pour le moment. Mode lecture libre activé.");
       }
     }
     load();
   }, []);
+
+  useEffect(() => {
+    const raw = searchParams.get("module");
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= MODULES.length) {
+      setActiveModule(parsed);
+    }
+  }, [searchParams]);
 
   const module1Completed = useMemo(() => Boolean(module1?.notebooks_validated && module1?.quiz_passed), [module1]);
   const module2Completed = useMemo(() => Boolean(module2?.validated), [module2]);
@@ -167,9 +183,9 @@ export default function DataAnalystLandingPage() {
             Connecte-toi pour suivre ta progression et déverrouiller les modules.
           </div>
         ) : null}
-        {status === "error" ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            Impossible de charger ton statut pour le moment.
+        {statusNote ? (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            {statusNote}
           </div>
         ) : null}
         {status === "ready" ? (

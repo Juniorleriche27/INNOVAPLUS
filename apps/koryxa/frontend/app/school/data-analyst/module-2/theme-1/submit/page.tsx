@@ -42,13 +42,13 @@ export default function Module2Theme1Submit() {
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        setMessage(data?.detail || "Soumission echouee.");
+        setMessage(data?.detail || "Soumission échouée.");
       } else {
         setStatus(data);
-        setMessage("Soumission enregistree ✅");
+        setMessage("Soumission enregistrée ✅");
       }
     } catch {
-      setMessage("Erreur reseau. Reessaie.");
+      setMessage("Erreur réseau. Réessaie.");
     } finally {
       setLoading(false);
     }
@@ -56,15 +56,15 @@ export default function Module2Theme1Submit() {
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Module 2 — Theme 1</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Module 2 — Thème 1</p>
       <h1 className="mt-2 text-2xl font-semibold text-slate-900">Soumettre les preuves</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Depose les 4 fichiers generes par le notebook. Le quiz se deverrouille apres validation.
+        Dépose les 4 fichiers générés par le notebook. Le quiz se déverrouille après validation.
       </p>
 
       {validated ? (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          ✅ Soumission validee (inventory_rows={status?.inventory_rows ?? "?"}, requirements_rows=
+          ✅ Soumission validée (inventory_rows={status?.inventory_rows ?? "?"}, requirements_rows=
           {status?.requirements_rows ?? "?"}).
           <div className="mt-3">
             <Link className="font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/quiz">
@@ -109,11 +109,10 @@ export default function Module2Theme1Submit() {
         <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-2/theme-1/notebook">
           Revoir notebook
         </Link>
-        <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-2/theme-1/page/1">
+        <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-2/theme-1">
           Revoir cours
         </Link>
       </div>
     </section>
   );
 }
-

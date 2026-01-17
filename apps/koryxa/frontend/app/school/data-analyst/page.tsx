@@ -97,11 +97,7 @@ function DataAnalystDashboard() {
             {statusNote}
           </div>
         ) : null}
-        {status === "ready" ? (
-          <p className="mt-4 text-xs text-slate-500">
-            Progression: Module 1 {module1Completed ? "validé" : "à valider"} · Module 2 {module2Completed ? "validé" : "à valider"}
-          </p>
-        ) : null}
+        
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -154,12 +150,12 @@ function DataAnalystDashboard() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-sm font-semibold text-slate-900">Thèmes du module</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Apercu des themes</h3>
         {active.themes.length === 0 ? (
           <p className="mt-3 text-sm text-slate-500">Contenu en préparation pour ce module.</p>
         ) : (
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {active.themes.map((theme) => (
+            {active.themes.slice(0, 3).map((theme) => (
               <div key={theme.href} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
                 <p className="text-sm font-semibold text-slate-900">{theme.title}</p>
                 <Link href={theme.href} className="mt-3 inline-flex text-sm font-semibold text-sky-700">

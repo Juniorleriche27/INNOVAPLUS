@@ -1,5 +1,5 @@
-import ThemeContent from "@/content/data-analyst/module-2/theme-1.mdx";
-import resources from "@/content/data-analyst/module-2/theme-1.resources.json";
+import ThemeContent from "@/content/data-analyst/module-2/theme-3.mdx";
+import resources from "@/content/data-analyst/module-2/theme-3.resources.json";
 import SingleThemeLayout from "../../../../module-1/components/SingleThemeLayout";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ type ResourceSchema = {
 
 const typedResources = resources as ResourceSchema;
 
-export default function Theme1Paged() {
+export default function Module2Theme3Paged() {
   const videos = typedResources.videos || [];
   const articles = typedResources.articles || [];
   const toc = typedResources.toc || [];
@@ -22,14 +22,14 @@ export default function Theme1Paged() {
     <SingleThemeLayout
       meta={{
         module: "Module 2 — Collecte des données",
-        title: "Thème 1 — Panorama des sources & plan de collecte",
-        readingTime: "70–100 min",
+        title: "Thème 3 — SQL extraction",
+        readingTime: "60–90 min",
       }}
-      description="Inventaire de sources, data mapping minimal, plan de collecte reproductible"
+      description="SELECT · JOIN · GROUP BY · HAVING · exports reproductibles"
       actions={[
-        { label: "Notebook", href: "/school/data-analyst/module-2/theme-1/notebook" },
-        { label: "Soumettre", href: "/school/data-analyst/module-2/theme-1/submit" },
-        { label: "Quiz", href: "/school/data-analyst/module-2/theme-1/quiz" },
+        { label: "Notebook", href: "/school/data-analyst/module-2/theme-3/notebook" },
+        { label: "Soumettre", href: "/school/data-analyst/module-2/theme-3/submit" },
+        { label: "Quiz", href: "/school/data-analyst/module-2/theme-3/quiz" },
       ]}
       videos={videos}
       articles={articles}
@@ -39,10 +39,11 @@ export default function Theme1Paged() {
           title: "Livrables attendus",
           content: (
             <ul className="list-disc pl-5">
-              <li>m2t1_inventory_filled.csv</li>
-              <li>m2t1_data_mapping.md</li>
-              <li>m2t1_collection_plan.md</li>
-              <li>m2t1_quality_checks.json</li>
+              <li>m2t3_queries.sql</li>
+              <li>m2t3_q1_funnel_by_theme.csv</li>
+              <li>m2t3_q2_completion_by_country.csv</li>
+              <li>m2t3_q3_notebook48h_vs_validation.csv</li>
+              <li>m2t3_run_report.json</li>
             </ul>
           ),
         },
@@ -52,3 +53,4 @@ export default function Theme1Paged() {
     </SingleThemeLayout>
   );
 }
+

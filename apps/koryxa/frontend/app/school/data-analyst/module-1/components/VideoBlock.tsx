@@ -87,8 +87,8 @@ export default function VideoBlock({ videos }: Props) {
 
   return (
     <div className="space-y-6">
-      {renderList(fr, "Francais")}
-      {renderList(en, "English")}
+      {renderList(fr, "Ressources — Français")}
+      {renderList(en, "Ressources — English")}
     </div>
   );
 }

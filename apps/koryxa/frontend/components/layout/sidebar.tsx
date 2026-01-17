@@ -146,7 +146,7 @@ const V1_SCHOOL_TREE: NavNode[] = [
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
-  const hideForDataAnalyst = pathname.startsWith("/school/data-analyst");
+  const hideForSchool = pathname.startsWith("/school");
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);
@@ -154,7 +154,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const [module1Open, setModule1Open] = useState(false);
 
   useEffect(() => {
-    if (hideForDataAnalyst) return;
+    if (hideForSchool) return;
     const saved = localStorage.getItem("innova.sidebar.collapsed");
     if (saved === null) {
       // Default: collapsed on tablets, expanded on desktop
@@ -163,10 +163,10 @@ export default function Sidebar({ className, style }: { className?: string; styl
       return;
     }
     setCollapsed(saved === "1");
-  }, [hideForDataAnalyst]);
+  }, [hideForSchool]);
 
   useEffect(() => {
-    if (hideForDataAnalyst) return;
+    if (hideForSchool) return;
     if (pathname.startsWith("/school")) {
       setSchoolOpen(true);
     }
@@ -178,7 +178,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
       setAnalystOpen(true);
       setModule1Open(true);
     }
-  }, [hideForDataAnalyst, pathname]);
+  }, [hideForSchool, pathname]);
 
   function toggle() {
     const next = !collapsed;
@@ -188,7 +188,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
 
   const isExpanded = !collapsed;
 
-  if (hideForDataAnalyst) {
+  if (hideForSchool) {
     return null;
   }
 

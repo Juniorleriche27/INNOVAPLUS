@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import VideoBlock from "./VideoBlock";
-import type { ThemeArticle, ThemeMeta, ThemeVideo } from "./PagedThemeLayout";
+import type { ThemeMeta, ThemeVideo } from "./PagedThemeLayout";
 
 type TocItem = { id?: string; href?: string; label: string };
 type SidebarSection = { title: string; content: ReactNode };
@@ -61,6 +61,28 @@ export default function SingleThemeLayout({
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        {toc.length > 0 ? (
+          <nav className="mb-6 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Sommaire</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {toc
+                .map((item) => {
+                  const href = item.href || (item.id ? `#${item.id}` : undefined);
+                  if (!href) return null;
+                  return (
+                    <a
+                      key={href}
+                      href={href}
+                      className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                    >
+                      {item.label}
+                    </a>
+                  );
+                })
+                .filter(Boolean)}
+            </div>
+          </nav>
+        ) : null}
         <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
           {children}
         </div>

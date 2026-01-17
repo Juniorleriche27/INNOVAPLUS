@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type ChatMessage = {
@@ -134,7 +134,7 @@ function buildContentBlocks(text: string): ContentBlock[] {
   return blocks;
 }
 
-function StructuredSectionContent({ text }: { text: string }): JSX.Element | null {
+function StructuredSectionContent({ text }: { text: string }) {
   if (!text.trim()) return null;
   const blocks = buildContentBlocks(text);
   if (!blocks.length) {
@@ -167,7 +167,7 @@ function StructuredSectionContent({ text }: { text: string }): JSX.Element | nul
   );
 }
 
-function AssistantMessageContent({ content }: { content: string }): JSX.Element {
+function AssistantMessageContent({ content }: { content: string }) {
   const sections = parseStructuredSections(content);
   if (!sections.length) {
     return <span className="whitespace-pre-wrap break-words">{content}</span>;
@@ -194,7 +194,7 @@ function AssistantMessageContent({ content }: { content: string }): JSX.Element 
   );
 }
 
-export default function ChatlayaPage(): JSX.Element {
+export default function ChatlayaPage() {
   // ---- State ----
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -215,17 +215,120 @@ export default function ChatlayaPage(): JSX.Element {
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
 
+  const forceLoginRedirect = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const redirect = encodeURIComponent(next && next !== "/" ? next : "/chatlaya");
+    window.location.href = `/login?redirect=${redirect}`;
+  }, []);
+
+  const isAuthFailure = useCallback(
+    (status: number) => {
+      if (status === 401 || status === 403 || status === 419) {
+        forceLoginRedirect();
+        return true;
+      }
+      return false;
+    },
+    [forceLoginRedirect]
+  );
+
+  const ensureSeedConversation = useCallback(async () => {
+    if (ensuredConversation.current) return;
+    ensuredConversation.current = true;
+    try {
+      const res = await fetch(`${API_BASE}/chatlaya/session`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        if (isAuthFailure(res.status)) return;
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible de creer la conversation initiale");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inattendue");
+    }
+  }, [isAuthFailure]);
+
+  const loadConversations = useCallback(
+    async (force = false) => {
+      setConversationsLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/chatlaya/conversations`, {
+          cache: "no-store",
+          credentials: "include",
+        });
+        if (!res.ok) {
+          if (isAuthFailure(res.status)) return;
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.detail || "Impossible de charger les conversations");
+        }
+        const data = await res.json();
+        const items: Conversation[] = Array.isArray(data?.items) ? data.items : [];
+
+        if (items.length === 0 && !force) {
+          await ensureSeedConversation();
+          await loadConversations(true);
+          return;
+        }
+        setConversations(items);
+
+        if (items.length === 0) {
+          setSelectedConversationId(null);
+          setMessages([]);
+          return;
+        }
+
+        setSelectedConversationId((previousId) => {
+          if (previousId && items.some((c) => c.conversation_id === previousId)) return previousId;
+          return items[0]?.conversation_id ?? null;
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erreur inattendue");
+      } finally {
+        setConversationsLoading(false);
+      }
+    },
+    [ensureSeedConversation, isAuthFailure]
+  );
+
+  const loadMessages = useCallback(
+    async (id: string) => {
+      setMessagesLoading(true);
+      try {
+        const res = await fetch(
+          `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`,
+          { credentials: "include", cache: "no-store" },
+        );
+        if (!res.ok) {
+          if (isAuthFailure(res.status)) return;
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.detail || "Impossible de recuperer les messages");
+        }
+        const data = await res.json().catch(() => ({}));
+        setMessages(data.items ?? []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Erreur inattendue");
+        setMessages([]);
+      } finally {
+        setMessagesLoading(false);
+      }
+    },
+    [isAuthFailure]
+  );
+
   // Charger conversations/messages
   useEffect(() => {
     void loadConversations();
-  }, []);
+  }, [loadConversations]);
   useEffect(() => {
     if (!selectedConversationId) {
       setMessages([]);
       return;
     }
     void loadMessages(selectedConversationId);
-  }, [selectedConversationId]);
+  }, [selectedConversationId, loadMessages]);
 
   // Autoscroll dans la liste des messages (pas la page)
   useEffect(() => {
@@ -262,109 +365,17 @@ export default function ChatlayaPage(): JSX.Element {
     };
   }, []);
 
-  // ---- Helpers API ----
-  function forceLoginRedirect() {
-    if (typeof window === "undefined") return;
-    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const redirect = encodeURIComponent(next && next !== "/" ? next : "/chatlaya");
-    window.location.href = `/login?redirect=${redirect}`;
-  }
-  function isAuthFailure(status: number) {
-    if (status === 401 || status === 403 || status === 419) {
-      forceLoginRedirect();
-      return true;
-    }
-    return false;
-  }
-
-  async function ensureSeedConversation() {
-    if (ensuredConversation.current) return;
-    ensuredConversation.current = true;
-    try {
-      const res = await fetch(`${API_BASE}/chatlaya/session`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de creer la conversation initiale");
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-    }
-  }
-
-  async function loadConversations(force = false) {
-    setConversationsLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/chatlaya/conversations`, {
-        cache: "no-store",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de charger les conversations");
-      }
-      const data = await res.json();
-      const items: Conversation[] = Array.isArray(data?.items) ? data.items : [];
-
-      if (items.length === 0 && !force) {
-        await ensureSeedConversation();
-        await loadConversations(true);
-        return;
-      }
-      setConversations(items);
-
-      if (items.length === 0) {
-        setSelectedConversationId(null);
-        setMessages([]);
-        return;
-      }
-
-      const still = items.some((c) => c.conversation_id === selectedConversationId);
-      setSelectedConversationId(still ? selectedConversationId : items[0]?.conversation_id ?? null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-    } finally {
-      setConversationsLoading(false);
-    }
-  }
-
-  async function loadMessages(id: string) {
-    setMessagesLoading(true);
-    try {
-      const res = await fetch(
-        `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`,
-        { credentials: "include", cache: "no-store" },
-      );
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de recuperer les messages");
-      }
-      const data = await res.json().catch(() => ({}));
-      setMessages(data.items ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-      setMessages([]);
-    } finally {
-      setMessagesLoading(false);
-    }
-  }
-
   async function handleSelectConversation(id: string) {
     streamAbortRef.current?.abort();
     const collapse = typeof window !== "undefined" ? window.innerWidth < 768 : false;
     if (id === selectedConversationId) {
-      if (collapse) setSidebarOpen(false);
+      if (collapse) setHistoryDrawerOpen(false);
       return;
     }
     setError(null);
     setMessages([]);
     setSelectedConversationId(id);
-    if (collapse) setSidebarOpen(false);
+    if (collapse) setHistoryDrawerOpen(false);
   }
 
   async function handleCreateConversation() {
@@ -386,7 +397,7 @@ export default function ChatlayaPage(): JSX.Element {
       ]);
       setSelectedConversationId(created.conversation_id);
       setMessages([]);
-      if (typeof window !== "undefined" && window.innerWidth < 768) setSidebarOpen(false);
+      if (typeof window !== "undefined" && window.innerWidth < 768) setHistoryDrawerOpen(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inattendue");
     }

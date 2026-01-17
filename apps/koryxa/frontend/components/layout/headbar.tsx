@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
-import { AUTH_API_BASE, IS_V1_SIMPLE } from "@/lib/env";
+import { IS_V1_SIMPLE } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const IS_V1 = IS_V1_SIMPLE;
@@ -273,26 +273,30 @@ export default function Headbar() {
                       </div>
                       <p className="text-sm text-slate-500">Aucune notification</p>
                     </div>
-                  ) : (
-                    <div className="max-h-80 overflow-y-auto space-y-2">
-                      {notifs.map((n) => (
-                        <div key={n.id} className="rounded-xl p-3 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 rounded-full bg-sky-500 mt-2 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-slate-900">{n.type}</p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                {n.payload?.title || n.payload?.message || "—"}
-                              </p>
-                              <p className="text-xs text-slate-400 mt-1">
-                                {new Date(n.created_at).toLocaleDateString("fr-FR")}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+	                  ) : (
+	                    <div className="max-h-80 overflow-y-auto space-y-2">
+	                      {notifs.map((n) => (
+	                        <div key={n.id} className="rounded-xl p-3 hover:bg-slate-50 transition-colors">
+	                          <div className="flex items-start gap-3">
+	                            <div className="w-2 h-2 rounded-full bg-sky-500 mt-2 flex-shrink-0" />
+	                            <div className="flex-1 min-w-0">
+	                              <p className="text-sm font-medium text-slate-900">{n.type}</p>
+	                              <p className="text-xs text-slate-500 mt-1">
+	                                {typeof n.payload?.title === "string"
+	                                  ? n.payload.title
+	                                  : typeof n.payload?.message === "string"
+	                                    ? n.payload.message
+	                                    : "—"}
+	                              </p>
+	                              <p className="text-xs text-slate-400 mt-1">
+	                                {new Date(n.created_at).toLocaleDateString("fr-FR")}
+	                              </p>
+	                            </div>
+	                          </div>
+	                        </div>
+	                      ))}
+	                    </div>
+	                  )}
                 </div>
               )}
             </div>

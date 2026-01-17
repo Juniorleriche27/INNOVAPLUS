@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { ModuleContent, ModuleSection, SectionVideo } from "@/app/school/v1/content";
+import type { ModuleContent, SectionVideo } from "@/app/school/v1/content";
 import { MIN_PASS_PERCENT } from "@/app/school/v1/content";
 
 type Props = {
@@ -14,6 +14,26 @@ type Props = {
   nextHref?: string;
   isLast?: boolean;
 };
+
+function hashString(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash << 5) - hash + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function shuffleOptions(question: ModuleContent["quiz"][number]) {
+  const indexed = question.options.map((label, idx) => ({ label, originalIndex: idx }));
+  let seed = hashString(question.prompt);
+  for (let i = indexed.length - 1; i > 0; i -= 1) {
+    seed = (seed * 9301 + 49297) % 233280;
+    const j = seed % (i + 1);
+    [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+  }
+  return indexed;
+}
 
 export default function ModuleReader({
   module,
@@ -237,26 +257,6 @@ export default function ModuleReader({
         </div>
       </div>
     );
-  }
-
-  function hashString(input: string) {
-    let hash = 0;
-    for (let i = 0; i < input.length; i += 1) {
-      hash = (hash << 5) - hash + input.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash);
-  }
-
-  function shuffleOptions(question: ModuleContent["quiz"][number]) {
-    const indexed = question.options.map((label, idx) => ({ label, originalIndex: idx }));
-    let seed = hashString(question.prompt);
-    for (let i = indexed.length - 1; i > 0; i -= 1) {
-      seed = (seed * 9301 + 49297) % 233280;
-      const j = seed % (i + 1);
-      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
-    }
-    return indexed;
   }
 
   const shuffledOptions = useMemo(

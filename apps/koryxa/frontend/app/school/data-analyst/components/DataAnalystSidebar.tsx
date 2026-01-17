@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { DataAnalystModule } from "../data";
+
+const TRACKS = [
+  { value: "data-analyst", label: "Data Analyst", href: "/school/data-analyst" },
+  { value: "data-engineer", label: "Data Engineer", href: "/school/parcours/specialisations/data-engineer" },
+  { value: "data-scientist", label: "Data Scientist", href: "/school/parcours/specialisations/data-scientist" },
+  { value: "machine-learning-engineer", label: "ML Engineer", href: "/school/parcours/specialisations/machine-learning-engineer" },
+] as const;
 
 function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -18,21 +24,23 @@ function matchesTheme(pathname: string, href: string, match?: string) {
 export default function DataAnalystSidebar({ modules }: { modules: DataAnalystModule[] }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const tracks = [
-    { value: "data-analyst", label: "Data Analyst", href: "/school/data-analyst" },
-    { value: "data-engineer", label: "Data Engineer", href: "/school/parcours/specialisations/data-engineer" },
-    { value: "data-scientist", label: "Data Scientist", href: "/school/parcours/specialisations/data-scientist" },
-    { value: "machine-learning-engineer", label: "ML Engineer", href: "/school/parcours/specialisations/machine-learning-engineer" },
-  ] as const;
 
   const activeModule = useMemo(() => {
+    if (pathname === "/school/data-analyst") {
+      const raw = searchParams.get("module");
+      const parsed = raw ? Number(raw) : NaN;
+      if (Number.isFinite(parsed) && parsed >= 1 && parsed <= modules.length) {
+        return parsed;
+      }
+    }
     const match = modules.find((module) => {
       if (isActivePath(pathname, module.href)) return true;
       return module.themes.some((theme) => matchesTheme(pathname, theme.href, theme.match));
     });
     return match?.index ?? modules[0]?.index ?? 1;
-  }, [modules, pathname]);
+  }, [modules, pathname, searchParams]);
 
   const selectedModule = useMemo(
     () => modules.find((module) => module.index === activeModule) || modules[0],
@@ -40,7 +48,7 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
   );
 
   const selectedTrackValue = useMemo(() => {
-    const hit = tracks.find((track) => isActivePath(pathname, track.href));
+    const hit = TRACKS.find((track) => isActivePath(pathname, track.href));
     return hit?.value ?? "data-analyst";
   }, [pathname]);
 
@@ -73,11 +81,11 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
               className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
               value={selectedTrackValue}
               onChange={(event) => {
-                const next = tracks.find((track) => track.value === event.target.value);
+                const next = TRACKS.find((track) => track.value === event.target.value);
                 if (next) router.push(next.href);
               }}
             >
-              {tracks.map((track) => (
+              {TRACKS.map((track) => (
                 <option key={track.href} value={track.value}>
                   {track.label}
                 </option>
@@ -92,7 +100,6 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
               onChange={(event) => {
                 const next = modules.find((module) => module.index === Number(event.target.value));
                 if (next) {
-                  setOpenModule(next.index);
                   router.push(next.href);
                 }
               }}

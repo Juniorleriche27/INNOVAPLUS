@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { missionsApi, MissionDetail, MissionPayload } from "@/lib/api-client/missions";
 
@@ -10,7 +9,6 @@ type Stage = "idle" | "pending" | "matching" | "completed" | "error";
 const todayIso = () => new Date().toISOString().split("T")[0];
 
 export default function MissionMatchPage() {
-  const router = useRouter();
   const [payload, setPayload] = useState<MissionPayload>({
     title: "",
     description: "",
@@ -29,14 +27,12 @@ export default function MissionMatchPage() {
   const [mission, setMission] = useState<MissionDetail | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [polling, setPolling] = useState(false);
 
   const canSubmit = payload.title.trim().length > 6 && payload.description.trim().length > 12;
 
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     if (missionId && stage === "matching") {
-      setPolling(true);
       const poll = async () => {
         try {
           const data = await missionsApi.detail(missionId);
@@ -55,7 +51,6 @@ export default function MissionMatchPage() {
     }
     return () => {
       if (timer) clearTimeout(timer);
-      setPolling(false);
     };
   }, [missionId, stage]);
 

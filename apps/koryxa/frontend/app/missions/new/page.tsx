@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { missionsApi, MissionPayload } from "@/lib/api-client/missions";
+import { opportunitiesApi } from "@/lib/api-client/opportunities";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const DEFAULT_PAYLOAD: MissionPayload = {
@@ -68,23 +69,23 @@ export default function NewMissionPage() {
       const response = await missionsApi.create(payload);
       const missionId = response.mission_id;
       setSuccess("Mission créée. Redirection vers le suivi…");
-      if (missionId && createOpportunity) {
-        try {
-          await opportunitiesApi.create({
-            title: payload.title,
-            problem: payload.description,
-            skills_required: payload.deliverables ? payload.deliverables.split(",").map((s) => s.trim()).filter(Boolean) : [],
-            tags: preview?.keywords || [],
-            country: payload.location_hint,
-            status: "open",
-            mission_id: missionId,
-            source: "mission",
-            product_slug: productSlug || undefined,
-          });
-        } catch (opErr) {
-          console.error("Création opportunité liée échouée", opErr);
-        }
-      }
+	      if (missionId && createOpportunity) {
+	        try {
+	          await opportunitiesApi.create({
+	            title: payload.title,
+	            problem: payload.description,
+	            skills_required: payload.deliverables ? payload.deliverables.split(",").map((s) => s.trim()).filter(Boolean) : [],
+	            tags: preview?.keywords || [],
+	            country: payload.location_hint?.trim() || undefined,
+	            status: "open",
+	            mission_id: missionId,
+	            source: "mission",
+	            product_slug: productSlug.trim() || undefined,
+	          });
+	        } catch (opErr) {
+	          console.error("Création opportunité liée échouée", opErr);
+	        }
+	      }
       if (missionId) {
         setTimeout(() => router.push(`/missions/track/${missionId}`), 1200);
       }

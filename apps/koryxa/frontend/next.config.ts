@@ -9,13 +9,19 @@ const isProd = process.env.NODE_ENV === "production";
 const DEFAULT_API_BASE = "https://api.innovaplus.africa";
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(/\/+$/, "");
 
-const nextConfig: NextConfig = {
+type NextConfigWithTurbopack = NextConfig & {
+  turbopack?: {
+    rules: Record<string, { loaders: string[]; as: string }>;
+  };
+};
+
+const nextConfig: NextConfigWithTurbopack = {
   reactStrictMode: true,
   poweredByHeader: false,
 
   typescript: { ignoreBuildErrors: isProd },
 
-  typedRoutes: true,
+  typedRoutes: false,
 
   experimental: {
     optimizePackageImports: ["react", "react-dom"],
@@ -47,7 +53,9 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
   },
 };
 
@@ -56,7 +64,7 @@ const withMDX = createMDX({
 });
 
 // Turbopack needs an explicit rule to handle MDX imports.
-(nextConfig as any).turbopack = {
+nextConfig.turbopack = {
   rules: {
     "*.mdx": {
       loaders: ["@mdx-js/loader"],

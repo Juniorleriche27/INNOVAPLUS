@@ -32,7 +32,6 @@ type Task = {
   completed_at?: string | null;
   linked_goal?: string | null;
   moscow?: string | null;
-  status?: string | null;
   energy_level?: string | null;
   pomodoro_estimated?: number | null;
   pomodoro_done?: number | null;
@@ -98,14 +97,6 @@ const SOURCE_LABEL: Record<TaskSource, string> = {
   ia: "IA",
 };
 
-const KANBAN_LABEL_EXTENDED: Record<AdvancedKanban, string> = {
-  backlog: "Backlog",
-  a_faire: "À faire",
-  en_cours: "En cours",
-  termine: "Terminé",
-  bloque: "Bloqué",
-};
-
 function hasHour(text: string): boolean {
   return /\b([01]?\d|2[0-3])h/.test(text);
 }
@@ -123,7 +114,10 @@ function priorityRank(priority: Priority): number {
   }
 }
 
-function extractHour(task: Pick<Task, "title" | "start_datetime" | "due_datetime">): number | null {
+type SortableTimeItem = { title: string; start_datetime?: string | null; due_datetime?: string | null };
+type SortablePriorityItem = SortableTimeItem & { priority_eisenhower?: Priority | null; high_impact?: boolean | null };
+
+function extractHour(task: SortableTimeItem): number | null {
   const fromDate = (value?: string | null) => {
     if (!value) return null;
     const hasExplicitTime = /T(?!00:00:00)/.test(value);
@@ -141,22 +135,24 @@ function extractHour(task: Pick<Task, "title" | "start_datetime" | "due_datetime
   return null;
 }
 
-function sortByPriorityThenHour<T extends Pick<Task, "priority_eisenhower" | "title" | "start_datetime" | "due_datetime" | "high_impact">>(items: T[]): T[] {
+function sortByPriorityThenHour<T extends SortablePriorityItem>(items: T[]): T[] {
   return [...items].sort((a, b) => {
-    const pa = priorityRank(a.priority_eisenhower);
-    const pb = priorityRank(b.priority_eisenhower);
+    const pa = priorityRank(a.priority_eisenhower ?? "important_not_urgent");
+    const pb = priorityRank(b.priority_eisenhower ?? "important_not_urgent");
     if (pa !== pb) return pa - pb;
     const ha = extractHour(a);
     const hb = extractHour(b);
     if (ha !== null && hb !== null) return ha - hb;
     if (ha !== null) return -1;
     if (hb !== null) return 1;
-    if (a.high_impact !== b.high_impact) return a.high_impact ? -1 : 1;
+    const impactA = Boolean(a.high_impact);
+    const impactB = Boolean(b.high_impact);
+    if (impactA !== impactB) return impactA ? -1 : 1;
     return a.title.localeCompare(b.title);
   });
 }
 
-function formatDisplayTime(task: Pick<Task, "title" | "start_datetime" | "due_datetime">): string | null {
+function formatDisplayTime(task: SortableTimeItem): string | null {
   // 1) Si une heure explicite est dans start/due, l'utiliser.
   const pick = (value?: string | null) => {
     if (!value) return null;
@@ -307,7 +303,7 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "n
 const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-export default function MyPlanningClient(): JSX.Element {
+export default function MyPlanningClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
@@ -1519,12 +1515,12 @@ export default function MyPlanningClient(): JSX.Element {
       )}
       {aiDrafts.length > 0 && (
         <div className="mt-2 space-y-2 text-sm">
-              {sortByPriorityThenHour(aiDrafts).map((draft, idx) => (
-                <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
-                    {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
-                  </div>
+	              {sortByPriorityThenHour(aiDrafts).map((draft, idx) => (
+	                <div key={`${draft.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+	                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+	                    <span>{draft.priority_eisenhower ? PRIORITY_LABEL[draft.priority_eisenhower] : "Priorité"}</span>
+	                    {draft.high_impact && <span className="text-emerald-600">Impact élevé</span>}
+	                  </div>
               <p className="font-semibold text-slate-900">{draft.title}</p>
               {draft.description && <p className="text-xs text-slate-500">{draft.description}</p>}
               <div className="mt-2 flex justify-end gap-2">

@@ -2,6 +2,26 @@ import { INNOVA_API_BASE } from "@/lib/env";
 
 const BASE = `${INNOVA_API_BASE}/missions`;
 
+function extractApiErrorMessage(data: unknown): string {
+  if (!data || typeof data !== "object") return "";
+  const obj = data as Record<string, unknown>;
+
+  const detail = obj.detail;
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object") {
+    const inner = (detail as Record<string, unknown>).detail;
+    if (typeof inner === "string") return inner;
+  }
+
+  if (typeof obj.message === "string") return obj.message;
+
+  try {
+    return JSON.stringify(obj);
+  } catch {
+    return "";
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
@@ -10,19 +30,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       headers: { "Content-Type": "application/json", ...(init.headers || {}) },
       ...init,
     });
-  } catch (err) {
+  } catch {
     throw new Error("Impossible de contacter l'API (réseau/CORS). Réessayez ou reconnectez-vous.");
   }
 
   if (!res.ok) {
     let message = "";
     try {
-      const data = await res.json();
-      const detail = (data as any)?.detail;
-      if (typeof detail === "string") message = detail;
-      else if (detail?.detail) message = String(detail.detail);
-      else if ((data as any)?.message) message = String((data as any).message);
-      else message = JSON.stringify(data);
+      const data = (await res.json()) as unknown;
+      message = extractApiErrorMessage(data);
     } catch {
       message = await res.text().catch(() => "");
     }
@@ -59,7 +75,7 @@ export type MissionDetail = {
   budget?: { minimum?: number; maximum?: number; currency?: string };
   offers?: Array<{ offer_id: string; prestataire_id: string; status: string; wave: number; message: string; expires_at?: string; scores?: Record<string, number> }>;
   messages?: Array<{ id: string; author_id: string; role: string; text: string; created_at: string }>; // truncated for UI
-  milestones?: Array<{ id: string; title: string; status: string; due_date?: string; notes?: string }>; // truncated for UI
+  milestones?: Array<{ id: string; title: string; status: "todo" | "in_progress" | "delivered" | "validated"; due_date?: string; notes?: string }>; // truncated for UI
   events?: Array<{ type: string; ts: string; payload?: Record<string, unknown> }>;
 };
 
@@ -131,7 +147,7 @@ export const missionsApi = {
     return request<Record<string, unknown>>(`/${mission_id}/export`);
   },
   journal(mission_id: string) {
-    return request<Array<Record<string, unknown>>>(`/${mission_id}/journal`);
+    return request<Array<{ ts: string; payload?: Record<string, unknown> }>>(`/${mission_id}/journal`);
   },
   dashboard(params?: { window_days?: number }) {
     const search = params?.window_days ? `?window_days=${params.window_days}` : "";

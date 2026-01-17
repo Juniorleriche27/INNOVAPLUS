@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const fakeStats = {
   missionsOpen: 0,
   certified: 0,
@@ -32,7 +34,7 @@ export default function StudioPage() {
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <a
+        <Link
           href="/studio/assistant"
           className="md:col-span-1 rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-white p-5 shadow-md hover:-translate-y-1 hover:shadow-lg transition"
         >
@@ -42,12 +44,12 @@ export default function StudioPage() {
             Décris ton besoin, laisse CHATLAYA proposer un plan, un texte et des titres. Tu ajustes, tu valides, tu exportes.
           </p>
           <div className="mt-4">
-            <button className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700">
+            <span className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-700">
               Commencer →
-            </button>
+            </span>
           </div>
-        </a>
-        <a
+        </Link>
+        <Link
           href="/studio/missions"
           className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition"
         >
@@ -58,12 +60,12 @@ export default function StudioPage() {
           </p>
           <p className="mt-3 text-xs text-slate-500">{fakeStats.missionsOpen} mission(s) disponible(s)</p>
           <div className="mt-4">
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
               Voir les missions →
-            </button>
+            </span>
           </div>
-        </a>
-        <a
+        </Link>
+        <Link
           href="/studio/academy"
           className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition"
         >
@@ -74,11 +76,11 @@ export default function StudioPage() {
           </p>
           <p className="mt-3 text-xs text-slate-500">Progression : à venir</p>
           <div className="mt-4">
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
               Voir le parcours →
-            </button>
+            </span>
           </div>
-        </a>
+        </Link>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">

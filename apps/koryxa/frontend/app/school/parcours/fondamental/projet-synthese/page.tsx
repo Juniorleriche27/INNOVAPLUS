@@ -3,13 +3,13 @@ import { foundationalProgram } from "@/app/school/v1/content";
 
 export default function ProjetSynthesePage() {
   const moduleIndex = foundationalProgram.modules.findIndex((m) => m.id === "projet-synthese");
-  const module = foundationalProgram.modules[moduleIndex];
+  const activeModule = foundationalProgram.modules[moduleIndex];
   const prev = foundationalProgram.modules[moduleIndex - 1];
   const next = foundationalProgram.modules[moduleIndex + 1];
 
   return (
     <ModuleReader
-      module={module}
+      module={activeModule}
       programTitle={foundationalProgram.title}
       moduleIndex={moduleIndex}
       moduleCount={foundationalProgram.modules.length}

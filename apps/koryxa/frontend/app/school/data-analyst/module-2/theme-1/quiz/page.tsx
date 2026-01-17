@@ -23,7 +23,7 @@ export default function Module2Theme1Quiz() {
         const data = await resp.json().catch(() => ({}));
         if (resp.ok) setStatus(data);
       } catch {
-        setStateError("Etat indisponible.");
+        setStateError("État indisponible.");
       }
     }
     load();
@@ -68,17 +68,17 @@ export default function Module2Theme1Quiz() {
       }
       setResult({ percent: data?.percent, passed: data?.passed, score: data?.score, total: questions.length });
     } catch {
-      setStateError("Erreur reseau.");
+      setStateError("Erreur réseau.");
     }
   }
 
   if (!validated) {
     return (
       <section className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-sm text-amber-900">
-        Quiz verrouille. Soumets d'abord les preuves du Theme 1.
+        Quiz verrouillé. Soumets d'abord les preuves du Thème 1.
         <div className="mt-4">
           <Link className="font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/submit">
-            Aller a la soumission →
+            Aller à la soumission →
           </Link>
         </div>
       </section>
@@ -87,8 +87,8 @@ export default function Module2Theme1Quiz() {
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold text-slate-900">Quiz Theme 1</h1>
-      <p className="mt-2 text-sm text-slate-600">Questions basees sur tes exports notebook • seuil 70%</p>
+      <h1 className="text-2xl font-semibold text-slate-900">Quiz Thème 1</h1>
+      <p className="mt-2 text-sm text-slate-600">Questions basées sur tes exports notebook • seuil 70%</p>
 
       {stateError ? (
         <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">{stateError}</div>
@@ -125,17 +125,16 @@ export default function Module2Theme1Quiz() {
         </button>
         {result ? (
           <span className="text-sm text-slate-700">
-            Score {result.percent}% — {result.passed ? "Theme valide" : "A re-tenter"}
+            Score {result.percent}% — {result.passed ? "Thème validé" : "À retenter"}
           </span>
         ) : null}
       </div>
 
       <div className="mt-6 text-sm">
-        <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-2/theme-1/page/1">
+        <Link className="text-sky-700 hover:underline" href="/school/data-analyst/module-2/theme-1">
           Revenir au cours
         </Link>
       </div>
     </section>
   );
 }
-

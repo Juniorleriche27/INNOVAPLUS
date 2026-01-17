@@ -49,7 +49,7 @@ export default function DataAnalystModule2Placeholder() {
           <p className="text-sm font-semibold text-slate-900">Thème 1 — Panorama des sources & plan de collecte</p>
           <p className="mt-2 text-sm text-slate-600">Cours (16 pages) + notebook + soumission + quiz.</p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/page/1">
+            <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1">
               Ouvrir →
             </Link>
             <Link className="inline-flex text-sm font-semibold text-sky-700" href="/school/data-analyst/module-2/theme-1/notebook">

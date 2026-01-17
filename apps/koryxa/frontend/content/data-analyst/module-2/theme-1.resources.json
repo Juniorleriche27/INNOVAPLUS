@@ -28,6 +28,11 @@
       "title": "Data mapping — process & objectifs",
       "url": "https://usercentrics.com/knowledge-hub/data-map/"
     }
+  ],
+  "slides": [
+    {
+      "title": "Theme 1 — Sources de données & plan de collecte",
+      "note": "Optionnel : champ slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
   ]
 }
-

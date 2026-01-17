@@ -7,10 +7,10 @@ const requirementsTemplate = "/datasets/data-analyst/module-2/theme-1/data_requi
 export default function Module2Theme1Notebook() {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Module 2 — Theme 1</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Module 2 — Thème 1</p>
       <h1 className="mt-2 text-2xl font-semibold text-slate-900">Notebook + templates</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Telecharge le notebook et les 2 templates CSV. Place-les dans le meme dossier avant execution.
+        Télécharge le notebook et les 2 templates CSV. Place-les dans le même dossier avant exécution.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -31,7 +31,7 @@ export default function Module2Theme1Notebook() {
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
           className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          href="/school/data-analyst/module-2/theme-1/page/1"
+          href="/school/data-analyst/module-2/theme-1"
         >
           Lire le cours
         </Link>
@@ -47,7 +47,7 @@ export default function Module2Theme1Notebook() {
       </div>
 
       <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        Exports obligatoires a generer :
+        Exports obligatoires à générer :
         <ul className="mt-2 list-disc pl-5">
           <li>`m2t1_inventory_filled.csv`</li>
           <li>`m2t1_data_mapping.md`</li>
@@ -58,4 +58,3 @@ export default function Module2Theme1Notebook() {
     </section>
   );
 }
-

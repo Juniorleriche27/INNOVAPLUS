@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { DataAnalystModule } from "../data";
 
 function isActivePath(pathname: string, href: string) {
@@ -16,7 +17,7 @@ function matchesTheme(pathname: string, href: string, match?: string) {
 
 export default function DataAnalystSidebar({ modules }: { modules: DataAnalystModule[] }) {
   const pathname = usePathname();
-  const [openModule, setOpenModule] = useState<number | null>(null);
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const tracks = [
     { label: "Data Analyst", href: "/school/data-analyst" },
@@ -33,9 +34,10 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
     return match?.index ?? modules[0]?.index ?? 1;
   }, [modules, pathname]);
 
-  useEffect(() => {
-    setOpenModule(activeModule);
-  }, [activeModule]);
+  const selectedModule = useMemo(
+    () => modules.find((module) => module.index === activeModule) || modules[0],
+    [modules, activeModule]
+  );
 
   return (
     <aside className="w-full shrink-0 lg:w-[280px]">
@@ -82,66 +84,61 @@ export default function DataAnalystSidebar({ modules }: { modules: DataAnalystMo
             </div>
           </section>
           <section className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Modules du parcours</p>
-          {modules.map((module) => {
-            const isOpen = openModule === module.index;
-            const isActive =
-              isActivePath(pathname, module.href) ||
-              module.themes.some((theme) => matchesTheme(pathname, theme.href, theme.match));
-            return (
-              <div key={module.href} className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
-                <button
-                  type="button"
-                  onClick={() => setOpenModule(isOpen ? null : module.index)}
-                  className="flex w-full items-center justify-between gap-3 text-left text-sm font-semibold text-slate-800"
-                  aria-expanded={isOpen}
-                >
-                  <span className={isActive ? "text-slate-900" : "text-slate-700"}>
-                    {module.title}
-                  </span>
-                  <span className="text-xs text-slate-400">{isOpen ? "−" : "+"}</span>
-                </button>
-                <div className={`mt-3 space-y-2 ${isOpen ? "block" : "hidden"}`}>
-                  <Link
-                    href={module.href}
-                    className={`block rounded-xl border px-3 py-2 text-xs font-semibold ${
-                      isActivePath(pathname, module.href)
-                        ? "border-sky-200 bg-sky-50 text-slate-900"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    Vue du module
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Module</p>
+            <select
+              className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+              value={selectedModule?.index}
+              onChange={(event) => {
+                const next = modules.find((module) => module.index === Number(event.target.value));
+                if (next) {
+                  setOpenModule(next.index);
+                  router.push(next.href);
+                }
+              }}
+            >
+              {modules.map((module) => (
+                <option key={module.href} value={module.index}>
+                  {module.title}
+                </option>
+              ))}
+            </select>
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Sommaire du module
+                </p>
+                {selectedModule ? (
+                  <Link href={selectedModule.href} className="text-xs font-semibold text-sky-700">
+                    Ouvrir
                   </Link>
-                  <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Lecons
-                  </p>
-                  {module.themes.length > 0 ? (
-                    module.themes.map((theme) => {
-                      const activeTheme = matchesTheme(pathname, theme.href, theme.match);
-                      return (
-                        <Link
-                          key={theme.href}
-                          href={theme.href}
-                          className={`block rounded-xl border px-3 py-2 text-xs ${
-                            activeTheme
-                              ? "border-sky-200 bg-sky-50 text-slate-900"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                          }`}
-                          aria-current={activeTheme ? "page" : undefined}
-                        >
-                          {theme.title}
-                        </Link>
-                      );
-                    })
-                  ) : (
-                    <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
-                      Contenu en preparation.
-                    </p>
-                  )}
-                </div>
+                ) : null}
               </div>
-            );
-          })}
+              <div className="mt-3 space-y-2">
+                {selectedModule?.themes.length ? (
+                  selectedModule.themes.map((theme) => {
+                    const activeTheme = matchesTheme(pathname, theme.href, theme.match);
+                    return (
+                      <Link
+                        key={theme.href}
+                        href={theme.href}
+                        className={`block rounded-xl border px-3 py-2 text-xs ${
+                          activeTheme
+                            ? "border-sky-200 bg-sky-50 text-slate-900"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        }`}
+                        aria-current={activeTheme ? "page" : undefined}
+                      >
+                        {theme.title}
+                      </Link>
+                    );
+                  })
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+                    Contenu en preparation.
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
         </div>
       </div>

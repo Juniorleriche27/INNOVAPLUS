@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { INNOVA_API_BASE } from "@/lib/env";
 import { themes as module1Themes } from "./module-1/content";
@@ -92,7 +92,7 @@ const MODULES: ModuleCard[] = [
   },
 ];
 
-export default function DataAnalystLandingPage() {
+function DataAnalystDashboard() {
   const [status, setStatus] = useState<"loading" | "ready" | "unauth" | "error">("loading");
   const [module1, setModule1] = useState<Module1Status>({});
   const [module2, setModule2] = useState<Module2Status>({});
@@ -286,5 +286,13 @@ export default function DataAnalystLandingPage() {
         </aside>
       </section>
     </div>
+  );
+}
+
+export default function DataAnalystLandingPage() {
+  return (
+    <Suspense fallback={<div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">Chargement…</div>}>
+      <DataAnalystDashboard />
+    </Suspense>
   );
 }

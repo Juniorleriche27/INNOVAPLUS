@@ -1,0 +1,35 @@
+{
+  "videos": [
+    {
+      "lang": "fr",
+      "youtubeId": "bhmbkS7MvO0",
+      "title": "Comment Supprimer les Doublons dans un Dataframe Pandas (FR)"
+    },
+    {
+      "lang": "en",
+      "youtubeId": "JOcLL17QMK4",
+      "title": "Pandas: Remove Duplicate Rows (drop_duplicates) — Tutorial (EN)"
+    }
+  ],
+  "articles": [
+    {
+      "title": "pandas.DataFrame.duplicated (détecter les doublons)",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.duplicated.html"
+    },
+    {
+      "title": "pandas.DataFrame.drop_duplicates (supprimer doublons contrôlés)",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.drop_duplicates.html"
+    },
+    {
+      "title": "PostgreSQL — Constraints (PRIMARY KEY, UNIQUE : logique d’unicité)",
+      "url": "https://www.postgresql.org/docs/current/ddl-constraints.html"
+    }
+  ],
+  "slides": [
+    {
+      "title": "Theme 2 — Doublons & Clés (deck)",
+      "note": "Optionnel : slidesEmbedUrl (Google Slides) renseigné par l’admin."
+    }
+  ]
+}
+

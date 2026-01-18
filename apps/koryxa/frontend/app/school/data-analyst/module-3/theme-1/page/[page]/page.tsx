@@ -1,6 +1,8 @@
 import ThemeContent from "@/content/data-analyst/module-3/theme-1.mdx";
 import resources from "@/content/data-analyst/module-3/theme-1.resources.json";
 import SingleThemeLayout from "../../../../module-1/components/SingleThemeLayout";
+import fs from "node:fs";
+import path from "node:path";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,6 +27,10 @@ export default async function Module3Theme1Paged({ params }: Props) {
   const videos = typedResources.videos || [];
   const articles = typedResources.articles || [];
   const toc = typedResources.toc || [];
+
+  const pdfPublicPath = "/course-pdfs/data-analyst/module-3/theme-1/page-1.pdf";
+  const pdfDiskPath = path.join(process.cwd(), "public", pdfPublicPath.replace(/^\//, ""));
+  const hasPdf = page === 1 && fs.existsSync(pdfDiskPath);
 
   return (
     <SingleThemeLayout
@@ -66,7 +72,40 @@ export default async function Module3Theme1Paged({ params }: Props) {
         },
       ]}
     >
-      <ThemeContent />
+      {page === 1 ? (
+        <div className="not-prose">
+          <div className="rounded-2xl border border-slate-200 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 text-sm">
+              <p className="font-semibold text-slate-900">Cours PDF</p>
+              <a className="text-sky-700 hover:underline" href={pdfPublicPath} download>
+                Télécharger le PDF
+              </a>
+            </div>
+            <div className="h-[calc(100vh-360px)] min-h-[520px] w-full">
+              {hasPdf ? (
+                <iframe
+                  src={`${pdfPublicPath}#view=FitH`}
+                  className="h-full w-full rounded-b-2xl"
+                  style={{ border: 0 }}
+                  title="Cours PDF"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center p-6 text-sm text-slate-600">
+                  PDF en cours de génération. Le contenu Markdown reste disponible ci-dessous.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {!hasPdf ? (
+            <div className="mt-8">
+              <ThemeContent />
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <ThemeContent />
+      )}
     </SingleThemeLayout>
   );
 }

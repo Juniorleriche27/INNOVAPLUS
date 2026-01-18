@@ -1,0 +1,10 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "exports": [
+    {
+      "url": "/school/data-analyst/module-3/theme-1/page/1",
+      "out": "public/course-pdfs/data-analyst/module-3/theme-1/page-1.pdf"
+    }
+  ]
+}
+

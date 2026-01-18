@@ -1,5 +1,5 @@
-import ThemeContent from "@/content/data-analyst/module-3/theme-1.mdx";
-import resources from "@/content/data-analyst/module-3/theme-1.resources.json";
+import ThemeContent from "@/content/data-analyst/module-3/theme-2.mdx";
+import resources from "@/content/data-analyst/module-3/theme-2.resources.json";
 import SingleThemeLayout from "../../../../module-1/components/SingleThemeLayout";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +15,11 @@ const typedResources = resources as ResourceSchema;
 
 type Props = { params: { page: string } | Promise<{ page: string }> };
 
-export default async function Module3Theme1Paged({ params }: Props) {
+export default async function Module3Theme2Paged({ params }: Props) {
   const resolved = await Promise.resolve(params);
   const page = typeof resolved.page === "string" ? Number(resolved.page) : 1;
   if (!Number.isFinite(page) || page !== 1) {
-    // Theme 1 is a single-page lesson.
+    // Theme 2 is a single-page lesson.
   }
 
   const videos = typedResources.videos || [];
@@ -30,14 +30,14 @@ export default async function Module3Theme1Paged({ params }: Props) {
     <SingleThemeLayout
       meta={{
         module: "Module 3 — Nettoyage & Qualité des données",
-        title: "Thème 1 — Profilage & valeurs manquantes : diagnostiquer, choisir une stratégie, prouver",
+        title: "Thème 2 — Doublons, clés, unicité : détecter, dédupliquer sans casser les KPI",
         readingTime: "120–150 min",
       }}
-      description="Profilage (dtype/min/max/top values), diagnostic missingness (MCAR/MAR/MNAR), stratégies et preuves."
+      description="Doublons (exact/key/entity), audit de clés candidates, dédup contrôlée + audit des suppressions"
       actions={[
-        { label: "Notebook", href: "/school/data-analyst/module-3/theme-1/notebook" },
-        { label: "Soumettre", href: "/school/data-analyst/module-3/theme-1/submit" },
-        { label: "Quiz", href: "/school/data-analyst/module-3/theme-1/quiz" },
+        { label: "Notebook", href: "/school/data-analyst/module-3/theme-2/notebook" },
+        { label: "Soumettre", href: "/school/data-analyst/module-3/theme-2/submit" },
+        { label: "Quiz", href: "/school/data-analyst/module-3/theme-2/quiz" },
       ]}
       videos={videos}
       articles={articles}
@@ -47,20 +47,22 @@ export default async function Module3Theme1Paged({ params }: Props) {
           title: "Livrables à soumettre",
           content: (
             <ul className="list-disc pl-5">
-              <li>m3t1_profiling_table.csv</li>
-              <li>m3t1_dataset_clean.csv</li>
-              <li>m3t1_quality_report.json</li>
-              <li>m3t1_missingness_plan.md</li>
+              <li>m3t2_key_audit.csv</li>
+              <li>m3t2_duplicates_report.csv</li>
+              <li>m3t2_dataset_dedup.csv</li>
+              <li>m3t2_dedup_audit.csv</li>
+              <li>m3t2_quality_report.json</li>
+              <li>m3t2_dedup_rules.md</li>
             </ul>
           ),
         },
         {
-          title: "Corrections critiques",
+          title: "Règle de dédup (simple)",
           content: (
             <ul className="list-disc pl-5">
-              <li>Ne pas faire `astype(str)` (préserver les NA, utiliser dtype string).</li>
-              <li>Dédup: `sort_values(..., na_position=\"first\")` puis `drop_duplicates(... keep=\"last\")`.</li>
-              <li>Profilage: inclure `dtype` + min/max (numériques & dates).</li>
+              <li>`entity_id = email ?? phone ?? user_id`</li>
+              <li>Garder: complétude max → last_active max → stable.</li>
+              <li>Exporter un audit des lignes supprimées.</li>
             </ul>
           ),
         },
@@ -70,3 +72,4 @@ export default async function Module3Theme1Paged({ params }: Props) {
     </SingleThemeLayout>
   );
 }
+

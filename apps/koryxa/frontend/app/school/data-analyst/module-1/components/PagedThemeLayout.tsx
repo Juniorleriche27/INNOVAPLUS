@@ -118,7 +118,8 @@ export default function PagedThemeLayout(props: {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:text-xl prose-h3:text-base prose-h3:font-semibold prose-p:text-[15px] prose-p:leading-7">
+        <div className="mx-auto max-w-[820px]">
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:mb-3 prose-h2:mt-10 prose-h2:text-2xl prose-h2:font-semibold prose-h3:mb-2 prose-h3:mt-7 prose-h3:text-xl prose-h3:font-semibold prose-h4:text-base prose-h4:font-semibold prose-p:text-[17px] prose-p:leading-[1.8] prose-ul:my-5 prose-ol:my-5 prose-li:my-1 prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-table:rounded-xl prose-table:border prose-table:border-slate-200 prose-thead:bg-slate-50 prose-th:border-b prose-th:border-slate-200 prose-th:px-3 prose-th:py-2 prose-td:border-b prose-td:border-slate-100 prose-td:px-3 prose-td:py-2 prose-tr:even:bg-slate-50/40 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:font-medium prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-slate-200 prose-pre:bg-slate-50 prose-pre:p-4">
             {page.sections.map((section, sectionIndex) => {
               const id = `section-${pageNumber}-${slugify(section.heading)}`;
               return (
@@ -131,8 +132,8 @@ export default function PagedThemeLayout(props: {
               );
             })}
           </div>
-
-        </section>
+        </div>
+      </section>
       {hasResources ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <h2 className="text-lg font-semibold text-slate-900">Ressources</h2>

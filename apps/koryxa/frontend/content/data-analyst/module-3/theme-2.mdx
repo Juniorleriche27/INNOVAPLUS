@@ -1,0 +1,198 @@
+export const meta = {
+  title: "Thème 2 — Doublons, clés, unicité : détecter, dédupliquer sans casser les KPI",
+  module: "Module 3 — Nettoyage & Qualité des données",
+  estimated_reading_time: "120–150 min",
+};
+
+# 1) Pourquoi ce thème est critique
+
+Un doublon n’est pas “juste une ligne en trop”.
+C’est souvent une erreur de **grain**, de **jointure**, de **tracking** ou d’**intégration** qui se propage partout :
+- KPIs gonflés (utilisateurs, commandes, revenus),
+- taux faussés (conversion, rétention, churn),
+- segmentation incorrecte (un même utilisateur apparaît dans plusieurs segments),
+- décisions business basées sur des chiffres faux.
+
+Objectif du thème :
+1) savoir détecter les doublons (exact + par clé + “identité”),
+2) choisir une clé cohérente (unicité),
+3) dédupliquer de façon contrôlée (règles + audit),
+4) prouver ce qui a été fait (exports + report + plan).
+
+À la fin, tu livres :
+- un dataset dédupliqué,
+- un rapport de qualité,
+- un plan de déduplication documenté,
+- et un audit des lignes supprimées.
+
+---
+
+# 2) Comprendre les types de doublons
+
+## 2.1 Doublons exacts (row duplicates)
+Même ligne répétée plusieurs fois.
+Ça arrive quand :
+- un export est concaténé deux fois,
+- un job ETL rejoue et ré-insère,
+- une API renvoie la même page et le code l’ajoute.
+
+➡️ Traitement souvent simple : supprimer les lignes strictement identiques.
+
+## 2.2 Doublons par clé (key duplicates)
+La ligne n’est pas forcément identique, mais une clé censée être unique se répète.
+Exemples :
+- user_id apparaît 2 fois avec des last_active différents,
+- tx_id apparaît 2 fois avec montants différents (grave),
+- email apparaît sur plusieurs user_id (conflit identité).
+
+➡️ Traitement : il faut une règle métier de sélection (ou de fusion), sinon tu “casses” le dataset.
+
+## 2.3 Doublons d’identité (entity duplicates)
+Deux identifiants différents représentent la même personne / le même objet.
+Ex :
+- user_id=U100 et user_id=U205 ont le même email/phone,
+- deux clients créés dans le CRM après un bug.
+
+➡️ Plus dur : tu dois définir une clé “entité” (email/phone, ou combinaison), puis consolider.
+
+## 2.4 Doublons “presque identiques” (near duplicates)
+Typos, espaces, variations :
+- "Togo" vs "  togo"
+- "Facebook" vs "facebook"
+- emails avec majuscules
+
+➡️ Avant de chercher les doublons : nettoyer les strings (strip, lower, normalisation).
+
+---
+
+# 3) Clés, grain, unicité : les bases qui évitent les erreurs
+
+## 3.1 Grain : 1 ligne = quoi ?
+Avant de parler de doublons, tu fixes le grain :
+- 1 ligne = 1 utilisateur (user-level)
+- 1 ligne = 1 événement (event-level)
+- 1 ligne = 1 transaction (transaction-level)
+
+Erreur classique :
+tu veux un dataset user-level mais tu joins une table events (N lignes par user), et tu crois encore être au niveau utilisateur.
+
+➡️ Règle :
+tu écris le grain cible dans ton README et tu vérifies l’unicité sur la clé de ce grain.
+
+## 3.2 Candidate keys
+Une candidate key est une colonne (ou groupe de colonnes) qui devrait être unique.
+Ex :
+- user_id (si bien conçu)
+- email (souvent unique, mais pas toujours)
+- (country, phone) peut être unique dans un contexte donné (pas garanti)
+
+➡️ Dans ce thème, tu fais un audit de clés : tu testes plusieurs clés et tu mesures le % de doublons.
+
+## 3.3 Primary key vs unique
+En base SQL, une PRIMARY KEY impose l’unicité et non-null.
+Une contrainte UNIQUE impose l’unicité aussi.
+Même si ici on travaille en CSV, le principe est le même : ta clé principale doit être unique, sinon tu ne sais pas compter correctement.
+
+---
+
+# 4) Méthode pro : workflow de déduplication contrôlée
+
+Voici une méthode robuste et reproductible :
+
+## Étape A — Standardiser avant d’auditer
+- trim espaces,
+- normaliser casse (email en lowercase),
+- parser dates,
+- convertir types.
+
+Sans ça, tu vas rater des doublons.
+
+## Étape B — Audit des clés (key audit)
+Tu testes des clés candidates (user_id, email, phone, etc.) et tu mesures :
+- n_rows
+- n_unique
+- duplicates_rows
+- duplicate_rate
+
+But : choisir une clé “entité” réaliste.
+
+## Étape C — Diagnostiquer la nature des doublons
+Sur une clé dupliquée, tu regardes :
+- les colonnes qui changent (country, channel, revenue),
+- si c’est juste un “update” (last_active plus récent),
+- s’il y a conflit (revenu différent, pays différent) -> décision stricte.
+
+## Étape D — Règles de résolution (déduplication contrôlée)
+Tu ne supprimes pas “au hasard”.
+Tu définis une règle claire, par exemple :
+1) garder la ligne la plus récente (max last_active),
+2) si égalité, garder la plus complète (moins de NA),
+3) si égalité, garder la plus grande revenue (optionnel),
+4) sinon, garder la première stable.
+
+Dans certains cas tu ne “gardes” pas, tu “fusionnes” :
+- email non null le plus récent,
+- country non null,
+- etc.
+(Mais fusion = plus complexe, il faut l’auditer.)
+
+## Étape E — Produire un audit (preuve)
+Tu exportes un fichier d’audit qui contient :
+- entity_id (clé entité),
+- lignes “gardées” et “supprimées”,
+- raison (recency, completeness),
+- timestamps.
+
+## Étape F — Validation après dédup
+Checks minimum :
+- entity_id unique
+- nombre de lignes cohérent
+- pas de perte silencieuse énorme (ex : -40% sans justification)
+
+---
+
+# 5) Lab KORYXA (dataset Thème 2)
+
+Tu reçois un dataset “identité utilisateur” avec :
+- user_id, email, phone
+- country, channel
+- signup_date, last_active
+- revenue
+
+Doublons injectés :
+- user_id dupliqué (updates multiples),
+- email dupliqué sur plusieurs user_id (conflit identité),
+- lignes strictement identiques (row duplicates),
+- variations de format (espaces, casse).
+
+But :
+1) auditer les clés candidates,
+2) créer une clé entité (entity_id),
+3) dédupliquer avec une règle contrôlée,
+4) exporter dataset + report + plan + audit.
+
+---
+
+# 6) Exercices obligatoires (avant quiz)
+
+A) Exécuter le notebook du thème  
+B) Générer :
+- m3t2_key_audit.csv
+- m3t2_duplicates_report.csv
+- m3t2_dataset_dedup.csv
+- m3t2_dedup_audit.csv
+- m3t2_quality_report.json
+- m3t2_dedup_rules.md
+
+C) Soumettre sur la plateforme
+
+---
+
+# 7) Checklist validation (Thème 2)
+- [ ] key audit généré
+- [ ] duplicates report généré
+- [ ] dataset dédupliqué généré
+- [ ] audit dédup (preuves) généré
+- [ ] quality_report.json généré (checks OK)
+- [ ] soumission validée + quiz débloqué
+

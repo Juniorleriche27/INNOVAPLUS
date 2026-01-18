@@ -102,6 +102,15 @@ export const DATA_ANALYST_MODULES: CourseModule[] = [
           },
         ],
       },
+      {
+        title: "Thème 2 — Doublons, clés, unicité",
+        lessons: [
+          {
+            title: "Page 1 — Lecture",
+            href: "/school/data-analyst/module-3/theme-2/page/1",
+          },
+        ],
+      },
     ],
   },
   {

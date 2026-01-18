@@ -33,7 +33,7 @@ export default async function Module3Theme1Paged({ params }: Props) {
         title: "Thème 1 — Profilage & valeurs manquantes : diagnostiquer, choisir une stratégie, prouver",
         readingTime: "120–150 min",
       }}
-      description="Profilage (dtype/min/max/top values), diagnostic missingness (MCAR/MAR/MNAR), stratégies + preuves"
+      description="Profilage (dtype/min/max/top values), diagnostic missingness (MCAR/MAR/MNAR), stratégies et preuves."
       actions={[
         { label: "Notebook", href: "/school/data-analyst/module-3/theme-1/notebook" },
         { label: "Soumettre", href: "/school/data-analyst/module-3/theme-1/submit" },
@@ -70,4 +70,3 @@ export default async function Module3Theme1Paged({ params }: Props) {
     </SingleThemeLayout>
   );
 }
-

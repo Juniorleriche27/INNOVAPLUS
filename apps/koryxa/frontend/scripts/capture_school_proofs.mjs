@@ -121,6 +121,19 @@ async function main() {
   await injectUrlBanner();
   await screenshot("08-step5-resources-fr-en-in-flow");
 
+  // Module 3 — Theme 1 Page 1: reading width + hierarchy + callouts + table
+  await goto("/school/data-analyst/module-3/theme-1/page/1");
+  await page.evaluate(() => {
+    const body = document.querySelector("[data-koryxa-school-body]");
+    if (!body) return;
+    const table = body.querySelector("table");
+    if (!table) return;
+    const top = table.getBoundingClientRect().top + body.scrollTop - 160;
+    body.scrollTop = Math.max(0, top);
+  });
+  await injectUrlBanner();
+  await screenshot("09-module3-theme1-page1-reading-callouts-table");
+
   await browser.close();
   console.log(`Saved screenshots to: ${OUT_DIR}`);
 }
@@ -129,4 +142,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

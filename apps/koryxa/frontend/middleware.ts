@@ -123,6 +123,15 @@ export async function middleware(request: NextRequest) {
     return sessionValid;
   };
 
+  // PDF render bypass (CI/script): allows rendering /school/* without an auth session.
+  // Use a secret token so it cannot be abused publicly.
+  const pdfToken = (process.env.PDF_RENDER_TOKEN || "").trim();
+  const pdfHeaderToken = (request.headers.get("x-koryxa-pdf-token") || "").trim();
+  const pdfBypass = Boolean(pdfToken && pdfHeaderToken && pdfHeaderToken === pdfToken);
+  if (pdfBypass && pathname.startsWith("/school/")) {
+    return NextResponse.next();
+  }
+
   if (V1_SIMPLE) {
     const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
     if (!hasSession && !isPublic) {

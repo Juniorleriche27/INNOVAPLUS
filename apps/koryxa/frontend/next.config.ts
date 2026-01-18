@@ -11,7 +11,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(/
 
 type NextConfigWithTurbopack = NextConfig & {
   turbopack?: {
-    rules: Record<string, { loaders: string[]; as: string }>;
+    rules: Record<string, { loaders: Array<string | { loader: string; options?: Record<string, unknown> }>; as: string }>;
   };
 };
 
@@ -70,7 +70,14 @@ const withMDX = createMDX({
 nextConfig.turbopack = {
   rules: {
     "*.mdx": {
-      loaders: ["@mdx-js/loader"],
+      loaders: [
+        {
+          loader: "@next/mdx/mdx-js-loader.js",
+          options: {
+            remarkPlugins: ["remark-gfm"],
+          },
+        },
+      ],
       as: "*.js",
     },
   },

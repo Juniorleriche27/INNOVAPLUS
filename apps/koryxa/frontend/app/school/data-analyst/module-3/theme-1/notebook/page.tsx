@@ -60,8 +60,10 @@ export default function Module3Theme1Notebook() {
           <li>`m3t1_quality_report.json`</li>
           <li>`m3t1_missingness_plan.md`</li>
         </ul>
+        <p className="mt-3 text-sm text-amber-900">
+          Générez ces fichiers dans le même dossier que le notebook (ou dans un sous-dossier <span className="font-mono">outputs/</span>), puis déposez-les dans Soumettre les preuves.
+        </p>
       </div>
     </section>
   );
 }
-

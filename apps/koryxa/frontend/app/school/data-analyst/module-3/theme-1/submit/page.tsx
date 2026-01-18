@@ -97,18 +97,22 @@ export default function Module3Theme1Submit() {
         <label className="grid gap-1 text-sm">
           <span className="font-semibold text-slate-900">m3t1_profiling_table.csv</span>
           <input name="profiling_table_csv" type="file" accept=".csv,text/csv" required className="rounded-xl border border-slate-200 p-2" />
+          <span className="text-xs text-slate-500">Fichier CSV exporté depuis le notebook (table de profilage).</span>
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold text-slate-900">m3t1_dataset_clean.csv</span>
           <input name="dataset_clean_csv" type="file" accept=".csv,text/csv" required className="rounded-xl border border-slate-200 p-2" />
+          <span className="text-xs text-slate-500">Fichier CSV exporté depuis le notebook (dataset nettoyé).</span>
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold text-slate-900">m3t1_quality_report.json</span>
           <input name="quality_report_json" type="file" accept=".json,application/json" required className="rounded-xl border border-slate-200 p-2" />
+          <span className="text-xs text-slate-500">Fichier JSON généré à la fin du notebook (rapport qualité).</span>
         </label>
         <label className="grid gap-1 text-sm">
           <span className="font-semibold text-slate-900">m3t1_missingness_plan.md</span>
           <input name="missingness_plan_md" type="file" accept=".md,text/markdown,.txt,text/plain" required className="rounded-xl border border-slate-200 p-2" />
+          <span className="text-xs text-slate-500">Fichier Markdown généré à la fin du notebook (plan de traitement des manquants).</span>
         </label>
 
         <button
@@ -131,4 +135,3 @@ export default function Module3Theme1Submit() {
     </section>
   );
 }
-

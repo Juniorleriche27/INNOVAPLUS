@@ -1,26 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { INNOVA_API_BASE } from "@/lib/env";
 import { DATA_ANALYST_MODULES } from "./data";
-
-type Module1Status = {
-  notebooks_validated?: boolean;
-  quiz_passed?: boolean;
-};
-
-type Module2Status = {
-  validated?: boolean;
-};
 
 const MODULES = DATA_ANALYST_MODULES;
 
 function DataAnalystDashboard() {
   const [status, setStatus] = useState<"loading" | "ready" | "unauth" | "error">("loading");
-  const [module1, setModule1] = useState<Module1Status>({});
-  const [module2, setModule2] = useState<Module2Status>({});
   const [activeModule, setActiveModule] = useState<number>(1);
   const [statusNote, setStatusNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -33,20 +22,7 @@ function DataAnalystDashboard() {
           setStatus("unauth");
           return;
         }
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-          setStatus("ready");
-          setStatusNote("Statut indisponible pour le moment. Mode lecture libre activé.");
-          return;
-        }
-        setModule1({ notebooks_validated: !!data?.notebooks_validated, quiz_passed: !!data?.quiz_passed });
-        try {
-          const m2resp = await fetch(`${INNOVA_API_BASE}/school/data-analyst/module-2/theme-5/status`, { credentials: "include" });
-          const m2data = await m2resp.json().catch(() => ({}));
-          if (m2resp.ok) setModule2({ validated: !!m2data?.validated });
-        } catch {
-          // ignore module 2 status errors
-        }
+        await resp.json().catch(() => ({}));
         setStatus("ready");
       } catch {
         setStatus("ready");
@@ -64,17 +40,7 @@ function DataAnalystDashboard() {
     }
   }, [searchParams]);
 
-  const module1Completed = useMemo(() => Boolean(module1?.notebooks_validated && module1?.quiz_passed), [module1]);
-  const module2Completed = useMemo(() => Boolean(module2?.validated), [module2]);
-
-  function unlocked(moduleIndex: number): boolean {
-    if (moduleIndex <= 1) return true;
-    if (moduleIndex === 2) return module1Completed;
-    return module2Completed;
-  }
-
   const active = MODULES.find((m) => m.index === activeModule) || MODULES[0];
-  const activeUnlocked = unlocked(active.index);
   const firstLesson = active.themes?.[0]?.lessons?.[0] ?? null;
 
   return (
@@ -90,7 +56,7 @@ function DataAnalystDashboard() {
 
         {status === "unauth" ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Connecte-toi pour suivre ta progression et déverrouiller les modules.
+            Connecte-toi pour suivre ta progression.
           </div>
         ) : null}
         {statusNote ? (
@@ -124,23 +90,12 @@ function DataAnalystDashboard() {
               <h2 className="mt-2 text-xl font-semibold text-slate-900">{active.title}</h2>
               <p className="mt-2 text-sm text-slate-600">{active.description}</p>
             </div>
-            {!activeUnlocked ? (
-              <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
-                Verrouillé
-              </span>
-            ) : null}
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            {activeUnlocked ? (
-              <Link className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white" href={active.href}>
-                Ouvrir le module
-              </Link>
-            ) : (
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">
-                Valide le module précédent pour déverrouiller
-              </span>
-            )}
+            <Link className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white" href={active.href}>
+              Ouvrir le module
+            </Link>
             {firstLesson ? (
               <Link className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700" href={firstLesson.href}>
                 Commencer la première leçon

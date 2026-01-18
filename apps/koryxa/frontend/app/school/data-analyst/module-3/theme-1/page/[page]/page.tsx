@@ -77,9 +77,13 @@ export default async function Module3Theme1Paged({ params }: Props) {
           <div className="rounded-2xl border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 text-sm">
               <p className="font-semibold text-slate-900">Cours PDF</p>
-              <a className="text-sky-700 hover:underline" href={pdfPublicPath} download>
-                Télécharger le PDF
-              </a>
+              {hasPdf ? (
+                <a className="text-sky-700 hover:underline" href={pdfPublicPath} download>
+                  Télécharger le PDF
+                </a>
+              ) : (
+                <span className="text-slate-500">PDF pas encore généré</span>
+              )}
             </div>
             <div className="h-[calc(100vh-360px)] min-h-[520px] w-full">
               {hasPdf ? (

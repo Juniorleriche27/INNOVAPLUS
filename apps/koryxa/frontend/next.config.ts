@@ -61,6 +61,9 @@ const nextConfig: NextConfigWithTurbopack = {
 
 const withMDX = createMDX({
   extension: /\.mdx?$/,
+  options: {
+    remarkPlugins: [require.resolve("remark-gfm")],
+  },
 });
 
 // Turbopack needs an explicit rule to handle MDX imports.

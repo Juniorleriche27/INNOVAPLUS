@@ -84,9 +84,7 @@ export default function SingleThemeLayout({
           </nav>
         ) : null}
         <div className="mx-auto max-w-[820px]">
-          <div
-            className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:mb-3 prose-h2:mt-10 prose-h2:text-2xl prose-h2:font-semibold prose-h3:mb-2 prose-h3:mt-7 prose-h3:text-xl prose-h3:font-semibold prose-h4:text-base prose-h4:font-semibold prose-p:text-[17px] prose-p:leading-[1.8] prose-ul:my-5 prose-ol:my-5 prose-li:my-1 prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-table:rounded-xl prose-table:border prose-table:border-slate-200 prose-thead:bg-slate-50 prose-th:border-b prose-th:border-slate-200 prose-th:px-3 prose-th:py-2 prose-td:border-b prose-td:border-slate-100 prose-td:px-3 prose-td:py-2 prose-tr:even:bg-slate-50/40 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:font-medium prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-slate-200 prose-pre:bg-slate-50 prose-pre:p-4"
-          >
+          <div className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-h2:mb-3 prose-h2:mt-12 prose-h2:text-2xl prose-h2:font-semibold prose-h3:mb-2 prose-h3:mt-8 prose-h3:text-xl prose-h3:font-semibold prose-h4:mt-6 prose-h4:text-base prose-h4:font-semibold prose-p:my-5 prose-p:text-[17px] prose-p:leading-[1.85] prose-hr:my-10 prose-ul:my-6 prose-ol:my-6 prose-li:my-1 prose-table:my-6 prose-table:block prose-table:w-full prose-table:overflow-x-auto prose-table:rounded-xl prose-table:border prose-table:border-slate-200 prose-thead:bg-slate-50 prose-th:border-b prose-th:border-slate-200 prose-th:px-3 prose-th:py-2 prose-td:border-b prose-td:border-slate-100 prose-td:px-3 prose-td:py-2 prose-tr:even:bg-slate-50/40 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:font-medium prose-pre:my-6 prose-pre:overflow-x-auto prose-pre:rounded-2xl prose-pre:border prose-pre:border-slate-200 prose-pre:bg-slate-50 prose-pre:p-4">
             {children}
           </div>
         </div>

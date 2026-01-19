@@ -1,0 +1,96 @@
+{
+  "moduleKey": "module-1",
+  "moduleTitle": "Module 1 — Cadrage & KPIs",
+  "videos": [
+    {
+      "theme": 1,
+      "themeTitle": "Cadrage : besoin, contexte, parties prenantes",
+      "lang": "fr",
+      "youtubeId": "pMjF1NlYsiU",
+      "title": "Recueil du besoin / analyse des besoins (bases)",
+      "recommended": true,
+      "rank": 10
+    },
+    {
+      "theme": 1,
+      "themeTitle": "Cadrage : besoin, contexte, parties prenantes",
+      "lang": "en",
+      "youtubeId": "eTcTl_LrQGY",
+      "title": "Business Problem Framing (Data/Analytics)",
+      "recommended": true,
+      "rank": 9
+    },
+    {
+      "theme": 2,
+      "themeTitle": "Objectifs : SMART + questions d’analyse",
+      "lang": "fr",
+      "youtubeId": "S2wLm_7uhP8",
+      "title": "Objectifs SMART : méthode + exemples",
+      "recommended": true,
+      "rank": 8
+    },
+    {
+      "theme": 2,
+      "themeTitle": "Objectifs : SMART + questions d’analyse",
+      "lang": "en",
+      "youtubeId": "z571yxAJwFM",
+      "title": "SMART Goals Explained (practical examples)",
+      "recommended": true,
+      "rank": 7
+    },
+    {
+      "theme": 3,
+      "themeTitle": "KPIs : définition, dictionnaire KPI, cohérence",
+      "lang": "fr",
+      "youtubeId": "wsYrtliU7h0",
+      "title": "Tableau de bord / KPI : principes pour choisir de bons indicateurs",
+      "recommended": true,
+      "rank": 6
+    },
+    {
+      "theme": 3,
+      "themeTitle": "KPIs : définition, dictionnaire KPI, cohérence",
+      "lang": "en",
+      "youtubeId": "mQe39pEf82c",
+      "title": "Power BI KPI Visual (overview + usage)",
+      "recommended": true,
+      "rank": 5
+    },
+    {
+      "theme": 4,
+      "themeTitle": "Plan de mesure : events, tracking, instrumentation",
+      "lang": "fr",
+      "youtubeId": "CsEhbCgUdZY",
+      "title": "Tracking plan + Tag Manager : bases (plan de marquage)",
+      "recommended": true,
+      "rank": 4
+    },
+    {
+      "theme": 4,
+      "themeTitle": "Plan de mesure : events, tracking, instrumentation",
+      "lang": "en",
+      "youtubeId": "EcghyPg-Gow",
+      "title": "Google Tag Manager (advanced tracking concepts)",
+      "recommended": true,
+      "rank": 3
+    },
+    {
+      "theme": 5,
+      "themeTitle": "Restitution : dashboard spec + décision + storytelling",
+      "lang": "fr",
+      "youtubeId": "WYyeTnpxg4g",
+      "title": "Data Storytelling (conférence / bonnes pratiques)",
+      "recommended": true,
+      "rank": 2
+    },
+    {
+      "theme": 5,
+      "themeTitle": "Restitution : dashboard spec + décision + storytelling",
+      "lang": "en",
+      "youtubeId": "OYbPOhK0wPo",
+      "title": "Data Storytelling (how to present insights)",
+      "recommended": true,
+      "rank": 1
+    }
+  ]
+}

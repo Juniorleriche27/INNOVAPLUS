@@ -39,10 +39,6 @@ from app.routers.myplanning import router as myplanning_router
 from app.routers import studio_missions as studio_missions_router
 from app.routers.skills import router as skills_router
 from app.routers.module6 import router as module6_router
-from app.routers.data_analyst_module1 import router as da_module1_router
-from app.routers.data_analyst_module2 import router as da_module2_router
-from app.routers.data_analyst_module3 import router as da_module3_router
-from app.routers.labs_mock_api import router as labs_mock_api_router
 from app.routers.youtube import router as youtube_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -175,13 +171,9 @@ if MYPLANNING_ONLY:
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
-    minimal.include_router(da_module2_router)
-    minimal.include_router(da_module3_router)
     app.include_router(minimal)
     # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
     app.include_router(minimal, prefix="/innova/api", include_in_schema=False)
-    # Public lab endpoints (not under /innova/api)
-    app.include_router(labs_mock_api_router, prefix="/api")
     logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning only")
 else:
     # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
@@ -214,18 +206,12 @@ else:
     innova_api.include_router(studio_missions_router.router)
     innova_api.include_router(school_router.router)
     innova_api.include_router(module6_router)
-    innova_api.include_router(da_module1_router)
-    innova_api.include_router(da_module2_router)
-    innova_api.include_router(da_module3_router)
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
     app.include_router(innova_api)
     # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
     # by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
     app.include_router(innova_api, prefix="/innova/api", include_in_schema=False)
-    # Public lab endpoints (not under /innova/api)
-    app.include_router(labs_mock_api_router, prefix="/api")
-
     innova_rag = APIRouter(prefix="/innova")
     innova_rag.include_router(rag_router)
     app.include_router(innova_rag)

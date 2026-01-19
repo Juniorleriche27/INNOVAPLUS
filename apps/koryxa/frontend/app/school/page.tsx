@@ -230,41 +230,15 @@ function SchoolV1Landing() {
               Ouvrir le parcours →
             </Link>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-            <p className="text-sm font-semibold text-slate-900">Certificat Data Analyst (Module 1)</p>
-            <p className="mt-2 text-sm text-slate-600">Cadrage du besoin, KPIs et validation metier.</p>
-            <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-              <span className="rounded-full border border-slate-200 px-2 py-1">1 module</span>
-              <span className="rounded-full border border-slate-200 px-2 py-1">5 themes</span>
-            </div>
-            <Link href="/school/data-analyst/module-1" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
-              Ouvrir le module →
-            </Link>
-          </div>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Specialisations</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          {[
-            { title: "Data Analyst", slug: "data-analyst", focus: "Analyse et tableaux de bord pour la decision." },
-            { title: "Data Engineer", slug: "data-engineer", focus: "Pipelines fiables et preparation des donnees." },
-            { title: "Data Scientist", slug: "data-scientist", focus: "Modeles et experimentation appliquee." },
-            { title: "Machine Learning Engineer", slug: "machine-learning-engineer", focus: "Industrialisation des modeles ML." },
-          ].map((track) => (
-            <div key={track.slug} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5">
-              <p className="text-sm font-semibold text-slate-900">{track.title}</p>
-              <p className="mt-2 text-sm text-slate-600">{track.focus}</p>
-              <Link
-                href={`/school/parcours/specialisations/${track.slug}`}
-                className="mt-4 inline-flex text-sm font-semibold text-sky-700"
-              >
-                Ouvrir la specialisation →
-              </Link>
-            </div>
-          ))}
-        </div>
+        <p className="mt-2 text-sm text-slate-600">Liste des parcours de specialisation et leurs modules.</p>
+        <Link href="/school/specialisations" className="mt-4 inline-flex text-sm font-semibold text-sky-700">
+          Voir les specialisations →
+        </Link>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">

@@ -2,48 +2,27 @@
 
 import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { getTrack, type TrackId } from "@/data/school/catalog";
 
-type TrackKey = "fondamental" | "data-analyst" | "data-engineer" | "data-science" | "machine-learning";
-
-const TRACKS: Array<{ key: TrackKey; label: string; maxModules: number }> = [
-  { key: "fondamental", label: "Fondamental", maxModules: 6 },
-  { key: "data-analyst", label: "Data Analyst", maxModules: 7 },
-  { key: "data-engineer", label: "Data Engineer", maxModules: 2 },
-  { key: "data-science", label: "Data Science", maxModules: 1 },
-  { key: "machine-learning", label: "Machine Learning", maxModules: 1 },
-];
-
-const FUNDAMENTAL_MODULE_IDS = [
-  "intro-metiers",
-  "python-data",
-  "manip-donnees",
-  "sql-bases",
-  "visualisation",
-  "projet-synthese",
-];
-
-function parseSelection(pathname: string): { track: TrackKey; moduleNumber: number | null } {
-  const match = pathname.match(/^\/school\/(data-analyst|data-engineer|data-science|machine-learning)\/module-(\d+)(?:\/|$)/);
+function parseSelection(pathname: string): { track: TrackId; moduleId: string | null } {
+  const match = pathname.match(/^\/school\/(data-analyst|data-engineer|data-science|machine-learning)\/(module-\d+)(?:\/|$)/);
   if (match) {
-    const track = match[1] as TrackKey;
-    const moduleNumber = Number.parseInt(match[2], 10);
-    return { track, moduleNumber: Number.isFinite(moduleNumber) ? moduleNumber : 1 };
+    return { track: match[1] as TrackId, moduleId: match[2] };
   }
-  const fundamental = pathname.match(/^\/school\/parcours\/fondamental\/([^/]+)(?:\/|$)/);
-  if (fundamental) {
-    const id = decodeURIComponent(fundamental[1]);
-    const idx = FUNDAMENTAL_MODULE_IDS.indexOf(id);
-    return { track: "fondamental", moduleNumber: idx === -1 ? 1 : idx + 1 };
+  const fundamentalMatch = pathname.match(/^\/school\/parcours\/fondamental\/([^/]+)(?:\/|$)/);
+  if (fundamentalMatch) {
+    const moduleSlug = decodeURIComponent(fundamentalMatch[1]);
+    const track = getTrack("fundamental");
+    const mod = track?.modules.find((m) => m.href.endsWith(`/school/parcours/fondamental/${moduleSlug}`));
+    return { track: "fundamental", moduleId: mod?.id ?? "module-1" };
   }
-  return { track: "fondamental", moduleNumber: null };
+  return { track: "data-analyst", moduleId: null };
 }
 
-function routeFor(track: TrackKey, moduleNumber: number) {
-  if (track === "fondamental") {
-    const safeIdx = Math.min(Math.max(moduleNumber, 1), FUNDAMENTAL_MODULE_IDS.length) - 1;
-    return `/school/parcours/fondamental/${FUNDAMENTAL_MODULE_IDS[safeIdx]}`;
-  }
-  return `/school/${track}/module-${moduleNumber}`;
+function defaultHrefFor(trackId: TrackId, moduleId: string) {
+  const track = getTrack(trackId);
+  const mod = track?.modules.find((m) => m.id === moduleId) ?? track?.modules[0];
+  return mod?.href ?? "/school";
 }
 
 export default function SchoolSidebar() {
@@ -51,54 +30,75 @@ export default function SchoolSidebar() {
   const router = useRouter();
 
   const selection = useMemo(() => parseSelection(pathname), [pathname]);
-  const track = selection.track;
-  const trackMeta = TRACKS.find((t) => t.key === track) ?? TRACKS[0];
-  const moduleNumber = selection.moduleNumber ?? 1;
-  const moduleOptions = Array.from({ length: trackMeta.maxModules }, (_, i) => i + 1);
+  const trackId = selection.track;
+  const track = getTrack(trackId);
+  const modules = track?.modules ?? [];
+  const selectedModuleId = selection.moduleId ?? modules[0]?.id ?? null;
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA School</p>
-      <h2 className="mt-2 text-lg font-semibold text-slate-900">Navigation</h2>
+    <div className="h-full">
+      <div className="flex h-full flex-col rounded-none border-r border-slate-200 bg-white px-6 py-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA School</p>
+        <h2 className="mt-2 text-lg font-semibold text-slate-900">Navigation</h2>
 
-      <div className="mt-6 space-y-5">
-        <div>
-          <label className="text-sm font-semibold text-slate-900">Parcours</label>
-          <select
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-            value={track}
-            onChange={(e) => {
-              const nextTrack = e.target.value as TrackKey;
-              router.push(routeFor(nextTrack, 1));
-            }}
-          >
-            {TRACKS.map((t) => (
-              <option key={t.key} value={t.key}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+        <div className="mt-6 space-y-5">
+          <div>
+            <label className="text-sm font-semibold text-slate-900">Parcours</label>
+            <select
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+              value={trackId}
+              onChange={(e) => {
+                const nextTrackId = e.target.value as TrackId;
+                const nextTrack = getTrack(nextTrackId);
+                const nextModuleId = nextTrack?.modules[0]?.id ?? "module-1";
+                router.push(defaultHrefFor(nextTrackId, nextModuleId));
+              }}
+            >
+              {(
+                [
+                  { id: "fundamental", label: "Fondamental" },
+                  { id: "data-analyst", label: "Data Analyst" },
+                  { id: "data-engineer", label: "Data Engineer" },
+                  { id: "data-science", label: "Data Scientist" },
+                  { id: "machine-learning", label: "Machine Learning" },
+                ] as const
+              ).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-slate-900">Modules</label>
+            <select
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 disabled:bg-slate-50 disabled:text-slate-500"
+              value={selectedModuleId ?? ""}
+              disabled={modules.length === 0}
+              onChange={(e) => {
+                const nextModuleId = e.target.value;
+                router.push(defaultHrefFor(trackId, nextModuleId));
+              }}
+            >
+              {modules.length === 0 ? (
+                <option value="">Aucun module pour le moment</option>
+              ) : (
+                modules
+                  .slice()
+                  .sort((a, b) => a.order - b.order)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title.startsWith("Module") ? m.title : `Module ${m.order}`}
+                    </option>
+                  ))
+              )}
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label className="text-sm font-semibold text-slate-900">Modules</label>
-          <select
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-            value={moduleNumber}
-            onChange={(e) => {
-              const nextModule = Number.parseInt(e.target.value, 10);
-              router.push(routeFor(track, nextModule));
-            }}
-          >
-            {moduleOptions.map((n) => (
-              <option key={n} value={n}>
-                Module {n}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="mt-auto pt-6 text-xs text-slate-500">Body et sidebar scrollent indépendamment.</div>
       </div>
     </div>
   );
 }
-

@@ -1,9 +1,13 @@
 import { getModuleMeta } from "@/app/school/components/moduleMeta";
+import ArticleRow from "@/app/school/components/ArticleRow";
+import { DATA_ANALYST_ARTICLES, DATA_ANALYST_THEMES } from "@/data/data-analyst/resources";
 
 export default function DataAnalystModuleArticles({ params }: { params: { module: string } }) {
   const moduleNumber = Number.parseInt(params.module, 10);
   const meta = getModuleMeta("data-analyst", Number.isFinite(moduleNumber) ? moduleNumber : 1);
   const themes = Array.from({ length: meta.themesCount }, (_, i) => `Thème ${i + 1}`);
+  const moduleId = `module-${Number.isFinite(moduleNumber) ? moduleNumber : 1}`;
+  const items = DATA_ANALYST_ARTICLES.filter((a) => a.moduleId === moduleId && a.status === "active").sort((a, b) => a.order - b.order);
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -54,10 +58,24 @@ export default function DataAnalystModuleArticles({ params }: { params: { module
       </div>
 
       <div className="mt-8 space-y-3">
-        {/* empty list on purpose */}
-        <div className="text-sm text-slate-600">Aucun article pour le moment pour ce module.</div>
+        {items.slice(0, 12).map((a) => {
+          const theme = DATA_ANALYST_THEMES.find((t) => t.id === a.themeId);
+          const reading = `${Math.max(1, a.readingMinutes ?? 6)} min`;
+          return (
+            <ArticleRow
+              key={a.id}
+              title={a.title}
+              source={a.sourceName ?? "Source"}
+              language={a.language}
+              readingTimeLabel={reading}
+              themeLabel={theme?.title ?? "Thème"}
+              descriptionShort={a.descriptionShort}
+              href={a.url}
+            />
+          );
+        })}
+        {items.length === 0 ? <div className="text-sm text-slate-600">Aucun article pour le moment pour ce module.</div> : null}
       </div>
     </section>
   );
 }
-

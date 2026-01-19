@@ -1,13 +1,16 @@
 import ModulePageShell from "@/app/school/components/ModulePageShell";
 import { getTrack, type TrackId } from "@/data/school/catalog";
+import { getThemeLabels, hasAnyArticles, normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
 
 export default function ArticlesTab({ trackId, moduleId }: { trackId: TrackId; moduleId: string }) {
   const track = getTrack(trackId);
   const mod = track?.modules.find((m) => m.id === moduleId);
+  const themes = getThemeLabels(trackId, moduleId);
+  const hasItems = hasAnyArticles(trackId, moduleId);
 
   return (
     <ModulePageShell trackId={trackId} moduleId={moduleId}>
-      <h1 className="text-2xl font-semibold text-slate-900">{mod?.title ?? "Module"}</h1>
+      <h1 className="text-2xl font-semibold text-slate-900">{normalizeInlineSpacing(mod?.title ?? "Module")}</h1>
       <p className="mt-2 text-sm text-slate-600">À lire pour maîtriser ce module.</p>
 
       <div className="mt-6 space-y-4">
@@ -17,9 +20,15 @@ export default function ArticlesTab({ trackId, moduleId }: { trackId: TrackId; m
             <button disabled className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700">
               Tous
             </button>
-            <button disabled className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">
-              Thème 1
-            </button>
+            {themes.map((t) => (
+              <button
+                key={t}
+                disabled
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700"
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -48,7 +57,11 @@ export default function ArticlesTab({ trackId, moduleId }: { trackId: TrackId; m
       </div>
 
       <div className="mt-8 text-sm text-slate-600">Aucun article pour le moment pour ce module.</div>
+      {hasItems ? (
+        <button disabled className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">
+          Charger plus
+        </button>
+      ) : null}
     </ModulePageShell>
   );
 }
-

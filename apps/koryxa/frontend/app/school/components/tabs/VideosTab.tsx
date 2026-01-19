@@ -1,14 +1,18 @@
 import ModulePageShell from "@/app/school/components/ModulePageShell";
 import { getTrack, type TrackId } from "@/data/school/catalog";
+import { getModuleObjective, getThemeLabels, hasAnyVideos, normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
 
 export default function VideosTab({ trackId, moduleId }: { trackId: TrackId; moduleId: string }) {
   const track = getTrack(trackId);
   const mod = track?.modules.find((m) => m.id === moduleId);
+  const themes = getThemeLabels(trackId, moduleId);
+  const objective = getModuleObjective(trackId, moduleId);
+  const hasItems = hasAnyVideos(trackId, moduleId);
 
   return (
     <ModulePageShell trackId={trackId} moduleId={moduleId}>
-      <h1 className="text-2xl font-semibold text-slate-900">{mod?.title ?? "Module"}</h1>
-      <p className="mt-2 text-sm text-slate-600">Objectif du module (court)</p>
+      <h1 className="text-2xl font-semibold text-slate-900">{normalizeInlineSpacing(mod?.title ?? "Module")}</h1>
+      <p className="mt-2 text-sm text-slate-600">{objective}</p>
 
       <div className="mt-6 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -17,9 +21,15 @@ export default function VideosTab({ trackId, moduleId }: { trackId: TrackId; mod
             <button disabled className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700">
               Tous
             </button>
-            <button disabled className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700">
-              Thème 1
-            </button>
+            {themes.map((t) => (
+              <button
+                key={t}
+                disabled
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700"
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -50,11 +60,12 @@ export default function VideosTab({ trackId, moduleId }: { trackId: TrackId; mod
       <div className="mt-8">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" />
         <div className="mt-6 text-sm text-slate-600">Aucune vidéo pour le moment pour ce module.</div>
-        <button disabled className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">
-          Charger plus
-        </button>
+        {hasItems ? (
+          <button disabled className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700">
+            Charger plus
+          </button>
+        ) : null}
       </div>
     </ModulePageShell>
   );
 }
-

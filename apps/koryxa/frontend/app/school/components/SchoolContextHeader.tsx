@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { getTrack, type TrackId } from "@/data/school/catalog";
+import { normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
 
 function parseSelection(pathname: string): { track: TrackId | null; moduleTitle: string | null } {
   const match = pathname.match(/^\/school\/(data-analyst|data-engineer|data-science|machine-learning)\/(module-\d+)(?:\/|$)/);
@@ -28,6 +29,7 @@ export default function SchoolContextHeader() {
 
   if (!selection.track || !selection.moduleTitle) return null;
   const trackLabel = getTrack(selection.track)?.label ?? selection.track;
+  const moduleTitle = normalizeInlineSpacing(selection.moduleTitle);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
@@ -36,7 +38,7 @@ export default function SchoolContextHeader() {
           <span className="font-semibold text-slate-900">Parcours :</span> {trackLabel}
         </div>
         <div>
-          <span className="font-semibold text-slate-900">Module :</span> {selection.moduleTitle}
+          <span className="font-semibold text-slate-900">Module :</span> {moduleTitle}
         </div>
       </div>
     </div>

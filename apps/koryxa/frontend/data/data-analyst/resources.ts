@@ -46,7 +46,7 @@ export const DATA_ANALYST_MODULES: Module[] = [
   { id: "module-1", title: "Module 1 — Cadrage & KPIs", order: 1, objectiveShort: "Cadrer un besoin et poser des KPI fiables." },
   { id: "module-2", title: "Module 2 — Collecte", order: 2, objectiveShort: "Collecter et structurer les données à partir de sources réelles." },
   { id: "module-3", title: "Module 3 — Nettoyage", order: 3, objectiveShort: "Nettoyer, contrôler la qualité et fiabiliser le dataset." },
-  { id: "module-4", title: "Module 4 — Preparation", order: 4, objectiveShort: "Préparer les données pour l’analyse (jointures, agrégations, features)." },
+  { id: "module-4", title: "Module 4 — Préparation", order: 4, objectiveShort: "Préparer les données pour l’analyse (jointures, agrégations, features)." },
   { id: "module-5", title: "Module 5 — EDA", order: 5, objectiveShort: "Explorer et comprendre les patterns, segments et anomalies." },
   { id: "module-6", title: "Module 6 — Reporting & Dashboards", order: 6, objectiveShort: "Restituer avec clarté (storytelling, dashboards, décisions)." },
   { id: "module-7", title: "Module 7 — Recommandations + capstone", order: 7, objectiveShort: "Transformer l’analyse en recommandations actionnables." },
@@ -86,4 +86,3 @@ export const DATA_ANALYST_THEMES: Theme[] = [
 export const DATA_ANALYST_VIDEOS: Video[] = [];
 
 export const DATA_ANALYST_ARTICLES: Article[] = [];
-

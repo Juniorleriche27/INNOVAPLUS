@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getTrack, type TrackId } from "@/data/school/catalog";
+import { normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
 
 function parseSelection(pathname: string): { track: TrackId; moduleId: string | null } {
   const match = pathname.match(/^\/school\/(data-analyst|data-engineer|data-science|machine-learning)\/(module-\d+)(?:\/|$)/);
@@ -89,7 +90,7 @@ export default function SchoolSidebar() {
                   .sort((a, b) => a.order - b.order)
                   .map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.title.startsWith("Module") ? m.title : `Module ${m.order}`}
+                      {normalizeInlineSpacing(m.title.startsWith("Module") ? m.title : `Module ${m.order}`)}
                     </option>
                   ))
               )}

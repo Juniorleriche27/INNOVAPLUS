@@ -8,6 +8,8 @@ import module3Articles from "@/data/school/data-analyst/module-3/articles.json";
 import module3Videos from "@/data/school/data-analyst/module-3/videos.json";
 import module4Articles from "@/data/school/data-analyst/module-4/articles.json";
 import module4Videos from "@/data/school/data-analyst/module-4/videos.json";
+import module5Articles from "@/data/school/data-analyst/module-5/articles.json";
+import module5Videos from "@/data/school/data-analyst/module-5/videos.json";
 import type { TrackId } from "@/data/school/catalog";
 
 const MODULE_3_THEME_TITLES: Record<number, string> = {
@@ -16,6 +18,14 @@ const MODULE_3_THEME_TITLES: Record<number, string> = {
   3: "Types & dates",
   4: "Valeurs aberrantes (outliers)",
   5: "Qualité & validation",
+};
+
+const MODULE_5_THEME_TITLES: Record<number, string> = {
+  1: "EDA workflow (pandas)",
+  2: "Visualisations (Matplotlib)",
+  3: "Corrélations (Seaborn)",
+  4: "Segmentation (groupby)",
+  5: "Rapport automatique (profiling)",
 };
 
 export type SeedVideo = {
@@ -54,6 +64,8 @@ type Module3VideosJson = typeof module3Videos;
 type Module3ArticlesJson = typeof module3Articles;
 type Module4VideosJson = typeof module4Videos;
 type Module4ArticlesJson = typeof module4Articles;
+type Module5VideosJson = typeof module5Videos;
+type Module5ArticlesJson = typeof module5Articles;
 
 function parseThemeString(theme: string): { themeIndex: number; themeTitle: string } | null {
   const match = /^\s*Th[èe]me\s+(\d+)\s*—\s*(.+?)\s*$/.exec(theme);
@@ -68,13 +80,23 @@ function normalizeModuleTitle(data: unknown): string | undefined {
   if ("moduleTitle" in data && typeof (data as { moduleTitle?: unknown }).moduleTitle === "string") {
     return (data as { moduleTitle: string }).moduleTitle;
   }
+  if (
+    "module" in data &&
+    typeof (data as { module?: unknown }).module === "object" &&
+    (data as { module: { title?: unknown } }).module &&
+    typeof (data as { module: { title?: unknown } }).module.title === "string"
+  ) {
+    return (data as { module: { title: string } }).module.title;
+  }
   if ("module" in data && typeof (data as { module?: unknown }).module === "string") {
     return (data as { module: string }).module;
   }
   return undefined;
 }
 
-function normalizeVideos(data: Module1VideosJson | Module2VideosJson | Module3VideosJson | Module4VideosJson): SeedVideo[] {
+function normalizeVideos(
+  data: Module1VideosJson | Module2VideosJson | Module3VideosJson | Module4VideosJson | Module5VideosJson,
+): SeedVideo[] {
   if (Array.isArray(data)) {
     return data.map((v, idx) => ({
       id: (v as { id?: string }).id,
@@ -98,7 +120,10 @@ function normalizeVideos(data: Module1VideosJson | Module2VideosJson | Module3Vi
       themeTitle:
         typeof (v as { theme?: unknown }).theme === "string"
           ? parseThemeString((v as { theme: string }).theme)?.themeTitle ?? (v as { theme: string }).theme
-          : (v as { themeTitle?: string }).themeTitle ?? MODULE_3_THEME_TITLES[v.theme] ?? `Thème ${v.theme}`,
+          : (v as { themeTitle?: string }).themeTitle ??
+            MODULE_3_THEME_TITLES[v.theme] ??
+            MODULE_5_THEME_TITLES[v.theme] ??
+            `Thème ${v.theme}`,
       lang: v.lang,
       youtubeId: v.youtubeId,
       title: v.title,
@@ -112,7 +137,7 @@ function normalizeVideos(data: Module1VideosJson | Module2VideosJson | Module3Vi
 }
 
 function normalizeArticles(
-  data: Module1ArticlesJson | Module2ArticlesJson | Module3ArticlesJson | Module4ArticlesJson,
+  data: Module1ArticlesJson | Module2ArticlesJson | Module3ArticlesJson | Module4ArticlesJson | Module5ArticlesJson,
 ): SeedArticle[] {
   if (Array.isArray(data)) {
     return data.flatMap((block) =>
@@ -136,7 +161,10 @@ function normalizeArticles(
       themeTitle:
         typeof (a as { theme?: unknown }).theme === "string"
           ? parseThemeString((a as { theme: string }).theme)?.themeTitle ?? (a as { theme: string }).theme
-          : (a as { themeTitle?: string }).themeTitle ?? MODULE_3_THEME_TITLES[a.theme] ?? `Thème ${a.theme}`,
+          : (a as { themeTitle?: string }).themeTitle ??
+            MODULE_3_THEME_TITLES[a.theme] ??
+            MODULE_5_THEME_TITLES[a.theme] ??
+            `Thème ${a.theme}`,
       title: a.title,
       url: a.url,
       lang: (a as { lang?: "fr" | "en" }).lang,
@@ -168,6 +196,11 @@ const SEED: Partial<Record<TrackId, Partial<Record<string, ModuleSeedContent>>>>
       moduleTitle: normalizeModuleTitle(module4Videos) ?? normalizeModuleTitle(module4Articles),
       videos: normalizeVideos(module4Videos),
       articles: normalizeArticles(module4Articles),
+    },
+    "module-5": {
+      moduleTitle: normalizeModuleTitle(module5Videos) ?? normalizeModuleTitle(module5Articles),
+      videos: normalizeVideos(module5Videos),
+      articles: normalizeArticles(module5Articles),
     },
   },
 };

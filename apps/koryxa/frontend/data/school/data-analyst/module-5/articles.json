@@ -1,0 +1,16 @@
+{
+  "parcours": "Data Analyst",
+  "module": { "number": 5, "title": "Module 5 — EDA" },
+  "articles": [
+    { "theme": 1, "title": "pandas.DataFrame.describe", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html" },
+    { "theme": 1, "title": "pandas.Series.value_counts", "url": "https://pandas.pydata.org/docs/reference/api/pandas.Series.value_counts.html" },
+
+    { "theme": 2, "title": "Matplotlib — documentation", "url": "https://matplotlib.org/stable/" },
+    { "theme": 3, "title": "Seaborn — documentation", "url": "https://seaborn.pydata.org/" },
+
+    { "theme": 4, "title": "pandas.DataFrame.groupby", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html" },
+
+    { "theme": 5, "title": "ydata-profiling — documentation", "url": "https://ydata-profiling.ydata.ai/docs/master/" }
+  ]
+}
+

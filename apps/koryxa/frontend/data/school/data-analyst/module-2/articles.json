@@ -1,0 +1,143 @@
+{
+  "track": "Data Analyst",
+  "module": "Module 2 — Collecte",
+  "moduleSlug": "module-2-collecte",
+  "articles": [
+    {
+      "id": "m2t1_fr_a1",
+      "theme": 1,
+      "themeTitle": "Panorama collecte & sources",
+      "lang": "fr",
+      "title": "Qu’est-ce que Power Query ? (Microsoft Learn)",
+      "url": "https://learn.microsoft.com/fr-fr/power-query/power-query-what-is-power-query",
+      "order": 1
+    },
+    {
+      "id": "m2t1_en_a1",
+      "theme": 1,
+      "themeTitle": "Panorama collecte & sources",
+      "lang": "en",
+      "title": "What is Power Query? (Microsoft Learn)",
+      "url": "https://learn.microsoft.com/en-us/power-query/power-query-what-is-power-query",
+      "order": 2
+    },
+    {
+      "id": "m2t1_en_a2",
+      "theme": 1,
+      "themeTitle": "Panorama collecte & sources",
+      "lang": "en",
+      "title": "What is ETL? (AWS)",
+      "url": "https://aws.amazon.com/what-is/etl/",
+      "order": 3
+    },
+    {
+      "id": "m2t2_fr_a1",
+      "theme": 2,
+      "themeTitle": "Fichiers (CSV/Excel) & Power Query",
+      "lang": "fr",
+      "title": "Se connecter à un fichier texte/CSV (Microsoft Learn)",
+      "url": "https://learn.microsoft.com/fr-fr/power-query/connectors/text-csv",
+      "order": 1
+    },
+    {
+      "id": "m2t2_en_a1",
+      "theme": 2,
+      "themeTitle": "Fichiers (CSV/Excel) & Power Query",
+      "lang": "en",
+      "title": "Connect to a Text/CSV file (Microsoft Learn)",
+      "url": "https://learn.microsoft.com/en-us/power-query/connectors/text-csv",
+      "order": 2
+    },
+    {
+      "id": "m2t2_en_a2",
+      "theme": 2,
+      "themeTitle": "Fichiers (CSV/Excel) & Power Query",
+      "lang": "en",
+      "title": "Power Query M language reference (Microsoft Learn)",
+      "url": "https://learn.microsoft.com/en-us/powerquery-m/",
+      "order": 3
+    },
+    {
+      "id": "m2t3_en_a1",
+      "theme": 3,
+      "themeTitle": "SQL (extraction fiable)",
+      "lang": "en",
+      "title": "PostgreSQL — SELECT",
+      "url": "https://www.postgresql.org/docs/current/sql-select.html",
+      "order": 1
+    },
+    {
+      "id": "m2t3_en_a2",
+      "theme": 3,
+      "themeTitle": "SQL (extraction fiable)",
+      "lang": "en",
+      "title": "PostgreSQL — JOIN",
+      "url": "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-JOIN",
+      "order": 2
+    },
+    {
+      "id": "m2t3_en_a3",
+      "theme": 3,
+      "themeTitle": "SQL (extraction fiable)",
+      "lang": "en",
+      "title": "PostgreSQL — GROUP BY / Aggregates",
+      "url": "https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-GROUP",
+      "order": 3
+    },
+    {
+      "id": "m2t4_en_a1",
+      "theme": 4,
+      "themeTitle": "APIs (HTTP) & Python requests",
+      "lang": "en",
+      "title": "Requests — Quickstart",
+      "url": "https://requests.readthedocs.io/en/latest/user/quickstart/",
+      "order": 1
+    },
+    {
+      "id": "m2t4_en_a2",
+      "theme": 4,
+      "themeTitle": "APIs (HTTP) & Python requests",
+      "lang": "en",
+      "title": "HTTP Status Codes (MDN)",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status",
+      "order": 2
+    },
+    {
+      "id": "m2t4_en_a3",
+      "theme": 4,
+      "themeTitle": "APIs (HTTP) & Python requests",
+      "lang": "en",
+      "title": "What is a REST API? (Red Hat)",
+      "url": "https://www.redhat.com/en/topics/api/what-is-a-rest-api",
+      "order": 3
+    },
+    {
+      "id": "m2t5_en_a1",
+      "theme": 5,
+      "themeTitle": "Capstone collecte (pack reproductible)",
+      "lang": "en",
+      "title": "Reproducible Analytical Pipelines (RAP) — guidance",
+      "url": "https://analysisfunction.civilservice.gov.uk/support/reproducible-analytical-pipelines/",
+      "order": 1
+    },
+    {
+      "id": "m2t5_en_a2",
+      "theme": 5,
+      "themeTitle": "Capstone collecte (pack reproductible)",
+      "lang": "en",
+      "title": "What is Data Lineage? (IBM)",
+      "url": "https://www.ibm.com/think/topics/data-lineage",
+      "order": 2
+    },
+    {
+      "id": "m2t5_en_a3",
+      "theme": 5,
+      "themeTitle": "Capstone collecte (pack reproductible)",
+      "lang": "en",
+      "title": "README file for datasets — best practices (EPFL PDF)",
+      "url": "https://infoscience.epfl.ch/server/api/core/bitstreams/e92aa9c8-c545-4d04-8b0b-8c6a54631fa5/content",
+      "order": 3
+    }
+  ]
+}
+

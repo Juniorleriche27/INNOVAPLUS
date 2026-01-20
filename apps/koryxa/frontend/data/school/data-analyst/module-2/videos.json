@@ -1,0 +1,108 @@
+{
+  "track": "Data Analyst",
+  "module": "Module 2 — Collecte",
+  "moduleSlug": "module-2-collecte",
+  "videos": [
+    {
+      "id": "m2t1_fr_01",
+      "theme": 1,
+      "themeTitle": "Panorama collecte & sources",
+      "lang": "fr",
+      "youtubeId": "w8XH-Q_0CJA",
+      "title": "Formation Power BI pour les Débutants en Français (importer des données)",
+      "recommended": true,
+      "order": 1
+    },
+    {
+      "id": "m2t1_en_01",
+      "theme": 1,
+      "themeTitle": "Panorama collecte & sources",
+      "lang": "en",
+      "youtubeId": "G4ViDBWq_A8",
+      "title": "30 Websites to Find FREE Datasets for Data Analyst Projects",
+      "recommended": true,
+      "order": 2
+    },
+    {
+      "id": "m2t2_fr_01",
+      "theme": 2,
+      "themeTitle": "Fichiers (CSV/Excel) & Power Query",
+      "lang": "fr",
+      "youtubeId": "sHX_q7wUKOU",
+      "title": "Je vous apprends Power Query en 45 minutes",
+      "recommended": true,
+      "order": 3
+    },
+    {
+      "id": "m2t2_en_01",
+      "theme": 2,
+      "themeTitle": "Fichiers (CSV/Excel) & Power Query",
+      "lang": "en",
+      "youtubeId": "UAFExySaSPY",
+      "title": "Complete Guide to Power Query",
+      "recommended": true,
+      "order": 4
+    },
+    {
+      "id": "m2t3_fr_01",
+      "theme": 3,
+      "themeTitle": "SQL (extraction fiable)",
+      "lang": "fr",
+      "youtubeId": "zRQkdqXsrV4",
+      "title": "Réussir les jointures en SQL (live/cours)",
+      "recommended": true,
+      "order": 5
+    },
+    {
+      "id": "m2t3_en_01",
+      "theme": 3,
+      "themeTitle": "SQL (extraction fiable)",
+      "lang": "en",
+      "youtubeId": "XqIk2PwP0To",
+      "title": "SQL Tutorial — Full Database Course for Beginners",
+      "recommended": true,
+      "order": 6
+    },
+    {
+      "id": "m2t4_fr_01",
+      "theme": 4,
+      "themeTitle": "APIs (HTTP) & Python requests",
+      "lang": "fr",
+      "youtubeId": "o-rTY5uHahc",
+      "title": "Interroger une API en Python (requests) — exemple Geo API",
+      "recommended": true,
+      "order": 7
+    },
+    {
+      "id": "m2t4_en_01",
+      "theme": 4,
+      "themeTitle": "APIs (HTTP) & Python requests",
+      "lang": "en",
+      "youtubeId": "p71SWzjeqtk",
+      "title": "Learn how to access ANY API with Python (requests)",
+      "recommended": true,
+      "order": 8
+    },
+    {
+      "id": "m2t5_fr_01",
+      "theme": 5,
+      "themeTitle": "Capstone collecte (pack reproductible)",
+      "lang": "fr",
+      "youtubeId": "7ovpDjDJs6w",
+      "title": "Cours complet dbt + DuckDB (pipeline reproductible, transformations)",
+      "recommended": true,
+      "order": 9
+    },
+    {
+      "id": "m2t5_en_01",
+      "theme": 5,
+      "themeTitle": "Capstone collecte (pack reproductible)",
+      "lang": "en",
+      "youtubeId": "dfouoh9QdUw",
+      "title": "How to build an ETL pipeline with Python (data pipeline)",
+      "recommended": true,
+      "order": 10
+    }
+  ]
+}
+

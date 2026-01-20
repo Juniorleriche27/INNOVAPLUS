@@ -1,0 +1,17 @@
+[
+  { "module": 3, "theme": 1, "lang": "fr", "youtubeId": "Z9GHoLbn1pI", "title": "Nettoyage d'un dataframe (Pandas) — pratiques de base" },
+  { "module": 3, "theme": 1, "lang": "en", "youtubeId": "ozKsfsldV7M", "title": "Clean Messy Data in Python (NumPy + Pandas)" },
+
+  { "module": 3, "theme": 2, "lang": "fr", "youtubeId": "bhmbkS7MvO0", "title": "Pandas — supprimer les doublons (duplicated / drop_duplicates)" },
+  { "module": 3, "theme": 2, "lang": "en", "youtubeId": "Hxlfu0IwMdU", "title": "Pandas: duplicated() and drop_duplicates() (remove duplicates)" },
+
+  { "module": 3, "theme": 3, "lang": "fr", "youtubeId": "BgaoK777kPo", "title": "Manipulation des dates et heures en Python (datetime + pandas)" },
+  { "module": 3, "theme": 3, "lang": "en", "youtubeId": "igWjq3jtLYI", "title": "Pandas Time Series: to_datetime (parsing dates)" },
+
+  { "module": 3, "theme": 4, "lang": "fr", "youtubeId": "xBDdZTBDhgk", "title": "Valeurs aberrantes (outliers) — détection et interprétation (boxplot/IQR)" },
+  { "module": 3, "theme": 4, "lang": "en", "youtubeId": "e1P7q-YKt-I", "title": "Outlier Detection in Python (practical walkthrough)" },
+
+  { "module": 3, "theme": 5, "lang": "fr", "youtubeId": "bcCqZ755ebM", "title": "Qualité des données avec Python — profiler/contrôler avant livraison" },
+  { "module": 3, "theme": 5, "lang": "en", "youtubeId": "cH6U1Nf8G-I", "title": "Great Expectations — Data Validation (quickstart tutorial)" }
+]
+

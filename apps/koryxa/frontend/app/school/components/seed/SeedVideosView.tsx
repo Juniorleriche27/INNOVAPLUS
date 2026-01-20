@@ -41,13 +41,13 @@ export default function SeedVideosView({ videos }: { videos: SeedVideo[] }) {
     }
 
     if (sortBy === "Recommandé") {
+      const hasRank = out.some((v) => typeof v.rank === "number");
+      const hasOrder = out.some((v) => typeof v.order === "number");
       out = [...out].sort((a, b) => {
         const aRec = a.recommended ? 1 : 0;
         const bRec = b.recommended ? 1 : 0;
         if (aRec !== bRec) return bRec - aRec;
-        const hasRank = out.some((v) => typeof v.rank === "number");
         if (hasRank) return (b.rank ?? 0) - (a.rank ?? 0);
-        const hasOrder = out.some((v) => typeof v.order === "number");
         if (hasOrder) return (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
         return 0;
       });

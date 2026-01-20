@@ -26,6 +26,7 @@ export default function SeedVideosView({ videos }: { videos: SeedVideo[] }) {
   const themes = useMemo(() => {
     const uniq = new Map<number, string>();
     for (const video of videos) {
+      if (video.theme <= 0) continue;
       uniq.set(video.theme, video.themeTitle);
     }
     return [...uniq.entries()].sort((a, b) => a[0] - b[0]);

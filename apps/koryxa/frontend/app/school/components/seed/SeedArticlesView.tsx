@@ -33,6 +33,7 @@ export default function SeedArticlesView({ articles }: { articles: SeedArticle[]
   const themes = useMemo(() => {
     const uniq = new Map<number, string>();
     for (const article of articles) {
+      if (article.theme <= 0) continue;
       uniq.set(article.theme, article.themeTitle);
     }
     return [...uniq.entries()].sort((a, b) => a[0] - b[0]);

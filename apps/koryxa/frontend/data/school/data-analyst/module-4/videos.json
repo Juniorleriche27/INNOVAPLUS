@@ -1,0 +1,76 @@
+{
+  "module": "Module 4 — Préparation",
+  "videos": [
+    {
+      "theme": "Thème 1 — Filtrage & sélection (pandas)",
+      "lang": "fr",
+      "youtubeId": "mP9haXSqGQg",
+      "title": "Filtrer les données avec Pandas (16/30) #DAAP",
+      "recommendedOrder": 1
+    },
+    {
+      "theme": "Thème 1 — Filtrage & sélection (pandas)",
+      "lang": "en",
+      "youtubeId": "DCE6t3vNfvM",
+      "title": "Python Pandas: Select, Slice & Filter Data (rows & columns)",
+      "recommendedOrder": 2
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "lang": "fr",
+      "youtubeId": "SGqHM51Mec0",
+      "title": "Joindre des DataFrames Pandas (17/30) #DAAP",
+      "recommendedOrder": 3
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "lang": "en",
+      "youtubeId": "Fl3VGL3BuAA",
+      "title": "Master Python Pandas Merge (Ultimate Guide)",
+      "recommendedOrder": 4
+    },
+    {
+      "theme": "Thème 3 — Agrégation & features (groupby/agg)",
+      "lang": "fr",
+      "youtubeId": "KCX-Hwajm0w",
+      "title": "Grouper des données avec Pandas (25/30) #DAAP",
+      "recommendedOrder": 5
+    },
+    {
+      "theme": "Thème 3 — Agrégation & features (groupby/agg)",
+      "lang": "en",
+      "youtubeId": "VRmXto2YA2I",
+      "title": "Pandas GroupBy Tutorial (groupby, agg, basics)",
+      "recommendedOrder": 6
+    },
+    {
+      "theme": "Thème 4 — Encodage catégoriel (get_dummies / OneHotEncoder)",
+      "lang": "fr",
+      "youtubeId": "E_i7BkcRogo",
+      "title": "Tutoriel Python — Variables indicatrices / Encodage One Hot (Pandas)",
+      "recommendedOrder": 7
+    },
+    {
+      "theme": "Thème 4 — Encodage catégoriel (get_dummies / OneHotEncoder)",
+      "lang": "en",
+      "youtubeId": "6qFGxJFfmvo",
+      "title": "Encoding Categorical Data | Machine Learning Fundamentals",
+      "recommendedOrder": 8
+    },
+    {
+      "theme": "Thème 5 — Mise à l’échelle (scaling) & préparation finale",
+      "lang": "fr",
+      "youtubeId": "Ph9OI2l0yBY",
+      "title": "Exercice corrigé — Régression Logistique & SVM (Normalisation centrée-réduite)",
+      "recommendedOrder": 9
+    },
+    {
+      "theme": "Thème 5 — Mise à l’échelle (scaling) & préparation finale",
+      "lang": "en",
+      "youtubeId": "G7xRVW9CfHY",
+      "title": "Feature Scaling (Normalization vs Standardization) — Practical Guide",
+      "recommendedOrder": 10
+    }
+  ]
+}
+

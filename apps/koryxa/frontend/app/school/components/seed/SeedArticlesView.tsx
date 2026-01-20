@@ -7,7 +7,9 @@ import type { SeedArticle } from "@/app/school/lib/getModuleSeedContent";
 type LanguageFilter = "Tous" | "FR" | "EN";
 
 function getLangFromUrl(url: string): Exclude<LanguageFilter, "Tous"> {
-  return url.includes("/fr-fr/") ? "FR" : "EN";
+  const lower = url.toLowerCase();
+  if (lower.includes("/fr-fr/") || lower.includes("/fr/") || lower.includes(".fr/") || lower.endsWith(".fr")) return "FR";
+  return "EN";
 }
 
 function getLang(article: SeedArticle): Exclude<LanguageFilter, "Tous"> {

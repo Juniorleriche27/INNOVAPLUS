@@ -45,7 +45,11 @@ export default function SeedVideosView({ videos }: { videos: SeedVideo[] }) {
         const aRec = a.recommended ? 1 : 0;
         const bRec = b.recommended ? 1 : 0;
         if (aRec !== bRec) return bRec - aRec;
-        return (b.rank ?? 0) - (a.rank ?? 0);
+        const hasRank = out.some((v) => typeof v.rank === "number");
+        if (hasRank) return (b.rank ?? 0) - (a.rank ?? 0);
+        const hasOrder = out.some((v) => typeof v.order === "number");
+        if (hasOrder) return (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+        return 0;
       });
     }
 
@@ -191,4 +195,3 @@ export default function SeedVideosView({ videos }: { videos: SeedVideo[] }) {
     </div>
   );
 }
-

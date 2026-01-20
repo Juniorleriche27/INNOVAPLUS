@@ -10,6 +10,11 @@ function getLangFromUrl(url: string): Exclude<LanguageFilter, "Tous"> {
   return url.includes("/fr-fr/") ? "FR" : "EN";
 }
 
+function getLang(article: SeedArticle): Exclude<LanguageFilter, "Tous"> {
+  if (article.lang) return article.lang.toUpperCase() as Exclude<LanguageFilter, "Tous">;
+  return getLangFromUrl(article.url);
+}
+
 function getSourceName(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -38,11 +43,15 @@ export default function SeedArticlesView({ articles }: { articles: SeedArticle[]
       out = out.filter((a) => a.theme === themeFilter);
     }
     if (langFilter !== "Tous") {
-      out = out.filter((a) => getLangFromUrl(a.url) === langFilter);
+      out = out.filter((a) => getLang(a) === langFilter);
     }
 
     if (sortBy === "Recommandé") {
-      out = [...out].sort((a, b) => a.__idx - b.__idx);
+      const hasOrder = out.some((a) => typeof a.order === "number");
+      out = [...out].sort((a, b) => {
+        if (hasOrder) return (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+        return a.__idx - b.__idx;
+      });
     }
 
     return out;
@@ -126,7 +135,7 @@ export default function SeedArticlesView({ articles }: { articles: SeedArticle[]
               key={`${a.theme}-${a.url}`}
               title={a.title}
               source={getSourceName(a.url)}
-              language={getLangFromUrl(a.url)}
+              language={getLang(a)}
               readingTimeLabel="Lecture"
               themeLabel={`Thème ${a.theme} — ${a.themeTitle}`}
               descriptionShort={`À lire pour approfondir : ${a.themeTitle}.`}
@@ -138,4 +147,3 @@ export default function SeedArticlesView({ articles }: { articles: SeedArticle[]
     </div>
   );
 }
-

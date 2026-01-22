@@ -10,6 +10,7 @@ import module4Articles from "@/data/school/data-analyst/module-4/articles.json";
 import module4Videos from "@/data/school/data-analyst/module-4/videos.json";
 import module5Articles from "@/data/school/data-analyst/module-5/articles.json";
 import module5Videos from "@/data/school/data-analyst/module-5/videos.json";
+import module6Videos from "@/data/school/data-analyst/module-6/videos.json";
 import type { TrackId } from "@/data/school/catalog";
 
 const MODULE_3_THEME_TITLES: Record<number, string> = {
@@ -26,6 +27,14 @@ const MODULE_5_THEME_TITLES: Record<number, string> = {
   3: "Corrélations (Seaborn)",
   4: "Segmentation (groupby)",
   5: "Rapport automatique (profiling)",
+};
+
+const MODULE_6_THEME_TITLES: Record<string, string> = {
+  T1_KPI_REPORTING: "KPI & reporting",
+  T2_DATAVIZ_STORYTELLING: "Dataviz & storytelling",
+  T3_POWERBI_DESKTOP: "Power BI Desktop",
+  T4_DASHBOARD_DESIGN: "Dashboard design",
+  T5_SERVICE_PUBLISH_REFRESH: "Service, publication & refresh",
 };
 
 export type SeedVideo = {
@@ -66,6 +75,7 @@ type Module4VideosJson = typeof module4Videos;
 type Module4ArticlesJson = typeof module4Articles;
 type Module5VideosJson = typeof module5Videos;
 type Module5ArticlesJson = typeof module5Articles;
+type Module6VideosJson = typeof module6Videos;
 
 function parseThemeString(theme: string): { themeIndex: number; themeTitle: string } | null {
   const match = /^\s*Th[èe]me\s+(\d+)\s*—\s*(.+?)\s*$/.exec(theme);
@@ -73,6 +83,14 @@ function parseThemeString(theme: string): { themeIndex: number; themeTitle: stri
   const themeIndex = Number(match[1]);
   if (!Number.isFinite(themeIndex)) return null;
   return { themeIndex, themeTitle: match[2] };
+}
+
+function parseThemeCode(code: string): { themeIndex: number; themeTitle: string } | null {
+  const match = /^\s*T(\d+)_/.exec(code);
+  if (!match) return null;
+  const themeIndex = Number(match[1]);
+  if (!Number.isFinite(themeIndex)) return null;
+  return { themeIndex, themeTitle: MODULE_6_THEME_TITLES[code] ?? code };
 }
 
 function normalizeModuleTitle(data: unknown): string | undefined {
@@ -95,7 +113,7 @@ function normalizeModuleTitle(data: unknown): string | undefined {
 }
 
 function normalizeVideos(
-  data: Module1VideosJson | Module2VideosJson | Module3VideosJson | Module4VideosJson | Module5VideosJson,
+  data: Module1VideosJson | Module2VideosJson | Module3VideosJson | Module4VideosJson | Module5VideosJson | Module6VideosJson,
 ): SeedVideo[] {
   if (Array.isArray(data)) {
     return data.map((v, idx) => ({
@@ -115,11 +133,15 @@ function normalizeVideos(
       id: (v as { id?: string }).id,
       theme:
         typeof (v as { theme?: unknown }).theme === "string"
-          ? parseThemeString((v as { theme: string }).theme)?.themeIndex ?? 0
+          ? parseThemeString((v as { theme: string }).theme)?.themeIndex ??
+            parseThemeCode((v as { theme: string }).theme)?.themeIndex ??
+            0
           : v.theme,
       themeTitle:
         typeof (v as { theme?: unknown }).theme === "string"
-          ? parseThemeString((v as { theme: string }).theme)?.themeTitle ?? (v as { theme: string }).theme
+          ? parseThemeString((v as { theme: string }).theme)?.themeTitle ??
+            parseThemeCode((v as { theme: string }).theme)?.themeTitle ??
+            (v as { theme: string }).theme
           : (v as { themeTitle?: string }).themeTitle ??
             MODULE_3_THEME_TITLES[v.theme] ??
             MODULE_5_THEME_TITLES[v.theme] ??
@@ -201,6 +223,11 @@ const SEED: Partial<Record<TrackId, Partial<Record<string, ModuleSeedContent>>>>
       moduleTitle: normalizeModuleTitle(module5Videos) ?? normalizeModuleTitle(module5Articles),
       videos: normalizeVideos(module5Videos),
       articles: normalizeArticles(module5Articles),
+    },
+    "module-6": {
+      moduleTitle: normalizeModuleTitle(module6Videos),
+      videos: normalizeVideos(module6Videos),
+      articles: [],
     },
   },
 };

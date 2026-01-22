@@ -1,0 +1,76 @@
+{
+  "module": {
+    "slug": "module-7",
+    "title": "Module 7 — Recommandations + capstone",
+    "themes": [
+      { "theme": 1, "title": "Storytelling & insights (transformer une analyse en message clair)" },
+      { "theme": 2, "title": "Priorisation & business case (RICE/ICE, impact, effort)" },
+      { "theme": 3, "title": "Validation & expérimentation (A/B test, décision)" },
+      { "theme": 4, "title": "Restitution (rapport, deck, dashboard, stakeholders)" },
+      { "theme": 5, "title": "Capstone final (projet complet + livrable propre)" }
+    ]
+  },
+  "articles": [
+    {
+      "theme": 1,
+      "lang": "en",
+      "title": "Storytelling with Data — Resources & blog",
+      "url": "https://www.storytellingwithdata.com/blog"
+    },
+    {
+      "theme": 1,
+      "lang": "en",
+      "title": "Forbes — Why data storytelling matters",
+      "url": "https://www.forbes.com/sites/forbestechcouncil/2020/09/17/the-art-and-importance-of-data-storytelling/"
+    },
+    {
+      "theme": 2,
+      "lang": "en",
+      "title": "Atlassian — RICE scoring model (prioritization)",
+      "url": "https://www.atlassian.com/agile/product-management/rice-scoring"
+    },
+    {
+      "theme": 2,
+      "lang": "en",
+      "title": "Railsware — RICE framework explained",
+      "url": "https://railsware.com/blog/rice-scoring-model/"
+    },
+    {
+      "theme": 3,
+      "lang": "en",
+      "title": "Google Developers — A/B testing (best practices)",
+      "url": "https://developers.google.com/search/docs/fundamentals/ab-testing"
+    },
+    {
+      "theme": 3,
+      "lang": "en",
+      "title": "Wikipedia — A/B testing (overview)",
+      "url": "https://en.wikipedia.org/wiki/A/B_testing"
+    },
+    {
+      "theme": 4,
+      "lang": "en",
+      "title": "Nielsen Norman Group — Data visualizations: how to communicate clearly",
+      "url": "https://www.nngroup.com/articles/data-visualizations-communication/"
+    },
+    {
+      "theme": 4,
+      "lang": "en",
+      "title": "Harvard Business Review — A data-driven decision-making guide",
+      "url": "https://hbr.org/2020/02/a-refresher-on-data-driven-decision-making"
+    },
+    {
+      "theme": 5,
+      "lang": "en",
+      "title": "UK Government — Reproducible Analytical Pipelines (RAP) strategy",
+      "url": "https://analysisfunction.civilservice.gov.uk/policy-store/reproducible-analytical-pipelines-strategy/"
+    },
+    {
+      "theme": 5,
+      "lang": "en",
+      "title": "Dataset README — Best practices (template guidance)",
+      "url": "https://www.staff.lu.se/research-and-education/research-support/support-research-process/research-data-management/store-and-organise/document-datasets-readme-file"
+    }
+  ]
+}
+

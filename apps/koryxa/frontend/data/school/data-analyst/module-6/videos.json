@@ -1,0 +1,76 @@
+{
+  "module": "Module 6 — Reporting & Dashboards",
+  "videos": [
+    {
+      "theme": "T1_KPI_REPORTING",
+      "lang": "fr",
+      "youtubeId": "jf2ccafYDRQ",
+      "title": "Les KPI dans Power BI : comment les créer ?",
+      "order": 1
+    },
+    {
+      "theme": "T1_KPI_REPORTING",
+      "lang": "en",
+      "youtubeId": "Oiw3Xv4RETc",
+      "title": "Power BI KPI Dashboard (step by step)",
+      "order": 2
+    },
+    {
+      "theme": "T2_DATAVIZ_STORYTELLING",
+      "lang": "fr",
+      "youtubeId": "xKIixSGwnsk",
+      "title": "Introduction à la data visualization (outils & bases)",
+      "order": 3
+    },
+    {
+      "theme": "T2_DATAVIZ_STORYTELLING",
+      "lang": "en",
+      "youtubeId": "DeLHpwkLvjY",
+      "title": "Data Visualization Tutorial (Full Course / Beginner)",
+      "order": 4
+    },
+    {
+      "theme": "T3_POWERBI_DESKTOP",
+      "lang": "fr",
+      "youtubeId": "pW-9qOtkSHc",
+      "title": "Power BI — Cours complet (Desktop) : importer, modéliser, visualiser",
+      "order": 5
+    },
+    {
+      "theme": "T3_POWERBI_DESKTOP",
+      "lang": "en",
+      "youtubeId": "I0vQ_VLZTWg",
+      "title": "Power BI Full Course (Learn Power BI from Scratch)",
+      "order": 6
+    },
+    {
+      "theme": "T4_DASHBOARD_DESIGN",
+      "lang": "fr",
+      "youtubeId": "sUZal8IMw5M",
+      "title": "Créer un tableau de bord Power BI (mise en page + visuels)",
+      "order": 7
+    },
+    {
+      "theme": "T4_DASHBOARD_DESIGN",
+      "lang": "en",
+      "youtubeId": "-tdkUYrzrio",
+      "title": "Power BI Report Design Best Practices",
+      "order": 8
+    },
+    {
+      "theme": "T5_SERVICE_PUBLISH_REFRESH",
+      "lang": "fr",
+      "youtubeId": "ePoJXioJ1n4",
+      "title": "Power BI Service : partager & collaborer sur des rapports",
+      "order": 9
+    },
+    {
+      "theme": "T5_SERVICE_PUBLISH_REFRESH",
+      "lang": "en",
+      "youtubeId": "M0HzPGaq784",
+      "title": "Power BI Service: Publish + Scheduled Refresh (Tutorial)",
+      "order": 10
+    }
+  ]
+}
+

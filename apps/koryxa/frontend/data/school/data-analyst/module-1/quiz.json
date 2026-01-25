@@ -1,0 +1,380 @@
+{
+  "module": "Module 1 — Cadrage & KPIs",
+  "version": "1.0.0",
+  "pass_threshold": 0.8,
+  "grading": { "points_per_question": 1, "negative_marking": false },
+  "delivery": { "shuffle_questions": true, "shuffle_choices": true, "time_limit_minutes": 25 },
+  "questions": [
+    {
+      "id": "m1_q01",
+      "type": "single_choice",
+      "prompt": "Dans un projet data, le “cadrage” sert principalement à :",
+      "choices": [
+        "Écrire des dashboards le plus vite possible",
+        "Définir le problème, le périmètre, les décisions visées et les critères de succès",
+        "Nettoyer la base de données avant toute discussion",
+        "Choisir un modèle ML dès le départ"
+      ],
+      "answer_index": 1,
+      "explanation": "Le cadrage aligne problème → décisions → métriques → périmètre → livrables."
+    },
+    {
+      "id": "m1_q02",
+      "type": "single_choice",
+      "prompt": "Quelle phrase décrit le mieux un KPI (Key Performance Indicator) ?",
+      "choices": [
+        "N’importe quel chiffre affiché dans un dashboard",
+        "Un indicateur lié à un objectif, défini avec une formule et une règle de lecture",
+        "Un graphique joli pour convaincre le management",
+        "Une donnée brute issue d’une table SQL"
+      ],
+      "answer_index": 1,
+      "explanation": "Un KPI est une mesure de performance reliée à un objectif, avec définition opérationnelle."
+    },
+    {
+      "id": "m1_q03",
+      "type": "single_choice",
+      "prompt": "Lequel est un exemple de “vanity metric” (métrique trompeuse) si on veut mesurer l’impact business ?",
+      "choices": [
+        "Revenu net",
+        "Taux de conversion paiement",
+        "Nombre total d’inscriptions cumulées depuis 3 ans (sans cohorte ni activité)",
+        "Taux de rétention à 30 jours"
+      ],
+      "answer_index": 2,
+      "explanation": "Une métrique cumulée peut augmenter même si l’impact réel baisse (pas de lien direct à une décision)."
+    },
+    {
+      "id": "m1_q04",
+      "type": "single_choice",
+      "prompt": "Quelle différence est correcte entre indicateur “leading” et “lagging” ?",
+      "choices": [
+        "Leading = mesure après le résultat, Lagging = mesure avant",
+        "Leading = prédictif/causal potentiel, Lagging = constat du résultat (historique)",
+        "Leading = toujours financier, Lagging = toujours produit",
+        "Ils sont identiques, c’est juste du vocabulaire"
+      ],
+      "answer_index": 1,
+      "explanation": "Leading aide à piloter (signal amont), lagging mesure l’issue (signal aval)."
+    },
+    {
+      "id": "m1_q05",
+      "type": "single_choice",
+      "prompt": "Objectif : “Améliorer la complétion du Module 1”. Quel KPI est le plus directement aligné ?",
+      "choices": [
+        "Nombre de visiteurs sur la page d’accueil",
+        "Taux de complétion du Module 1 (utilisateurs ayant terminé / inscrits)",
+        "Nombre total de vidéos disponibles",
+        "Nombre de clics sur le menu"
+      ],
+      "answer_index": 1,
+      "explanation": "Le KPI doit mesurer l’objectif, pas un proxy trop éloigné."
+    },
+    {
+      "id": "m1_q06",
+      "type": "single_choice",
+      "prompt": "Pourquoi une définition précise du dénominateur est critique pour un KPI ?",
+      "choices": [
+        "Parce que ça rend le KPI plus joli",
+        "Parce que ça change la valeur du KPI et donc la décision",
+        "Parce que le dénominateur est toujours constant",
+        "Parce que les dashboards n’affichent pas de dénominateur"
+      ],
+      "answer_index": 1,
+      "explanation": "Changer le dénominateur = changer l’interprétation (risque de conclusions fausses)."
+    },
+    {
+      "id": "m1_q07",
+      "type": "single_choice",
+      "prompt": "Conversion : 200 visiteurs, 20 inscriptions. Quel est le taux de conversion inscription ?",
+      "choices": ["1%", "5%", "10%", "20%"],
+      "answer_index": 2,
+      "explanation": "20/200 = 0,10 = 10%."
+    },
+    {
+      "id": "m1_q08",
+      "type": "single_choice",
+      "prompt": "Churn : 500 clients au début du mois, 25 résiliations pendant le mois (ignore acquisitions). Churn mensuel ?",
+      "choices": ["2%", "5%", "10%", "20%"],
+      "answer_index": 1,
+      "explanation": "25/500 = 0,05 = 5%."
+    },
+    {
+      "id": "m1_q09",
+      "type": "single_choice",
+      "prompt": "Quel est le meilleur exemple de “guardrail metric” (garde-fou) lors d’une optimisation ?",
+      "choices": [
+        "Optimiser le taux de clic sans autre mesure",
+        "Optimiser la complétion, avec un garde-fou sur le taux de plaintes/support",
+        "Optimiser les inscriptions en supprimant la vérification email",
+        "Optimiser l’activité en envoyant des notifications illimitées"
+      ],
+      "answer_index": 1,
+      "explanation": "Un garde-fou évite de gagner sur un KPI en dégradant un risque (qualité, satisfaction, coût)."
+    },
+    {
+      "id": "m1_q10",
+      "type": "single_choice",
+      "prompt": "Dans un cadrage, “périmètre” signifie :",
+      "choices": [
+        "La liste de toutes les idées possibles",
+        "Ce qui est inclus/exclu (population, période, produit, pays, canaux) pour éviter la dérive",
+        "Le budget marketing",
+        "Le nom des tables SQL"
+      ],
+      "answer_index": 1,
+      "explanation": "Le périmètre protège le projet contre la dérive (“scope creep”)."
+    },
+    {
+      "id": "m1_q11",
+      "type": "single_choice",
+      "prompt": "Pourquoi préciser le “grain” (niveau de ligne) est indispensable ?",
+      "choices": [
+        "Parce que le grain rend le dataset plus lourd",
+        "Parce que sans grain on ne peut pas faire de jointures",
+        "Parce que le grain détermine ce qu’une ligne représente et évite les doubles comptages",
+        "Parce que le grain n’a d’intérêt qu’en machine learning"
+      ],
+      "answer_index": 2,
+      "explanation": "Sans grain, on mélange event-level et user-level → KPI faux."
+    },
+    {
+      "id": "m1_q12",
+      "type": "single_choice",
+      "prompt": "Quel risque principal survient si on compte des events au lieu d’utilisateurs uniques ?",
+      "choices": [
+        "On ne peut plus filtrer",
+        "On surestime la taille réelle de la population (duplications par utilisateur)",
+        "On sous-estime toujours le KPI",
+        "Aucun risque"
+      ],
+      "answer_index": 1,
+      "explanation": "Un utilisateur peut générer plusieurs events → inflation des volumes."
+    },
+    {
+      "id": "m1_q13",
+      "type": "single_choice",
+      "prompt": "Une bonne “question métier” doit idéalement être formulée comme :",
+      "choices": [
+        "Quel est le meilleur algorithme ?",
+        "Qu’est-ce qui est beau dans ce produit ?",
+        "Quelle décision veut-on prendre, et quel indicateur la déclenche ?",
+        "Combien de colonnes dans la table events ?"
+      ],
+      "answer_index": 2,
+      "explanation": "La data sert une décision, pas l’inverse."
+    },
+    {
+      "id": "m1_q14",
+      "type": "single_choice",
+      "prompt": "Quel élément est obligatoire dans la définition opérationnelle d’un KPI ?",
+      "choices": [
+        "Une couleur de graphique",
+        "Une formule + périmètre (population/période) + règle de lecture",
+        "Le logo de l’entreprise",
+        "Le nom du développeur"
+      ],
+      "answer_index": 1,
+      "explanation": "Sans formule/périmètre, le KPI est non reproductible et ambigu."
+    },
+    {
+      "id": "m1_q15",
+      "type": "single_choice",
+      "prompt": "Quel est l’intérêt d’un “baseline” avant de fixer une cible ?",
+      "choices": [
+        "Éviter de mesurer",
+        "Fixer une cible réaliste et évaluer l’amélioration relative",
+        "Changer les données pour que ça marche",
+        "Remplacer les KPIs"
+      ],
+      "answer_index": 1,
+      "explanation": "La baseline sert de référence objective (avant/après)."
+    },
+    {
+      "id": "m1_q16",
+      "type": "single_choice",
+      "prompt": "Objectif : “Réduire le temps de réponse support”. Quelle mesure est la plus pertinente ?",
+      "choices": [
+        "Nombre d’emails reçus",
+        "Temps moyen (ou médian) de première réponse",
+        "Nombre de tickets fermés par agent (sans qualité)",
+        "Nombre de pages vues"
+      ],
+      "answer_index": 1,
+      "explanation": "On mesure directement la variable à réduire (attention aux distributions → médiane souvent utile)."
+    },
+    {
+      "id": "m1_q17",
+      "type": "single_choice",
+      "prompt": "Quelle pratique rend un KPI “actionnable” ?",
+      "choices": [
+        "Le calculer une fois par an",
+        "Le relier à des leviers (actions) et à une fréquence de suivi adaptée",
+        "Le publier sans définition",
+        "Le garder secret"
+      ],
+      "answer_index": 1,
+      "explanation": "Actionnable = on peut agir, et observer le signal à une cadence utile."
+    },
+    {
+      "id": "m1_q18",
+      "type": "single_choice",
+      "prompt": "Quel est le meilleur exemple de segmentation utile ?",
+      "choices": [
+        "Segmenter au hasard",
+        "Segmenter par pays/canal pour détecter des écarts de performance",
+        "Segmenter par couleur préférée",
+        "Ne jamais segmenter"
+      ],
+      "answer_index": 1,
+      "explanation": "La segmentation aide à localiser les causes et adapter l’action."
+    },
+    {
+      "id": "m1_q19",
+      "type": "single_choice",
+      "prompt": "Un KPI “North Star” est surtout :",
+      "choices": [
+        "Un KPI financier obligatoire",
+        "Un indicateur principal qui reflète la valeur délivrée au client et guide l’équipe",
+        "Une métrique de design",
+        "Un tableau SQL"
+      ],
+      "answer_index": 1,
+      "explanation": "La North Star est un repère central (valeur), accompagnée de KPIs secondaires/guardrails."
+    },
+    {
+      "id": "m1_q20",
+      "type": "single_choice",
+      "prompt": "CTR : 3 000 impressions, 120 clics. CTR ?",
+      "choices": ["0,4%", "4%", "12%", "25%"],
+      "answer_index": 1,
+      "explanation": "120/3000 = 0,04 = 4%."
+    },
+    {
+      "id": "m1_q21",
+      "type": "single_choice",
+      "prompt": "Panier moyen : 1 500 000 XOF de CA, 300 commandes. Panier moyen ?",
+      "choices": ["3 000 XOF", "5 000 XOF", "7 500 XOF", "15 000 XOF"],
+      "answer_index": 1,
+      "explanation": "1 500 000 / 300 = 5 000."
+    },
+    {
+      "id": "m1_q22",
+      "type": "single_choice",
+      "prompt": "Pourquoi documenter un KPI (formule, source, refresh) est une exigence “qualité” ?",
+      "choices": [
+        "Pour faire joli",
+        "Pour rendre la mesure reproductible, audit-able et stable dans le temps",
+        "Pour réduire la taille des données",
+        "Pour éviter les jointures"
+      ],
+      "answer_index": 1,
+      "explanation": "Sans documentation, le KPI change de sens selon la personne/outil."
+    },
+    {
+      "id": "m1_q23",
+      "type": "single_choice",
+      "prompt": "Quel piège classique se produit quand on change la définition d’un KPI sans versionning ?",
+      "choices": [
+        "Les calculs deviennent plus rapides",
+        "On compare des périodes non comparables (rupture de série) et on tire de fausses conclusions",
+        "Les données deviennent plus propres",
+        "Aucun impact"
+      ],
+      "answer_index": 1,
+      "explanation": "Une rupture de définition casse l’historique (trend non interprétable)."
+    },
+    {
+      "id": "m1_q24",
+      "type": "single_choice",
+      "prompt": "Quel est l’objectif d’une “data dictionary” (dictionnaire de données) dans un projet KPI ?",
+      "choices": [
+        "Stocker des vidéos",
+        "Décrire les colonnes (sens, type, unité, règles) pour éviter les interprétations divergentes",
+        "Remplacer SQL",
+        "Augmenter le trafic SEO"
+      ],
+      "answer_index": 1,
+      "explanation": "Le dictionnaire réduit l’ambiguïté métier et facilite la réutilisation."
+    },
+    {
+      "id": "m1_q25",
+      "type": "single_choice",
+      "prompt": "Quel choix réduit le risque d’erreur lors d’un KPI de temps (délais) ?",
+      "choices": [
+        "Utiliser des dates au format libre",
+        "Garder des timestamps avec fuseau ou standardiser en UTC",
+        "Supprimer les timestamps",
+        "Arrondir toutes les heures au jour"
+      ],
+      "answer_index": 1,
+      "explanation": "Les fuseaux/ambiguïtés peuvent décaler les durées (erreurs systématiques)."
+    },
+    {
+      "id": "m1_q26",
+      "type": "single_choice",
+      "prompt": "Quel indicateur est le plus “pilotable” au quotidien pour améliorer la complétion d’un module ?",
+      "choices": [
+        "Le revenu annuel",
+        "Le nombre de vidéos uploadées (sans visionnage)",
+        "Le taux d’ouverture des notebooks dans les 48h après inscription",
+        "Le nombre total de comptes créés depuis 5 ans"
+      ],
+      "answer_index": 2,
+      "explanation": "Un indicateur amont (leading) proche du comportement d’apprentissage est plus actionnable."
+    },
+    {
+      "id": "m1_q27",
+      "type": "single_choice",
+      "prompt": "Dans un cadrage, une hypothèse doit être :",
+      "choices": [
+        "Une vérité définitive",
+        "Explicite, testable ou vérifiable, et révisable si les données contredisent",
+        "Un avis personnel",
+        "Une règle cachée"
+      ],
+      "answer_index": 1,
+      "explanation": "Une hypothèse est une proposition à tester, pas un dogme."
+    },
+    {
+      "id": "m1_q28",
+      "type": "single_choice",
+      "prompt": "Si un KPI dépend de données incomplètes, la pratique la plus saine est :",
+      "choices": [
+        "Publier quand même sans mention",
+        "Documenter la couverture (ex: % de données manquantes) et les limites d’interprétation",
+        "Supprimer le KPI",
+        "Inventer les valeurs"
+      ],
+      "answer_index": 1,
+      "explanation": "Transparence sur la qualité/coverage = indispensable pour décisions fiables."
+    },
+    {
+      "id": "m1_q29",
+      "type": "single_choice",
+      "prompt": "Quel livrable est le plus important pour éviter les débats interminables sur “ce que veut dire le KPI” ?",
+      "choices": [
+        "Un slogan marketing",
+        "Une fiche KPI (définition, formule, périmètre, source, fréquence, owner)",
+        "Une capture d’écran du dashboard",
+        "Une liste de features"
+      ],
+      "answer_index": 1,
+      "explanation": "Une fiche KPI standardise le sens et réduit l’ambiguïté."
+    },
+    {
+      "id": "m1_q30",
+      "type": "single_choice",
+      "prompt": "Quel comportement est le plus cohérent avec une approche “objective” des KPIs ?",
+      "choices": [
+        "Changer la métrique quand elle baisse",
+        "Choisir une métrique, la définir, la versionner, et accepter ce qu’elle révèle",
+        "Mesurer uniquement quand ça arrange",
+        "Supprimer les segments qui baissent"
+      ],
+      "answer_index": 1,
+      "explanation": "La rigueur = définition stable + transparence + décisions basées sur le signal."
+    }
+  ]
+}
+

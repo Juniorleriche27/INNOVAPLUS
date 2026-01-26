@@ -1,0 +1,708 @@
+{
+  "module": "Module 6 — Reporting & Dashboards",
+  "format": "mcq_single",
+  "pass_score_pct": 80,
+  "total_questions": 50,
+  "questions": [
+    {
+      "id": "m6q01",
+      "question": "Objectif principal d’un dashboard (vs un rapport détaillé) ?",
+      "choices": {
+        "A": "Explorer librement toutes les données brutes",
+        "B": "Surveiller rapidement des KPI et détecter des alertes",
+        "C": "Remplacer la base de données",
+        "D": "Faire de la modélisation prédictive"
+      },
+      "answer": "B",
+      "rationale": "Un dashboard sert d’abord au pilotage rapide (KPI + monitoring).",
+      "difficulty": "easy",
+      "tags": ["dashboard", "kpi"]
+    },
+    {
+      "id": "m6q02",
+      "question": "Pour comparer des valeurs par catégorie (ex: ventes par pays), le graphique le plus adapté est généralement :",
+      "choices": {
+        "A": "Histogramme",
+        "B": "Courbe (line chart)",
+        "C": "Barres/colonnes",
+        "D": "Nuage de points"
+      },
+      "answer": "C",
+      "rationale": "Barres/colonnes = comparaison claire entre catégories.",
+      "difficulty": "easy",
+      "tags": ["viz", "chart_selection"]
+    },
+    {
+      "id": "m6q03",
+      "question": "Pour une évolution dans le temps (ex: CA quotidien), le graphique le plus adapté est :",
+      "choices": {
+        "A": "Courbe (line chart)",
+        "B": "Camembert",
+        "C": "Treemap",
+        "D": "Table uniquement"
+      },
+      "answer": "A",
+      "rationale": "La courbe met en évidence la tendance temporelle.",
+      "difficulty": "easy",
+      "tags": ["viz", "time_series"]
+    },
+    {
+      "id": "m6q04",
+      "question": "Une erreur fréquente qui rend un dashboard trompeur :",
+      "choices": {
+        "A": "Afficher la date de dernière mise à jour",
+        "B": "Utiliser des axes non cohérents (échelles différentes sans le dire)",
+        "C": "Mettre un titre clair",
+        "D": "Limiter le nombre de visuels"
+      },
+      "answer": "B",
+      "rationale": "Des axes incohérents induisent des comparaisons fausses.",
+      "difficulty": "medium",
+      "tags": ["viz", "integrity"]
+    },
+    {
+      "id": "m6q05",
+      "question": "Pourquoi éviter les graphiques 3D dans un dashboard ?",
+      "choices": {
+        "A": "Ils sont trop modernes",
+        "B": "Ils déforment la perception des valeurs",
+        "C": "Ils empêchent l’export PDF",
+        "D": "Ils rendent les données plus précises"
+      },
+      "answer": "B",
+      "rationale": "La 3D introduit un biais visuel (lecture moins fiable).",
+      "difficulty": "easy",
+      "tags": ["viz", "best_practices"]
+    },
+    {
+      "id": "m6q06",
+      "question": "Dans un modèle BI en étoile (star schema), le rôle d’une table de faits (fact) est de :",
+      "choices": {
+        "A": "Stocker des dimensions descriptives (pays, produit, canal)",
+        "B": "Stocker des événements mesurables (ventes, transactions, clicks)",
+        "C": "Remplacer toutes les dimensions",
+        "D": "Contenir uniquement des textes libres"
+      },
+      "answer": "B",
+      "rationale": "Une fact table contient mesures + clés vers dimensions.",
+      "difficulty": "easy",
+      "tags": ["modeling", "star_schema"]
+    },
+    {
+      "id": "m6q07",
+      "question": "Quel bénéfice majeur du star schema pour un dashboard ?",
+      "choices": {
+        "A": "Rendre les jointures plus ambiguës",
+        "B": "Simplifier les relations et améliorer performances/clarité",
+        "C": "Obliger à dupliquer toutes les colonnes",
+        "D": "Empêcher le filtrage par dimensions"
+      },
+      "answer": "B",
+      "rationale": "Le star schema réduit la complexité et stabilise le filtrage.",
+      "difficulty": "medium",
+      "tags": ["modeling", "performance"]
+    },
+    {
+      "id": "m6q08",
+      "question": "Une relation 'one-to-many' correcte ressemble le plus souvent à :",
+      "choices": {
+        "A": "Fact (many) → Dimension (one)",
+        "B": "Dimension (many) → Fact (one)",
+        "C": "Fact (one) → Dimension (many)",
+        "D": "Many-to-many partout"
+      },
+      "answer": "A",
+      "rationale": "La dimension a une ligne par clé, la fact en a plusieurs.",
+      "difficulty": "medium",
+      "tags": ["modeling", "relationships"]
+    },
+    {
+      "id": "m6q09",
+      "question": "Quel risque principal d’une relation many-to-many non maîtrisée ?",
+      "choices": {
+        "A": "Toujours améliorer la performance",
+        "B": "Doubles comptages et ambiguïtés de filtrage",
+        "C": "Rendre les dates plus faciles",
+        "D": "Éliminer les nulls automatiquement"
+      },
+      "answer": "B",
+      "rationale": "Many-to-many = résultats souvent inattendus si non cadré.",
+      "difficulty": "hard",
+      "tags": ["modeling", "data_quality"]
+    },
+    {
+      "id": "m6q10",
+      "question": "Différence clé entre une 'mesure' et une 'colonne calculée' (Power BI/DAX ou équivalent) ?",
+      "choices": {
+        "A": "Une mesure est calculée selon le contexte de filtre, la colonne calculée est calculée ligne par ligne",
+        "B": "Une mesure ne peut jamais agréger",
+        "C": "Une colonne calculée dépend toujours d’un slicer",
+        "D": "Aucune différence"
+      },
+      "answer": "A",
+      "rationale": "Mesure = dynamique (context), colonne = statique (row-level).",
+      "difficulty": "hard",
+      "tags": ["dax", "measures"]
+    },
+    {
+      "id": "m6q11",
+      "question": "Pourquoi privilégier une mesure pour un KPI (ex: completion_rate) ?",
+      "choices": {
+        "A": "Parce qu’elle se recalcule avec les filtres (pays, période, segment)",
+        "B": "Parce qu’elle duplique les données",
+        "C": "Parce qu’elle empêche les slicers",
+        "D": "Parce qu’elle supprime les outliers"
+      },
+      "answer": "A",
+      "rationale": "Un KPI doit s’adapter au contexte de lecture.",
+      "difficulty": "medium",
+      "tags": ["kpi", "dax"]
+    },
+    {
+      "id": "m6q12",
+      "question": "Pour éviter une division par zéro dans un ratio, la bonne pratique est :",
+      "choices": {
+        "A": "Forcer le dénominateur à 1 sans vérifier",
+        "B": "Utiliser une fonction/condition de type DIVIDE/NULLIF",
+        "C": "Supprimer toutes les lignes",
+        "D": "Arrondir à 0"
+      },
+      "answer": "B",
+      "rationale": "Il faut gérer explicitement le cas dénominateur = 0.",
+      "difficulty": "medium",
+      "tags": ["kpi", "robustness"]
+    },
+    {
+      "id": "m6q13",
+      "question": "Un slicer (filtre interactif) sert principalement à :",
+      "choices": {
+        "A": "Changer le format du CSV",
+        "B": "Changer le contexte de filtre appliqué aux visuels",
+        "C": "Créer une nouvelle table dans la base",
+        "D": "Corriger automatiquement les données manquantes"
+      },
+      "answer": "B",
+      "rationale": "Un slicer contrôle le filtrage/segmentation à l’écran.",
+      "difficulty": "easy",
+      "tags": ["interactivity", "filters"]
+    },
+    {
+      "id": "m6q14",
+      "question": "Quelle information doit être visible sur un dashboard “sérieux” ?",
+      "choices": {
+        "A": "La couleur préférée du designer",
+        "B": "La date/heure de dernière mise à jour (refresh)",
+        "C": "La liste complète des logs systèmes",
+        "D": "Le code source complet"
+      },
+      "answer": "B",
+      "rationale": "La fraîcheur de la donnée conditionne l’interprétation.",
+      "difficulty": "easy",
+      "tags": ["governance", "trust"]
+    },
+    {
+      "id": "m6q15",
+      "question": "Si un KPI baisse, quel élément aide le plus à diagnostiquer rapidement ?",
+      "choices": {
+        "A": "Un drill-down/drillthrough par segment (pays/canal/produit)",
+        "B": "Un fond d’écran animé",
+        "C": "Un titre générique",
+        "D": "Un camembert 3D"
+      },
+      "answer": "A",
+      "rationale": "La capacité à segmenter explique la variation.",
+      "difficulty": "medium",
+      "tags": ["analysis", "interactivity"]
+    },
+    {
+      "id": "m6q16",
+      "question": "Bon principe de design :",
+      "choices": {
+        "A": "Mettre 25 visuels sur une page",
+        "B": "Hiérarchiser : KPI principaux en haut, détails ensuite",
+        "C": "Varier les polices à chaque visuel",
+        "D": "Changer les couleurs d’une page à l’autre"
+      },
+      "answer": "B",
+      "rationale": "La hiérarchie réduit la charge cognitive.",
+      "difficulty": "easy",
+      "tags": ["design", "dashboard"]
+    },
+    {
+      "id": "m6q17",
+      "question": "Accessibilité : quel choix est le plus sûr ?",
+      "choices": {
+        "A": "Encoder l’information uniquement par rouge/vert",
+        "B": "Ajouter labels/valeurs en plus des couleurs",
+        "C": "Utiliser du texte gris clair sur fond blanc",
+        "D": "Utiliser des couleurs très saturées partout"
+      },
+      "answer": "B",
+      "rationale": "Ne jamais dépendre uniquement de la couleur.",
+      "difficulty": "medium",
+      "tags": ["accessibility", "viz"]
+    },
+    {
+      "id": "m6q18",
+      "question": "Pourquoi limiter le nombre de visuels sur une page ?",
+      "choices": {
+        "A": "Pour cacher les détails",
+        "B": "Pour réduire le bruit visuel et améliorer la performance",
+        "C": "Pour empêcher les filtres",
+        "D": "Pour éviter les données manquantes"
+      },
+      "answer": "B",
+      "rationale": "Trop de visuels = lenteur + confusion.",
+      "difficulty": "medium",
+      "tags": ["performance", "design"]
+    },
+    {
+      "id": "m6q19",
+      "question": "Quel cas justifie souvent une table (et pas un graphique) ?",
+      "choices": {
+        "A": "Comparer 3 catégories seulement",
+        "B": "Afficher des détails précis (top 50 lignes) avec tri/recherche",
+        "C": "Montrer une tendance longue",
+        "D": "Montrer une corrélation"
+      },
+      "answer": "B",
+      "rationale": "La table sert aux détails et au lookup.",
+      "difficulty": "easy",
+      "tags": ["viz", "table"]
+    },
+    {
+      "id": "m6q20",
+      "question": "Si tu changes un filtre 'pays', et un visuel ne change pas, la cause la plus probable est :",
+      "choices": {
+        "A": "Le visuel est cassé par nature",
+        "B": "Une relation manquante ou un filtre non connecté au modèle",
+        "C": "Le fichier CSV est trop grand",
+        "D": "La couleur du thème"
+      },
+      "answer": "B",
+      "rationale": "Sans relation/propagation de filtre, le visuel reste inchangé.",
+      "difficulty": "hard",
+      "tags": ["modeling", "filters"]
+    },
+    {
+      "id": "m6q21",
+      "question": "Que signifie “cardinality” d’une relation dans un modèle BI ?",
+      "choices": {
+        "A": "Le nombre de couleurs d’un graphique",
+        "B": "Le type de correspondance (1-1, 1-*, *-*) entre tables",
+        "C": "Le nombre de pages d’un rapport",
+        "D": "Le nombre de KPI"
+      },
+      "answer": "B",
+      "rationale": "Cardinalité = structure des correspondances entre clés.",
+      "difficulty": "medium",
+      "tags": ["modeling", "relationships"]
+    },
+    {
+      "id": "m6q22",
+      "question": "Un bon KPI doit être :",
+      "choices": {
+        "A": "Ambigu pour créer du débat",
+        "B": "Défini clairement (numérateur/dénominateur/périmètre)",
+        "C": "Toujours en valeur absolue uniquement",
+        "D": "Impossible à recalculer"
+      },
+      "answer": "B",
+      "rationale": "Sans définition, on ne peut pas l’auditer.",
+      "difficulty": "easy",
+      "tags": ["kpi", "governance"]
+    },
+    {
+      "id": "m6q23",
+      "question": "Quel élément est essentiel dans un dictionnaire de données (data dictionary) ?",
+      "choices": {
+        "A": "La liste des couleurs du dashboard",
+        "B": "Définition des champs + unités + règles de calcul",
+        "C": "Le CV de l’analyste",
+        "D": "Le nombre d’écrans du PC"
+      },
+      "answer": "B",
+      "rationale": "Le dictionnaire réduit les interprétations fausses.",
+      "difficulty": "medium",
+      "tags": ["documentation", "data_dictionary"]
+    },
+    {
+      "id": "m6q24",
+      "question": "Mode de connexion : Import vs DirectQuery. Une différence vraie est :",
+      "choices": {
+        "A": "Import requête la base à chaque interaction",
+        "B": "DirectQuery peut requêter la source à l’usage (selon visuels/filters)",
+        "C": "DirectQuery stocke toujours tout en mémoire localement",
+        "D": "Import empêche le refresh"
+      },
+      "answer": "B",
+      "rationale": "DirectQuery interroge la source (avec limites/perf).",
+      "difficulty": "hard",
+      "tags": ["connectivity", "performance"]
+    },
+    {
+      "id": "m6q25",
+      "question": "Dans un service BI, un “gateway” sert le plus souvent à :",
+      "choices": {
+        "A": "Dessiner des graphes",
+        "B": "Permettre le refresh vers des sources on-premise/réseau privé",
+        "C": "Remplacer SQL",
+        "D": "Convertir automatiquement les devises"
+      },
+      "answer": "B",
+      "rationale": "Le gateway connecte le service cloud à des sources privées.",
+      "difficulty": "medium",
+      "tags": ["refresh", "infrastructure"]
+    },
+    {
+      "id": "m6q26",
+      "question": "Quel indicateur aide à diagnostiquer un rapport lent ?",
+      "choices": {
+        "A": "Le nombre d’emojis dans le titre",
+        "B": "Le temps de rendu des visuels via un outil type Performance Analyzer",
+        "C": "Le nombre de colonnes d’un CSV brut",
+        "D": "Le jour de la semaine"
+      },
+      "answer": "B",
+      "rationale": "Il faut mesurer quelles requêtes/visuels coûtent le plus.",
+      "difficulty": "hard",
+      "tags": ["performance", "monitoring"]
+    },
+    {
+      "id": "m6q27",
+      "question": "Une action typique pour améliorer la performance d’un dashboard :",
+      "choices": {
+        "A": "Ajouter 10 slicers",
+        "B": "Réduire le nombre de visuels et éviter des champs à forte cardinalité inutile",
+        "C": "Utiliser uniquement des images",
+        "D": "Dupliquer les mêmes visuels sur 5 pages"
+      },
+      "answer": "B",
+      "rationale": "Moins de requêtes + modèle plus simple = plus rapide.",
+      "difficulty": "hard",
+      "tags": ["performance", "design"]
+    },
+    {
+      "id": "m6q28",
+      "question": "Sécurité : la Row-Level Security (RLS) sert à :",
+      "choices": {
+        "A": "Cacher des visuels selon l’utilisateur uniquement",
+        "B": "Restreindre les lignes de données visibles selon l’utilisateur/role",
+        "C": "Accélérer le refresh",
+        "D": "Corriger les doublons"
+      },
+      "answer": "B",
+      "rationale": "RLS = filtrage des données par rôle/utilisateur.",
+      "difficulty": "medium",
+      "tags": ["security", "rls"]
+    },
+    {
+      "id": "m6q29",
+      "question": "Quel risque si on partage un rapport sans contrôle d’accès ?",
+      "choices": {
+        "A": "Aucun, c’est toujours OK",
+        "B": "Exposition de données sensibles (pays, revenus, transactions)",
+        "C": "Le rapport devient plus rapide",
+        "D": "Les KPI se recalculent mieux"
+      },
+      "answer": "B",
+      "rationale": "Le partage doit respecter confidentialité et périmètre.",
+      "difficulty": "easy",
+      "tags": ["security", "governance"]
+    },
+    {
+      "id": "m6q30",
+      "question": "Dans un KPI “taux”, la pratique correcte est :",
+      "choices": {
+        "A": "Afficher sans préciser la période",
+        "B": "Préciser période + population + définition du numérateur/dénominateur",
+        "C": "Arrondir au hasard",
+        "D": "Remplacer les NA par 0 sans le dire"
+      },
+      "answer": "B",
+      "rationale": "Sans périmètre, le taux est non interprétable/auditable.",
+      "difficulty": "medium",
+      "tags": ["kpi", "definition"]
+    },
+    {
+      "id": "m6q31",
+      "question": "Un bon titre de visuel doit :",
+      "choices": {
+        "A": "Être décoratif",
+        "B": "Décrire clairement la métrique + le périmètre",
+        "C": "Être vide pour gagner de la place",
+        "D": "Contenir uniquement des abréviations"
+      },
+      "answer": "B",
+      "rationale": "Le titre est une partie de l’interprétation.",
+      "difficulty": "easy",
+      "tags": ["storytelling", "design"]
+    },
+    {
+      "id": "m6q32",
+      "question": "Quand utiliser un scatter plot (nuage de points) ?",
+      "choices": {
+        "A": "Pour une distribution temporelle",
+        "B": "Pour une relation entre deux variables numériques (corrélation, clusters)",
+        "C": "Pour des parts de marché",
+        "D": "Pour un tableau de détails"
+      },
+      "answer": "B",
+      "rationale": "Scatter = relation/structure entre variables numériques.",
+      "difficulty": "medium",
+      "tags": ["viz", "analysis"]
+    },
+    {
+      "id": "m6q33",
+      "question": "Un filtre de page (page-level) s’applique :",
+      "choices": {
+        "A": "À toutes les pages du rapport",
+        "B": "Uniquement à la page courante",
+        "C": "Uniquement à un visuel",
+        "D": "Uniquement au dataset source"
+      },
+      "answer": "B",
+      "rationale": "Page-level = périmètre page (vs report-level / visual-level).",
+      "difficulty": "medium",
+      "tags": ["filters", "bi_basics"]
+    },
+    {
+      "id": "m6q34",
+      "question": "Un filtre de visuel (visual-level) s’applique :",
+      "choices": {
+        "A": "À tous les visuels",
+        "B": "Uniquement au visuel ciblé",
+        "C": "À toute l’organisation",
+        "D": "À la base SQL"
+      },
+      "answer": "B",
+      "rationale": "Visual-level = isolé au visuel.",
+      "difficulty": "easy",
+      "tags": ["filters", "bi_basics"]
+    },
+    {
+      "id": "m6q35",
+      "question": "Pourquoi afficher des unités (ex: XOF, %, jours) sur un KPI ?",
+      "choices": {
+        "A": "Pour occuper de la place",
+        "B": "Pour éviter les interprétations erronées",
+        "C": "Pour ralentir le rapport",
+        "D": "Pour empêcher l’export"
+      },
+      "answer": "B",
+      "rationale": "Sans unité, on confond les ordres de grandeur.",
+      "difficulty": "easy",
+      "tags": ["kpi", "clarity"]
+    },
+    {
+      "id": "m6q36",
+      "question": "Si tes KPI changent quand tu ajoutes une dimension (ex: canal), la cause probable est :",
+      "choices": {
+        "A": "Le modèle a changé de langue",
+        "B": "Ton agrégation ou grain n’est pas maîtrisé (double comptage)",
+        "C": "Le navigateur est lent",
+        "D": "Le thème visuel est différent"
+      },
+      "answer": "B",
+      "rationale": "Changement de grain = risque de duplication dans les calculs.",
+      "difficulty": "hard",
+      "tags": ["grain", "data_model"]
+    },
+    {
+      "id": "m6q37",
+      "question": "Meilleure pratique : pour calculer un KPI, tu dois utiliser :",
+      "choices": {
+        "A": "Des valeurs copiées à la main",
+        "B": "Des transformations traçables (SQL/Python/DAX) + définition documentée",
+        "C": "Des captures d’écran uniquement",
+        "D": "Des estimations non justifiées"
+      },
+      "answer": "B",
+      "rationale": "Auditabilité = règles explicites + reproductibles.",
+      "difficulty": "medium",
+      "tags": ["governance", "trust"]
+    },
+    {
+      "id": "m6q38",
+      "question": "Quel élément est utile pour un audit “data” d’un dashboard ?",
+      "choices": {
+        "A": "Un glossaire / dictionnaire des KPI",
+        "B": "Une image de fond",
+        "C": "Des animations",
+        "D": "Un logo en grand"
+      },
+      "answer": "A",
+      "rationale": "Le glossaire fixe la signification des chiffres.",
+      "difficulty": "easy",
+      "tags": ["documentation", "audit"]
+    },
+    {
+      "id": "m6q39",
+      "question": "Une règle de storytelling utile en dashboard :",
+      "choices": {
+        "A": "Mettre les détails avant les KPI",
+        "B": "Commencer par 3–6 KPI clés, puis expliquer avec segments",
+        "C": "Cacher les filtres",
+        "D": "Mettre uniquement des tableaux"
+      },
+      "answer": "B",
+      "rationale": "On commence par l’essentiel, puis on explique le “pourquoi”.",
+      "difficulty": "medium",
+      "tags": ["storytelling", "dashboard"]
+    },
+    {
+      "id": "m6q40",
+      "question": "Quelle action réduit les erreurs d’interprétation ?",
+      "choices": {
+        "A": "Des titres génériques",
+        "B": "Des définitions KPI + tooltips explicatifs + unités",
+        "C": "Des visuels 3D",
+        "D": "Des couleurs aléatoires"
+      },
+      "answer": "B",
+      "rationale": "Expliciter les règles = moins d’ambiguïtés.",
+      "difficulty": "medium",
+      "tags": ["clarity", "governance"]
+    },
+    {
+      "id": "m6q41",
+      "question": "Quelle est la meilleure pratique pour publier une nouvelle version d’un rapport ?",
+      "choices": {
+        "A": "Écraser sans prévenir",
+        "B": "Versionner (notes de version) et tester avant publication",
+        "C": "Changer les KPI sans documentation",
+        "D": "Supprimer l’historique"
+      },
+      "answer": "B",
+      "rationale": "Versioning + tests = stabilité et confiance.",
+      "difficulty": "medium",
+      "tags": ["release", "governance"]
+    },
+    {
+      "id": "m6q42",
+      "question": "Pour éviter que les utilisateurs tirent des conclusions fausses, il est utile de :",
+      "choices": {
+        "A": "Cacher la période",
+        "B": "Afficher le périmètre (dates, population, source) et les limites",
+        "C": "Désactiver l’export",
+        "D": "Enlever les filtres"
+      },
+      "answer": "B",
+      "rationale": "La transparence du périmètre est une règle pro.",
+      "difficulty": "hard",
+      "tags": ["trust", "ethics"]
+    },
+    {
+      "id": "m6q43",
+      "question": "Si un utilisateur demande “Pourquoi ce KPI ne correspond pas à Excel ?”, ta première vérification est :",
+      "choices": {
+        "A": "La police du texte",
+        "B": "La définition du KPI + le périmètre + le grain + le filtrage",
+        "C": "Le thème de couleurs",
+        "D": "Le navigateur"
+      },
+      "answer": "B",
+      "rationale": "Différences = périmètre/filtre/grain/définition avant tout.",
+      "difficulty": "hard",
+      "tags": ["debugging", "kpi"]
+    },
+    {
+      "id": "m6q44",
+      "question": "Quel élément améliore la confiance (trust) dans un dashboard ?",
+      "choices": {
+        "A": "Des chiffres sans source",
+        "B": "Une section 'source & refresh' + définitions KPI",
+        "C": "Uniquement des images",
+        "D": "Des KPI sans unités"
+      },
+      "answer": "B",
+      "rationale": "Source + fraîcheur + définitions = base de la confiance.",
+      "difficulty": "easy",
+      "tags": ["trust", "governance"]
+    },
+    {
+      "id": "m6q45",
+      "question": "Qu’est-ce qu’un “tile” dans un dashboard Power BI (ou équivalent) ?",
+      "choices": {
+        "A": "Une table SQL",
+        "B": "Un élément épinglé (visuel) provenant souvent d’un rapport",
+        "C": "Un fichier CSV",
+        "D": "Une mesure DAX"
+      },
+      "answer": "B",
+      "rationale": "Un tile = tuile épinglée sur un dashboard.",
+      "difficulty": "medium",
+      "tags": ["powerbi", "dashboard"]
+    },
+    {
+      "id": "m6q46",
+      "question": "Si tu dois comparer des parts de marché sur 2–3 catégories max, tu peux utiliser :",
+      "choices": {
+        "A": "Camembert (avec peu de catégories) ou barres",
+        "B": "Camembert avec 20 catégories",
+        "C": "3D donut",
+        "D": "Nuage de points"
+      },
+      "answer": "A",
+      "rationale": "Parts de tout = OK si très peu de catégories, sinon barres.",
+      "difficulty": "medium",
+      "tags": ["viz", "chart_selection"]
+    },
+    {
+      "id": "m6q47",
+      "question": "Une bonne pratique pour une page “exécutif” (management) est :",
+      "choices": {
+        "A": "Mettre toutes les métriques possibles",
+        "B": "Mettre 3–6 KPI + tendances + 1–2 segments clés",
+        "C": "Afficher les logs techniques",
+        "D": "Mettre uniquement des tables de 500 lignes"
+      },
+      "answer": "B",
+      "rationale": "Executive = synthèse + capacité de diagnostic.",
+      "difficulty": "medium",
+      "tags": ["dashboard", "stakeholders"]
+    },
+    {
+      "id": "m6q48",
+      "question": "Quel est un bon indicateur de qualité de donnée à exposer dans un dashboard ?",
+      "choices": {
+        "A": "Le nombre de pages vues",
+        "B": "Le % de valeurs manquantes sur un champ clé (ex: country) ou le % de refresh OK",
+        "C": "Le nombre d’icônes",
+        "D": "Le temps passé sur Teams"
+      },
+      "answer": "B",
+      "rationale": "La qualité impacte directement la fiabilité des KPI.",
+      "difficulty": "hard",
+      "tags": ["data_quality", "trust"]
+    },
+    {
+      "id": "m6q49",
+      "question": "Pourquoi documenter un KPI “completion_rate” avec ses règles exactes ?",
+      "choices": {
+        "A": "Pour rendre le KPI plus vague",
+        "B": "Pour permettre recalcul, audit et cohérence entre équipes",
+        "C": "Pour empêcher l’automatisation",
+        "D": "Pour éviter le refresh"
+      },
+      "answer": "B",
+      "rationale": "Documentation = cohérence + auditabilité.",
+      "difficulty": "easy",
+      "tags": ["kpi", "documentation"]
+    },
+    {
+      "id": "m6q50",
+      "question": "Quel est le meilleur ordre de travail pour construire un dashboard fiable ?",
+      "choices": {
+        "A": "Design → chiffres → modèle",
+        "B": "Modèle & définitions KPI → mesures → visuels → tests & partage",
+        "C": "Couleurs → animations → export",
+        "D": "Partager d’abord, corriger ensuite"
+      },
+      "answer": "B",
+      "rationale": "On sécurise d’abord la vérité (modèle/KPI), puis l’affichage.",
+      "difficulty": "hard",
+      "tags": ["process", "governance"]
+    }
+  ]
+}

@@ -1,0 +1,535 @@
+{
+  "module": "Module 2 — Collecte des données",
+  "version": "1.0.0",
+  "pass_threshold": 0.8,
+  "grading": { "points_per_question": 1, "negative_marking": false },
+  "delivery": { "shuffle_questions": true, "shuffle_choices": true, "time_limit_minutes": 45 },
+  "questions": [
+    {
+      "id": "m2_q01",
+      "type": "single_choice",
+      "prompt": "Quel est l’objectif principal de la collecte de données en contexte Data Analyst ?",
+      "choices": [
+        "Accumuler le maximum de données possibles sans critère",
+        "Obtenir un dataset exploitable, traçable et reproductible pour répondre à une décision métier",
+        "Créer des graphiques avant d’avoir les données",
+        "Choisir un modèle ML en premier"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q02",
+      "type": "single_choice",
+      "prompt": "Définir le “grain” d’un dataset signifie :",
+      "choices": [
+        "Choisir la couleur des graphiques",
+        "Définir ce que représente 1 ligne (event, user, order, etc.)",
+        "Compresser le fichier CSV",
+        "Calculer la moyenne d’une colonne"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q03",
+      "type": "single_choice",
+      "prompt": "Pourquoi le grain est critique avant un JOIN ?",
+      "choices": [
+        "Parce que JOIN ne marche pas sans grain",
+        "Parce que le grain évite les doubles comptages et KPI faux après jointure",
+        "Parce que le grain réduit la taille du fichier",
+        "Parce que le grain remplace les index"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q04",
+      "type": "single_choice",
+      "prompt": "Quelle pratique rend une extraction “reproductible” ?",
+      "choices": [
+        "Faire des copier-coller manuels depuis l’interface",
+        "Versionner les requêtes/scripts + exécuter via notebook/script + générer un run report",
+        "Changer la requête à chaque exécution",
+        "Exporter uniquement des captures d’écran"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q05",
+      "type": "single_choice",
+      "prompt": "Quel est un signal clair que ta jointure crée des duplications ?",
+      "choices": [
+        "Le temps d’exécution diminue",
+        "Le nombre de lignes augmente après le JOIN alors que tu visais un grain stable",
+        "Tu as ajouté un ORDER BY",
+        "Tu as utilisé LIMIT"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q06",
+      "type": "single_choice",
+      "prompt": "Dans SQL, quelle clause filtre les lignes AVANT agrégation ?",
+      "choices": ["HAVING", "WHERE", "GROUP BY", "ORDER BY"],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q07",
+      "type": "single_choice",
+      "prompt": "Dans SQL, quelle clause filtre les groupes APRÈS agrégation ?",
+      "choices": ["WHERE", "JOIN", "HAVING", "LIMIT"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q08",
+      "type": "single_choice",
+      "prompt": "Tu veux garder toutes les lignes de la table events même si profiles est incomplet. Quel JOIN utiliser ?",
+      "choices": ["INNER JOIN", "LEFT JOIN (events à gauche)", "RIGHT JOIN (profiles à droite)", "CROSS JOIN"],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q09",
+      "type": "single_choice",
+      "prompt": "Quel est le risque si profiles contient plusieurs lignes par user_id et tu fais LEFT JOIN events→profiles ?",
+      "choices": [
+        "Aucun risque",
+        "Les events peuvent être dupliqués (gonflement des KPI)",
+        "Les dates deviennent invalides",
+        "Le SQL refusera d’exécuter"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q10",
+      "type": "single_choice",
+      "prompt": "Quelle solution est la plus saine si une table “dimension” (profiles) a des doublons sur la clé ?",
+      "choices": [
+        "Utiliser DISTINCT partout",
+        "Dédupliquer/agréger la dimension AVANT la jointure (règle explicite) puis JOIN",
+        "Ignorer le problème",
+        "Remplacer LEFT JOIN par CROSS JOIN"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q11",
+      "type": "single_choice",
+      "prompt": "Quelle requête calcule correctement un nombre d’utilisateurs uniques par pays ?",
+      "choices": [
+        "SELECT country, COUNT(*) FROM profiles GROUP BY country;",
+        "SELECT country, COUNT(DISTINCT user_id) FROM profiles GROUP BY country;",
+        "SELECT DISTINCT country, COUNT(user_id) FROM profiles;",
+        "SELECT country FROM profiles ORDER BY country;"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q12",
+      "type": "single_choice",
+      "prompt": "Pourquoi utiliser NULLIF au dénominateur d’un ratio SQL ?",
+      "choices": [
+        "Pour accélérer la requête",
+        "Pour éviter une division par zéro",
+        "Pour forcer une jointure",
+        "Pour supprimer les doublons"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q13",
+      "type": "single_choice",
+      "prompt": "Tu veux filtrer sur un attribut de la table de droite tout en gardant un LEFT JOIN. Où mettre la condition pour éviter de transformer le LEFT JOIN en INNER JOIN ?",
+      "choices": [
+        "Dans WHERE uniquement",
+        "Dans la clause ON (condition de jointure), ou dans WHERE avec logique acceptant NULL",
+        "Dans ORDER BY",
+        "Dans GROUP BY"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q14",
+      "type": "single_choice",
+      "prompt": "Quel est l’intérêt principal d’une CTE (WITH ...) ?",
+      "choices": [
+        "Remplacer toutes les tables",
+        "Rendre la requête plus lisible/modulaire et faciliter le raisonnement",
+        "Forcer un index",
+        "Empêcher l’utilisation de JOIN"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q15",
+      "type": "single_choice",
+      "prompt": "Tu veux garder uniquement les thèmes avec au moins 100 événements. La bonne clause est :",
+      "choices": [
+        "WHERE COUNT(*) >= 100",
+        "HAVING COUNT(*) >= 100",
+        "ORDER BY COUNT(*) >= 100",
+        "LIMIT 100"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q16",
+      "type": "single_choice",
+      "prompt": "Un export CSV depuis PostgreSQL avec COPY écrit le fichier :",
+      "choices": [
+        "Toujours sur le poste client",
+        "Côté serveur (sauf usage de \\copy en psql côté client)",
+        "Toujours dans le navigateur",
+        "Uniquement dans la base de données"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q17",
+      "type": "single_choice",
+      "prompt": "Pourquoi versionner un fichier m2t3_queries.sql est une bonne pratique ?",
+      "choices": [
+        "Pour changer l’historique",
+        "Pour pouvoir relancer la même extraction et auditer les changements (reproductibilité)",
+        "Pour éviter les indexes",
+        "Pour rendre la requête plus longue"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q18",
+      "type": "single_choice",
+      "prompt": "Tu as enrolled_users=400 et validated_users=120. Completion rate = ?",
+      "choices": ["12%", "25%", "30%", "75%"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q19",
+      "type": "single_choice",
+      "prompt": "Quel est le meilleur test rapide pour vérifier l’unicité d’une clé dans une table SQL ?",
+      "choices": [
+        "SELECT * LIMIT 10",
+        "Comparer COUNT(*) et COUNT(DISTINCT key)",
+        "ORDER BY key",
+        "GROUP BY toutes les colonnes"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q20",
+      "type": "single_choice",
+      "prompt": "En extraction, pourquoi éviter SELECT * ?",
+      "choices": [
+        "Parce que ça ne marche pas",
+        "Parce que c’est fragile (colonnes qui changent), moins lisible, et peut extraire trop de données",
+        "Parce que c’est interdit par SQL",
+        "Parce que ça supprime les doublons"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q21",
+      "type": "single_choice",
+      "prompt": "En Python requests, quelle pratique évite que ton pipeline reste bloqué indéfiniment ?",
+      "choices": [
+        "Ne jamais mettre de timeout",
+        "Toujours fournir timeout=… sur les appels HTTP",
+        "Utiliser print uniquement",
+        "Faire des boucles infinies"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q22",
+      "type": "single_choice",
+      "prompt": "À quoi sert r.raise_for_status() dans requests ?",
+      "choices": [
+        "Transformer le JSON en CSV",
+        "Lever une exception si la réponse HTTP est une erreur (4xx/5xx)",
+        "Ajouter des headers",
+        "Relancer automatiquement la requête"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q23",
+      "type": "single_choice",
+      "prompt": "Dans requests, la manière standard de passer des query params est :",
+      "choices": [
+        "requests.get(url, body=params)",
+        "requests.get(url, params=params_dict)",
+        "requests.get(url, headers=params_dict)",
+        "requests.get(params_dict, url)"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q24",
+      "type": "single_choice",
+      "prompt": "Quel code récupère du JSON avec requests ?",
+      "choices": ["r.text()", "r.json()", "r.csv()", "r.headers()"],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q25",
+      "type": "single_choice",
+      "prompt": "HTTP 429 signifie :",
+      "choices": ["OK", "Unauthorized", "Too Many Requests (limitation de débit)", "Not Found"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q26",
+      "type": "single_choice",
+      "prompt": "Si l’API répond 429 avec Retry-After: 3, que dois-tu faire ?",
+      "choices": [
+        "Stopper définitivement",
+        "Attendre environ 3 secondes puis retenter",
+        "Ignorer et continuer sans pause",
+        "Changer de méthode GET→POST"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q27",
+      "type": "single_choice",
+      "prompt": "Quel élément est typiquement utilisé pour un Bearer token ?",
+      "choices": [
+        "Header Authorization: Bearer <token>",
+        "Query param token=… obligatoire",
+        "Cookie non signé",
+        "Nom de table SQL"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m2_q28",
+      "type": "single_choice",
+      "prompt": "OAuth 2.0 est surtout un cadre pour :",
+      "choices": [
+        "Compresser des CSV",
+        "Autoriser un client à accéder à des ressources protégées (scopes/flows)",
+        "Remplacer HTTP",
+        "Créer des bases PostgreSQL"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q29",
+      "type": "single_choice",
+      "prompt": "Pagination : quel est le risque si tu ne gères pas toutes les pages ?",
+      "choices": ["Dataset incomplet ⇒ analyses et KPI faux", "Dataset plus précis", "Moins de logs ⇒ meilleure qualité", "Aucun risque"],
+      "answer_index": 0
+    },
+    {
+      "id": "m2_q30",
+      "type": "single_choice",
+      "prompt": "Quel pattern général est correct pour récupérer toutes les pages ?",
+      "choices": [
+        "Faire une seule requête et s’arrêter",
+        "Boucler tant que next (ou page < total_pages) et accumuler les résultats",
+        "Changer de base de données",
+        "Supprimer les erreurs 4xx"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q31",
+      "type": "single_choice",
+      "prompt": "Pourquoi utiliser requests.Session() dans un lab multi-pages ?",
+      "choices": [
+        "Pour désactiver les headers",
+        "Pour réutiliser la connexion et centraliser les headers (auth, accept) plus efficacement",
+        "Pour éviter tout log",
+        "Pour forcer 429"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q32",
+      "type": "single_choice",
+      "prompt": "Quel est un contenu minimal de log par requête (preuve d’exécution) ?",
+      "choices": [
+        "Seulement le pays",
+        "timestamp, url/params, status_code, durée, taille réponse",
+        "Seulement le résultat final",
+        "Seulement l’adresse IP"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q33",
+      "type": "single_choice",
+      "prompt": "Retry : quelle situation est généralement plus logique à retenter ?",
+      "choices": ["400 Bad Request", "401 Unauthorized", "429 Too Many Requests / certains 5xx", "404 Not Found"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q34",
+      "type": "single_choice",
+      "prompt": "Dans un run_report API, quel champ prouve directement que la pagination a tourné ?",
+      "choices": ["requests_made >= 2", "date_min != null", "n_429 == 0", "country == 'Togo'"],
+      "answer_index": 0
+    },
+    {
+      "id": "m2_q35",
+      "type": "single_choice",
+      "prompt": "Un test bed type httpbin sert principalement à :",
+      "choices": [
+        "Faire des jointures SQL",
+        "Tester des méthodes HTTP, status codes, auth, headers, réponses",
+        "Créer des dashboards",
+        "Convertir des unités"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q36",
+      "type": "single_choice",
+      "prompt": "Pourquoi exporter des résultats d’extraction en CSV est utile en Data Analyst ?",
+      "choices": [
+        "Parce que CSV est obligatoire partout",
+        "Parce que c’est un format simple, portable, et réutilisable pour analyse/BI (avec limites)",
+        "Parce que c’est plus sécurisé que tout",
+        "Parce que CSV évite la qualité des données"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q37",
+      "type": "single_choice",
+      "prompt": "Quel est un risque réel du CSV ?",
+      "choices": [
+        "Pas de types stricts (dates/nombres peuvent être mal interprétés)",
+        "Impossible à lire",
+        "Toujours chiffré",
+        "Interdit par Python"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m2_q38",
+      "type": "single_choice",
+      "prompt": "Si tu dois garantir la reproductibilité, quel artefact est le plus important à archiver avec le CSV final ?",
+      "choices": [
+        "Uniquement une capture d’écran",
+        "Le script/requête qui a généré le CSV + paramètres + run report",
+        "Le fond d’écran du PC",
+        "Le navigateur utilisé"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q39",
+      "type": "single_choice",
+      "prompt": "Capstone collecte : quel dossier ne doit JAMAIS être modifié manuellement une fois créé ?",
+      "choices": ["processed/", "outputs/", "raw/", "scripts/"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q40",
+      "type": "single_choice",
+      "prompt": "Dans un pack livrable, à quoi sert un data_dictionary ?",
+      "choices": [
+        "À stocker des vidéos",
+        "À définir chaque colonne (sens, type, unité, source, transformations) pour éviter l’ambiguïté",
+        "À accélérer l’API",
+        "À remplacer le dataset"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q41",
+      "type": "single_choice",
+      "prompt": "Data lineage : quel est l’objectif principal ?",
+      "choices": [
+        "Rendre les fichiers plus lourds",
+        "Tracer source → transformations → sorties pour audit et compréhension",
+        "Empêcher l’export CSV",
+        "Changer les types de données"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q42",
+      "type": "single_choice",
+      "prompt": "Lequel est un check de qualité MINIMUM raisonnable sur un dataset user-level final ?",
+      "choices": [
+        "Toutes les colonnes doivent être non nulles",
+        "user_id unique (pas de doublon)",
+        "Toutes les valeurs doivent être identiques",
+        "Toutes les dates doivent être vides"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q43",
+      "type": "single_choice",
+      "prompt": "Tu livres un final_dataset au grain utilisateur. Si tu as 250 lignes mais seulement 200 user_id uniques, duplicats = ?",
+      "choices": ["0", "25", "50", "200"],
+      "answer_index": 2
+    },
+    {
+      "id": "m2_q44",
+      "type": "single_choice",
+      "prompt": "Dans un capstone, pourquoi inclure un README est une exigence “pro” ?",
+      "choices": [
+        "Pour décorer le ZIP",
+        "Pour expliquer comment relancer le pipeline et ce que contient le livrable",
+        "Pour éviter les logs",
+        "Pour supprimer les sources"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q45",
+      "type": "single_choice",
+      "prompt": "Quel élément prouve qu’un pack a été exécuté récemment (audit) ?",
+      "choices": ["Le nom du fichier", "Un manifest.json/run_report avec run_id et timestamp", "La couleur du dossier", "Le nombre de lignes dans un tableau"],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q46",
+      "type": "single_choice",
+      "prompt": "Capstone : quel fichier contient typiquement le résultat final prêt à analyse/dashboard ?",
+      "choices": ["final_dataset.csv", "extract_sql.sql", "extract_api.py", "lineage.md"],
+      "answer_index": 0
+    },
+    {
+      "id": "m2_q47",
+      "type": "multiple_choice",
+      "prompt": "Quels éléments sont des preuves directes de reproductibilité ? (plusieurs réponses)",
+      "choices": [
+        "Notebook/script exécutable",
+        "Run report (JSON) avec métriques d’exécution",
+        "Se souvenir des étapes de tête",
+        "Requêtes versionnées (SQL) / code versionné"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m2_q48",
+      "type": "single_choice",
+      "prompt": "Si une extraction SQL doit être “audit-able”, quelle information est la plus critique à conserver ?",
+      "choices": [
+        "Le thème du module",
+        "La version de la requête + la date d’exécution + les paramètres/périmètre",
+        "Le fond d’écran",
+        "Le navigateur"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q49",
+      "type": "single_choice",
+      "prompt": "Dans un pipeline API, quel export est la meilleure “preuve” de ce qui s’est passé requête par requête ?",
+      "choices": ["transactions_clean.csv", "request_log.csv (ou équivalent)", "README.md uniquement", "un diagramme sans données"],
+      "answer_index": 1
+    },
+    {
+      "id": "m2_q50",
+      "type": "single_choice",
+      "prompt": "Si un module exige 80% pour passer et contient 50 questions, combien de bonnes réponses minimum faut-il ?",
+      "choices": ["30", "35", "40", "45"],
+      "answer_index": 2
+    }
+  ]
+}
+

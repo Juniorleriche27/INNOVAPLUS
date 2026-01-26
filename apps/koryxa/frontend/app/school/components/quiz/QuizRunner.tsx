@@ -2,14 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type QuizQuestion = {
+type QuizQuestionBase = {
   id: string;
-  type: "single_choice";
+  type: "single_choice" | "multiple_choice";
   prompt: string;
   choices: string[];
-  answer_index: number;
   explanation?: string;
 };
+
+type QuizSingleChoiceQuestion = QuizQuestionBase & {
+  type: "single_choice";
+  answer_index: number;
+};
+
+type QuizMultipleChoiceQuestion = QuizQuestionBase & {
+  type: "multiple_choice";
+  answer_indices: number[];
+};
+
+type QuizQuestion = QuizSingleChoiceQuestion | QuizMultipleChoiceQuestion;
 
 export type QuizConfig = {
   module: string;
@@ -22,16 +33,18 @@ export type QuizConfig = {
 
 type ShuffledQuestion = {
   id: string;
+  type: "single_choice" | "multiple_choice";
   prompt: string;
   choices: string[];
-  correctIndex: number;
+  correctIndex?: number;
+  correctIndices?: number[];
   explanation?: string;
 };
 
 type AttemptState = {
   startedAtMs: number;
   questions: ShuffledQuestion[];
-  answers: Array<number | null>;
+  answers: Array<number | number[] | null>;
   submitted: boolean;
   score: number;
 };
@@ -50,12 +63,29 @@ function buildAttempt(quiz: QuizConfig): AttemptState {
   const shuffledQuestions: ShuffledQuestion[] = questions.map((q) => {
     const originalChoices = q.choices.map((c, idx) => ({ c, idx }));
     const shuffled = quiz.delivery.shuffle_choices ? shuffleArray(originalChoices) : originalChoices;
-    const correctIndex = shuffled.findIndex((x) => x.idx === q.answer_index);
+    if (q.type === "single_choice") {
+      const correctIndex = shuffled.findIndex((x) => x.idx === q.answer_index);
+      return {
+        id: q.id,
+        type: q.type,
+        prompt: q.prompt,
+        choices: shuffled.map((x) => x.c),
+        correctIndex,
+        explanation: q.explanation,
+      };
+    }
+
+    const correctIndices = q.answer_indices
+      .map((originalIndex) => shuffled.findIndex((x) => x.idx === originalIndex))
+      .filter((i) => i >= 0)
+      .sort((a, b) => a - b);
+
     return {
       id: q.id,
+      type: q.type,
       prompt: q.prompt,
       choices: shuffled.map((x) => x.c),
-      correctIndex,
+      correctIndices,
       explanation: q.explanation,
     };
   });
@@ -164,7 +194,18 @@ export default function QuizRunner({
     setAttempt((prev) => {
       if (!prev || prev.submitted) return prev;
       const next = { ...prev, answers: [...prev.answers] };
-      next.answers[activeIndex] = choiceIndex;
+      const q = next.questions[activeIndex];
+      if (q.type === "multiple_choice") {
+        const current = next.answers[activeIndex];
+        const prevSelected = Array.isArray(current) ? current : [];
+        const set = new Set(prevSelected);
+        if (set.has(choiceIndex)) set.delete(choiceIndex);
+        else set.add(choiceIndex);
+        const selected = [...set].sort((a, b) => a - b);
+        next.answers[activeIndex] = selected.length ? selected : null;
+      } else {
+        next.answers[activeIndex] = choiceIndex;
+      }
       return next;
     });
   };
@@ -175,6 +216,13 @@ export default function QuizRunner({
       const score = prev.questions.reduce((acc, q, i) => {
         const a = prev.answers[i];
         if (a === null) return acc;
+        if (q.type === "multiple_choice") {
+          const selected = Array.isArray(a) ? a : [];
+          const expected = q.correctIndices ?? [];
+          const ok =
+            selected.length === expected.length && selected.every((v, idx) => v === expected[idx]);
+          return acc + (ok ? quiz.grading.points_per_question : 0);
+        }
         return acc + (a === q.correctIndex ? quiz.grading.points_per_question : 0);
       }, 0);
 
@@ -199,6 +247,8 @@ export default function QuizRunner({
   const current = attempt?.questions[activeIndex];
   const currentAnswer = attempt?.answers[activeIndex] ?? null;
   const answeredCount = attempt ? attempt.answers.filter((a) => a !== null).length : 0;
+  const canGoNext =
+    currentAnswer !== null && (!Array.isArray(currentAnswer) || currentAnswer.length > 0);
 
   return (
     <div className="space-y-6">
@@ -277,14 +327,16 @@ export default function QuizRunner({
                 <label
                   key={`${current.id}-${idx}`}
                   className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
-                    currentAnswer === idx ? "border-sky-200 bg-sky-50" : "border-slate-200 hover:bg-slate-50"
+                    (Array.isArray(currentAnswer) ? currentAnswer.includes(idx) : currentAnswer === idx)
+                      ? "border-sky-200 bg-sky-50"
+                      : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   <input
-                    type="radio"
+                    type={current.type === "multiple_choice" ? "checkbox" : "radio"}
                     name={`q-${current.id}`}
                     className="mt-1"
-                    checked={currentAnswer === idx}
+                    checked={Array.isArray(currentAnswer) ? currentAnswer.includes(idx) : currentAnswer === idx}
                     onChange={() => updateAnswer(idx)}
                     disabled={attempt.submitted}
                   />
@@ -311,7 +363,7 @@ export default function QuizRunner({
                         type="button"
                         className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
                         onClick={() => setActiveIndex((i) => clamp(i + 1, 0, attempt.questions.length - 1))}
-                        disabled={currentAnswer === null}
+                        disabled={!canGoNext}
                       >
                         Suivant
                       </button>
@@ -320,7 +372,7 @@ export default function QuizRunner({
                         type="button"
                         className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
                         onClick={submitAttempt}
-                        disabled={currentAnswer === null}
+                        disabled={!canGoNext}
                       >
                         Terminer
                       </button>
@@ -400,7 +452,27 @@ function ResultPanel({
         <div className="mt-6 space-y-4">
           {attempt.questions.map((q, idx) => {
             const user = attempt.answers[idx];
-            const ok = user === q.correctIndex;
+            const ok =
+              q.type === "multiple_choice"
+                ? Array.isArray(user) &&
+                  user.length === (q.correctIndices ?? []).length &&
+                  user.every((v, i) => v === (q.correctIndices ?? [])[i])
+                : user === q.correctIndex;
+
+            const expectedLabel =
+              q.type === "multiple_choice"
+                ? (q.correctIndices ?? []).map((i) => q.choices[i]).join(" · ")
+                : q.correctIndex === undefined
+                  ? "—"
+                  : q.choices[q.correctIndex];
+
+            const userLabel =
+              user === null
+                ? "—"
+                : Array.isArray(user)
+                  ? user.map((i) => q.choices[i]).join(" · ")
+                  : q.choices[user];
+
             return (
               <div key={q.id} className="rounded-2xl border border-slate-200 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -417,10 +489,10 @@ function ResultPanel({
                 </div>
                 <div className="mt-3 space-y-1 text-sm text-slate-700">
                   <p>
-                    <span className="font-semibold">Réponse attendue :</span> {q.choices[q.correctIndex]}
+                    <span className="font-semibold">Réponse attendue :</span> {expectedLabel}
                   </p>
                   <p>
-                    <span className="font-semibold">Ta réponse :</span> {user === null ? "—" : q.choices[user]}
+                    <span className="font-semibold">Ta réponse :</span> {userLabel}
                   </p>
                   {q.explanation ? (
                     <p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">{q.explanation}</p>
@@ -434,4 +506,3 @@ function ResultPanel({
     </div>
   );
 }
-

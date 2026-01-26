@@ -1,0 +1,575 @@
+{
+  "module": "Module 4 — Préparation des données",
+  "version": "1.0.0",
+  "pass_threshold": 0.8,
+  "grading": { "points_per_question": 1, "negative_marking": false },
+  "delivery": { "shuffle_questions": true, "shuffle_choices": true, "time_limit_minutes": 70 },
+  "questions": [
+    {
+      "id": "m4_q01",
+      "type": "single_choice",
+      "prompt": "Le but principal de la préparation des données avant analyse/modélisation est :",
+      "choices": [
+        "Rendre les données plus petites, peu importe la perte d'information",
+        "Rendre les données exploitables et cohérentes (types, formats, features), sans créer de biais ni fuite de données",
+        "Supprimer toutes les valeurs manquantes",
+        "Transformer toutes les colonnes en texte"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q02",
+      "type": "single_choice",
+      "prompt": "Quelle définition correspond le mieux à une 'feature' ?",
+      "choices": [
+        "Une ligne du dataset",
+        "Une variable (colonne) utilisée pour décrire un objet/événement",
+        "Un fichier CSV",
+        "Une jointure SQL"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q03",
+      "type": "single_choice",
+      "prompt": "Pourquoi on sépare souvent train / validation / test ?",
+      "choices": [
+        "Pour augmenter artificiellement la taille du dataset",
+        "Pour évaluer la généralisation sans 'tricher' sur les données vues pendant l'entraînement/choix de modèle",
+        "Pour accélérer pandas",
+        "Pour supprimer les doublons"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q04",
+      "type": "single_choice",
+      "prompt": "La fuite de données (data leakage) signifie :",
+      "choices": [
+        "Perdre un fichier",
+        "Utiliser dans les features une information indisponible au moment réel de la prédiction (ou calculée en regardant le futur)",
+        "Avoir trop de colonnes",
+        "Avoir trop de valeurs manquantes"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q05",
+      "type": "single_choice",
+      "prompt": "Exemple typique de fuite de données :",
+      "choices": [
+        "Standardiser les variables numériques sur le train uniquement",
+        "Encoder une catégorie en one-hot",
+        "Calculer une feature 'total_achat_30j' en incluant des transactions après la date de prédiction",
+        "Créer une colonne 'jour_de_semaine' à partir d'une date"
+      ],
+      "answer_index": 2
+    },
+    {
+      "id": "m4_q06",
+      "type": "single_choice",
+      "prompt": "Différence la plus juste entre 'fit' et 'transform' dans un pipeline de prétraitement :",
+      "choices": [
+        "fit = applique la transformation ; transform = apprend des paramètres",
+        "fit = apprend des paramètres (ex: moyenne/écart-type) ; transform = applique avec ces paramètres",
+        "fit = supprime les NA ; transform = supprime les doublons",
+        "fit et transform sont identiques"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q07",
+      "type": "single_choice",
+      "prompt": "Pourquoi on ne doit pas 'fit' un scaler (standardisation) sur tout le dataset avant split ?",
+      "choices": [
+        "Parce que ça ne marche pas en scikit-learn",
+        "Parce que ça introduit de la fuite : le test influence les paramètres (moyenne/écart-type)",
+        "Parce que la standardisation est inutile",
+        "Parce que ça supprime les catégories"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q08",
+      "type": "single_choice",
+      "prompt": "Standardisation (StandardScaler) signifie généralement :",
+      "choices": [
+        "Mettre chaque variable dans [0,1]",
+        "Centrer-réduire : moyenne 0 et écart-type 1 (sur train)",
+        "Remplacer les NaN par 0",
+        "Transformer en logarithme"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q09",
+      "type": "single_choice",
+      "prompt": "Normalisation Min-Max signifie généralement :",
+      "choices": [
+        "Mettre la variance à 1",
+        "Mettre chaque variable sur une échelle [0,1] (selon min et max du train)",
+        "Supprimer toutes les valeurs extrêmes",
+        "Encoder les catégories en nombres"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q10",
+      "type": "single_choice",
+      "prompt": "Quand la standardisation est-elle souvent utile ?",
+      "choices": [
+        "Toujours obligatoire, quel que soit le modèle",
+        "Souvent utile pour des modèles sensibles à l’échelle (k-NN, SVM, régression avec pénalisation, PCA)",
+        "Uniquement pour les arbres (Random Forest)",
+        "Uniquement quand il y a des catégories"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q11",
+      "type": "single_choice",
+      "prompt": "One-hot encoding est surtout adapté quand :",
+      "choices": [
+        "La variable catégorielle est ordonnée (low < medium < high)",
+        "La variable catégorielle est nominale (pas d’ordre naturel)",
+        "La variable est numérique",
+        "La variable est une date"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q12",
+      "type": "single_choice",
+      "prompt": "Quel est le risque principal d’un label encoding (catégories → 0,1,2,...) sur une variable nominale ?",
+      "choices": [
+        "Impossible à appliquer",
+        "Introduire un faux ordre numérique et tromper certains modèles",
+        "Augmenter la taille mémoire",
+        "Supprimer les doublons"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q13",
+      "type": "single_choice",
+      "prompt": "Une variable ordinale (ex: niveau d’études) peut être encodée de façon cohérente par :",
+      "choices": [
+        "One-hot uniquement",
+        "Un mapping ordonné (ex: primaire=1, secondaire=2, supérieur=3) si l’ordre est réel et documenté",
+        "Une conversion en datetime",
+        "Une suppression systématique"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q14",
+      "type": "single_choice",
+      "prompt": "Dans scikit-learn, quelle option de OneHotEncoder évite une erreur sur une catégorie jamais vue au train ?",
+      "choices": [
+        "handle_unknown='ignore'",
+        "errors='raise'",
+        "drop='first'",
+        "sparse_output=False"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m4_q15",
+      "type": "multiple_choice",
+      "prompt": "Quel(s) choix réduisent le risque de fuite (leakage) en preprocessing ?",
+      "choices": [
+        "Split d’abord, puis fit des transformations sur train uniquement",
+        "Utiliser Pipeline + ColumnTransformer",
+        "Calculer toutes les features sur tout le dataset puis split",
+        "Garder une colonne cible dans les features"
+      ],
+      "answer_indices": [0, 1]
+    },
+    {
+      "id": "m4_q16",
+      "type": "single_choice",
+      "prompt": "Pour les valeurs manquantes numériques, une stratégie baseline souvent robuste est :",
+      "choices": ["Moyenne", "Médiane", "0 systématiquement", "Max"],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q17",
+      "type": "single_choice",
+      "prompt": "Pourquoi créer un indicateur 'missing_flag' est utile ?",
+      "choices": [
+        "Ça supprime les NA",
+        "Ça conserve l’information de manque (souvent prédictive) et améliore la traçabilité",
+        "Ça remplace le besoin de split",
+        "Ça convertit les dates en UTC"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q18",
+      "type": "single_choice",
+      "prompt": "Si une colonne a 95% de valeurs manquantes, l’action la plus défendable (baseline) est :",
+      "choices": [
+        "Imputer par médiane sans commentaire",
+        "Souvent la drop (si non critique) OU justification forte si conservée, avec documentation",
+        "La convertir en datetime",
+        "La dupliquer"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q19",
+      "type": "single_choice",
+      "prompt": "Si tu as une variable 'revenue' très asymétrique (skewed), une transformation courante est :",
+      "choices": ["log(1+x)", "one-hot", "astype(int)", "drop_duplicates"],
+      "answer_index": 0
+    },
+    {
+      "id": "m4_q20",
+      "type": "single_choice",
+      "prompt": "Pourquoi on utilise souvent log(1+x) au lieu de log(x) ?",
+      "choices": [
+        "Pour rendre les valeurs négatives positives",
+        "Pour gérer les zéros (log(0) est indéfini) tout en réduisant l’asymétrie",
+        "Pour supprimer les NA",
+        "Pour encoder les catégories"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q21",
+      "type": "single_choice",
+      "prompt": "Une feature 'jour_de_semaine' construite depuis une date est un exemple de :",
+      "choices": ["Jointure", "Feature engineering temporel", "Encodage one-hot", "Déduplication"],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q22",
+      "type": "single_choice",
+      "prompt": "Une agrégation 'n_transactions par user' est :",
+      "choices": [
+        "Une conversion de type",
+        "Une feature agrégée (changement de grain) qui doit être contrôlée",
+        "Un encoding",
+        "Une normalisation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q23",
+      "type": "single_choice",
+      "prompt": "Quand tu changes de grain (event-level → user-level), l’erreur la plus fréquente est :",
+      "choices": [
+        "Oublier le tri",
+        "Faire des KPI sans vérifier le grain et créer du double comptage",
+        "Utiliser to_numeric",
+        "Utiliser utc=True"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q24",
+      "type": "single_choice",
+      "prompt": "Une jointure LEFT JOIN (table gauche) conserve :",
+      "choices": [
+        "Seulement les lignes qui matchent",
+        "Toutes les lignes de la table de gauche, même sans match",
+        "Toutes les lignes des deux tables sans condition",
+        "Uniquement les colonnes communes"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q25",
+      "type": "single_choice",
+      "prompt": "Pourquoi vérifier l’unicité de la clé dans une table dimension (ex: profils) avant join ?",
+      "choices": [
+        "Pour éviter la perte d’information",
+        "Pour éviter la duplication des lignes et la corruption des métriques après jointure",
+        "Pour accélérer YouTube",
+        "Pour remplir les NA"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q26",
+      "type": "single_choice",
+      "prompt": "Dans scikit-learn, l’outil destiné à appliquer des transformations différentes selon type de colonnes est :",
+      "choices": ["Pipeline", "ColumnTransformer", "KFold", "GridSearchCV"],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q27",
+      "type": "single_choice",
+      "prompt": "Pourquoi utiliser un Pipeline est recommandé ?",
+      "choices": [
+        "Pour rendre le code plus long",
+        "Pour garantir reproductibilité et éviter erreurs d’ordre (fit/transform) et fuite lors de CV/évaluation",
+        "Pour remplacer pandas",
+        "Pour éviter toute imputation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q28",
+      "type": "single_choice",
+      "prompt": "Dans un pipeline, l’imputation et l’encodage doivent être :",
+      "choices": [
+        "Fittés sur train uniquement",
+        "Fittés sur tout le dataset",
+        "Fittés sur test uniquement",
+        "Ignorés"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m4_q29",
+      "type": "single_choice",
+      "prompt": "Quel est l’objectif principal d’un train_test_split avec shuffle (quand applicable) ?",
+      "choices": [
+        "Créer des doublons",
+        "Éviter qu’un ordre particulier (tri temporel, segmentation) biaise la séparation",
+        "Remplacer l’imputation",
+        "Convertir en UTC"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q30",
+      "type": "single_choice",
+      "prompt": "Pour une série temporelle (forecasting), quel est le risque du shuffle random ?",
+      "choices": [
+        "Aucun risque",
+        "Fuite temporelle : le futur peut se retrouver dans le train",
+        "Ça empêche le parsing",
+        "Ça supprime les NA"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q31",
+      "type": "multiple_choice",
+      "prompt": "Quelles actions améliorent la traçabilité/audit des transformations ?",
+      "choices": [
+        "Conserver un dataset raw immuable",
+        "Générer un report (JSON/logs) sur conversions et pertes",
+        "Modifier le raw sans l’enregistrer",
+        "Versionner scripts/notebooks"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m4_q32",
+      "type": "single_choice",
+      "prompt": "Quelle approche est la plus saine pour standardiser des catégories texte (country, channel) ?",
+      "choices": [
+        "Ne rien faire",
+        "strip + normalisation espaces + casse cohérente + mapping explicite si nécessaire",
+        "Multiplier les catégories",
+        "Convertir en float"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q33",
+      "type": "single_choice",
+      "prompt": "Dans une colonne numérique, '1 200,50' (locale FR) et '1,200.50' (locale EN) posent problème parce que :",
+      "choices": [
+        "Ce sont des dates",
+        "Les séparateurs milliers/décimaux diffèrent : conversion naïve peut donner des valeurs fausses",
+        "Ce sont des booléens",
+        "Ils sont déjà des floats"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q34",
+      "type": "single_choice",
+      "prompt": "Que signifie 'errors=\"coerce\"' dans pd.to_numeric / pd.to_datetime ?",
+      "choices": [
+        "Convertit tout parfaitement",
+        "Remplace les valeurs invalides par NaN/NaT au lieu de planter",
+        "Supprime la colonne",
+        "Convertit en texte"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q35",
+      "type": "single_choice",
+      "prompt": "Pourquoi 'errors=\"coerce\"' doit être accompagné d’un compteur (invalid_count) ?",
+      "choices": [
+        "Pour rendre le notebook plus long",
+        "Pour éviter les pertes silencieuses et prouver le taux de parsing/erreur",
+        "Pour supprimer les NA",
+        "Pour augmenter le score"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q36",
+      "type": "single_choice",
+      "prompt": "Une feature 'ratio validated/enrolled' doit protéger la division par zéro via :",
+      "choices": ["NULLIF (SQL) ou gestion équivalente", "drop_duplicates", "astype(str)", "merge"],
+      "answer_index": 0
+    },
+    {
+      "id": "m4_q37",
+      "type": "single_choice",
+      "prompt": "Pourquoi un mapping manuel (ex: 'Togo', 'TOGO', '  togo') peut être nécessaire ?",
+      "choices": [
+        "Parce que strip ne marche jamais",
+        "Parce que certaines erreurs sont des variantes non triviales (typos) et doivent être corrigées par règle explicite",
+        "Parce que pandas n’accepte pas les strings",
+        "Parce que ça remplace l’imputation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q38",
+      "type": "single_choice",
+      "prompt": "High cardinality (ex: user_id, device_id) dans une variable catégorielle : risque principal du one-hot ?",
+      "choices": [
+        "Réduire trop la dimension",
+        "Explosion du nombre de colonnes (sparsité) et coût mémoire/overfitting potentiel",
+        "Créer des dates invalides",
+        "Supprimer la cible"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q39",
+      "type": "single_choice",
+      "prompt": "Le 'target encoding' (moyenne cible par catégorie) est risqué surtout parce que :",
+      "choices": [
+        "Il ne marche pas sur du texte",
+        "Il peut créer une forte fuite si calculé sans schéma de validation (fit sur tout le dataset)",
+        "Il remplace les NA",
+        "Il transforme en UTC"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q40",
+      "type": "single_choice",
+      "prompt": "Pour limiter la fuite avec un encodage basé sur la cible, une approche correcte est :",
+      "choices": [
+        "Calculer sur tout le dataset",
+        "Le calculer uniquement sur le train (et idéalement avec CV/regularisation), puis appliquer au val/test",
+        "Le calculer sur le test uniquement",
+        "Le calculer après prédiction"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q41",
+      "type": "single_choice",
+      "prompt": "Un dataset prêt pour dashboard doit surtout garantir :",
+      "choices": [
+        "Des couleurs cohérentes",
+        "Des types fiables, des clés cohérentes, un grain clair, et des règles documentées",
+        "Un maximum de colonnes",
+        "Zéro NA quel que soit le contexte"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q42",
+      "type": "single_choice",
+      "prompt": "Quel est un bon indicateur que le join a cassé tes KPI ?",
+      "choices": [
+        "Les colonnes sont en minuscules",
+        "Le nombre de lignes explose après join sans raison métier (duplication) ; COUNT(*) >> COUNT(DISTINCT key)",
+        "Le fichier est plus petit",
+        "Les dates sont en UTC"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q43",
+      "type": "single_choice",
+      "prompt": "Pourquoi conserver les colonnes *_raw (ex: amount_text_raw) peut être utile ?",
+      "choices": [
+        "Pour ralentir le pipeline",
+        "Pour audit : vérifier la conversion et diagnostiquer les erreurs",
+        "Pour remplacer les features clean",
+        "Pour encoder les catégories"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q44",
+      "type": "single_choice",
+      "prompt": "Pour contrôler l’impact d’une transformation, la preuve minimale attendue est :",
+      "choices": [
+        "Dire 'ça marche'",
+        "Un report/log chiffré : nb modifiés, nb invalides, taux parsing, règles appliquées",
+        "Un emoji",
+        "Un screenshot sans données"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q45",
+      "type": "single_choice",
+      "prompt": "Si après préparation, 25% des dates sont NaT, la décision la plus responsable est :",
+      "choices": [
+        "Continuer sans rien dire",
+        "Alerter et investiguer : formats mixtes, locale, erreurs source ; documenter et fixer la règle de parsing",
+        "Supprimer la colonne date",
+        "Remplacer par la date du jour"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q46",
+      "type": "single_choice",
+      "prompt": "Dans une préparation reproductible, quel artefact prouve l’exécution (au-delà du dataset clean) ?",
+      "choices": ["run_report.json / logs", "un PDF marketing", "une image", "un lien externe non versionné"],
+      "answer_index": 0
+    },
+    {
+      "id": "m4_q47",
+      "type": "single_choice",
+      "prompt": "Pourquoi versionner les scripts/notebooks de préparation (Git) est important ?",
+      "choices": [
+        "Pour faire joli",
+        "Pour pouvoir reproduire exactement la même transformation et auditer les changements",
+        "Pour éviter les one-hot",
+        "Pour supprimer les NA"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q48",
+      "type": "single_choice",
+      "prompt": "Dans un quiz à 50 questions avec seuil 80%, combien de bonnes réponses minimum ?",
+      "choices": ["35", "38", "40", "45"],
+      "answer_index": 2
+    },
+    {
+      "id": "m4_q49",
+      "type": "single_choice",
+      "prompt": "Le principe clé d’une préparation 'sérieuse' est :",
+      "choices": [
+        "Transformer beaucoup, peu importe les pertes",
+        "Définir des règles explicites, mesurer l’impact, éviter la fuite, et rendre reproductible",
+        "Supprimer toutes les colonnes texte",
+        "Ne jamais changer les types"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m4_q50",
+      "type": "multiple_choice",
+      "prompt": "Quelles sorties sont typiques d’un module 'préparation' bien auditable ?",
+      "choices": [
+        "dataset_clean.csv",
+        "conversion_report.json (invalid_count, taux parsing)",
+        "unit_rules.md / preprocessing_rules.md",
+        "un fichier 'raw' modifié à la place du clean"
+      ],
+      "answer_indices": [0, 1, 2]
+    }
+  ]
+}
+

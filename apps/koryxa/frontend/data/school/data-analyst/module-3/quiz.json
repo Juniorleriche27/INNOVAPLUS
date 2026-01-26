@@ -1,0 +1,550 @@
+{
+  "module": "Module 3 — Nettoyage & Qualité des données",
+  "version": "1.0.0",
+  "pass_threshold": 0.8,
+  "grading": { "points_per_question": 1, "negative_marking": false },
+  "delivery": { "shuffle_questions": true, "shuffle_choices": true, "time_limit_minutes": 60 },
+  "questions": [
+    {
+      "id": "m3_q01",
+      "type": "single_choice",
+      "prompt": "Quel est l’objectif du profilage (data profiling) avant nettoyage ?",
+      "choices": [
+        "Remplir toutes les valeurs manquantes automatiquement",
+        "Mesurer rapidement la qualité (NA, uniques, top valeurs, plages, anomalies) pour décider quoi faire",
+        "Créer un modèle ML",
+        "Supprimer des colonnes au hasard"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q02",
+      "type": "single_choice",
+      "prompt": "En pandas, quelle méthode permet de détecter les valeurs manquantes (NA) ?",
+      "choices": ["isna()", "toupper()", "merge()", "astype(int)"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q03",
+      "type": "single_choice",
+      "prompt": "Pourquoi une chaîne vide \"\" n’est pas forcément comptée comme NA en pandas ?",
+      "choices": [
+        "Parce que pandas refuse les chaînes",
+        "Parce que \"\" est une valeur valide (string) et n’est pas NA par défaut : il faut la convertir explicitement",
+        "Parce que pandas transforme tout en NaN automatiquement",
+        "Parce que NA ne s’applique qu’aux nombres"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q04",
+      "type": "single_choice",
+      "prompt": "MCAR signifie :",
+      "choices": [
+        "Missing Completely At Random (manque indépendant des variables observées et non observées)",
+        "Missing Caused At Revenue",
+        "Missing Corrected At Runtime",
+        "Missing Counted As Regular"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q05",
+      "type": "single_choice",
+      "prompt": "MAR signifie :",
+      "choices": [
+        "Le manque dépend de la valeur elle-même",
+        "Le manque dépend d’autres variables observées (mais pas directement de la valeur manquante)",
+        "Le manque est totalement aléatoire",
+        "Le manque est impossible à diagnostiquer"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q06",
+      "type": "single_choice",
+      "prompt": "MNAR signifie :",
+      "choices": [
+        "Le manque dépend de la valeur manquante elle-même (mécanisme non ignorable)",
+        "Le manque est toujours aléatoire",
+        "Le manque est toujours causé par un bug pandas",
+        "Le manque dépend uniquement du pays"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q07",
+      "type": "single_choice",
+      "prompt": "Quelle pratique est recommandée si tu imputes une variable importante (ex: âge) ?",
+      "choices": [
+        "Imputer et supprimer la colonne d’origine",
+        "Imputer + créer un indicateur missing_flag pour garder l’information de manque",
+        "Imputer uniquement si ça augmente la moyenne",
+        "Ne jamais imputer"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q08",
+      "type": "single_choice",
+      "prompt": "Quelle stratégie est souvent raisonnable pour une variable numérique avec outliers et missing (baseline) ?",
+      "choices": ["Moyenne", "Médiane", "Remplacer par 0 toujours", "Remplacer par la valeur max"],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q09",
+      "type": "single_choice",
+      "prompt": "Quel est le risque principal de supprimer 30% des lignes sans le documenter ?",
+      "choices": [
+        "Aucun risque",
+        "Tu changes l’échantillon → biais possible et conclusions non comparables",
+        "Tu améliores toujours la qualité",
+        "Tu réduis automatiquement le missingness"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q10",
+      "type": "single_choice",
+      "prompt": "Pour des catégories (channel, city), quelle option est souvent acceptable quand c’est manquant ?",
+      "choices": ["Imputation par médiane", "Catégorie 'Unknown' + flag missing", "Conversion en float", "Drop systématique"],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q11",
+      "type": "single_choice",
+      "prompt": "Déduplication contrôlée : si user_id est dupliqué, quel critère de conservation est le plus défendable ?",
+      "choices": [
+        "Garder la première ligne au hasard",
+        "Garder la ligne la plus récente selon une date métier (ex: last_active) et documenter la règle",
+        "Garder celle avec le plus grand index pandas",
+        "Concaténer les lignes sans règle"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q12",
+      "type": "single_choice",
+      "prompt": "Quelle différence correcte entre doublons “exact rows” et doublons “clés” ?",
+      "choices": [
+        "Aucune différence",
+        "Exact rows = toutes colonnes identiques ; clés = même identifiant (ex: user_id) même si autres colonnes diffèrent",
+        "Clés = doublons sur colonnes numériques seulement",
+        "Exact rows = uniquement sur dates"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q13",
+      "type": "single_choice",
+      "prompt": "Unicité d’une clé (SQL ou pandas) sert principalement à :",
+      "choices": [
+        "Améliorer la couleur des dashboards",
+        "Garantir qu’une entité (user, order) n’apparaît qu’une fois au bon grain",
+        "Forcer les valeurs manquantes",
+        "Accélérer YouTube"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q14",
+      "type": "single_choice",
+      "prompt": "Si tu joins un dataset user-level avec un dataset events (plusieurs lignes par user), le risque principal est :",
+      "choices": [
+        "Perdre des colonnes",
+        "Dupliquer les users et casser les KPI user-level (double comptage)",
+        "Changer les types en bool",
+        "Créer des NaT partout"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q15",
+      "type": "multiple_choice",
+      "prompt": "Parmi ces contrôles, lesquels aident à diagnostiquer des doublons problématiques ? (plusieurs réponses)",
+      "choices": [
+        "Comparer COUNT(*) et COUNT(DISTINCT key) (ou nunique)",
+        "Lister les clés avec fréquence > 1",
+        "Remplir les NA par 0",
+        "Vérifier que la table dimension est 1 ligne par clé"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m3_q16",
+      "type": "single_choice",
+      "prompt": "En pandas, quel outil est central pour convertir des dates de façon robuste ?",
+      "choices": ["pd.to_datetime", "pd.merge", "pd.cut", "pd.pivot_table"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q17",
+      "type": "single_choice",
+      "prompt": "Pourquoi '03/04/2026' est dangereux sans règle explicite ?",
+      "choices": [
+        "Parce que pandas refuse ce format",
+        "Parce que c’est ambigu (jour/mois inversables selon locale)",
+        "Parce que c’est toujours le 3 avril",
+        "Parce que c’est toujours le 4 mars"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q18",
+      "type": "single_choice",
+      "prompt": "Quel standard réduit l’ambiguïté des dates en texte ?",
+      "choices": ["ISO 8601 (ex: 2026-04-03)", "DD/MM/YY", "MM/DD/YY", "Un format au hasard"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q19",
+      "type": "single_choice",
+      "prompt": "RFC 3339 (ex: 2026-01-18T23:10:00Z) est principalement utilisé pour :",
+      "choices": [
+        "Définir les jointures SQL",
+        "Standardiser les timestamps sur Internet (profil ISO 8601)",
+        "Compresser les CSV",
+        "Encoder les catégories"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q20",
+      "type": "single_choice",
+      "prompt": "Différence 'naive' vs 'aware' datetime en Python :",
+      "choices": [
+        "Naive = avec timezone, aware = sans timezone",
+        "Naive = sans timezone ; aware = avec timezone (instant non ambigu)",
+        "Naive = toujours UTC",
+        "Aware = uniquement pour les strings"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q21",
+      "type": "single_choice",
+      "prompt": "Pourquoi un pipeline impose souvent l’UTC ?",
+      "choices": [
+        "Pour rendre les dates plus jolies",
+        "Pour éviter les décalages et ambiguïtés liées aux fuseaux (comparaisons fiables)",
+        "Pour supprimer les doublons",
+        "Pour accélérer pandas"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q22",
+      "type": "single_choice",
+      "prompt": "En pandas, quel outil convertit une colonne en numérique en mettant les erreurs en NaN (si demandé) ?",
+      "choices": ["pd.to_numeric(..., errors='coerce')", "pd.to_datetime", "str.title()", "drop_duplicates"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q23",
+      "type": "single_choice",
+      "prompt": "Montant '1 200,50' : quel piège classique doit être géré avant conversion numérique ?",
+      "choices": [
+        "La présence de lettres uniquement",
+        "Les séparateurs (espace milliers, virgule décimale) dépendants de la locale",
+        "Le fait que c’est déjà un float",
+        "Le fait que ça ne peut jamais être converti"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q24",
+      "type": "single_choice",
+      "prompt": "Si tu utilises errors='coerce' pour conversion, quelle obligation “audit” est la plus saine ?",
+      "choices": [
+        "Ignorer les NaN créés",
+        "Compter et reporter le nombre de valeurs devenues invalides (perte de parsing)",
+        "Supprimer la colonne",
+        "Remplacer tout par 0"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q25",
+      "type": "multiple_choice",
+      "prompt": "Standardisation d’unités : quelles règles minimales sont défendables ? (plusieurs réponses)",
+      "choices": [
+        "Choisir une unité cible unique (ex: kg)",
+        "Documenter la règle (ex: g → kg = /1000)",
+        "Convertir parfois, sans trace",
+        "Compter combien de valeurs ont été converties"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m3_q26",
+      "type": "single_choice",
+      "prompt": "Outlier : la meilleure définition opérationnelle en nettoyage est :",
+      "choices": [
+        "Toute valeur que je n’aime pas",
+        "Valeur atypique au regard de la distribution ET/OU des règles métier, nécessitant une décision documentée",
+        "Valeur manquante",
+        "Valeur égale à la médiane"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q27",
+      "type": "single_choice",
+      "prompt": "Pourquoi supprimer automatiquement tous les outliers peut être dangereux ?",
+      "choices": [
+        "Parce que ça augmente les doublons",
+        "Parce que certains outliers sont de vrais cas métier (fraude, VIP, incident) et leur suppression biaise l’analyse",
+        "Parce que c’est toujours interdit",
+        "Parce que pandas crash"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q28",
+      "type": "single_choice",
+      "prompt": "Quel est un exemple de règle métier simple sur l’âge (dataset user) ?",
+      "choices": [
+        "Âge doit être un texte",
+        "Âge plausible dans [10, 90] ; sinon NA + flag (selon contexte)",
+        "Âge doit être > 100",
+        "Âge doit être identique pour tous"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q29",
+      "type": "single_choice",
+      "prompt": "Quelle pratique est la plus “traçable” quand tu modifies des valeurs (outliers/erreurs) ?",
+      "choices": [
+        "Modifier sans rien noter",
+        "Créer des flags/colonnes de statut + un report/log de corrections",
+        "Supprimer le dataset brut",
+        "Changer les noms de colonnes"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q30",
+      "type": "single_choice",
+      "prompt": "Quel indicateur prouve qu’une conversion de dates a été réussie à grande échelle ?",
+      "choices": [
+        "La colonne est triée",
+        "Un taux de parsing (non-NaT) mesuré et reporté (ex: ≥ 80%)",
+        "Le fichier est plus petit",
+        "Il y a moins de colonnes"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q31",
+      "type": "single_choice",
+      "prompt": "Quelle est la différence entre une “anomalie” et une “erreur” dans un pipeline qualité ?",
+      "choices": [
+        "Aucune",
+        "Anomalie = signal à investiguer ; erreur = valeur invalide selon règle/contrainte (souvent action requise)",
+        "Anomalie = toujours faux, erreur = toujours vrai",
+        "Erreur = seulement sur texte"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q32",
+      "type": "multiple_choice",
+      "prompt": "Quels éléments sont des sorties “preuves” d’un nettoyage sérieux ? (plusieurs réponses)",
+      "choices": [
+        "Dataset clean",
+        "Rapport qualité JSON (checks, stats, missing_pct)",
+        "Une capture d’écran uniquement",
+        "Plan/README expliquant les décisions (missingness/outliers)"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m3_q33",
+      "type": "single_choice",
+      "prompt": "Si 'country' contient '  togo' et 'TOGO', l’objectif du nettoyage est surtout :",
+      "choices": [
+        "Remplacer par NaN",
+        "Standardiser (strip, normaliser espaces, casse cohérente) + documenter la règle",
+        "Dupliquer la colonne",
+        "Convertir en float"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q34",
+      "type": "single_choice",
+      "prompt": "Quel est le meilleur ordre logique de nettoyage ?",
+      "choices": [
+        "Imputation → profiling → déduplication",
+        "Profiling → règles de base (types/strings/dates) → traitement missing/outliers → déduplication contrôlée + report",
+        "Déduplication → supprimer colonnes → profiling",
+        "Supprimer lignes → inventer des règles"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q35",
+      "type": "single_choice",
+      "prompt": "Un check 'user_id_unique = true' signifie :",
+      "choices": [
+        "Il n’y a aucun NA",
+        "Chaque user_id apparaît au plus une fois (clé unique)",
+        "Les valeurs sont triées",
+        "Les dates sont en UTC"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q36",
+      "type": "single_choice",
+      "prompt": "Great Expectations (GE) sert principalement à :",
+      "choices": [
+        "Créer des vidéos",
+        "Définir et exécuter des tests/attentes de qualité sur les données (validation automatisée)",
+        "Faire des jointures SQL",
+        "Remplacer pandas"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q37",
+      "type": "single_choice",
+      "prompt": "Quel est un exemple d’Expectation utile sur une clé ?",
+      "choices": [
+        "expect_column_values_to_be_unique sur user_id",
+        "expect_table_row_count_to_equal 0",
+        "expect_column_values_to_be_increasing sur country",
+        "expect_column_values_to_match_regex sur amount (sans raison)"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q38",
+      "type": "single_choice",
+      "prompt": "Quel est l’intérêt d’un 'validation report' (GE ou équivalent) ?",
+      "choices": [
+        "Il remplace le dataset",
+        "Il fournit une preuve structurée (pass/fail) et des métriques auditables",
+        "Il supprime automatiquement les outliers",
+        "Il rend les données plus rapides"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q39",
+      "type": "single_choice",
+      "prompt": "Dans une logique 'pack livrable' (ZIP), quel fichier explique comment reproduire le pipeline ?",
+      "choices": ["README.md", "final_dataset.csv", "logs.bin", "image.png"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q40",
+      "type": "single_choice",
+      "prompt": "Pourquoi conserver un dossier raw/ (données brutes) sans modification ?",
+      "choices": [
+        "Pour gagner de la place",
+        "Pour garantir traçabilité et possibilité d’audit/rejeu depuis la source",
+        "Pour éviter les tests de qualité",
+        "Pour accélérer Excel"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q41",
+      "type": "single_choice",
+      "prompt": "Quelle métrique est la plus directe pour résumer le missingness par colonne ?",
+      "choices": ["% de valeurs manquantes (NA)", "Nombre de colonnes", "Taille du fichier", "Nombre de doublons"],
+      "answer_index": 0
+    },
+    {
+      "id": "m3_q42",
+      "type": "single_choice",
+      "prompt": "Tu observes que revenue manque surtout pour un segment 'high_value'. Quel mécanisme est plausible ?",
+      "choices": ["MCAR", "MAR", "MNAR", "Aucun"],
+      "answer_index": 2
+    },
+    {
+      "id": "m3_q43",
+      "type": "single_choice",
+      "prompt": "Quel est le but d’un 'missingness plan' ?",
+      "choices": [
+        "Faire joli",
+        "Documenter pour chaque variable la stratégie (drop/impute/keep NA/unknown) et la justification",
+        "Remplacer la donnée brute",
+        "Éviter de mesurer le missing"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q44",
+      "type": "single_choice",
+      "prompt": "Conversion : si 1000 lignes, et invalid_order_date=150 après parsing, taux d’échec = ?",
+      "choices": ["5%", "10%", "15%", "25%"],
+      "answer_index": 2
+    },
+    {
+      "id": "m3_q45",
+      "type": "single_choice",
+      "prompt": "Si tu standardises une unité g→kg, 800 valeurs étaient en g sur 1200 lignes. Combien converties ?",
+      "choices": ["400", "800", "1200", "0"],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q46",
+      "type": "multiple_choice",
+      "prompt": "Quelles informations minimales doivent figurer dans un quality_report.json ? (plusieurs réponses)",
+      "choices": [
+        "timestamp (created_at)",
+        "nombre de lignes + uniques clé",
+        "missing_pct par colonne",
+        "mot de passe de l’admin"
+      ],
+      "answer_indices": [0, 1, 2]
+    },
+    {
+      "id": "m3_q47",
+      "type": "single_choice",
+      "prompt": "Quelle action est la plus correcte si une conversion numérique échoue pour 40% des valeurs d’une colonne critique ?",
+      "choices": [
+        "Ignorer et continuer",
+        "Stopper ou alerter (fail fast) + analyser la source/format + documenter la décision",
+        "Remplacer tout par 0",
+        "Supprimer la colonne sans trace"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q48",
+      "type": "single_choice",
+      "prompt": "Dans les tests qualité, pourquoi séparer 'checks' (règles) et 'stats' (mesures) ?",
+      "choices": [
+        "Pour compliquer",
+        "Parce que stats décrivent, checks décident (pass/fail) : utile pour audit et gating",
+        "Parce que stats sont inutiles",
+        "Parce que checks remplacent les données"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m3_q49",
+      "type": "single_choice",
+      "prompt": "Dans un module à 50 questions avec seuil 80%, nombre minimum de bonnes réponses ?",
+      "choices": ["35", "38", "40", "45"],
+      "answer_index": 2
+    },
+    {
+      "id": "m3_q50",
+      "type": "single_choice",
+      "prompt": "Quel est le principe le plus 'scientifique' en nettoyage/qualité ?",
+      "choices": [
+        "Maximiser le nombre de modifications",
+        "Mesurer → décider → documenter → reproduire (preuves + incertitudes explicites)",
+        "Toujours imputer",
+        "Toujours supprimer"
+      ],
+      "answer_index": 1
+    }
+  ]
+}
+

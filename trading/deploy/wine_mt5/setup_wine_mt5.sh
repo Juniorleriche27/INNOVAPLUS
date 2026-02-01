@@ -27,9 +27,16 @@ echo "[setup] Installing system packages (sudo)..."
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   ca-certificates curl unzip p7zip-full \
-  wine64 winbind \
+  wine wine64 winbind \
   xvfb x11vnc fluxbox \
   cabextract
+
+if ! command -v wineboot >/dev/null 2>&1; then
+  echo "[setup] ERROR: wineboot not found after install."
+  echo "[setup] On Ubuntu, ensure package 'wine' is installed (not only 'wine64')."
+  echo "[setup] Try: sudo apt-get install -y wine"
+  exit 1
+fi
 
 mkdir -p "${WINEPREFIX}" "${INSTALLERS_DIR}"
 
@@ -71,4 +78,3 @@ cat <<'EOF'
 2) Lancer le modèle via Wine+Python:
    - bash trading/deploy/wine_mt5/run_trading_wine.sh --symbols "EURUSD,GBPUSD,USDJPY" --mode SELF --trade --lot 0.02 --interval 60
 EOF
-

@@ -1,0 +1,44 @@
+{
+  "model_name": "smc_gate_model_v1",
+  "trained_on_rows": 121,
+  "target_mean": 0.7933884297520661,
+  "feature_cols": [
+    "RR",
+    "RR_clip",
+    "entry_side",
+    "mins_to_break",
+    "mins_break_to_entry",
+    "asia_range",
+    "asia_range_atr",
+    "sweep_ATR14_M5",
+    "entry_ATR14_M5",
+    "session_entry",
+    "session_sweep",
+    "sweep_side",
+    "hour_entry",
+    "dow"
+  ],
+  "num_cols": [
+    "RR",
+    "RR_clip",
+    "entry_side",
+    "mins_to_break",
+    "mins_break_to_entry",
+    "asia_range",
+    "asia_range_atr",
+    "sweep_ATR14_M5",
+    "entry_ATR14_M5",
+    "sweep_side",
+    "hour_entry",
+    "dow"
+  ],
+  "cat_cols": [
+    "session_entry",
+    "session_sweep"
+  ],
+  "thr_default": 0.8,
+  "filters": {
+    "F2_no_NY_to_NY": true,
+    "F3_min_RR": 0.12
+  }
+}

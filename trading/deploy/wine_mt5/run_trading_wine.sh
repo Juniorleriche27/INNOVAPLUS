@@ -8,6 +8,20 @@ PREFIX_ROOT="/opt/innovaplus/trading/wine"
 export WINEPREFIX="${PREFIX_ROOT}/prefix"
 export WINEARCH=win64
 
+# Ensure a display exists (headless servers need Xvfb).
+DISPLAY_NUM="${DISPLAY_NUM:-99}"
+export DISPLAY="${DISPLAY:-:${DISPLAY_NUM}}"
+LOG_DIR="/opt/innovaplus/trading/logs"
+mkdir -p "${LOG_DIR}" >/dev/null 2>&1 || true
+if ! pgrep -f "Xvfb :${DISPLAY_NUM}" >/dev/null 2>&1; then
+  nohup Xvfb ":${DISPLAY_NUM}" -screen 0 1280x720x24 > "${LOG_DIR}/xvfb.log" 2>&1 &
+  sleep 1
+fi
+if ! pgrep -f "fluxbox.*:${DISPLAY_NUM}" >/dev/null 2>&1; then
+  nohup fluxbox -display ":${DISPLAY_NUM}" > "${LOG_DIR}/fluxbox.log" 2>&1 &
+  sleep 1
+fi
+
 # Some hosts have /tmp locked down. Use a dedicated tmp dir.
 TMPDIR_DEFAULT="/opt/innovaplus/trading/tmp"
 mkdir -p "${TMPDIR_DEFAULT}" >/dev/null 2>&1 || true

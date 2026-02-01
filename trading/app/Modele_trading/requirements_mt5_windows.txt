@@ -1,0 +1,10 @@
+# Dépendances pour exécuter le modèle via Python Windows (Wine) + MT5.
+# Ajuste si besoin selon ton modèle.
+
+MetaTrader5
+pandas
+numpy
+joblib
+scikit-learn
+pyarrow
+

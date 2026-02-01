@@ -31,14 +31,3 @@ data/*
 !data/.gitkeep
 logs/*
 !logs/.gitkeep
-
-# ML artefacts / fichiers lourds (évite de casser le repo + CI/Vercel)
-*.parquet
-*.joblib
-*.pkl
-*.pickle
-*.onnx
-*.pt
-*.pth
-*.h5
-*.hdf5

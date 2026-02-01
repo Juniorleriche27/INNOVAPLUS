@@ -15,6 +15,7 @@ Usage examples:
 from __future__ import annotations
 
 import argparse
+import logging
 import time
 from pathlib import Path
 from typing import List
@@ -22,9 +23,16 @@ from typing import List
 import joblib
 import numpy as np
 import pandas as pd
-import MetaTrader5 as mt5
 import sklearn.compose._column_transformer as ct
 from sklearn.impute import SimpleImputer
+
+try:
+    import MetaTrader5 as mt5
+except ImportError as exc:  # pragma: no cover - informative failure
+    raise SystemExit(
+        "MetaTrader5 package not installed. Install with `pip install MetaTrader5` "
+        "on the machine where the MT5 terminal runs."
+    ) from exc
 
 from features_pipeline import (
     META_PATH,
@@ -32,12 +40,20 @@ from features_pipeline import (
     session_label_training,
 )
 from score_signals import apply_filters
-from mt5_execute import send_order, log_trade, record_trade_state, already_traded, init_mt5
+from mt5_execute import (
+    already_traded,
+    ensure_symbol,
+    init_mt5,
+    log_trade,
+    record_trade_state,
+    send_order,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_FEAT = BASE_DIR / "features_live.parquet"
 OUT_SIGNALS = BASE_DIR / "signals.parquet"
 OUT_SIGNALS_CSV = BASE_DIR / "signals.csv"
+LOGGER = logging.getLogger("trading.live_loop")
 
 
 def load_model(path: Path):
@@ -96,6 +112,10 @@ def build_features_from_mt5(symbols: List[str], days_back: int, meta: dict) -> p
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)sZ %(levelname)s %(name)s - %(message)s",
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbols", required=True, help="Comma-separated MT5 symbols (e.g., EURUSD,GBPUSD)")
     parser.add_argument("--mode", default="SEL", choices=["SEL", "SELF"], help="Gating/filter mode")
@@ -106,8 +126,11 @@ def main():
     parser.add_argument("--terminal-path", type=str, default=None, help="Optional path to terminal64.exe if MT5 not auto-detected")
     parser.add_argument("--portable", action="store_true", help="Use MT5 portable mode (configs in terminal folder)")
     parser.add_argument("--timeout", type=int, default=60, help="MT5 IPC timeout (seconds)")
+    parser.add_argument("--max-retries", type=int, default=10, help="Max MT5 init retries")
+    parser.add_argument("--retry-sleep", type=float, default=2.0, help="Base init retry sleep seconds (exponential backoff)")
     parser.add_argument("--trade", dest="trade", action="store_true", help="Enable live execution")
     parser.add_argument("--no-trade", dest="trade", action="store_false", help="Disable live execution")
+    parser.add_argument("--once", action="store_true", help="Run a single cycle then exit (useful for cron)")
     parser.set_defaults(trade=False)
     args = parser.parse_args()
 
@@ -117,13 +140,23 @@ def main():
     thr_default = meta.get("thr_default", 0.8) if args.thr is None else args.thr
     filters = meta.get("filters", {})
 
-    init_mt5(path=args.terminal_path, portable=args.portable, timeout=args.timeout)
+    init_mt5(
+        path=args.terminal_path,
+        portable=args.portable,
+        timeout=args.timeout,
+        max_retries=args.max_retries,
+        retry_sleep=args.retry_sleep,
+        require_login=True,
+    )
     model = load_model(BASE_DIR / "smc_gate_model_v1.joblib")
 
     while True:
         feats = build_features_from_mt5(symbols, args.days, meta)
         if feats.empty:
-            print("No features built; sleeping...")
+            LOGGER.info("No features built.")
+            if args.once:
+                return
+            LOGGER.info("Sleeping %ss...", args.interval)
             time.sleep(args.interval)
             continue
 
@@ -139,9 +172,11 @@ def main():
         signals.to_parquet(OUT_SIGNALS, index=False)
         signals.to_csv(OUT_SIGNALS_CSV, index=False)
 
-        print(
-            f"[{pd.Timestamp.utcnow()}] built {len(feats)} feats, "
-            f"{signals['signal'].sum()} signals (mode={args.mode})"
+        LOGGER.info(
+            "Built %s feats, %s signals (mode=%s)",
+            len(feats),
+            int(signals["signal"].sum()),
+            args.mode,
         )
 
         if args.trade:
@@ -150,6 +185,9 @@ def main():
                 if not isinstance(trade_day, pd.Timestamp):
                     trade_day = pd.to_datetime(trade_day, utc=True)
                 if already_traded(row.ticker, trade_day):
+                    continue
+                if not ensure_symbol(row.ticker):
+                    LOGGER.warning("Symbol not available/visible in MT5: %s. Skipping.", row.ticker)
                     continue
                 tick = mt5.symbol_info_tick(row.ticker)
                 if tick is None:
@@ -166,6 +204,9 @@ def main():
                 log_trade(row, resp, row.mode)
                 if resp.get("retcode") == mt5.TRADE_RETCODE_DONE:
                     record_trade_state(row.ticker, trade_day)
+
+        if args.once:
+            return
 
         time.sleep(args.interval)
 

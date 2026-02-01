@@ -8,6 +8,11 @@ PREFIX_ROOT="/opt/innovaplus/trading/wine"
 export WINEPREFIX="${PREFIX_ROOT}/prefix"
 export WINEARCH=win64
 
+# Some hosts have /tmp locked down. Use a dedicated tmp dir.
+TMPDIR_DEFAULT="/opt/innovaplus/trading/tmp"
+mkdir -p "${TMPDIR_DEFAULT}" >/dev/null 2>&1 || true
+export TMPDIR="${TMPDIR:-${TMPDIR_DEFAULT}}"
+
 APP_WIN="Z:\\opt\\innovaplus\\trading\\app\\Modele_trading\\live_loop_mt5.py"
 PY_WIN="C:\\trading\\python\\python.exe"
 
@@ -64,4 +69,3 @@ exec wine "${PY_WIN}" "${APP_WIN}" \
   --max-retries "${MAX_RETRIES}" \
   --retry-sleep "${RETRY_SLEEP}" \
   ${ONCE}
-

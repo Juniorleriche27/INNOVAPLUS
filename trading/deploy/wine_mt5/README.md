@@ -64,7 +64,9 @@ bash trading/deploy/wine_mt5/run_trading_wine.sh \
 ```
 
 ## Notes importantes
+- Si tu vois une erreur Wine du type `ucrtbase.dll.* unimplemented` (ex: `crealf`) lors de l’exécution Python,
+  installe les runtimes Visual C++ dans le prefix Wine :
+  - `bash trading/deploy/wine_mt5/fix_wine_prefix.sh`
 - Les secrets (login/MDP MT5) **ne sont pas stockés dans Git**. La connexion se fait dans MT5.
 - Le modèle ne peut trader que si MT5 est **connecté** au compte.
 - Les logs sont dans `/opt/innovaplus/trading/app/Modele_trading/` (`signals.*`, `trades_log.csv`, `state/trade_state.csv`).
-

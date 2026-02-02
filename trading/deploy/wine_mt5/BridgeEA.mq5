@@ -43,7 +43,7 @@ string NormalizeSymbol(const string raw, bool &used_fallback)
    return raw;
 }
 
-string Trim(string s)
+string StrTrim(string s)
 {
    StringTrimLeft(s);
    StringTrimRight(s);
@@ -69,7 +69,7 @@ string LoadSymbolsFromFileOrDefault()
    string out = "";
    while(!FileIsEnding(h))
    {
-      string line = Trim(FileReadString(h));
+      string line = StrTrim(FileReadString(h));
       if(StringLen(line) == 0) continue;
       if(out == "") out = line;
       else out = out + "," + line;
@@ -191,7 +191,7 @@ void ProcessCommands()
    while(!FileIsEnding(h))
    {
       string line = FileReadString(h);
-      line = Trim(line);
+      line = StrTrim(line);
       if(StringLen(line) == 0) continue;
 
       // Expected CSV:
@@ -200,16 +200,16 @@ void ProcessCommands()
       SplitCSV(line, cols);
       if(ArraySize(cols) < 7) continue;
 
-      string cmd_id = Trim(cols[0]);
+      string cmd_id = StrTrim(cols[0]);
       if(cmd_id == "cmd_id" || cmd_id == "") continue;
       if(HasProcessed(cmd_id)) continue;
 
-      string action = StringUpper(Trim(cols[2]));
-      string symbol = Trim(cols[3]);
-      double lot = StrToDouble(Trim(cols[4]));
-      double sl = StrToDouble(Trim(cols[5]));
-      double tp = StrToDouble(Trim(cols[6]));
-      string comment = (ArraySize(cols) >= 8) ? Trim(cols[7]) : "bridge";
+      string action = StringUpper(StrTrim(cols[2]));
+      string symbol = StrTrim(cols[3]);
+      double lot = StrToDouble(StrTrim(cols[4]));
+      double sl = StrToDouble(StrTrim(cols[5]));
+      double tp = StrToDouble(StrTrim(cols[6]));
+      string comment = (ArraySize(cols) >= 8) ? StrTrim(cols[7]) : "bridge";
 
       trade.SetExpertMagicNumber(InpMagic);
       trade.SetDeviationInPoints(InpDeviation);
@@ -271,7 +271,7 @@ void OnTimer()
    int n = StringSplit(g_symbols, ',', syms);
    for(int i=0; i<n; i++)
    {
-      string s = Trim(syms[i]);
+      string s = StrTrim(syms[i]);
       if(s != "") ExportM5Rates(s);
    }
 

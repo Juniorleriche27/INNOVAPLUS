@@ -29,5 +29,4 @@ fi
 
 mv "${OUT}.tmp" "${OUT}"
 echo "Wrote: ${OUT}"
-echo "Lines: $(wc -l < \"${OUT}\")"
-
+echo "Lines: $(wc -l < "${OUT}")"

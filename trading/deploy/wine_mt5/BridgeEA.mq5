@@ -17,6 +17,8 @@ input int    InpDeviation = 20;
 string FILE_COMMANDS = "bridge_commands.csv";
 string FILE_RESULTS  = "bridge_results.csv";
 string FILE_SYMBOLS  = "bridge_symbols.txt"; // optional override (Common\\Files)
+string FILE_HEARTBEAT = "bridge_heartbeat.txt";
+string FILE_ERRORS = "bridge_errors.log";
 
 CTrade trade;
 string g_symbols = "";
@@ -100,6 +102,33 @@ bool HasProcessed(const string cmd_id)
    return false;
 }
 
+void WriteHeartbeat(const string stage)
+{
+   int h = FileOpen(FILE_HEARTBEAT, FILE_WRITE|FILE_TXT|FILE_COMMON);
+   if(h == INVALID_HANDLE) return;
+   string ts = TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS);
+   FileWriteString(h, "ts=" + ts + "\n");
+   FileWriteString(h, "stage=" + stage + "\n");
+   FileWriteString(h, "symbols=" + g_symbols + "\n");
+   FileWriteString(h, "account=" + IntegerToString((int)AccountInfoInteger(ACCOUNT_LOGIN)) + "\n");
+   FileWriteString(h, "server=" + AccountInfoString(ACCOUNT_SERVER) + "\n");
+   FileWriteString(h, "company=" + AccountInfoString(ACCOUNT_COMPANY) + "\n");
+   FileWriteString(h, "trade_allowed=" + (TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "1" : "0") + "\n");
+   FileWriteString(h, "connected=" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0") + "\n");
+   FileWriteString(h, "last_error=" + IntegerToString(GetLastError()) + "\n");
+   FileClose(h);
+}
+
+void LogError(const string msg)
+{
+   int h = FileOpen(FILE_ERRORS, FILE_WRITE|FILE_READ|FILE_TXT|FILE_COMMON);
+   if(h == INVALID_HANDLE) return;
+   FileSeek(h, 0, SEEK_END);
+   string ts = TimeToString(TimeCurrent(), TIME_DATE|TIME_SECONDS);
+   FileWriteString(h, ts + " " + msg + "\n");
+   FileClose(h);
+}
+
 void AppendResult(const string cmd_id, const string symbol, const string action, const double lot, const bool ok, const int retcode, const long ticket, const string msg)
 {
    int h = FileOpen(FILE_RESULTS, FILE_WRITE|FILE_READ|FILE_TXT|FILE_COMMON);
@@ -116,14 +145,25 @@ void ExportM5Rates(const string symbol)
    bool fallback=false;
    string sym = NormalizeSymbol(symbol, fallback);
 
+   ResetLastError();
    MqlRates rates[];
    ArraySetAsSeries(rates, true);
    int copied = CopyRates(sym, PERIOD_M5, 0, InpM5Bars, rates);
-   if(copied <= 0) return;
+   if(copied <= 0)
+   {
+      int err = GetLastError();
+      string note = (fallback ? " (fallback_no_=X)" : "");
+      LogError("CopyRates failed for " + sym + note + " err=" + IntegerToString(err));
+      return;
+   }
 
    string fname = "bridge_m5_" + symbol + ".csv";
    int h = FileOpen(fname, FILE_WRITE|FILE_TXT|FILE_COMMON);
-   if(h == INVALID_HANDLE) return;
+   if(h == INVALID_HANDLE)
+   {
+      LogError("FileOpen failed for " + fname + " err=" + IntegerToString(GetLastError()));
+      return;
+   }
 
    FileWriteString(h, "time,open,high,low,close,tick_volume\n");
    // rates are series (newest first). Write oldest->newest.
@@ -210,6 +250,7 @@ void ProcessCommands()
 int OnInit()
 {
    g_symbols = LoadSymbolsFromFileOrDefault();
+   WriteHeartbeat("init");
    EventSetTimer(InpTimerSec);
    return(INIT_SUCCEEDED);
 }
@@ -223,6 +264,7 @@ void OnTimer()
 {
    // Refresh symbol list (allows changing bridge_symbols.txt without restarting)
    g_symbols = LoadSymbolsFromFileOrDefault();
+   WriteHeartbeat("timer_begin");
 
    // Export rates for all symbols
    string syms[];
@@ -235,4 +277,5 @@ void OnTimer()
 
    // Process pending commands
    ProcessCommands();
+   WriteHeartbeat("timer_end");
 }

@@ -61,7 +61,46 @@ Puis dans MT5 (via VNC) :
 - Compile `BridgeEA.mq5`
 - Attache `BridgeEA` à un graphique (n’importe lequel)
 - Active **Algo Trading**
-- Dans les inputs, mets `InpSymbols` (ex: `EURUSD,GBPUSD,USDJPY`)
+- Pour la liste des paires, 2 options :
+  - soit tu modifies `InpSymbols`
+  - soit (recommandé) tu crées un fichier `bridge_symbols.txt` dans `Common\\Files` (tu peux le faire depuis Linux)
+
+Exemple (serveur) :
+```bash
+cat > "/opt/innovaplus/trading/wine/prefix/drive_c/users/innova/AppData/Roaming/MetaQuotes/Terminal/Common/Files/bridge_symbols.txt" <<'EOF'
+AUDCAD=X
+AUDCHF=X
+AUDJPY=X
+AUDNZD=X
+CADCHF=X
+CADJPY=X
+CHFJPY=X
+EURAUD=X
+EURCAD=X
+EURCHF=X
+EURGBP=X
+EURNOK=X
+EURNZD=X
+EURSEK=X
+EURUSD=X
+GBPAUD=X
+GBPCAD=X
+GBPCHF=X
+GBPNZD=X
+GBPUSD=X
+NZDCAD=X
+NZDCHF=X
+USDCAD=X
+USDCHF=X
+USDHUF=X
+USDMXN=X
+USDNOK=X
+USDPLN=X
+USDSEK=X
+USDTRY=X
+USDZAR=X
+EOF
+```
 
 Mode boucle (prod) :
 ```bash

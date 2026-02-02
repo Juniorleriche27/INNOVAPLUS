@@ -16,8 +16,10 @@ input int    InpDeviation = 20;
 
 string FILE_COMMANDS = "bridge_commands.csv";
 string FILE_RESULTS  = "bridge_results.csv";
+string FILE_SYMBOLS  = "bridge_symbols.txt"; // optional override (Common\\Files)
 
 CTrade trade;
+string g_symbols = "";
 
 string Trim(string s)
 {
@@ -30,6 +32,29 @@ void SplitCSV(const string src, string &out[])
 {
    int n = StringSplit(src, ',', out);
    if(n < 0) ArrayResize(out, 0);
+}
+
+string LoadSymbolsFromFileOrDefault()
+{
+   // If Common\\Files\\bridge_symbols.txt exists, it overrides InpSymbols.
+   // Expected formats:
+   // - comma-separated: EURUSD,GBPUSD,USDJPY
+   // - one per line
+   int h = FileOpen(FILE_SYMBOLS, FILE_READ|FILE_TXT|FILE_COMMON);
+   if(h == INVALID_HANDLE)
+      return InpSymbols;
+
+   string out = "";
+   while(!FileIsEnding(h))
+   {
+      string line = Trim(FileReadString(h));
+      if(StringLen(line) == 0) continue;
+      if(out == "") out = line;
+      else out = out + "," + line;
+   }
+   FileClose(h);
+   if(out == "") return InpSymbols;
+   return out;
 }
 
 bool FileExistsCommon(const string filename)
@@ -161,6 +186,7 @@ void ProcessCommands()
 
 int OnInit()
 {
+   g_symbols = LoadSymbolsFromFileOrDefault();
    EventSetTimer(InpTimerSec);
    return(INIT_SUCCEEDED);
 }
@@ -172,9 +198,12 @@ void OnDeinit(const int reason)
 
 void OnTimer()
 {
+   // Refresh symbol list (allows changing bridge_symbols.txt without restarting)
+   g_symbols = LoadSymbolsFromFileOrDefault();
+
    // Export rates for all symbols
    string syms[];
-   int n = StringSplit(InpSymbols, ',', syms);
+   int n = StringSplit(g_symbols, ',', syms);
    for(int i=0; i<n; i++)
    {
       string s = Trim(syms[i]);
@@ -184,4 +213,3 @@ void OnTimer()
    // Process pending commands
    ProcessCommands();
 }
-

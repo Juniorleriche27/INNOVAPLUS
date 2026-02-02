@@ -1,0 +1,8 @@
+# Python (Linux) dependencies for running the model + IG REST API on the server.
+requests>=2.31
+pandas>=2.2
+numpy>=1.26
+joblib>=1.3
+scikit-learn>=1.4
+pyarrow>=15
+

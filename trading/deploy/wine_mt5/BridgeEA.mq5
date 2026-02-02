@@ -21,6 +21,26 @@ string FILE_SYMBOLS  = "bridge_symbols.txt"; // optional override (Common\\Files
 CTrade trade;
 string g_symbols = "";
 
+string NormalizeSymbol(const string raw, bool &used_fallback)
+{
+   // Many datasets use a suffix like "=X" (Yahoo style). MT5 symbols usually don't.
+   // Try raw first; if not available, try stripping "=X".
+   used_fallback = false;
+   if(SymbolSelect(raw, true))
+      return raw;
+   int pos = StringFind(raw, "=X");
+   if(pos > 0)
+   {
+      string alt = StringSubstr(raw, 0, pos);
+      if(SymbolSelect(alt, true))
+      {
+         used_fallback = true;
+         return alt;
+      }
+   }
+   return raw;
+}
+
 string Trim(string s)
 {
    StringTrimLeft(s);
@@ -93,9 +113,12 @@ void AppendResult(const string cmd_id, const string symbol, const string action,
 
 void ExportM5Rates(const string symbol)
 {
+   bool fallback=false;
+   string sym = NormalizeSymbol(symbol, fallback);
+
    MqlRates rates[];
    ArraySetAsSeries(rates, true);
-   int copied = CopyRates(symbol, PERIOD_M5, 0, InpM5Bars, rates);
+   int copied = CopyRates(sym, PERIOD_M5, 0, InpM5Bars, rates);
    if(copied <= 0) return;
 
    string fname = "bridge_m5_" + symbol + ".csv";

@@ -102,6 +102,15 @@ USDZAR=X
 EOF
 ```
 
+Alternative (serveur) : générer automatiquement depuis le dataset d’entraînement :
+```bash
+# tickers exacts (avec =X)
+bash trading/deploy/wine_mt5/write_bridge_symbols_from_training.sh
+
+# ou sans le suffix (=X) si ton MT5 n’utilise pas ce format
+STRIP_X=1 bash trading/deploy/wine_mt5/write_bridge_symbols_from_training.sh
+```
+
 Mode boucle (prod) :
 ```bash
 bash trading/deploy/wine_mt5/run_trading_wine.sh \

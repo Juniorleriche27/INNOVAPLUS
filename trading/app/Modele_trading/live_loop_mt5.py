@@ -26,28 +26,14 @@ import pandas as pd
 import sklearn.compose._column_transformer as ct
 from sklearn.impute import SimpleImputer
 
-try:
-    import MetaTrader5 as mt5
-except ImportError as exc:  # pragma: no cover - informative failure
-    raise SystemExit(
-        "MetaTrader5 package not installed. Install with `pip install MetaTrader5` "
-        "on the machine where the MT5 terminal runs."
-    ) from exc
-
 from features_pipeline import (
     META_PATH,
     build_setups_for_ticker,
     session_label_training,
 )
 from score_signals import apply_filters
-from mt5_execute import (
-    already_traded,
-    ensure_symbol,
-    init_mt5,
-    log_trade,
-    record_trade_state,
-    send_order,
-)
+
+from bridge_io import default_common_files_dir, bridge_rates_path, submit_order, wait_result
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_FEAT = BASE_DIR / "features_live.parquet"
@@ -74,32 +60,27 @@ def load_model(path: Path):
     return model
 
 
-def fetch_mt5_m5(symbol: str, days_back: int = 30) -> pd.DataFrame:
-    utc_to = pd.Timestamp.utcnow()
-    utc_from = utc_to - pd.Timedelta(days=days_back)
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M5, utc_from.to_pydatetime(), utc_to.to_pydatetime())
-    if rates is None or len(rates) == 0:
+def fetch_m5_from_bridge(common_dir: Path, symbol: str) -> pd.DataFrame:
+    """
+    Reads M5 candles exported by BridgeEA in MT5 Common\\Files:
+    bridge_m5_<SYMBOL>.csv with columns: time,open,high,low,close,tick_volume
+    """
+    path = bridge_rates_path(common_dir, symbol)
+    if not path.exists():
         return pd.DataFrame()
-    df = pd.DataFrame(rates)
+    df = pd.read_csv(path)
+    if df.empty:
+        return df
     df["Datetime"] = pd.to_datetime(df["time"], unit="s", utc=True)
-    df.rename(
-        columns={
-            "open": "open",
-            "high": "high",
-            "low": "low",
-            "close": "close",
-            "tick_volume": "volume",
-        },
-        inplace=True,
-    )
+    df.rename(columns={"tick_volume": "volume"}, inplace=True)
     df["ticker"] = symbol
     return df[["Datetime", "ticker", "open", "high", "low", "close", "volume"]]
 
 
-def build_features_from_mt5(symbols: List[str], days_back: int, meta: dict) -> pd.DataFrame:
+def build_features_from_bridge(symbols: List[str], common_dir: Path, meta: dict) -> pd.DataFrame:
     rows = []
     for sym in symbols:
-        df = fetch_mt5_m5(sym, days_back=days_back)
+        df = fetch_m5_from_bridge(common_dir, sym)
         if df.empty:
             continue
         df = df.sort_values("Datetime").reset_index(drop=True)
@@ -120,14 +101,10 @@ def main():
     parser.add_argument("--symbols", required=True, help="Comma-separated MT5 symbols (e.g., EURUSD,GBPUSD)")
     parser.add_argument("--mode", default="SEL", choices=["SEL", "SELF"], help="Gating/filter mode")
     parser.add_argument("--thr", type=float, default=None, help="Threshold override; defaults to meta thr_default")
-    parser.add_argument("--days", type=int, default=30, help="Days of M5 history to fetch from MT5")
     parser.add_argument("--interval", type=int, default=300, help="Loop interval in seconds")
     parser.add_argument("--lot", type=float, default=0.02, help="Lot size when trading is enabled")
-    parser.add_argument("--terminal-path", type=str, default=None, help="Optional path to terminal64.exe if MT5 not auto-detected")
-    parser.add_argument("--portable", action="store_true", help="Use MT5 portable mode (configs in terminal folder)")
-    parser.add_argument("--timeout", type=int, default=60, help="MT5 IPC timeout (seconds)")
-    parser.add_argument("--max-retries", type=int, default=10, help="Max MT5 init retries")
-    parser.add_argument("--retry-sleep", type=float, default=2.0, help="Base init retry sleep seconds (exponential backoff)")
+    parser.add_argument("--common-files-dir", type=str, default=None, help="MT5 Common\\\\Files directory (bridge)")
+    parser.add_argument("--confirm-timeout", type=int, default=5, help="Seconds to wait for EA confirmation")
     parser.add_argument("--trade", dest="trade", action="store_true", help="Enable live execution")
     parser.add_argument("--no-trade", dest="trade", action="store_false", help="Disable live execution")
     parser.add_argument("--once", action="store_true", help="Run a single cycle then exit (useful for cron)")
@@ -140,18 +117,12 @@ def main():
     thr_default = meta.get("thr_default", 0.8) if args.thr is None else args.thr
     filters = meta.get("filters", {})
 
-    init_mt5(
-        path=args.terminal_path,
-        portable=args.portable,
-        timeout=args.timeout,
-        max_retries=args.max_retries,
-        retry_sleep=args.retry_sleep,
-        require_login=True,
-    )
+    common_dir = Path(args.common_files_dir) if args.common_files_dir else default_common_files_dir()
+    LOGGER.info("Bridge Common\\Files: %s", common_dir)
     model = load_model(BASE_DIR / "smc_gate_model_v1.joblib")
 
     while True:
-        feats = build_features_from_mt5(symbols, args.days, meta)
+        feats = build_features_from_bridge(symbols, common_dir, meta)
         if feats.empty:
             LOGGER.info("No features built.")
             if args.once:
@@ -181,29 +152,21 @@ def main():
 
         if args.trade:
             for _, row in signals[signals["signal"] == 1].iterrows():
-                trade_day = row.trade_day
-                if not isinstance(trade_day, pd.Timestamp):
-                    trade_day = pd.to_datetime(trade_day, utc=True)
-                if already_traded(row.ticker, trade_day):
-                    continue
-                if not ensure_symbol(row.ticker):
-                    LOGGER.warning("Symbol not available/visible in MT5: %s. Skipping.", row.ticker)
-                    continue
-                tick = mt5.symbol_info_tick(row.ticker)
-                if tick is None:
-                    continue
-                price = tick.ask if row.entry_side == 1 else tick.bid
-                resp = send_order(
-                    symbol=row.ticker,
-                    side=int(row.entry_side),
-                    price=price,
+                action = "BUY" if int(row.entry_side) == 1 else "SELL"
+                cmd_id = submit_order(
+                    common_dir=common_dir,
+                    action=action,
+                    symbol=str(row.ticker),
+                    lot=float(args.lot),
                     sl=float(row.sl),
                     tp=float(row.tp),
-                    lot=args.lot,
+                    comment=str(row.mode),
                 )
-                log_trade(row, resp, row.mode)
-                if resp.get("retcode") == mt5.TRADE_RETCODE_DONE:
-                    record_trade_state(row.ticker, trade_day)
+                res = wait_result(common_dir, cmd_id, timeout_s=args.confirm_timeout)
+                if res is None:
+                    LOGGER.warning("No EA confirmation for %s (%s %s).", cmd_id, action, row.ticker)
+                else:
+                    LOGGER.info("EA result %s ok=%s ret=%s ticket=%s msg=%s", cmd_id, res.ok, res.retcode, res.ticket, res.msg)
 
         if args.once:
             return

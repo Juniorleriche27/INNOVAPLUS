@@ -30,19 +30,13 @@ export TMPDIR="${TMPDIR:-${TMPDIR_DEFAULT}}"
 APP_WIN="Z:\\opt\\innovaplus\\trading\\app\\Modele_trading\\live_loop_mt5.py"
 PY_WIN="C:\\trading\\python\\python.exe"
 
-TERM_WIN_DEFAULT="C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-
 SYMBOLS=""
 MODE="SELF"
 LOT="0.02"
 INTERVAL="60"
 TRADE="--no-trade"
 ONCE=""
-PORTABLE=""
-TIMEOUT="60"
-MAX_RETRIES="10"
-RETRY_SLEEP="2"
-TERMINAL_PATH=""
+CONFIRM_TIMEOUT="5"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -53,22 +47,14 @@ while [[ $# -gt 0 ]]; do
     --trade) TRADE="--trade"; shift 1 ;;
     --no-trade) TRADE="--no-trade"; shift 1 ;;
     --once) ONCE="--once"; shift 1 ;;
-    --portable) PORTABLE="--portable"; shift 1 ;;
-    --timeout) TIMEOUT="$2"; shift 2 ;;
-    --max-retries) MAX_RETRIES="$2"; shift 2 ;;
-    --retry-sleep) RETRY_SLEEP="$2"; shift 2 ;;
-    --terminal-path) TERMINAL_PATH="$2"; shift 2 ;;
+    --confirm-timeout) CONFIRM_TIMEOUT="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 2 ;;
   esac
 done
 
 if [[ -z "${SYMBOLS}" ]]; then
-  echo "Usage: $0 --symbols \"EURUSD,GBPUSD\" [--mode SELF|SEL] [--trade|--no-trade] [--once] [--lot 0.02] [--interval 60] [--terminal-path \"C:\\\\...\\\\terminal64.exe\"]"
+  echo "Usage: $0 --symbols \"EURUSD,GBPUSD\" [--mode SELF|SEL] [--trade|--no-trade] [--once] [--lot 0.02] [--interval 60]"
   exit 2
-fi
-
-if [[ -z "${TERMINAL_PATH}" ]]; then
-  TERMINAL_PATH="${TERM_WIN_DEFAULT}"
 fi
 
 exec wine "${PY_WIN}" "${APP_WIN}" \
@@ -77,9 +63,5 @@ exec wine "${PY_WIN}" "${APP_WIN}" \
   ${TRADE} \
   --lot "${LOT}" \
   --interval "${INTERVAL}" \
-  --terminal-path "${TERMINAL_PATH}" \
-  ${PORTABLE} \
-  --timeout "${TIMEOUT}" \
-  --max-retries "${MAX_RETRIES}" \
-  --retry-sleep "${RETRY_SLEEP}" \
+  --confirm-timeout "${CONFIRM_TIMEOUT}" \
   ${ONCE}

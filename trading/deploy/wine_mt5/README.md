@@ -1,13 +1,20 @@
 # MT5 sur serveur Ubuntu (Wine) — guide opérationnel
 
 Contexte : sur ce serveur Ubuntu, **KVM/VM Windows n’est pas disponible** (pas de `/dev/kvm`).
-Pour exécuter un modèle Python qui utilise le module **MetaTrader5**, il faut un **terminal MT5 Windows**.
+Pour exécuter un modèle Python qui trade via MT5, il faut un **terminal MT5 Windows**.
 La solution viable sur ce serveur est donc :
 
 - **Wine** pour exécuter MT5 (Windows)
-- **Python Windows** (sous Wine) pour exécuter `MetaTrader5` + ton code
+- **Python Windows** (sous Wine) pour exécuter ton code
 - **Xvfb** (écran virtuel) pour faire tourner MT5 “headless”
 - (optionnel) **x11vnc** pour te connecter à l’écran virtuel une fois et te logguer
+
+## IMPORTANT — Mode Bridge (recommandé)
+Le module Python `MetaTrader5` est **instable sous Wine** (IPC timeout).
+On utilise donc un **EA MQL5** (BridgeEA) qui :
+- exporte les bougies M5 vers `Common\\Files/bridge_m5_<SYMBOL>.csv`
+- lit `Common\\Files/bridge_commands.csv` et exécute les ordres
+- écrit `Common\\Files/bridge_results.csv` avec le résultat
 
 ## 1) Installation (à faire sur le serveur)
 
@@ -42,6 +49,19 @@ Puis depuis ton PC :
 Si le serveur a déjà une session graphique, tu peux lancer MT5 directement sans VNC.
 
 ## 3) Lancer le modèle
+
+### 3.0 Installer l’EA Bridge dans MT5 (obligatoire)
+Sur le serveur :
+```bash
+bash trading/deploy/wine_mt5/install_bridge_ea.sh
+```
+
+Puis dans MT5 (via VNC) :
+- Ouvre **MetaEditor**
+- Compile `BridgeEA.mq5`
+- Attache `BridgeEA` à un graphique (n’importe lequel)
+- Active **Algo Trading**
+- Dans les inputs, mets `InpSymbols` (ex: `EURUSD,GBPUSD,USDJPY`)
 
 Mode boucle (prod) :
 ```bash

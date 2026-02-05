@@ -32,14 +32,17 @@ export default function MyPlanningPricingPage() {
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arriveront après la phase MVP.</p>
         </div>
-        <Link href="/myplanning/app" className="inline-flex rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">
-          Ouvrir l’app
+        <Link
+          href="/myplanning/app"
+          className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700"
+        >
+          Commencer gratuitement
         </Link>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {TIERS.map((tier) => (
-          <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">{tier.name}</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{tier.price}</p>
             <p className="mt-2 text-sm text-slate-600">{tier.desc}</p>
@@ -57,4 +60,3 @@ export default function MyPlanningPricingPage() {
     </div>
   );
 }
-

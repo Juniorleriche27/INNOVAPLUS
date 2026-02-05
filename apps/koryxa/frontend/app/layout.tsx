@@ -55,9 +55,9 @@ export default function RootLayout(props: { children: ReactNode }) {
               <div className="min-w-0 flex h-full flex-col overflow-hidden">
                 <main
                   id="content"
-                  className="mx-auto w-full max-w-[1200px] flex-1 overflow-y-auto overscroll-contain px-4 pb-10 pt-6 sm:px-6 lg:px-8"
+                  className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col overflow-y-auto overscroll-contain px-4 pb-10 pt-6 sm:px-6 lg:px-8"
                 >
-                  {children}
+                  <div className="flex-1">{children}</div>
                   <Footer />
                 </main>
               </div>

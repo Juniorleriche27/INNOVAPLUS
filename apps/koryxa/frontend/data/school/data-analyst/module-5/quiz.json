@@ -1,0 +1,559 @@
+{
+  "module": "Module 5 — Analyse exploratoire (EDA) & Visualisation",
+  "version": "1.0.0",
+  "pass_threshold": 0.8,
+  "grading": { "points_per_question": 1, "negative_marking": false },
+  "delivery": { "shuffle_questions": true, "shuffle_choices": true, "time_limit_minutes": 75 },
+  "questions": [
+    {
+      "id": "m5_q01",
+      "type": "single_choice",
+      "prompt": "L’objectif principal de l’EDA (Exploratory Data Analysis) est :",
+      "choices": [
+        "Prouver une causalité",
+        "Comprendre la structure des données, détecter anomalies/biais, et formuler des hypothèses testables",
+        "Remplacer le data cleaning",
+        "Éviter toute visualisation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q02",
+      "type": "single_choice",
+      "prompt": "Une bonne première étape EDA sur un dataset tabulaire est :",
+      "choices": [
+        "Lancer un modèle complexe directement",
+        "Vérifier forme, types, missingness, et valeurs aberrantes de base",
+        "Supprimer toutes les colonnes texte",
+        "Normaliser toutes les variables"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q03",
+      "type": "single_choice",
+      "prompt": "Pourquoi la médiane est souvent préférée à la moyenne pour décrire une variable très asymétrique ?",
+      "choices": [
+        "Parce qu’elle dépend plus des outliers",
+        "Parce qu’elle est plus robuste aux valeurs extrêmes",
+        "Parce qu’elle est toujours plus grande",
+        "Parce qu’elle supprime les NA"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q04",
+      "type": "single_choice",
+      "prompt": "Quel graphe est le plus adapté pour visualiser la distribution d’une variable numérique continue ?",
+      "choices": ["Histogramme", "Camembert", "Tableau croisé", "Heatmap de catégories"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q05",
+      "type": "single_choice",
+      "prompt": "Quel graphe est le plus adapté pour comparer la distribution d’une variable numérique par catégorie (ex: revenu par pays) ?",
+      "choices": ["Boxplot", "Scatter plot sans couleur", "Pie chart", "Word cloud"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q06",
+      "type": "single_choice",
+      "prompt": "Un boxplot sert principalement à visualiser :",
+      "choices": [
+        "La série temporelle",
+        "La médiane, quartiles, dispersion et valeurs potentiellement extrêmes",
+        "La corrélation exacte",
+        "Le taux de missingness uniquement"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q07",
+      "type": "single_choice",
+      "prompt": "Dans un boxplot, l’IQR correspond à :",
+      "choices": ["Q3 - Q1", "Moyenne - Médiane", "Max - Min", "Écart-type × 2"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q08",
+      "type": "single_choice",
+      "prompt": "Une règle classique (non universelle) pour détecter des outliers via IQR est :",
+      "choices": [
+        "Valeurs < Q1 - 1.5×IQR ou > Q3 + 1.5×IQR",
+        "Valeurs < moyenne - 0.5×std",
+        "Valeurs négatives uniquement",
+        "Valeurs dont la fréquence est élevée"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q09",
+      "type": "single_choice",
+      "prompt": "La corrélation de Pearson mesure surtout :",
+      "choices": [
+        "Une relation linéaire entre deux variables numériques",
+        "Une causalité",
+        "Une relation entre deux variables catégorielles",
+        "La normalité d’une distribution"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q10",
+      "type": "single_choice",
+      "prompt": "La corrélation de Spearman est souvent préférable à Pearson quand :",
+      "choices": [
+        "La relation est monotone mais non linéaire ou présence d’outliers",
+        "Les variables sont toutes catégorielles",
+        "On veut prouver la causalité",
+        "On veut supprimer les NA"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q11",
+      "type": "single_choice",
+      "prompt": "Une heatmap de corrélations est utile pour :",
+      "choices": [
+        "Voir rapidement des associations (corrélations) entre variables numériques",
+        "Garantir qu’il n’y a pas d’outliers",
+        "Encoder les catégories",
+        "Remplacer la modélisation"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q12",
+      "type": "single_choice",
+      "prompt": "Pourquoi 'corrélation ≠ causalité' ?",
+      "choices": [
+        "Parce qu’une corrélation peut être due à une variable confondante ou au hasard",
+        "Parce que la corrélation mesure toujours la causalité mais mal",
+        "Parce que corrélation = variance",
+        "Parce que la corrélation supprime les NA"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q13",
+      "type": "single_choice",
+      "prompt": "Un scatter plot (nuage de points) est surtout adapté pour :",
+      "choices": [
+        "Deux variables numériques (relation, forme, outliers)",
+        "Deux variables texte",
+        "Une seule catégorie",
+        "Afficher des totaux par mois uniquement"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q14",
+      "type": "single_choice",
+      "prompt": "Pour visualiser une relation numérique vs catégorie (ex: montant vs channel), un choix raisonnable est :",
+      "choices": ["Boxplot/violin plot", "Pie chart", "Corrplot uniquement", "Table sans tri"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q15",
+      "type": "multiple_choice",
+      "prompt": "Quelles sont des sorties typiques d’un EDA sérieux ?",
+      "choices": [
+        "Table de profilage (types, NA%, uniques, top valeurs)",
+        "Analyse des distributions (skew, outliers)",
+        "Hypothèses et questions à tester",
+        "Uniquement une prédiction finale"
+      ],
+      "answer_indices": [0, 1, 2]
+    },
+    {
+      "id": "m5_q16",
+      "type": "single_choice",
+      "prompt": "Un dataset très déséquilibré en cible binaire (ex: 95% classe 0) implique souvent que l’accuracy :",
+      "choices": [
+        "Est toujours suffisante",
+        "Peut être trompeuse (un modèle 'tout 0' peut être à 95%)",
+        "Devient impossible à calculer",
+        "Devient identique au F1-score"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q17",
+      "type": "single_choice",
+      "prompt": "Dans un contexte de classification déséquilibrée, une métrique plus informative que l’accuracy est souvent :",
+      "choices": ["F1-score / Precision-Recall", "MSE", "R²", "Variance"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q18",
+      "type": "single_choice",
+      "prompt": "Le problème de Simpson (Simpson’s paradox) illustre que :",
+      "choices": [
+        "Une tendance globale peut s’inverser quand on stratifie par groupe (variable confondante)",
+        "La médiane est toujours meilleure que la moyenne",
+        "La corrélation est toujours causale",
+        "Les outliers n’existent pas"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q19",
+      "type": "single_choice",
+      "prompt": "Dans une analyse par segments (ex: pays), la bonne pratique est :",
+      "choices": [
+        "Utiliser uniquement la moyenne globale",
+        "Comparer des distributions/ratios par groupe et vérifier tailles d’échantillons",
+        "Supprimer les groupes minoritaires automatiquement",
+        "Refuser toute stratification"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q20",
+      "type": "single_choice",
+      "prompt": "Quand on compare des taux (ex: conversion) entre deux groupes, une erreur courante est :",
+      "choices": [
+        "Oublier le dénominateur (taille de groupe) et conclure sur de petits effectifs",
+        "Tracer un graphe",
+        "Utiliser un ratio",
+        "Calculer des proportions"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q21",
+      "type": "single_choice",
+      "prompt": "Le meilleur outil pour repérer des valeurs dupliquées sur une clé (ex: user_id) est :",
+      "choices": [
+        "Comparer COUNT(*) et COUNT(DISTINCT user_id)",
+        "Faire un pie chart",
+        "Créer une colonne log",
+        "Standardiser les valeurs"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q22",
+      "type": "single_choice",
+      "prompt": "Pourquoi on vérifie le 'grain' (niveau de ligne) avant calcul de KPI ?",
+      "choices": [
+        "Pour réduire la taille du fichier",
+        "Pour éviter le double comptage (mauvaise agrégation/jointure)",
+        "Pour convertir les dates en UTC",
+        "Pour forcer l’imputation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q23",
+      "type": "single_choice",
+      "prompt": "Dans un funnel (enrolled → validated), un indicateur correct du taux de complétion est :",
+      "choices": [
+        "validated_users / enrolled_users (même cohorte/période, mêmes définitions)",
+        "enrolled_users / validated_users",
+        "validated_events / users_total sans cohorte",
+        "max(validated)"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q24",
+      "type": "single_choice",
+      "prompt": "Si un funnel affiche >100% de conversion, l’explication la plus probable est :",
+      "choices": [
+        "Un miracle statistique",
+        "Un problème de définition/cohorte, doublons, ou jointure/agrégation incorrecte",
+        "Un bon modèle ML",
+        "La normalisation MinMax"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q25",
+      "type": "single_choice",
+      "prompt": "Pour analyser une série temporelle (activité par jour), une visualisation adaptée est :",
+      "choices": ["Line chart (courbe)", "Camembert", "Boxplot de catégories", "Word cloud"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q26",
+      "type": "single_choice",
+      "prompt": "Pourquoi on fait souvent un tri chronologique avant certaines analyses temps ?",
+      "choices": [
+        "Pour rendre le fichier plus joli",
+        "Pour éviter erreurs d’interprétation et pour calculs dépendants du temps (rolling, lag)",
+        "Pour supprimer les NA",
+        "Pour augmenter la corrélation"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q27",
+      "type": "single_choice",
+      "prompt": "Une moyenne mobile (rolling mean) sert surtout à :",
+      "choices": [
+        "Encoder les catégories",
+        "Lisser une série temporelle pour visualiser tendance",
+        "Prouver une causalité",
+        "Supprimer les outliers automatiquement"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q28",
+      "type": "single_choice",
+      "prompt": "Une variable 'revenue' avec quelques valeurs énormes peut fortement impacter :",
+      "choices": [
+        "La moyenne et l’écart-type",
+        "La médiane uniquement",
+        "Le nombre de lignes",
+        "Le type object"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q29",
+      "type": "single_choice",
+      "prompt": "La méthode la plus transparente pour traiter un outlier en EDA est :",
+      "choices": [
+        "Le supprimer sans trace",
+        "Le documenter (règle), mesurer l’impact, et décider selon contexte métier (garder/capper/exclure)",
+        "Le remplacer par 0 toujours",
+        "Le convertir en texte"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q30",
+      "type": "multiple_choice",
+      "prompt": "Quelles informations un bon rapport EDA (minimal) doit contenir ?",
+      "choices": [
+        "Périmètre des données (période, sources, grain)",
+        "Qualité : NA%, doublons, valeurs aberrantes majeures",
+        "Insights + limites/incertitudes",
+        "Uniquement des opinions sans chiffres"
+      ],
+      "answer_indices": [0, 1, 2]
+    },
+    {
+      "id": "m5_q31",
+      "type": "single_choice",
+      "prompt": "Quelle est la bonne pratique pour choisir un échantillon à afficher (head) sans biaiser la compréhension ?",
+      "choices": [
+        "Toujours afficher les 5 premières lignes sans réfléchir",
+        "Afficher quelques lignes + des stats globales (describe, value_counts) + éventuellement échantillon aléatoire",
+        "Ne jamais afficher de lignes",
+        "Afficher uniquement les outliers"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q32",
+      "type": "single_choice",
+      "prompt": "Pour une variable catégorielle (country), une visualisation simple et utile est :",
+      "choices": ["Bar chart des fréquences", "Histogramme", "Scatter plot", "Line chart sans temps"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q33",
+      "type": "single_choice",
+      "prompt": "Pourquoi un pie chart est souvent déconseillé pour beaucoup de catégories ?",
+      "choices": [
+        "Parce qu’il ne marche pas",
+        "Parce que la comparaison d’angles est difficile et illisible avec beaucoup de classes",
+        "Parce qu’il supprime les NA",
+        "Parce qu’il crée des outliers"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q34",
+      "type": "single_choice",
+      "prompt": "Dans une matrice de corrélations, un coefficient proche de 0 signifie :",
+      "choices": [
+        "Pas de relation linéaire forte (mais une relation non linéaire peut exister)",
+        "Une causalité nulle",
+        "Aucun lien possible",
+        "Que les données sont propres"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q35",
+      "type": "single_choice",
+      "prompt": "Une transformation log peut rendre une distribution plus proche de :",
+      "choices": ["Symétrique (réduit la skewness)", "Binaire", "Uniforme parfaite", "Catégorielle"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q36",
+      "type": "single_choice",
+      "prompt": "Si tu compares des moyennes entre groupes, un point méthodologique crucial est :",
+      "choices": [
+        "Toujours supposer normalité",
+        "Vérifier distributions, outliers, tailles d’échantillons, et utiliser mesures robustes si besoin",
+        "Ignorer les tailles",
+        "Utiliser uniquement un pie chart"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q37",
+      "type": "single_choice",
+      "prompt": "Une table croisée (crosstab) est utile pour :",
+      "choices": [
+        "Deux variables catégorielles (comptages/percentages)",
+        "Deux variables numériques (corrélation)",
+        "Une variable datetime uniquement",
+        "Encoder les catégories"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q38",
+      "type": "single_choice",
+      "prompt": "Dans un crosstab en pourcentages, l’erreur classique est :",
+      "choices": [
+        "Ne pas préciser si le % est par ligne ou par colonne",
+        "Utiliser des entiers",
+        "Avoir des NA",
+        "Avoir des dates en UTC"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q39",
+      "type": "single_choice",
+      "prompt": "Quand on fait beaucoup de tests/hypothèses, le risque principal est :",
+      "choices": [
+        "Augmenter la puissance",
+        "Trouver des 'effets' faux positifs (p-hacking / multiple comparisons) si on ne contrôle pas la démarche",
+        "Réduire la corrélation",
+        "Créer des doublons"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q40",
+      "type": "single_choice",
+      "prompt": "Un bon insight EDA doit être :",
+      "choices": [
+        "Impossible à vérifier",
+        "Soutenu par chiffres/graphes, avec une limite/contre-hypothèse mentionnée",
+        "Basé uniquement sur intuition",
+        "Toujours causal"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q41",
+      "type": "single_choice",
+      "prompt": "Pour vérifier une hypothèse 'le channel A convertit mieux que B', une analyse minimale comprend :",
+      "choices": [
+        "Comparer deux moyennes sans effectifs",
+        "Comparer des taux avec effectifs, période/cohorte cohérente, et vérifier biais/confounders",
+        "Regarder uniquement un pie chart",
+        "Supprimer les NA"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q42",
+      "type": "single_choice",
+      "prompt": "Si une variable a beaucoup de valeurs manquantes, l’EDA doit au minimum :",
+      "choices": [
+        "Ignorer la variable",
+        "Mesurer NA% et regarder si le missingness dépend d’autres variables (MCAR/MAR plausible)",
+        "Imputer sans compter",
+        "Changer le nom de colonne"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q43",
+      "type": "single_choice",
+      "prompt": "Quel indicateur montre directement la proportion de missing par colonne ?",
+      "choices": ["df.isna().mean()", "df.sum()", "df.shape", "df.head()"],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q44",
+      "type": "single_choice",
+      "prompt": "Pourquoi segmenter l’EDA par pays peut être risqué si certains pays ont très peu de lignes ?",
+      "choices": [
+        "Parce que les boxplots ne marchent pas",
+        "Parce que les conclusions deviennent instables (variance élevée) et peuvent sur-interpréter du bruit",
+        "Parce que Pearson devient causal",
+        "Parce que les NA disparaissent"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q45",
+      "type": "multiple_choice",
+      "prompt": "Quelles pratiques renforcent la reproductibilité d’un EDA ?",
+      "choices": [
+        "Notebook versionné",
+        "Exports (tables/figures) + run_report (paramètres, date, nombre de lignes)",
+        "Actions manuelles non documentées",
+        "Dictionnaire de données (définitions) si dataset métier"
+      ],
+      "answer_indices": [0, 1, 3]
+    },
+    {
+      "id": "m5_q46",
+      "type": "single_choice",
+      "prompt": "Un bon KPI doit avoir :",
+      "choices": [
+        "Une définition, un numérateur, un dénominateur, une période, et des règles d’inclusion",
+        "Uniquement un graphique",
+        "Uniquement une moyenne",
+        "Uniquement une requête SQL"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q47",
+      "type": "single_choice",
+      "prompt": "Si tu observes une hausse d’un KPI, l’EDA doit d’abord vérifier :",
+      "choices": [
+        "Que le KPI est bien défini et que la population/grain n’a pas changé (ex: changement de tracking)",
+        "Que la corrélation est causale",
+        "Que les NA sont remplis",
+        "Que les vidéos sont disponibles"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "m5_q48",
+      "type": "single_choice",
+      "prompt": "Quiz de 50 questions, seuil 80% : nombre minimal de bonnes réponses =",
+      "choices": ["38", "39", "40", "41"],
+      "answer_index": 2
+    },
+    {
+      "id": "m5_q49",
+      "type": "single_choice",
+      "prompt": "Dans un rapport EDA, indiquer l’incertitude signifie :",
+      "choices": [
+        "Dire qu’on ne sait rien",
+        "Présenter limites (biais, échantillon, missingness, confounders) et ce qui manque pour conclure",
+        "Éviter les chiffres",
+        "Toujours conclure la causalité"
+      ],
+      "answer_index": 1
+    },
+    {
+      "id": "m5_q50",
+      "type": "multiple_choice",
+      "prompt": "Quels éléments sont typiquement attendus dans la sortie 'EDA pack' d’un module sérieux ?",
+      "choices": [
+        "profiling_table.csv (types, NA%, uniques)",
+        "figures (png) ou notebook avec graphes",
+        "insights.md (observations + hypothèses + limites)",
+        "raw dataset modifié sans trace"
+      ],
+      "answer_indices": [0, 1, 2]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "module": {
+    "slug": "module-7",
+    "title": "Module 7 — Recommandations + capstone",
+    "themes": [
+      { "theme": 1, "title": "Storytelling & insights (transformer une analyse en message clair)" },
+      { "theme": 2, "title": "Priorisation & business case (RICE/ICE, impact, effort)" },
+      { "theme": 3, "title": "Validation & expérimentation (A/B test, décision)" },
+      { "theme": 4, "title": "Restitution (rapport, deck, dashboard, stakeholders)" },
+      { "theme": 5, "title": "Capstone final (projet complet + livrable propre)" }
+    ]
+  },
+  "videos": [
+    {
+      "theme": 1,
+      "lang": "fr",
+      "youtubeId": "zVPSnj9X1ts",
+      "title": "Data Storytelling avec Power BI (structurer une histoire)"
+    },
+    {
+      "theme": 1,
+      "lang": "en",
+      "youtubeId": "zklM_KnNloI",
+      "title": "Data Storytelling Basics: How to Communicate Insights"
+    },
+    {
+      "theme": 2,
+      "lang": "fr",
+      "youtubeId": "JKn-7M5ZZ3k",
+      "title": "Méthode RICE (prioriser des recommandations)"
+    },
+    {
+      "theme": 2,
+      "lang": "en",
+      "youtubeId": "wKbRyL-jF94",
+      "title": "RICE Scoring Model (Prioritization Framework)"
+    },
+    {
+      "theme": 3,
+      "lang": "fr",
+      "youtubeId": "v65bJ8yhKP0",
+      "title": "A/B Testing — introduction + principes"
+    },
+    {
+      "theme": 3,
+      "lang": "en",
+      "youtubeId": "zFMgpxG-chM",
+      "title": "What is A/B Testing? (concepts clés)"
+    },
+    {
+      "theme": 4,
+      "lang": "fr",
+      "youtubeId": "wC0gXMKCPWw",
+      "title": "Présenter ses résultats: Power BI dans PowerPoint"
+    },
+    {
+      "theme": 4,
+      "lang": "en",
+      "youtubeId": "IukTEGEDAiY",
+      "title": "Communicating Data Insights to Stakeholders"
+    },
+    {
+      "theme": 5,
+      "lang": "fr",
+      "youtubeId": "mN2Df0eVxs8",
+      "title": "Projets Data Analyst (SQL/Power BI/Tableau) — end-to-end"
+    },
+    {
+      "theme": 5,
+      "lang": "en",
+      "youtubeId": "JsI71WjM5bo",
+      "title": "Data Analysis Project (end-to-end capstone style)"
+    }
+  ]
+}
+

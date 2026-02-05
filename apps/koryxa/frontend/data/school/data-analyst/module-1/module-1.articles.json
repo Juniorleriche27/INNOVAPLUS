@@ -1,0 +1,66 @@
+{
+  "moduleKey": "module-1",
+  "moduleTitle": "Module 1 — Cadrage & KPIs",
+  "articles": [
+    {
+      "theme": 1,
+      "themeTitle": "Cadrage : besoin, contexte, parties prenantes",
+      "title": "Power BI implementation planning (framework + phases)",
+      "url": "https://learn.microsoft.com/en-us/power-bi/guidance/powerbi-implementation-planning-introduction"
+    },
+    {
+      "theme": 1,
+      "themeTitle": "Cadrage : besoin, contexte, parties prenantes",
+      "title": "CRISP-DM — Visual Guide (business understanding → data understanding → etc.)",
+      "url": "https://exde.files.wordpress.com/2009/03/crisp_visualguide.pdf"
+    },
+    {
+      "theme": 2,
+      "themeTitle": "Objectifs : SMART + questions d’analyse",
+      "title": "There’s a S.M.A.R.T. way to write management’s goals and objectives (PDF)",
+      "url": "https://s3.amazonaws.com/kpu.pressbooks.pub/publichealthperspectivesfromthefield/chapter/theres-a-smart-way-to-write-managements-goals-and-objectives/"
+    },
+    {
+      "theme": 2,
+      "themeTitle": "Objectifs : SMART + questions d’analyse",
+      "title": "KPI Visual (concepts + usage) — Power BI documentation",
+      "url": "https://learn.microsoft.com/en-us/power-bi/visuals/power-bi-visualization-kpi"
+    },
+    {
+      "theme": 3,
+      "themeTitle": "KPIs : définition, dictionnaire KPI, cohérence",
+      "title": "Scorecards (Goals) — Power BI documentation",
+      "url": "https://learn.microsoft.com/en-us/power-bi/create-reports/service-goals-introduction"
+    },
+    {
+      "theme": 3,
+      "themeTitle": "KPIs : définition, dictionnaire KPI, cohérence",
+      "title": "Implementation planning: Model design (semantic model choices)",
+      "url": "https://learn.microsoft.com/en-us/power-bi/guidance/powerbi-implementation-planning-model-design"
+    },
+    {
+      "theme": 4,
+      "themeTitle": "Plan de mesure : events, tracking, instrumentation",
+      "title": "GA4 Event reference (official) — parameters & events",
+      "url": "https://developers.google.com/analytics/devguides/collection/ga4/reference/events"
+    },
+    {
+      "theme": 4,
+      "themeTitle": "Plan de mesure : events, tracking, instrumentation",
+      "title": "GA4 Event parameters reference (official)",
+      "url": "https://developers.google.com/analytics/devguides/collection/ga4/reference/parameters"
+    },
+    {
+      "theme": 5,
+      "themeTitle": "Restitution : dashboard spec + décision + storytelling",
+      "title": "Power BI — Data stories in the Power BI service (FR)",
+      "url": "https://learn.microsoft.com/fr-fr/power-bi/consumer/service-data-stories"
+    },
+    {
+      "theme": 5,
+      "themeTitle": "Restitution : dashboard spec + décision + storytelling",
+      "title": "Power BI implementation planning: Report design (best practices)",
+      "url": "https://learn.microsoft.com/en-us/power-bi/guidance/powerbi-implementation-planning-report-design"
+    }
+  ]
+}

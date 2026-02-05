@@ -1,0 +1,58 @@
+[
+  {
+    "module": 3,
+    "theme": 1,
+    "articles": [
+      { "title": "pandas.isna (détecter les valeurs manquantes)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.isna.html" },
+      { "title": "pandas.DataFrame.fillna (imputer des NA)", "url": "https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.fillna.html" },
+      { "title": "pandas.to_datetime (parser dates)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html" },
+      { "title": "Missing data mechanisms (MCAR/MAR/MNAR)", "url": "https://stefvanbuuren.name/fimd/sec-MCAR.html" },
+      { "title": "pandas.DataFrame.describe (profilage rapide)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html" }
+    ]
+  },
+  {
+    "module": 3,
+    "theme": 2,
+    "articles": [
+      { "title": "pandas.DataFrame.duplicated", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.duplicated.html" },
+      { "title": "pandas.DataFrame.drop_duplicates", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.drop_duplicates.html" },
+      { "title": "PostgreSQL UNIQUE constraint", "url": "https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS" },
+      { "title": "pandas.Index.is_unique (unicité)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.Index.is_unique.html" },
+      { "title": "pandas.DataFrame.sort_values (contrôler la dédup: garder le plus récent)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.sort_values.html" }
+    ]
+  },
+  {
+    "module": 3,
+    "theme": 3,
+    "articles": [
+      { "title": "pandas.to_datetime (options: errors/dayfirst/utc/format)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html" },
+      { "title": "pandas.to_numeric (errors='coerce')", "url": "https://pandas.pydata.org/docs/reference/api/pandas.to_numeric.html" },
+      { "title": "ISO 8601 — Date and time format", "url": "https://www.iso.org/iso-8601-date-and-time-format.html" },
+      { "title": "RFC 3339 — Internet timestamps", "url": "https://www.rfc-editor.org/rfc/rfc3339.html" },
+      { "title": "Python datetime — aware vs naive", "url": "https://docs.python.org/3/library/datetime.html" }
+    ]
+  },
+  {
+    "module": 3,
+    "theme": 4,
+    "articles": [
+      { "title": "pandas.Series.quantile (quartiles/IQR)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.Series.quantile.html" },
+      { "title": "pandas.DataFrame.clip (capping/winsorisation simple)", "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.clip.html" },
+      { "title": "NIST — Outliers (principes et méthodes)", "url": "https://www.itl.nist.gov/div898/handbook/prc/section1/prc16.htm" },
+      { "title": "Box plot (détection visuelle des outliers)", "url": "https://en.wikipedia.org/wiki/Box_plot" },
+      { "title": "Robust statistics (pour décisions stables)", "url": "https://en.wikipedia.org/wiki/Robust_statistics" }
+    ]
+  },
+  {
+    "module": 3,
+    "theme": 5,
+    "articles": [
+      { "title": "Great Expectations — documentation (Quickstart)", "url": "https://docs.greatexpectations.io/" },
+      { "title": "Great Expectations — Expectations (règles de qualité)", "url": "https://greatexpectations.io/expectations/" },
+      { "title": "Data Quality dimensions (vue d’ensemble)", "url": "https://en.wikipedia.org/wiki/Data_quality" },
+      { "title": "Data validation (principes)", "url": "https://en.wikipedia.org/wiki/Data_validation" },
+      { "title": "Metadata (pour audit/reproductibilité)", "url": "https://en.wikipedia.org/wiki/Metadata" }
+    ]
+  }
+]
+

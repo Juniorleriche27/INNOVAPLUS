@@ -1,0 +1,21 @@
+{
+  "parcours": "Data Analyst",
+  "module": { "number": 5, "title": "Module 5 — EDA" },
+  "videos": [
+    { "theme": 1, "lang": "fr", "youtubeId": "wzGKSKDanD4", "title": "Analyse exploratoire (EDA) avec pandas — workflow complet" },
+    { "theme": 1, "lang": "en", "youtubeId": "c6O0KWcg4Eg", "title": "Exploratory Data Analysis (EDA) in Python (pandas)" },
+
+    { "theme": 2, "lang": "fr", "youtubeId": "zAtTyEZCTdM", "title": "Matplotlib en Python — graphiques de base" },
+    { "theme": 2, "lang": "en", "youtubeId": "50SGBO3Psqk", "title": "Matplotlib Tutorial — plots you need for EDA" },
+
+    { "theme": 3, "lang": "fr", "youtubeId": "xYgfIRzNPlo", "title": "Seaborn (FR) — heatmap, distributions, relations" },
+    { "theme": 3, "lang": "en", "youtubeId": "yOibtFPJTic", "title": "Correlation Heatmap with Seaborn (EDA)" },
+
+    { "theme": 4, "lang": "fr", "youtubeId": "-DYA5riwSUM", "title": "Pandas (FR) — groupby, agrégations, analyse par segments" },
+    { "theme": 4, "lang": "en", "youtubeId": "Wb2Tp35dZ-I", "title": "Pandas GroupBy Tutorial (segmentation & aggregation)" },
+
+    { "theme": 5, "lang": "fr", "youtubeId": "k8pifdQjtEA", "title": "EDA + rapport automatique (pandas-profiling/ydata + plotly) — FR" },
+    { "theme": 5, "lang": "en", "youtubeId": "PSIgVg6suZo", "title": "Automatic EDA Report with Pandas Profiling / ydata-profiling" }
+  ]
+}
+

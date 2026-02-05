@@ -116,30 +116,6 @@ const V1_SCHOOL_TREE: NavNode[] = [
   {
     href: "/school/specialisations",
     label: "Specialisations",
-    children: [
-      {
-        href: "/school/data-analyst",
-        label: "Data Analyst",
-        children: [
-          {
-            href: "/school/data-analyst?module=1",
-            label: "Module 1 — Cadrage & KPIs",
-          },
-          {
-            href: "/school/data-analyst?module=2",
-            label: "Module 2 — Collecte",
-          },
-          { href: "/school/data-analyst?module=3", label: "Module 3 — Nettoyage" },
-          { href: "/school/data-analyst?module=4", label: "Module 4 — Preparation" },
-          { href: "/school/data-analyst?module=5", label: "Module 5 — EDA" },
-          { href: "/school/data-analyst?module=6", label: "Module 6 — Reporting" },
-          { href: "/school/data-analyst?module=7", label: "Module 7 — Capstone" },
-        ],
-      },
-      { href: "/school/parcours/specialisations/data-engineer", label: "Data Engineer" },
-      { href: "/school/parcours/specialisations/data-scientist", label: "Data Scientist" },
-      { href: "/school/parcours/specialisations/machine-learning-engineer", label: "Machine Learning Engineer" },
-    ],
   },
   { href: "/school/validations", label: "Projets & validations" },
 ];
@@ -150,9 +126,6 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const hideForMyPlanning = pathname.startsWith("/myplanning");
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
-  const [specialOpen, setSpecialOpen] = useState(false);
-  const [analystOpen, setAnalystOpen] = useState(false);
-  const [module1Open, setModule1Open] = useState(false);
 
   useEffect(() => {
     if (hideForSchool) return;
@@ -170,14 +143,6 @@ export default function Sidebar({ className, style }: { className?: string; styl
     if (hideForSchool) return;
     if (pathname.startsWith("/school")) {
       setSchoolOpen(true);
-    }
-    if (pathname.startsWith("/school/specialisations") || pathname.startsWith("/school/parcours/specialisations")) {
-      setSpecialOpen(true);
-    }
-    if (pathname.startsWith("/school/data-analyst")) {
-      setSpecialOpen(true);
-      setAnalystOpen(true);
-      setModule1Open(true);
     }
   }, [hideForSchool, pathname]);
 

@@ -1,0 +1,66 @@
+{
+  "module": "Module 4 — Préparation",
+  "articles": [
+    {
+      "theme": "Thème 1 — Filtrage & sélection (pandas)",
+      "title": "pandas — Indexing and selecting data (User Guide)",
+      "url": "https://pandas.pydata.org/docs/user_guide/indexing.html"
+    },
+    {
+      "theme": "Thème 1 — Filtrage & sélection (pandas)",
+      "title": "pandas.DataFrame.query",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.query.html"
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "title": "pandas.merge",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.merge.html"
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "title": "pandas.concat",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.concat.html"
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "title": "pandas.melt",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.melt.html"
+    },
+    {
+      "theme": "Thème 2 — Jointures & reshaping (merge/concat/melt/pivot)",
+      "title": "pandas.pivot_table",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.pivot_table.html"
+    },
+    {
+      "theme": "Thème 3 — Agrégation & features (groupby/agg)",
+      "title": "pandas.DataFrame.groupby",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html"
+    },
+    {
+      "theme": "Thème 3 — Agrégation & features (groupby/agg)",
+      "title": "pandas — Group by: split-apply-combine (User Guide)",
+      "url": "https://pandas.pydata.org/docs/user_guide/groupby.html"
+    },
+    {
+      "theme": "Thème 4 — Encodage catégoriel (get_dummies / OneHotEncoder)",
+      "title": "pandas.get_dummies",
+      "url": "https://pandas.pydata.org/docs/reference/api/pandas.get_dummies.html"
+    },
+    {
+      "theme": "Thème 4 — Encodage catégoriel (get_dummies / OneHotEncoder)",
+      "title": "scikit-learn — OneHotEncoder",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html"
+    },
+    {
+      "theme": "Thème 5 — Mise à l’échelle (scaling) & préparation finale",
+      "title": "scikit-learn — StandardScaler",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html"
+    },
+    {
+      "theme": "Thème 5 — Mise à l’échelle (scaling) & préparation finale",
+      "title": "scikit-learn — train_test_split",
+      "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html"
+    }
+  ]
+}
+

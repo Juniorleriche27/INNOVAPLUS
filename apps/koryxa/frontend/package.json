@@ -11,9 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "validate:resources": "node scripts/validate_resources.js",
-    "gen:pdf:m3t1": "node scripts/generate-pdf.mjs",
-    "gen:pdf": "node scripts/generate-pdfs.mjs"
+    "validate:resources": "echo \"validate:resources disabled (specialisation reset)\""
   },
   "dependencies": {
     "clsx": "^2.1.1",

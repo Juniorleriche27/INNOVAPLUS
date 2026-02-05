@@ -1,0 +1,90 @@
+import ModulePageShell from "@/app/school/components/ModulePageShell";
+import { getTrack, type TrackId } from "@/data/school/catalog";
+import { getModuleObjective, getThemeLabels, hasAnyVideos, normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
+import { getModuleSeedContent } from "@/app/school/lib/getModuleSeedContent";
+import SeedVideosView from "@/app/school/components/seed/SeedVideosView";
+
+export default function VideosTab({ trackId, moduleId }: { trackId: TrackId; moduleId: string }) {
+  const track = getTrack(trackId);
+  const mod = track?.modules.find((m) => m.id === moduleId);
+  const seed = getModuleSeedContent(trackId, moduleId);
+  const themes = getThemeLabels(trackId, moduleId);
+  const objective = getModuleObjective(trackId, moduleId);
+  const hasItems = hasAnyVideos(trackId, moduleId);
+
+  return (
+    <ModulePageShell trackId={trackId} moduleId={moduleId}>
+      <h1 className="text-2xl font-semibold text-slate-900">
+        {normalizeInlineSpacing(seed.moduleTitle ?? mod?.title ?? "Module")}
+      </h1>
+      <p className="mt-2 text-sm text-slate-600">{objective}</p>
+
+      {seed.videos.length > 0 ? (
+        <div className="mt-6">
+          <SeedVideosView videos={seed.videos} />
+        </div>
+      ) : (
+        <>
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="text-sm font-semibold text-slate-900">Thèmes :</div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  disabled
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                >
+                  Tous
+                </button>
+                {themes.map((t) => (
+                  <button
+                    key={t}
+                    disabled
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold text-slate-900">Langue :</div>
+                <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1">
+                  {["Tous", "FR", "EN"].map((l) => (
+                    <button key={l} disabled className="rounded-lg px-3 py-1 text-sm text-slate-700">
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold text-slate-900">Trier par :</div>
+                <select disabled className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800">
+                  {["Recommandé", "Durée ↑", "Durée ↓", "Plus récent"].map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" />
+            <div className="mt-6 text-sm text-slate-600">Aucune vidéo pour le moment pour ce module.</div>
+            {hasItems ? (
+              <button
+                disabled
+                className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700"
+              >
+                Charger plus
+              </button>
+            ) : null}
+          </div>
+        </>
+      )}
+    </ModulePageShell>
+  );
+}

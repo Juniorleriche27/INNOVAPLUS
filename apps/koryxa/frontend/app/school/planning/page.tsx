@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiSchool, type CertificateProgram } from "@/lib/api";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { SCHOOL_TRACKS } from "@/app/school/catalog";
 
 export default function SchoolPlanningHubPage() {
   const { user, loading } = useAuth();
@@ -39,29 +38,6 @@ export default function SchoolPlanningHubPage() {
         {!loading && !user ? (
           <p className="mt-3 text-sm text-slate-600">Connecte-toi pour créer ton planning.</p>
         ) : null}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">Parcours (KORYXA School)</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {SCHOOL_TRACKS.map((track) => (
-            <div key={track.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-semibold text-slate-900">{track.label}</p>
-              <p className="mt-1 text-sm text-slate-600">Planning guidé pour ce parcours.</p>
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <Link href={track.href} className="text-sm font-semibold text-sky-700 hover:underline">
-                  Ouvrir le parcours
-                </Link>
-                <Link
-                  href={`${track.href}/planning`}
-                  className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
-                >
-                  Ouvrir le planning
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
       </section>
 
       <section className="space-y-3">

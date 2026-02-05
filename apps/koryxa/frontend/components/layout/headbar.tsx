@@ -22,7 +22,7 @@ const NAV_LINKS_V1 = [
   { href: "/", label: "Accueil" },
   { href: "/school", label: "KORYXA School" },
   { href: "/entreprise", label: "Entreprise" },
-  { href: "/myplanning", label: "MyPlanning" },
+  { href: "/school/planning", label: "Mon planning d’apprentissage" },
   { href: "/about", label: "À propos" },
 ];
 
@@ -88,6 +88,17 @@ export default function Headbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
+  const isMyPlanning = pathname.startsWith("/myplanning");
+  const navLinks = useMemo(() => {
+    if (isMyPlanning) {
+      return [
+        { href: "/myplanning", label: "Accueil" },
+        { href: "/myplanning/pricing", label: "Tarifs" },
+        { href: "/myplanning/app", label: "App" },
+      ];
+    }
+    return IS_V1 ? NAV_LINKS_V1 : NAV_LINKS;
+  }, [isMyPlanning]);
   const displayName = useMemo(() => {
     if (!user) return "";
     const parts = [user.first_name, user.last_name].filter(Boolean);
@@ -184,20 +195,22 @@ export default function Headbar() {
         <div className="flex items-center justify-between gap-3 sm:gap-4 py-2.5 sm:py-3">
           {/* Left: Brand */}
           <div className="flex items-center gap-3 min-w-0">
-            <Link href="/" className="flex items-center gap-3 group">
+            <Link href={isMyPlanning ? "/myplanning" : "/"} className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
-                  <span className="text-white font-semibold text-xs">{IS_V1 ? "K" : "AI"}</span>
+                  <span className="text-white font-semibold text-xs">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
                 </div>
                 <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
-                  KORYXA
+                  {isMyPlanning ? "MyPlanning" : "KORYXA"}
                 </p>
                 <div className="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="whitespace-nowrap">{IS_V1 ? "Formation & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}</span>
+                  <span className="whitespace-nowrap">
+                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Formation & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
+                  </span>
                 </div>
               </div>
             </Link>
@@ -205,7 +218,7 @@ export default function Headbar() {
 
           {/* Center: Nav */}
           <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6 overflow-x-auto whitespace-nowrap">
-            {(IS_V1 ? NAV_LINKS_V1 : NAV_LINKS).map((link) => {
+            {navLinks.map((link) => {
               const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
                 <Link
@@ -516,11 +529,11 @@ export default function Headbar() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white/95 backdrop-blur-xl p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
-              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3">
+              <Link href={isMyPlanning ? "/myplanning" : "/"} onClick={() => setDrawerOpen(false)} className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-sm">{IS_V1 ? "K" : "AI"}</span>
+                  <span className="text-white font-bold text-sm">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
                 </div>
-                <span className="text-lg font-semibold text-slate-900">KORYXA</span>
+                <span className="text-lg font-semibold text-slate-900">{isMyPlanning ? "MyPlanning" : "KORYXA"}</span>
               </Link>
               <button 
                 aria-label="Fermer" 
@@ -532,7 +545,7 @@ export default function Headbar() {
             </div>
             
             <nav className="flex flex-col gap-2 mb-6">
-              {(IS_V1 ? NAV_LINKS_V1 : NAV_LINKS).map((link) => {
+              {navLinks.map((link) => {
                 const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
                 return (
                   <Link 

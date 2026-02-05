@@ -138,6 +138,7 @@ export default function CourseSidebar({
   );
 
   const activeLessonHref = pathname;
+  const planningHref = `${currentTrack.href}/planning`;
 
   return (
     <aside className="w-full min-h-0">
@@ -245,6 +246,18 @@ export default function CourseSidebar({
                 )}
               </div>
             </div>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Outils</p>
+            <Link
+              href={planningHref}
+              className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <span className="truncate">Mon planning d’apprentissage</span>
+              <span className="text-slate-400">→</span>
+            </Link>
+            <p className="mt-2 text-xs text-slate-500">Génère un planning guidé à partir de ton parcours.</p>
           </section>
         </div>
       </div>

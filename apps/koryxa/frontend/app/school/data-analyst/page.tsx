@@ -101,6 +101,9 @@ function DataAnalystDashboard() {
                 Commencer la première leçon
               </Link>
             ) : null}
+            <Link className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700" href="/school/data-analyst/planning">
+              Mon planning d’apprentissage
+            </Link>
           </div>
         </div>
       </section>

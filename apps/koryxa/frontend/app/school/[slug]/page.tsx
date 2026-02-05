@@ -152,6 +152,14 @@ export default function CertificateDetailPage() {
               )}
               {enrollError && <p className="mt-2 text-xs text-amber-700">{enrollError}</p>}
               {!user && <p className="mt-3 text-xs text-slate-500">Connectez-vous pour démarrer ce parcours.</p>}
+              {user && (
+                <Link
+                  href={`/school/${data.slug}/planning`}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Mon planning d’apprentissage
+                </Link>
+              )}
               {issued && (
                 <Link href={`/school/${data.slug}/learn`} className="mt-4 inline-flex text-sm font-semibold text-sky-700">
                   Consulter le parcours

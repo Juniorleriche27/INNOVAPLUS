@@ -303,7 +303,7 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "n
 const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-export default function MyPlanningClient() {
+export default function MyPlanningClient({ variant = "product" }: { variant?: "product" | "learning" }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);

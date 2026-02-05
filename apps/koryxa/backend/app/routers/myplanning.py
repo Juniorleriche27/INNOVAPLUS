@@ -19,6 +19,9 @@ from app.schemas.myplanning import (
     AiReplanResponse,
     AiSuggestTasksRequest,
     AiSuggestTasksResponse,
+    LearningPlanGenerateRequest,
+    LearningPlanGenerateResponse,
+    LearningPlanImportRequest,
     TaskCreatePayload,
     TaskListResponse,
     TaskResponse,
@@ -66,6 +69,8 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "title": doc.get("title", ""),
         "description": doc.get("description"),
         "category": doc.get("category"),
+        "context_type": doc.get("context_type") or "personal",
+        "context_id": doc.get("context_id"),
         "priority_eisenhower": doc.get("priority_eisenhower"),
         "kanban_state": doc.get("kanban_state"),
         "high_impact": bool(doc.get("high_impact")),
@@ -130,6 +135,8 @@ def _parse_date_filter(date_str: Optional[str]) -> Optional[tuple[datetime, date
 async def list_tasks(
     kanban_state: Optional[str] = Query(default=None),
     high_impact: Optional[bool] = Query(default=None),
+    context_type: Optional[str] = Query(default=None, description="personal|professional|learning"),
+    context_id: Optional[str] = Query(default=None, description="Identifier du contexte (ex: certificate_id)"),
     date: Optional[str] = Query(default=None, description="ISO date filter for today view"),
     week_start: Optional[str] = Query(default=None, description="ISO date for the starting Monday"),
     page: int = Query(default=1, ge=1),
@@ -142,6 +149,10 @@ async def list_tasks(
         criteria["kanban_state"] = kanban_state
     if high_impact is not None:
         criteria["high_impact"] = bool(high_impact)
+    if context_type:
+        criteria["context_type"] = context_type
+    if context_id:
+        criteria["context_id"] = context_id
     date_range = _parse_date_filter(date)
     if date_range:
         start, end = date_range
@@ -170,6 +181,207 @@ async def list_tasks(
     total = await db[COLLECTION].count_documents(criteria)
     has_more = page * limit < total
     return TaskListResponse(items=tasks, total=total, has_more=has_more)
+
+
+def _lesson_minutes(lesson_type: str) -> int:
+    lt = (lesson_type or "").lower()
+    if lt == "project_brief":
+        return 120
+    if lt == "youtube_video":
+        return 45
+    if lt == "external_article":
+        return 45
+    if lt == "internal_text":
+        return 45
+    # fallback
+    return 45
+
+
+@router.get("/learning/tasks", response_model=TaskListResponse)
+async def list_learning_tasks(
+    certificate_id: Optional[str] = Query(default=None, description="Filter on certificate _id"),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=200, ge=1, le=500),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> TaskListResponse:
+    criteria: Dict[str, Any] = {"user_id": current["_id"], "context_type": "learning"}
+    if certificate_id:
+        criteria["context_id"] = certificate_id
+    skip = (page - 1) * limit
+    cursor = db[COLLECTION].find(criteria).sort([("due_datetime", 1), ("created_at", -1)]).skip(skip).limit(limit)
+    tasks: List[TaskResponse] = []
+    async for doc in cursor:
+        tasks.append(_serialize_task(doc))
+    total = await db[COLLECTION].count_documents(criteria)
+    has_more = page * limit < total
+    return TaskListResponse(items=tasks, total=total, has_more=has_more)
+
+
+@router.post("/learning/generate", response_model=LearningPlanGenerateResponse)
+async def generate_learning_plan(
+    payload: LearningPlanGenerateRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> LearningPlanGenerateResponse:
+    """
+    Generate learning tasks for a certificate program (modules -> lessons).
+    Tasks are stored in the shared myplanning_tasks collection but tagged with context_type=learning.
+    """
+    user_id = current["_id"]
+    certificate_id = payload.certificate_id
+
+    # Auto-enroll if needed (so we can detect completed lessons)
+    enrollment = await db["certificate_enrollments"].find_one({"user_id": str(user_id), "certificate_id": certificate_id})
+    if not enrollment:
+        now_iso = datetime.utcnow().isoformat()
+        await db["certificate_enrollments"].insert_one(
+            {
+                "user_id": str(user_id),
+                "certificate_id": certificate_id,
+                "status": "enrolled",
+                "enrollment_date": now_iso,
+                "progress_percent": 0.0,
+            }
+        )
+        enrollment = await db["certificate_enrollments"].find_one({"user_id": str(user_id), "certificate_id": certificate_id})
+
+    enrollment_id = str(enrollment["_id"]) if enrollment else None
+    completed_lessons: set[str] = set()
+    if enrollment_id:
+        progress_docs = await db["lesson_progress"].find({"enrollment_id": enrollment_id, "status": "completed"}).to_list(length=5000)
+        completed_lessons = {p.get("lesson_id") for p in progress_docs if p.get("lesson_id")}
+
+    cert = await db["certificate_programs"].find_one({"_id": ObjectId(certificate_id)})
+    if not cert:
+        raise HTTPException(status_code=404, detail="Certificat introuvable")
+
+    modules = await db["certificate_modules"].find({"certificate_id": certificate_id}).sort("order_index", 1).to_list(length=500)
+    lessons = await db["certificate_lessons"].find({"certificate_id": certificate_id}).sort("order_index", 1).to_list(length=2000)
+
+    module_titles = {str(m["_id"]): (m.get("title") or "") for m in modules}
+
+    # Parse start date
+    if payload.start_date:
+        try:
+            day = datetime.fromisoformat(payload.start_date).date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="start_date invalide (attendu YYYY-MM-DD)")
+        current_day = datetime.combine(day, datetime.min.time())
+    else:
+        now = datetime.utcnow()
+        current_day = datetime.combine(now.date(), datetime.min.time())
+
+    minutes_budget = int(payload.available_minutes_per_day)
+    minutes_left = minutes_budget
+
+    created = updated = skipped = 0
+
+    for lesson in lessons:
+        lesson_id = str(lesson["_id"])
+        if lesson_id in completed_lessons:
+            continue
+
+        lesson_type = lesson.get("lesson_type") or "internal_text"
+        est = _lesson_minutes(str(lesson_type))
+        if est > minutes_budget:
+            est = minutes_budget
+        if est > minutes_left:
+            current_day = current_day + timedelta(days=1)
+            minutes_left = minutes_budget
+        minutes_left -= est
+
+        due_dt = current_day + timedelta(hours=20)  # end of day block
+        title = lesson.get("title") or "Leçon"
+        module_id = lesson.get("module_id")
+        module_title = module_titles.get(str(module_id), "").strip()
+        full_title = f"{module_title} — {title}" if module_title else title
+
+        task_doc: Dict[str, Any] = {
+            "user_id": user_id,
+            "title": full_title,
+            "description": lesson.get("summary"),
+            "category": cert.get("title") or "KORYXA School",
+            "context_type": "learning",
+            "context_id": certificate_id,
+            "linked_goal": f"lesson:{lesson_id}",
+            "source": "ia",
+            "kanban_state": "todo",
+            "high_impact": True,
+            "estimated_duration_minutes": est,
+            "due_datetime": due_dt,
+            "updated_at": datetime.utcnow(),
+        }
+
+        existing = await db[COLLECTION].find_one(
+            {"user_id": user_id, "context_type": "learning", "context_id": certificate_id, "linked_goal": f"lesson:{lesson_id}"}
+        )
+        if existing:
+            if payload.overwrite_existing:
+                await db[COLLECTION].update_one({"_id": existing["_id"]}, {"$set": task_doc})
+                updated += 1
+            else:
+                skipped += 1
+            continue
+
+        task_doc["created_at"] = datetime.utcnow()
+        await db[COLLECTION].insert_one(task_doc)
+        created += 1
+
+    return LearningPlanGenerateResponse(created=created, updated=updated, skipped=skipped, context_id=certificate_id)
+
+
+@router.post("/learning/import", response_model=LearningPlanGenerateResponse)
+async def import_learning_plan(
+    payload: LearningPlanImportRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> LearningPlanGenerateResponse:
+    """
+    Import (bulk upsert) learning tasks from a KORYXA parcours structure (modules/thèmes/lessons).
+    Used by KORYXA School "Mon planning d’apprentissage".
+    """
+    user_id = current["_id"]
+    context_id = payload.context_id
+    now = datetime.utcnow()
+
+    created = updated = skipped = 0
+
+    for item in payload.items:
+        linked = item.linked_goal or item.title
+        task_doc: Dict[str, Any] = {
+            "user_id": user_id,
+            "title": item.title,
+            "description": item.description,
+            "category": item.category,
+            "context_type": "learning",
+            "context_id": context_id,
+            "linked_goal": linked,
+            "source": "ia",
+            "kanban_state": "todo",
+            "high_impact": bool(item.high_impact) if item.high_impact is not None else True,
+            "priority_eisenhower": item.priority_eisenhower or "important_not_urgent",
+            "estimated_duration_minutes": item.estimated_duration_minutes,
+            "due_datetime": item.due_datetime,
+            "updated_at": now,
+        }
+
+        existing = await db[COLLECTION].find_one(
+            {"user_id": user_id, "context_type": "learning", "context_id": context_id, "linked_goal": linked}
+        )
+        if existing:
+            if payload.overwrite_existing:
+                await db[COLLECTION].update_one({"_id": existing["_id"]}, {"$set": task_doc})
+                updated += 1
+            else:
+                skipped += 1
+            continue
+
+        task_doc["created_at"] = now
+        await db[COLLECTION].insert_one(task_doc)
+        created += 1
+
+    return LearningPlanGenerateResponse(created=created, updated=updated, skipped=skipped, context_id=context_id)
 
 
 @router.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)

@@ -106,7 +106,7 @@ const WORKSPACE_LINKS = [
 const V1_LINKS = [
   { href: "/school", label: "KORYXA School", description: "Programme de formation", icon: IconBook },
   { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
-  { href: "/myplanning", label: "MyPlanning", description: "Organisation & suivi", icon: IconCalendar },
+  { href: "/school/planning", label: "Mon planning d’apprentissage", description: "Planning guidé par parcours", icon: IconCalendar },
 ];
 
 type NavNode = { href: string; label: string; children?: NavNode[] };
@@ -147,6 +147,7 @@ const V1_SCHOOL_TREE: NavNode[] = [
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
   const hideForSchool = pathname.startsWith("/school");
+  const hideForMyPlanning = pathname.startsWith("/myplanning");
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
   const [specialOpen, setSpecialOpen] = useState(false);
@@ -188,7 +189,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
 
   const isExpanded = !collapsed;
 
-  if (hideForSchool) {
+  if (hideForSchool || hideForMyPlanning) {
     return null;
   }
 

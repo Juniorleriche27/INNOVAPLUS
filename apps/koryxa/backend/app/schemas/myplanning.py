@@ -16,12 +16,15 @@ KanbanState = Literal["todo", "in_progress", "done"]
 MoSCoWOption = Literal["must", "should", "could", "wont"]
 EnergyLevel = Literal["low", "medium", "high"]
 TaskSource = Literal["manual", "ia"]
+TaskContextType = Literal["personal", "professional", "learning"]
 
 
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=2, max_length=260)
     description: Optional[str] = Field(default=None, max_length=4000)
     category: Optional[str] = Field(default=None, max_length=60)
+    context_type: TaskContextType = "personal"
+    context_id: Optional[str] = Field(default=None, max_length=80, description="Identifier du contexte (ex: certificate_id)")
     priority_eisenhower: PriorityEisenhower = "important_not_urgent"
     kanban_state: KanbanState = "todo"
     high_impact: bool = False
@@ -130,3 +133,36 @@ class AiReplanItem(BaseModel):
 
 class AiReplanResponse(BaseModel):
     recommendations: List[AiReplanItem]
+
+
+# --- Learning planning (KORYXA School) ---
+
+class LearningPlanGenerateRequest(BaseModel):
+    certificate_id: str = Field(..., min_length=6, max_length=64, description="KORYXA School certificate _id")
+    start_date: Optional[str] = Field(default=None, max_length=20, description="ISO date YYYY-MM-DD (defaults to today)")
+    available_minutes_per_day: int = Field(default=120, ge=30, le=720)
+    overwrite_existing: bool = True
+
+
+class LearningPlanGenerateResponse(BaseModel):
+    created: int = 0
+    updated: int = 0
+    skipped: int = 0
+    context_id: str
+
+
+class LearningTaskImportItem(BaseModel):
+    title: str = Field(..., min_length=2, max_length=260)
+    description: Optional[str] = Field(default=None, max_length=4000)
+    due_datetime: Optional[datetime] = None
+    estimated_duration_minutes: Optional[int] = Field(default=None, ge=5, le=2880)
+    linked_goal: Optional[str] = Field(default=None, max_length=200)
+    priority_eisenhower: Optional[PriorityEisenhower] = None
+    high_impact: Optional[bool] = None
+    category: Optional[str] = Field(default=None, max_length=60)
+
+
+class LearningPlanImportRequest(BaseModel):
+    context_id: str = Field(..., min_length=2, max_length=80, description="Identifiant du parcours/contexte (ex: data-analyst)")
+    overwrite_existing: bool = True
+    items: List[LearningTaskImportItem] = Field(default_factory=list, min_length=1, max_length=5000)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getTrack, type TrackId } from "@/data/school/catalog";
 import { normalizeInlineSpacing } from "@/app/school/components/moduleHelpers";
@@ -69,6 +70,19 @@ export default function SchoolSidebar() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Outils</p>
+            <div className="mt-2">
+              <Link
+                href="/school/planning"
+                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+              >
+                Mon planning d’apprentissage
+                <span className="text-slate-400">→</span>
+              </Link>
+            </div>
           </div>
 
           <div>

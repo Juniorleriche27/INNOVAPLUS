@@ -89,6 +89,12 @@ export default function Headbar() {
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
   const isMyPlanning = pathname.startsWith("/myplanning");
+  const showMyPlanningBottomNav =
+    isMyPlanning &&
+    !pathname.startsWith("/myplanning/app") &&
+    !pathname.startsWith("/myplanning/login") &&
+    !pathname.startsWith("/myplanning/signup") &&
+    !pathname.startsWith("/myplanning/stats");
   const navLinks = useMemo(() => {
     if (isMyPlanning) {
       return [
@@ -627,6 +633,30 @@ export default function Headbar() {
           </div>
         </div>
       )}
+
+      {showMyPlanningBottomNav ? (
+        <div className="fixed bottom-4 left-1/2 z-40 w-[min(820px,calc(100vw-24px))] -translate-x-1/2">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
+            <nav className="flex items-center justify-center gap-2">
+              {navLinks.map((link) => {
+                const active = link.href === "/myplanning" ? pathname === "/myplanning" : pathname.startsWith(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={clsx(
+                      "relative inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition",
+                      active ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

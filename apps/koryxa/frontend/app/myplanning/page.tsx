@@ -4,7 +4,7 @@ export const revalidate = 3600;
 
 export default function MyPlanningLandingPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10">
+    <div className="mx-auto w-full max-w-6xl space-y-10">
       {/* HERO (above the fold) */}
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/70 to-indigo-50/50 p-8 shadow-sm sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
@@ -184,4 +184,3 @@ export default function MyPlanningLandingPage() {
     </div>
   );
 }
-

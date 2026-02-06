@@ -48,6 +48,27 @@ def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
     _RATE_LIMIT_BUCKETS[key] = bucket
 
 
+def _user_plan(current: dict) -> str:
+    raw = str(current.get("plan", "free")).lower()
+    if raw in {"free", "pro", "team"}:
+        return raw
+    roles = {str(role).lower() for role in (current.get("roles") or [])}
+    if "admin" in roles or "myplanning_team" in roles or "team" in roles:
+        return "team"
+    if "myplanning_pro" in roles or "pro" in roles:
+        return "pro"
+    return "free"
+
+
+def _require_pro(current: dict) -> None:
+    plan = _user_plan(current)
+    if plan not in {"pro", "team"}:
+        raise HTTPException(
+            status_code=403,
+            detail="Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.",
+        )
+
+
 def _serialize_datetime(value: Any) -> Optional[datetime]:
     if not value:
         return None
@@ -515,6 +536,7 @@ async def ai_suggest_tasks(
     db: AsyncIOMotorDatabase = Depends(get_db),  # noqa: ARG001
     current: dict = Depends(get_current_user),  # noqa: ARG001
 ) -> AiSuggestTasksResponse:
+    _require_pro(current)
     _rate_limit(f"ai_suggest:{current['_id']}")
     clean_text = payload.free_text.strip()
     if len(clean_text) > 2000:
@@ -552,6 +574,7 @@ async def ai_plan_day(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> AiPlanDayResponse:
+    _require_pro(current)
     _rate_limit(f"ai_plan:{current['_id']}")
     tasks = await _load_open_tasks(db, current["_id"])
     order, focus = await plan_day_with_llama(tasks, payload.date, payload.available_minutes)
@@ -567,6 +590,7 @@ async def ai_replan_with_time(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> AiReplanResponse:
+    _require_pro(current)
     _rate_limit(f"ai_replan:{current['_id']}")
     tasks = await _load_open_tasks(db, current["_id"], payload.task_ids)
     recs = await replan_with_time_limit(tasks, payload.available_minutes)

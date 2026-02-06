@@ -11,15 +11,15 @@ const TIERS = [
   },
   {
     name: "Pro",
-    price: "À venir",
-    desc: "Coaching IA + statistiques (bêta).",
-    items: ["Coaching IA", "Templates universels", "Stats & graphiques", "Automatisations"],
+    price: "Bêta",
+    desc: "Valeur réelle: IA + data.",
+    items: ["Coaching IA", "Templates universels", "Stats & graphiques", "Automatisations (bientôt)"],
   },
   {
     name: "Team",
     price: "À venir",
     desc: "Pour équipes et collaboration.",
-    items: ["Collaborateurs", "Assignation", "Reporting", "Admin"],
+    items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
   },
 ];
 
@@ -43,7 +43,12 @@ export default function MyPlanningPricingPage() {
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {TIERS.map((tier) => (
           <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-9 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">{tier.name}</p>
+            <p className="text-sm font-semibold text-slate-900">
+              {tier.name}
+              {tier.name === "Pro" ? (
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BÊTA</span>
+              ) : null}
+            </p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{tier.price}</p>
             <p className="mt-2 text-sm text-slate-600">{tier.desc}</p>
             <ul className="mt-4 space-y-2 text-sm text-slate-700">

@@ -15,7 +15,11 @@ function inferPlanFromRoles(roles?: string[]): PlanTier {
 
 export default function MyPlanningAiCoachingPage() {
   const { user } = useAuth();
-  const plan = useMemo(() => inferPlanFromRoles(user?.roles), [user?.roles]);
+  const plan = useMemo(() => {
+    const raw = String(user?.plan || "").toLowerCase();
+    if (raw === "free" || raw === "pro" || raw === "team") return raw as PlanTier;
+    return inferPlanFromRoles(user?.roles);
+  }, [user?.plan, user?.roles]);
   const isFree = plan === "free";
 
   return (
@@ -70,4 +74,3 @@ export default function MyPlanningAiCoachingPage() {
     </div>
   );
 }
-

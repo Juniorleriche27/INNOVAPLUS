@@ -111,6 +111,9 @@ def _public_user(user: dict) -> UserPublic:
     workspace_role = user.get("workspace_role")
     if workspace_role not in {"demandeur", "prestataire"}:
         workspace_role = None
+    raw_plan = str(user.get("plan", "free")).lower()
+    if raw_plan not in {"free", "pro", "team"}:
+        raw_plan = "free"
     return UserPublic(
         id=str(user.get("_id")),
         email=user.get("email"),
@@ -121,6 +124,7 @@ def _public_user(user: dict) -> UserPublic:
         workspace_role=workspace_role,
         country=user.get("country"),
         account_type=user.get("account_type"),
+        plan=raw_plan,
     )
 
 
@@ -173,6 +177,7 @@ async def register(
         "country": payload.country.strip(),
         "account_type": payload.account_type,
         "roles": ["user"],
+        "plan": "free",
         "created_at": now,
     }
     res = await db["users"].insert_one(user_doc)

@@ -40,6 +40,7 @@ class UserPublic(BaseModel):
     workspace_role: Optional[Literal["demandeur", "prestataire"]] = None
     country: Optional[str] = None
     account_type: Optional[Literal["learner", "company", "organization"]] = None
+    plan: Literal["free", "pro", "team"] = "free"
 
 
 class OTPRequestPayload(BaseModel):

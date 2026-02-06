@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 // Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
@@ -105,10 +106,6 @@ const FEATURE_PLAN: Record<string, PlanTier> = {
   automations: "pro",
   settings: "pro",
 };
-
-type PaywallState =
-  | { open: false }
-  | { open: true; title: string; message: string };
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent_important: "Urgent & important",
@@ -343,6 +340,7 @@ export default function MyPlanningClient({
   initialSection?: string;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
   const plan = useMemo(() => inferPlanFromUser(user), [user]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -350,7 +348,6 @@ export default function MyPlanningClient({
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
   const [activeSection, setActiveSection] = useState<string>(() => initialSection || "dashboard");
-  const [paywall, setPaywall] = useState<PaywallState>({ open: false });
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -409,18 +406,18 @@ export default function MyPlanningClient({
     void loadTasks();
   }, []);
 
-  function openPaywall() {
-    setPaywall({
-      open: true,
-      title: "Fonctionnalité Pro (bêta)",
-      message: "Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.",
-    });
+  function redirectToProUpsell(feature?: string) {
+    const params = new URLSearchParams();
+    params.set("upgrade", "pro");
+    params.set("message", "Fonctionnalité Pro - débloque le pilotage avancé.");
+    if (feature) params.set("feature", feature);
+    router.push(`/myplanning/pricing?${params.toString()}`);
   }
 
   function handleSectionClick(sectionId: string) {
     const required = FEATURE_PLAN[sectionId];
     if (required && !canAccess(plan, required)) {
-      openPaywall();
+      redirectToProUpsell(sectionId);
       return;
     }
     setActiveSection(sectionId);
@@ -647,7 +644,7 @@ export default function MyPlanningClient({
 
   const handleAiSuggest = async () => {
     if (!canAccess(plan, "pro")) {
-      openPaywall();
+      redirectToProUpsell("coaching");
       return;
     }
     if (!aiText.trim()) return;
@@ -689,7 +686,7 @@ export default function MyPlanningClient({
 
   const handleAddDraft = async (draft: AiDraft, index: number) => {
     if (!canAccess(plan, "pro")) {
-      openPaywall();
+      redirectToProUpsell("coaching");
       return;
     }
     if (!draft.title) return;
@@ -781,7 +778,7 @@ export default function MyPlanningClient({
                 <button
                   onClick={() => {
                     if (!canAccess(plan, "pro")) {
-                      openPaywall();
+                      redirectToProUpsell("coaching");
                       return;
                     }
                     setActiveSection("coaching");
@@ -829,7 +826,7 @@ export default function MyPlanningClient({
             onClick={() => {
               setSelectedDate(monday);
               if (!canAccess(plan, "pro")) {
-                openPaywall();
+                redirectToProUpsell("coaching");
                 return;
               }
               setActiveSection("coaching");
@@ -943,7 +940,10 @@ export default function MyPlanningClient({
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Stats & graphiques</h2>
           <p className="mt-2 text-sm text-slate-600">Les statistiques avancées sont disponibles en Pro.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+            <Link
+              href="/myplanning/pricing?upgrade=pro&feature=stats&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
+              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+            >
               Voir l’offre Pro
             </Link>
             <button
@@ -1669,7 +1669,10 @@ export default function MyPlanningClient({
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Paramètres IA</h2>
           <p className="mt-2 text-sm text-slate-600">Les paramètres IA sont disponibles en Pro.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+            <Link
+              href="/myplanning/pricing?upgrade=pro&feature=settings&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
+              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+            >
               Voir l’offre Pro
             </Link>
             <button
@@ -1788,7 +1791,10 @@ export default function MyPlanningClient({
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Automatisations</h2>
           <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+            <Link
+              href="/myplanning/pricing?upgrade=pro&feature=automations&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
+              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+            >
               Voir l’offre Pro
             </Link>
             <button
@@ -2014,25 +2020,6 @@ export default function MyPlanningClient({
         </div>
       ) : null}
 
-      {paywall.open ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{paywall.title}</p>
-            <p className="mt-3 text-base font-semibold text-slate-900">{paywall.message}</p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
-                Voir l’offre Pro
-              </Link>
-              <button
-                onClick={() => setPaywall({ open: false })}
-                className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Plus tard
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

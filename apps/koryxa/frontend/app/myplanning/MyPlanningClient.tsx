@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
+import Link from "next/link";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 // Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
 const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api");
@@ -77,6 +79,31 @@ const ACTIONS: SidebarItem[] = [
   { id: "coaching", label: "Coaching IA", icon: "🤖" },
   { id: "settings", label: "Paramètres IA", icon: "⚙️" },
 ];
+
+type PlanTier = "free" | "pro" | "team";
+
+const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, team: 2 };
+
+function inferPlanFromRoles(roles?: string[]): PlanTier {
+  const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
+  if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
+  if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
+  return "free";
+}
+
+function canAccess(plan: PlanTier, required: PlanTier) {
+  return PLAN_RANK[plan] >= PLAN_RANK[required];
+}
+
+const FEATURE_PLAN: Record<string, PlanTier> = {
+  stats: "pro",
+  coaching: "pro",
+  settings: "pro",
+};
+
+type PaywallState =
+  | { open: false }
+  | { open: true; title: string; message: string };
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent_important: "Urgent & important",
@@ -303,12 +330,22 @@ const dayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "n
 const shortDayFormatter = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
 const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-export default function MyPlanningClient({ variant = "product" }: { variant?: "product" | "learning" }) {
+export default function MyPlanningClient({
+  variant = "product",
+  initialSection,
+}: {
+  variant?: "product" | "learning";
+  initialSection?: string;
+}) {
+  const { user } = useAuth();
+  const plan = useMemo(() => inferPlanFromRoles(user?.roles), [user?.roles]);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
-  const [activeSection, setActiveSection] = useState<string>("dashboard");
+  const [activeSection, setActiveSection] = useState<string>(() => initialSection || "dashboard");
+  const [paywall, setPaywall] = useState<PaywallState>({ open: false });
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -366,6 +403,23 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
   useEffect(() => {
     void loadTasks();
   }, []);
+
+  function openPaywall() {
+    setPaywall({
+      open: true,
+      title: "Fonctionnalité Pro",
+      message: "Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanning Pro.",
+    });
+  }
+
+  function handleSectionClick(sectionId: string) {
+    const required = FEATURE_PLAN[sectionId];
+    if (required && !canAccess(plan, required)) {
+      openPaywall();
+      return;
+    }
+    setActiveSection(sectionId);
+  }
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? window.localStorage.getItem("myplanning.sidebar") : null;
@@ -587,6 +641,10 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
   };
 
   const handleAiSuggest = async () => {
+    if (!canAccess(plan, "pro")) {
+      openPaywall();
+      return;
+    }
     if (!aiText.trim()) return;
     setAiLoading(true);
     setBanner(null);
@@ -625,6 +683,10 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
   };
 
   const handleAddDraft = async (draft: AiDraft, index: number) => {
+    if (!canAccess(plan, "pro")) {
+      openPaywall();
+      return;
+    }
     if (!draft.title) return;
     setAddingDraftIndex(index);
     try {
@@ -708,8 +770,19 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
             <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
               <p className="font-semibold text-slate-800">Aucune tâche planifiée pour aujourd’hui.</p>
               <div className="mt-3 flex flex-wrap justify-center gap-2">
-                <button onClick={() => setActiveSection("create")} className="rounded-full bg-slate-900 px-4 py-2 text-white">Créer une nouvelle tâche</button>
-                <button onClick={() => setActiveSection("coaching")} className="rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50">
+                <button onClick={() => setActiveSection("create")} className="rounded-full bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700">
+                  Créer une nouvelle tâche
+                </button>
+                <button
+                  onClick={() => {
+                    if (!canAccess(plan, "pro")) {
+                      openPaywall();
+                      return;
+                    }
+                    setActiveSection("coaching");
+                  }}
+                  className="rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50"
+                >
                   Organiser ma journée avec l’IA
                 </button>
               </div>
@@ -750,9 +823,13 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
           <button
             onClick={() => {
               setSelectedDate(monday);
+              if (!canAccess(plan, "pro")) {
+                openPaywall();
+                return;
+              }
               setActiveSection("coaching");
             }}
-            className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white"
+            className="mt-3 rounded-full bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700"
           >
             Organiser ma semaine avec l’IA
           </button>
@@ -854,11 +931,31 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
   };
 
   const renderStats = () => {
+    if (!canAccess(plan, "pro")) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Stats & graphiques</h2>
+          <p className="mt-2 text-sm text-slate-600">Les statistiques avancées sont disponibles en Pro.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+              Voir l’offre Pro
+            </Link>
+            <button
+              onClick={() => setActiveSection("dashboard")}
+              className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      );
+    }
     if (!tasks.length) {
       return (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
           <p className="font-semibold text-slate-800">Nous afficherons vos statistiques dès que vous aurez commencé à utiliser votre planning.</p>
-          <button onClick={() => setActiveSection("create")} className="mt-3 rounded-full bg-slate-900 px-4 py-2 text-white">
+          <button onClick={() => setActiveSection("create")} className="mt-3 rounded-full bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700">
             Créer ma première tâche
           </button>
         </div>
@@ -1161,7 +1258,7 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setActiveSection("create")} className="rounded-full bg-slate-900 px-4 py-2 font-semibold text-white shadow hover:bg-slate-800">
+          <button onClick={() => setActiveSection("create")} className="rounded-full bg-sky-600 px-4 py-2 font-semibold text-white shadow hover:bg-sky-700">
             + Nouvelle tâche
           </button>
           <button onClick={() => void loadTasks()} className="rounded-full border border-slate-200 px-3 py-2 text-slate-600 hover:border-sky-200 hover:text-sky-700">
@@ -1461,7 +1558,7 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
           <button
             onClick={handleAiSuggest}
             disabled={aiLoading}
-            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-400/20 transition hover:-translate-y-[1px] hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-7 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:-translate-y-[1px] hover:bg-sky-700 disabled:opacity-60"
           >
             {aiLoading ? "Analyse en cours..." : "Générer des tâches"}
             {!aiLoading && <span aria-hidden>→</span>}
@@ -1559,7 +1656,28 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
     </div>
   );
 
-  const renderSettings = () => (
+  const renderSettings = () => {
+    if (!canAccess(plan, "pro")) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Paramètres IA</h2>
+          <p className="mt-2 text-sm text-slate-600">Les paramètres IA sont disponibles en Pro.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+              Voir l’offre Pro
+            </Link>
+            <button
+              onClick={() => setActiveSection("dashboard")}
+              className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
       <h2 className="text-xl font-semibold text-slate-900">Paramètres IA</h2>
       <p className="text-sm text-slate-600">
@@ -1655,6 +1773,7 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
       </div>
     </div>
   );
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -1686,64 +1805,84 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
 
   return (
     <div className={containerClasses}>
-      <aside
-        className="flex h-full flex-col gap-6 border-r border-slate-200 bg-white/95 p-4 transition-[width] duration-200"
-        style={{ width: sidebarWidth, minWidth: sidebarWidth }}
-      >
-        <div className="flex items-center justify-between">
-          {!isSidebarCollapsed && (
+      {variant === "learning" ? (
+        <aside
+          className="flex h-full flex-col gap-6 border-r border-slate-200 bg-white/95 p-4 transition-[width] duration-200"
+          style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+        >
+          <div className="flex items-center justify-between">
+            {!isSidebarCollapsed && (
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
+                <p className="text-lg font-semibold text-slate-900">Cockpit</p>
+              </div>
+            )}
+            <button
+              onClick={() => setIsSidebarCollapsed((v) => !v)}
+              className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+              title={isSidebarCollapsed ? "Déployer" : "Réduire"}
+            >
+              {isSidebarCollapsed ? "»" : "«"}
+            </button>
+          </div>
+          <nav className="space-y-6 text-sm font-semibold">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
-              <p className="text-lg font-semibold text-slate-900">Cockpit</p>
+              <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Vues</p>
+              <div className="mt-2 space-y-2">
+                {VIEWS.map((item) => {
+                  const required = FEATURE_PLAN[item.id];
+                  const locked = required ? !canAccess(plan, required) : false;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSectionClick(item.id)}
+                      className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
+                        activeSection === item.id ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
+                      title={item.label}
+                    >
+                      <span>{item.icon}</span>
+                      {!isSidebarCollapsed && (
+                        <span className="flex-1">
+                          {item.label}
+                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">PRO</span> : null}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
-          <button
-            onClick={() => setIsSidebarCollapsed((v) => !v)}
-            className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
-            title={isSidebarCollapsed ? "Déployer" : "Réduire"}
-          >
-            {isSidebarCollapsed ? "»" : "«"}
-          </button>
-        </div>
-        <nav className="space-y-6 text-sm font-semibold">
-          <div>
-            <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Vues</p>
-            <div className="mt-2 space-y-2">
-              {VIEWS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
-                    activeSection === item.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                  title={item.label}
-                >
-                  <span>{item.icon}</span>
-                  {!isSidebarCollapsed && <span>{item.label}</span>}
-                </button>
-              ))}
+            <div>
+              <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Actions</p>
+              <div className="mt-2 space-y-2">
+                {ACTIONS.map((item) => {
+                  const required = FEATURE_PLAN[item.id];
+                  const locked = required ? !canAccess(plan, required) : false;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSectionClick(item.id)}
+                      className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
+                        activeSection === item.id ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
+                      title={item.label}
+                    >
+                      <span>{item.icon}</span>
+                      {!isSidebarCollapsed && (
+                        <span className="flex-1">
+                          {item.label}
+                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">PRO</span> : null}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <div>
-            <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Actions</p>
-            <div className="mt-2 space-y-2">
-              {ACTIONS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2 text-left transition ${
-                    activeSection === item.id ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                  title={item.label}
-                >
-                  <span>{item.icon}</span>
-                  {!isSidebarCollapsed && <span>{item.label}</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </nav>
-      </aside>
+          </nav>
+        </aside>
+      ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
@@ -1767,7 +1906,7 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
               Jour suivant →
             </button>
             <button
-              onClick={() => setActiveSection("coaching")}
+              onClick={() => handleSectionClick("coaching")}
               className="rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500"
             >
               Organiser ma journée (IA)
@@ -1780,7 +1919,7 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
             </button>
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${variant === "product" ? "pb-24" : ""}`}>
           {banner && (
             <div
               className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
@@ -1793,6 +1932,56 @@ export default function MyPlanningClient({ variant = "product" }: { variant?: "p
           {renderSection()}
         </div>
       </main>
+
+      {variant === "product" ? (
+        <div className="fixed bottom-4 left-1/2 z-50 w-[min(980px,calc(100vw-24px))] -translate-x-1/2">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {[...VIEWS, ...ACTIONS].map((item) => {
+                const required = FEATURE_PLAN[item.id];
+                const locked = required ? !canAccess(plan, required) : false;
+                const active = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSectionClick(item.id)}
+                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                      active
+                        ? "bg-sky-600 text-white"
+                        : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                    }`}
+                    title={item.label}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                    {locked ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>PRO</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {paywall.open ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{paywall.title}</p>
+            <p className="mt-3 text-base font-semibold text-slate-900">{paywall.message}</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+                Voir l’offre Pro
+              </Link>
+              <button
+                onClick={() => setPaywall({ open: false })}
+                className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Plus tard
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

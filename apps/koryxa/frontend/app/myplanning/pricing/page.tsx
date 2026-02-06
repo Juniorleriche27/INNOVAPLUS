@@ -25,7 +25,7 @@ const TIERS = [
 
 export default function MyPlanningPricingPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
@@ -42,7 +42,7 @@ export default function MyPlanningPricingPage() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {TIERS.map((tier) => (
-          <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-9 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">{tier.name}</p>
             <p className="mt-2 text-3xl font-semibold text-slate-900">{tier.price}</p>
             <p className="mt-2 text-sm text-slate-600">{tier.desc}</p>

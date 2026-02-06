@@ -11,6 +11,7 @@ export default function MyPlanningTeamPage() {
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
           L’architecture est prête, mais les actions sont bloquées : pas d’activation backend, pas d’assignation réelle pour le moment.
         </p>
+        <p className="mt-2 text-sm font-medium text-slate-700">Fonctionnalité en préparation. Disponible bientôt pour les équipes.</p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link href="/myplanning/pricing" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
             Voir les tarifs
@@ -38,4 +39,3 @@ export default function MyPlanningTeamPage() {
     </div>
   );
 }
-

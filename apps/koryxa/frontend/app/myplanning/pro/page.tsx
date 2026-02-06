@@ -34,6 +34,13 @@ export default function MyPlanningProPage() {
           >
             Passer à Pro
           </button>
+          <button
+            disabled
+            className="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-800"
+            title="Fonctionnalité en bêta"
+          >
+            Fonctionnalité en bêta
+          </button>
           <Link
             href="/myplanning/pricing"
             className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"

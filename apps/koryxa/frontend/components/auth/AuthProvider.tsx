@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { INNOVA_API_BASE } from "@/lib/env";
 
 type WorkspaceRole = "demandeur" | "prestataire";
+type PlanTier = "free" | "pro" | "team";
 
 type User = {
   id: string;
@@ -11,6 +12,7 @@ type User = {
   first_name: string;
   last_name: string;
   roles?: string[];
+  plan?: PlanTier;
   created_at?: string;
   workspace_role?: WorkspaceRole | null;
 } | null;

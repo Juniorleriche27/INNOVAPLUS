@@ -77,6 +77,7 @@ const ACTIONS: SidebarItem[] = [
   { id: "create", label: "Nouvelle tâche", icon: "➕" },
   { id: "manage", label: "Gérer les tâches", icon: "📋" },
   { id: "coaching", label: "Coaching IA", icon: "🤖" },
+  { id: "automations", label: "Automatisations", icon: "⚡" },
   { id: "settings", label: "Paramètres IA", icon: "⚙️" },
 ];
 
@@ -84,7 +85,10 @@ type PlanTier = "free" | "pro" | "team";
 
 const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, team: 2 };
 
-function inferPlanFromRoles(roles?: string[]): PlanTier {
+function inferPlanFromUser(input?: { plan?: string; roles?: string[] } | null): PlanTier {
+  const plan = String(input?.plan || "").toLowerCase();
+  if (plan === "free" || plan === "pro" || plan === "team") return plan;
+  const roles = input?.roles;
   const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
   if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
   if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
@@ -98,6 +102,7 @@ function canAccess(plan: PlanTier, required: PlanTier) {
 const FEATURE_PLAN: Record<string, PlanTier> = {
   stats: "pro",
   coaching: "pro",
+  automations: "pro",
   settings: "pro",
 };
 
@@ -338,7 +343,7 @@ export default function MyPlanningClient({
   initialSection?: string;
 }) {
   const { user } = useAuth();
-  const plan = useMemo(() => inferPlanFromRoles(user?.roles), [user?.roles]);
+  const plan = useMemo(() => inferPlanFromUser(user), [user]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -407,8 +412,8 @@ export default function MyPlanningClient({
   function openPaywall() {
     setPaywall({
       open: true,
-      title: "Fonctionnalité Pro",
-      message: "Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanning Pro.",
+      title: "Fonctionnalité Pro (bêta)",
+      message: "Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.",
     });
   }
 
@@ -885,7 +890,7 @@ export default function MyPlanningClient({
     const Empty = (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
         <p>Créez ou générez des tâches pour voir votre matrice de priorités.</p>
-        <button onClick={() => setActiveSection("coaching")} className="mt-3 rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50">
+        <button onClick={() => handleSectionClick("coaching")} className="mt-3 rounded-full border border-sky-200 px-4 py-2 text-sky-700 hover:bg-sky-50">
           Générer des tâches avec l’IA
         </button>
       </div>
@@ -1775,6 +1780,50 @@ export default function MyPlanningClient({
   );
   };
 
+  const renderAutomations = () => {
+    if (!canAccess(plan, "pro")) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Automatisations</h2>
+          <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/myplanning/pro" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
+              Voir l’offre Pro
+            </Link>
+            <button
+              onClick={() => setActiveSection("dashboard")}
+              className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Automatisations</p>
+        <h2 className="mt-2 text-xl font-semibold text-slate-900">
+          Automatisations <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BETA</span>
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">Structure prête. Les déclencheurs et actions réelles arrivent bientôt.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {["Créer tâche récurrente", "Rappel intelligent", "Blocage auto du focus", "Règles de priorités"].map((label) => (
+            <button
+              key={label}
+              disabled
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-500"
+            >
+              {label} (bientôt)
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
@@ -1791,6 +1840,8 @@ export default function MyPlanningClient({
         return renderManage();
       case "coaching":
         return renderCoaching();
+      case "automations":
+        return renderAutomations();
       case "settings":
         return renderSettings();
       default:
@@ -1845,7 +1896,7 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">PRO</span> : null}
+                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
                         </span>
                       )}
                     </button>
@@ -1872,7 +1923,7 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">PRO</span> : null}
+                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
                         </span>
                       )}
                     </button>
@@ -1954,7 +2005,7 @@ export default function MyPlanningClient({
                   >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
-                    {locked ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>PRO</span> : null}
+                    {locked ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>🔒 PRO</span> : null}
                   </button>
                 );
               })}

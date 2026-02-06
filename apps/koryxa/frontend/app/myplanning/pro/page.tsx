@@ -15,7 +15,11 @@ function inferPlanFromRoles(roles?: string[]): PlanTier {
 
 export default function MyPlanningProPage() {
   const { user } = useAuth();
-  const plan = useMemo(() => inferPlanFromRoles(user?.roles), [user?.roles]);
+  const plan = useMemo(() => {
+    const raw = String(user?.plan || "").toLowerCase();
+    if (raw === "free" || raw === "pro" || raw === "team") return raw as PlanTier;
+    return inferPlanFromRoles(user?.roles);
+  }, [user?.plan, user?.roles]);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -32,7 +36,7 @@ export default function MyPlanningProPage() {
             className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-6 py-3 text-sm font-semibold text-slate-600"
             title="Paiement non branché (bêta)"
           >
-            Passer à Pro
+            Activer l’offre Pro (bientôt)
           </button>
           <button
             disabled
@@ -62,7 +66,7 @@ export default function MyPlanningProPage() {
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">🤖 Coaching IA</p>
+          <p className="text-sm font-semibold text-slate-900">🤖 Coaching IA <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BÊTA</span></p>
           <p className="mt-2 text-sm text-slate-600">
             Suggestions de priorités, réorganisation selon la réalité, feedback quotidien. Tu gardes le contrôle.
           </p>
@@ -73,7 +77,7 @@ export default function MyPlanningProPage() {
           </div>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">📊 Stats & graphiques</p>
+          <p className="text-sm font-semibold text-slate-900">📊 Stats & graphiques <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BÊTA</span></p>
           <p className="mt-2 text-sm text-slate-600">
             Complétion, régularité, focus, impact. Pas pour “faire joli” : pour décider et ajuster.
           </p>
@@ -95,7 +99,10 @@ export default function MyPlanningProPage() {
             </span>
           ))}
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-            Automatisations (structure prête)
+            Automatisations (bientôt)
+          </span>
+          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+            BÊTA
           </span>
         </div>
         <p className="mt-4 text-xs text-slate-500">Boutons visibles, fonctionnalités en bêta/à venir selon l’avancement.</p>

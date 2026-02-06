@@ -25,7 +25,7 @@ export default function MyPlanningProPage() {
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
-        <h1 className="mt-4 text-3xl font-semibold text-slate-900">Passe de “je fais” à “j’avance”.</h1>
+        <h1 className="mt-4 text-3xl font-semibold text-slate-900">MyPlanning Pro - Passe du controle a la performance.</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
           Pro débloque ce qui crée la valeur : une IA utile (pas décorative) et des stats d’exécution pour mesurer ton impact.
         </p>
@@ -71,7 +71,7 @@ export default function MyPlanningProPage() {
             Suggestions de priorités, réorganisation selon la réalité, feedback quotidien. Tu gardes le contrôle.
           </p>
           <div className="mt-4">
-            <Link href="/myplanning/ai-coaching" className="text-sm font-semibold text-sky-700 hover:underline">
+            <Link href="/myplanning/coaching-ia" className="text-sm font-semibold text-sky-700 hover:underline">
               Voir comment l’IA fonctionne →
             </Link>
           </div>
@@ -104,6 +104,11 @@ export default function MyPlanningProPage() {
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
             BÊTA
           </span>
+        </div>
+        <div className="mt-4">
+          <Link href="/myplanning/automatisations" className="text-sm font-semibold text-sky-700 hover:underline">
+            Voir la page Automatisations →
+          </Link>
         </div>
         <p className="mt-4 text-xs text-slate-500">Boutons visibles, fonctionnalités en bêta/à venir selon l’avancement.</p>
       </section>

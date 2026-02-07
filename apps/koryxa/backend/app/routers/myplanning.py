@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 import time
@@ -182,9 +183,11 @@ def _intent_to_text(value: str) -> str:
 def _serialize_onboarding_state(doc: Optional[Dict[str, Any]]) -> OnboardingStateResponse:
     if not doc:
         return OnboardingStateResponse()
+    goal = doc.get("main_goal_mid_term") or doc.get("main_goal")
     return OnboardingStateResponse(
         user_intent=doc.get("user_intent"),
-        main_goal=doc.get("main_goal"),
+        main_goal_mid_term=goal,
+        daily_focus_hint=doc.get("daily_focus_hint"),
         daily_time_budget=doc.get("daily_time_budget"),
         onboarding_completed=bool(doc.get("onboarding_completed")),
         generated_tasks=doc.get("generated_tasks") or [],
@@ -192,23 +195,29 @@ def _serialize_onboarding_state(doc: Optional[Dict[str, Any]]) -> OnboardingStat
     )
 
 
-def _build_onboarding_brief(intent: str, goal: str, daily_budget: str) -> str:
+def _build_onboarding_brief(intent: str, goal: str, daily_focus_hint: str | None, daily_budget: str) -> str:
     minutes = _daily_budget_to_minutes(daily_budget)
+    focus = (daily_focus_hint or "").strip()
+    focus_line = f"Focus du jour suggéré: {focus}.\n" if focus else ""
     return (
-        f"Intent: {_intent_to_text(intent)}.\n"
-        f"Objectif principal: {goal.strip()}.\n"
+        f"Contexte d'usage: {_intent_to_text(intent)}.\n"
+        f"Objectif moyen terme (1-4 semaines): {goal.strip()}.\n"
+        f"{focus_line}"
         f"Temps réel par jour: {minutes} minutes.\n"
-        "Retourne uniquement les actions les plus utiles aujourd'hui."
+        "Retourne des tâches pour aujourd'hui qui contribuent directement à l'objectif moyen terme. "
+        "Évite les routines génériques (réveil, douche, petit-déjeuner) si elles ne font pas avancer l'objectif."
     )
 
 
-def _fallback_onboarding_tasks(main_goal: str, daily_minutes: int) -> List[Dict[str, Any]]:
+def _fallback_onboarding_tasks(main_goal: str, daily_focus_hint: str | None, daily_minutes: int) -> List[Dict[str, Any]]:
     main_block = max(20, min(120, int(daily_minutes * 0.6)))
     prep_block = max(10, min(40, int(daily_minutes * 0.2)))
     close_block = max(10, min(30, int(daily_minutes * 0.2)))
+    focus_title = (daily_focus_hint or "").strip()
+    prep_title = focus_title if focus_title else f"Clarifier le livrable lié à {main_goal.strip()[:80]}"
     return [
         {
-            "title": "Clarifier le livrable du jour",
+            "title": prep_title,
             "estimated_time": prep_block,
             "impact_level": "moyen",
         },
@@ -225,7 +234,47 @@ def _fallback_onboarding_tasks(main_goal: str, daily_minutes: int) -> List[Dict[
     ]
 
 
-def _normalize_onboarding_tasks(candidates: List[Dict[str, Any]], goal: str, daily_budget: str) -> List[Dict[str, Any]]:
+def _tokenize_for_match(text: str) -> set[str]:
+    words = re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}", text.lower())
+    stopwords = {
+        "pour", "avec", "dans", "sans", "une", "des", "les", "sur", "mon", "ton", "son", "leur",
+        "faire", "plus", "tres", "objectif", "aujourdhui", "aujourd", "hui", "prochaines", "semaines",
+    }
+    return {w for w in words if w not in stopwords}
+
+
+def _is_generic_routine(title: str) -> bool:
+    t = title.lower()
+    routine_markers = [
+        "réveil", "reveil", "petit-déjeuner", "petit dejeuner", "douche", "sieste",
+        "pause déjeuner", "pause dejeuner", "déjeuner", "dejeuner", "manger", "sport 20h",
+    ]
+    return any(marker in t for marker in routine_markers)
+
+
+def _is_task_related_to_goal(title: str, goal: str, daily_focus_hint: str | None) -> bool:
+    title_tokens = _tokenize_for_match(title)
+    if not title_tokens:
+        return False
+    goal_tokens = _tokenize_for_match(goal)
+    focus_tokens = _tokenize_for_match(daily_focus_hint or "")
+    # Require at least one shared token with goal/focus to ensure direct contribution.
+    if goal_tokens and title_tokens.intersection(goal_tokens):
+        return True
+    if focus_tokens and title_tokens.intersection(focus_tokens):
+        return True
+    # If no lexical overlap and routine marker detected, reject directly.
+    if _is_generic_routine(title):
+        return False
+    return False
+
+
+def _normalize_onboarding_tasks(
+    candidates: List[Dict[str, Any]],
+    goal: str,
+    daily_focus_hint: str | None,
+    daily_budget: str,
+) -> List[Dict[str, Any]]:
     daily_minutes = _daily_budget_to_minutes(daily_budget)
     normalized: List[Dict[str, Any]] = []
     seen_titles: set[str] = set()
@@ -234,6 +283,8 @@ def _normalize_onboarding_tasks(candidates: List[Dict[str, Any]], goal: str, dai
             break
         title = str(item.get("title") or "").strip()
         if len(title) < 3:
+            continue
+        if not _is_task_related_to_goal(title, goal, daily_focus_hint):
             continue
         key = title.lower()
         if key in seen_titles:
@@ -255,7 +306,7 @@ def _normalize_onboarding_tasks(candidates: List[Dict[str, Any]], goal: str, dai
         seen_titles.add(key)
 
     if len(normalized) < 3:
-        for fallback in _fallback_onboarding_tasks(goal, daily_minutes):
+        for fallback in _fallback_onboarding_tasks(goal, daily_focus_hint, daily_minutes):
             if len(normalized) >= 3:
                 break
             key = fallback["title"].lower()
@@ -287,8 +338,10 @@ async def update_onboarding_state(
         return _serialize_onboarding_state(doc)
     if "onboarding_completed" in updates:
         raise HTTPException(status_code=400, detail="Utilisez /myplanning/onboarding/complete pour terminer l’onboarding.")
-    if "main_goal" in updates and isinstance(updates["main_goal"], str):
-        updates["main_goal"] = updates["main_goal"].strip()
+    if "main_goal_mid_term" in updates and isinstance(updates["main_goal_mid_term"], str):
+        updates["main_goal_mid_term"] = updates["main_goal_mid_term"].strip()
+    if "daily_focus_hint" in updates and isinstance(updates["daily_focus_hint"], str):
+        updates["daily_focus_hint"] = updates["daily_focus_hint"].strip()
     if "generated_tasks" in updates and updates["generated_tasks"] is not None:
         updates["generated_tasks"] = updates["generated_tasks"][:3]
     now = datetime.utcnow()
@@ -316,17 +369,19 @@ async def generate_onboarding_tasks(
     current: dict = Depends(get_current_user),
 ) -> OnboardingGenerateResponse:
     _rate_limit(f"onboarding_generate:{current['_id']}", limit=20, window_seconds=60)
-    goal = payload.main_goal.strip()
-    brief = _build_onboarding_brief(payload.user_intent, goal, payload.daily_time_budget)
+    goal = payload.main_goal_mid_term.strip()
+    daily_focus_hint = (payload.daily_focus_hint or "").strip() or None
+    brief = _build_onboarding_brief(payload.user_intent, goal, daily_focus_hint, payload.daily_time_budget)
     drafts, _used_fallback = await suggest_tasks_from_text(brief, "fr", None)
-    generated_tasks = _normalize_onboarding_tasks(drafts, goal, payload.daily_time_budget)
+    generated_tasks = _normalize_onboarding_tasks(drafts, goal, daily_focus_hint, payload.daily_time_budget)
     now = datetime.utcnow()
     await db[ONBOARDING_COLLECTION].update_one(
         {"user_id": current["_id"]},
         {
             "$set": {
                 "user_intent": payload.user_intent,
-                "main_goal": goal,
+                "main_goal_mid_term": goal,
+                "daily_focus_hint": daily_focus_hint,
                 "daily_time_budget": payload.daily_time_budget,
                 "generated_tasks": generated_tasks,
                 "onboarding_completed": False,
@@ -350,8 +405,9 @@ async def complete_onboarding(
         raise HTTPException(status_code=400, detail="Onboarding introuvable. Reprenez depuis l’étape 1.")
     if doc.get("onboarding_completed"):
         raise HTTPException(status_code=409, detail="Onboarding déjà terminé.")
-    if not doc.get("user_intent") or not doc.get("main_goal") or not doc.get("daily_time_budget"):
-        raise HTTPException(status_code=400, detail="Onboarding incomplet. Terminez d’abord les étapes 1 à 4.")
+    goal = doc.get("main_goal_mid_term") or doc.get("main_goal")
+    if not doc.get("user_intent") or not goal or not doc.get("daily_time_budget"):
+        raise HTTPException(status_code=400, detail="Onboarding incomplet. Terminez d’abord les étapes 1 à 5.")
 
     generated_tasks = [item.dict() for item in payload.generated_tasks][:3]
     now = datetime.utcnow()
@@ -366,14 +422,14 @@ async def complete_onboarding(
             {
                 "user_id": current["_id"],
                 "title": task["title"],
-                "description": f"Objectif principal: {doc.get('main_goal')}",
+                "description": f"Objectif moyen terme: {goal}",
                 "category": "Onboarding MyPlanning",
                 "priority_eisenhower": "urgent_important" if impact_level == "élevé" else "important_not_urgent",
                 "kanban_state": "todo",
                 "high_impact": impact_level == "élevé",
                 "estimated_duration_minutes": int(task["estimated_time"]),
                 "due_datetime": due_dt,
-                "linked_goal": str(doc.get("main_goal")),
+                "linked_goal": str(goal),
                 "source": "ia",
                 "created_at": now,
                 "updated_at": now,

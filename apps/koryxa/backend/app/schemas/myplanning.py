@@ -148,7 +148,8 @@ class OnboardingGeneratedTask(BaseModel):
 
 class OnboardingStateResponse(BaseModel):
     user_intent: Optional[OnboardingIntent] = None
-    main_goal: Optional[str] = Field(default=None, max_length=120)
+    main_goal_mid_term: Optional[str] = Field(default=None, max_length=120)
+    daily_focus_hint: Optional[str] = Field(default=None, max_length=120)
     daily_time_budget: Optional[DailyTimeBudget] = None
     onboarding_completed: bool = False
     generated_tasks: List[OnboardingGeneratedTask] = Field(default_factory=list)
@@ -157,7 +158,8 @@ class OnboardingStateResponse(BaseModel):
 
 class OnboardingUpdatePayload(BaseModel):
     user_intent: Optional[OnboardingIntent] = None
-    main_goal: Optional[str] = Field(default=None, max_length=120)
+    main_goal_mid_term: Optional[str] = Field(default=None, max_length=120)
+    daily_focus_hint: Optional[str] = Field(default=None, max_length=120)
     daily_time_budget: Optional[DailyTimeBudget] = None
     generated_tasks: Optional[List[OnboardingGeneratedTask]] = Field(default=None, max_length=3)
     onboarding_completed: Optional[bool] = None
@@ -165,7 +167,8 @@ class OnboardingUpdatePayload(BaseModel):
 
 class OnboardingGeneratePayload(BaseModel):
     user_intent: OnboardingIntent
-    main_goal: str = Field(..., min_length=2, max_length=120)
+    main_goal_mid_term: str = Field(..., min_length=2, max_length=120)
+    daily_focus_hint: Optional[str] = Field(default=None, max_length=120)
     daily_time_budget: DailyTimeBudget
 
 

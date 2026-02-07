@@ -3,8 +3,18 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import PaywallModal from "./components/PaywallModal";
+import {
+  hasPlanAccess,
+  inferUserPlan,
+  lockedBadgeLabel,
+  MyPlanningFeatureId,
+  MYPLANNING_ACTION_ITEMS,
+  MYPLANNING_FEATURE_MAP,
+  MYPLANNING_MENU_ITEMS,
+  MYPLANNING_VIEW_ITEMS,
+} from "@/config/planFeatures";
 
 // Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
 const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api");
@@ -65,47 +75,8 @@ type AiDraft = {
   due_datetime?: string | null;
 };
 
-type SidebarItem = { id: string; label: string; icon?: string };
-
-const VIEWS: SidebarItem[] = [
-  { id: "dashboard", label: "Dashboard quotidien", icon: "📅" },
-  { id: "weekly", label: "Vue hebdomadaire", icon: "🗓️" },
-  { id: "matrix", label: "Matrice temps / tâches", icon: "🪧" },
-  { id: "stats", label: "Stats & graphiques", icon: "📈" },
-];
-
-const ACTIONS: SidebarItem[] = [
-  { id: "create", label: "Nouvelle tâche", icon: "➕" },
-  { id: "manage", label: "Gérer les tâches", icon: "📋" },
-  { id: "coaching", label: "Coaching IA", icon: "🤖" },
-  { id: "automations", label: "Automatisations", icon: "⚡" },
-  { id: "settings", label: "Paramètres IA", icon: "⚙️" },
-];
-
-type PlanTier = "free" | "pro" | "team";
-
-const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, team: 2 };
-
-function inferPlanFromUser(input?: { plan?: string; roles?: string[] } | null): PlanTier {
-  const plan = String(input?.plan || "").toLowerCase();
-  if (plan === "free" || plan === "pro" || plan === "team") return plan;
-  const roles = input?.roles;
-  const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
-  if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
-  if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
-  return "free";
-}
-
-function canAccess(plan: PlanTier, required: PlanTier) {
-  return PLAN_RANK[plan] >= PLAN_RANK[required];
-}
-
-const FEATURE_PLAN: Record<string, PlanTier> = {
-  stats: "pro",
-  coaching: "pro",
-  automations: "pro",
-  settings: "pro",
-};
+const VIEWS = MYPLANNING_VIEW_ITEMS;
+const ACTIONS = MYPLANNING_ACTION_ITEMS;
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent_important: "Urgent & important",
@@ -340,14 +311,17 @@ export default function MyPlanningClient({
   initialSection?: string;
 }) {
   const { user } = useAuth();
-  const router = useRouter();
-  const plan = useMemo(() => inferPlanFromUser(user), [user]);
+  const plan = useMemo(() => inferUserPlan(user), [user]);
+  const initialFeature = useMemo<MyPlanningFeatureId>(
+    () => (initialSection && initialSection in MYPLANNING_FEATURE_MAP ? (initialSection as MyPlanningFeatureId) : "dashboard"),
+    [initialSection]
+  );
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
-  const [activeSection, setActiveSection] = useState<string>(() => initialSection || "dashboard");
+  const [activeSection, setActiveSection] = useState<MyPlanningFeatureId>(initialFeature);
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -377,6 +351,7 @@ export default function MyPlanningClient({
   }>({ autonomy: "medium", tone: "coach", quietHours: "06:00-22:00", notifications: true });
   const [dueDatePart, setDueDatePart] = useState<string>("");
   const [dueTimePart, setDueTimePart] = useState<string>("");
+  const [paywallFeature, setPaywallFeature] = useState<MyPlanningFeatureId | null>(null);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -406,18 +381,23 @@ export default function MyPlanningClient({
     void loadTasks();
   }, []);
 
-  function redirectToProUpsell(feature?: string) {
-    const params = new URLSearchParams();
-    params.set("upgrade", "pro");
-    params.set("message", "Fonctionnalité Pro - débloque le pilotage avancé.");
-    if (feature) params.set("feature", feature);
-    router.push(`/myplanning/pricing?${params.toString()}`);
+  function openPaywall(featureId: MyPlanningFeatureId) {
+    setPaywallFeature(featureId);
   }
 
-  function handleSectionClick(sectionId: string) {
-    const required = FEATURE_PLAN[sectionId];
-    if (required && !canAccess(plan, required)) {
-      redirectToProUpsell(sectionId);
+  function closePaywall() {
+    setPaywallFeature(null);
+  }
+
+  function isFeatureLocked(featureId: MyPlanningFeatureId): boolean {
+    const feature = MYPLANNING_FEATURE_MAP[featureId];
+    if (!feature) return false;
+    return !hasPlanAccess(plan, feature.minPlan);
+  }
+
+  function handleSectionClick(sectionId: MyPlanningFeatureId) {
+    if (isFeatureLocked(sectionId)) {
+      openPaywall(sectionId);
       return;
     }
     setActiveSection(sectionId);
@@ -643,8 +623,8 @@ export default function MyPlanningClient({
   };
 
   const handleAiSuggest = async () => {
-    if (!canAccess(plan, "pro")) {
-      redirectToProUpsell("coaching");
+    if (!hasPlanAccess(plan, "pro")) {
+      openPaywall("coaching");
       return;
     }
     if (!aiText.trim()) return;
@@ -685,8 +665,8 @@ export default function MyPlanningClient({
   };
 
   const handleAddDraft = async (draft: AiDraft, index: number) => {
-    if (!canAccess(plan, "pro")) {
-      redirectToProUpsell("coaching");
+    if (!hasPlanAccess(plan, "pro")) {
+      openPaywall("coaching");
       return;
     }
     if (!draft.title) return;
@@ -777,8 +757,8 @@ export default function MyPlanningClient({
                 </button>
                 <button
                   onClick={() => {
-                    if (!canAccess(plan, "pro")) {
-                      redirectToProUpsell("coaching");
+                    if (!hasPlanAccess(plan, "pro")) {
+                      openPaywall("coaching");
                       return;
                     }
                     setActiveSection("coaching");
@@ -825,8 +805,8 @@ export default function MyPlanningClient({
           <button
             onClick={() => {
               setSelectedDate(monday);
-              if (!canAccess(plan, "pro")) {
-                redirectToProUpsell("coaching");
+              if (!hasPlanAccess(plan, "pro")) {
+                openPaywall("coaching");
                 return;
               }
               setActiveSection("coaching");
@@ -933,7 +913,7 @@ export default function MyPlanningClient({
   };
 
   const renderStats = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
@@ -1662,7 +1642,7 @@ export default function MyPlanningClient({
   );
 
   const renderSettings = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
@@ -1784,7 +1764,7 @@ export default function MyPlanningClient({
   };
 
   const renderAutomations = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
@@ -1830,6 +1810,50 @@ export default function MyPlanningClient({
     );
   };
 
+  const renderTemplates = () => {
+    if (!hasPlanAccess(plan, "pro")) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Templates universels</h2>
+          <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/myplanning/pricing?upgrade=pro&feature=templates&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
+              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+            >
+              Voir l’offre Pro
+            </Link>
+            <button
+              onClick={() => setActiveSection("dashboard")}
+              className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Templates universels</p>
+        <h2 className="mt-2 text-xl font-semibold text-slate-900">
+          Templates <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BETA</span>
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">Bibliothèque de templates prête pour étudiants, freelances et entrepreneurs.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {["Étudiant", "Freelance", "Entrepreneur"].map((label) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">{label}</p>
+              <p className="mt-1 text-xs text-slate-500">Template prêt à personnaliser.</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
@@ -1846,6 +1870,8 @@ export default function MyPlanningClient({
         return renderManage();
       case "coaching":
         return renderCoaching();
+      case "templates":
+        return renderTemplates();
       case "automations":
         return renderAutomations();
       case "settings":
@@ -1887,8 +1913,7 @@ export default function MyPlanningClient({
               <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Vues</p>
               <div className="mt-2 space-y-2">
                 {VIEWS.map((item) => {
-                  const required = FEATURE_PLAN[item.id];
-                  const locked = required ? !canAccess(plan, required) : false;
+                  const locked = !hasPlanAccess(plan, item.minPlan);
                   return (
                     <button
                       key={item.id}
@@ -1902,7 +1927,11 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
+                          {locked ? (
+                            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
+                              {lockedBadgeLabel(item.minPlan, item.beta)}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </button>
@@ -1914,8 +1943,7 @@ export default function MyPlanningClient({
               <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Actions</p>
               <div className="mt-2 space-y-2">
                 {ACTIONS.map((item) => {
-                  const required = FEATURE_PLAN[item.id];
-                  const locked = required ? !canAccess(plan, required) : false;
+                  const locked = !hasPlanAccess(plan, item.minPlan);
                   return (
                     <button
                       key={item.id}
@@ -1929,7 +1957,11 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
+                          {locked ? (
+                            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
+                              {lockedBadgeLabel(item.minPlan, item.beta)}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </button>
@@ -1943,7 +1975,9 @@ export default function MyPlanningClient({
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{VIEWS.concat(ACTIONS).find((item) => item.id === activeSection)?.label || "MyPlanning"}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+              {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanning"}
+            </p>
             <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1995,8 +2029,7 @@ export default function MyPlanningClient({
           <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
             <div className="flex items-center gap-2 overflow-x-auto">
               {[...VIEWS, ...ACTIONS].map((item) => {
-                const required = FEATURE_PLAN[item.id];
-                const locked = required ? !canAccess(plan, required) : false;
+                const locked = !hasPlanAccess(plan, item.minPlan);
                 const active = activeSection === item.id;
                 return (
                   <button
@@ -2011,7 +2044,11 @@ export default function MyPlanningClient({
                   >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
-                    {locked ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>🔒 PRO</span> : null}
+                    {locked ? (
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
+                        {lockedBadgeLabel(item.minPlan, item.beta)}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -2019,6 +2056,14 @@ export default function MyPlanningClient({
           </div>
         </div>
       ) : null}
+
+      <PaywallModal
+        open={Boolean(paywallFeature)}
+        title="Fonctionnalité Pro (bêta)"
+        message="Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanning Pro."
+        ctaHref={paywallFeature ? `/myplanning/pricing?upgrade=pro&feature=${paywallFeature}` : "/myplanning/pricing?upgrade=pro"}
+        onClose={closePaywall}
+      />
 
     </div>
   );

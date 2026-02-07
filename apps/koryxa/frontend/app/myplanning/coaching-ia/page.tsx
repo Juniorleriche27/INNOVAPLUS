@@ -3,23 +3,11 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-
-type PlanTier = "free" | "pro" | "team";
-
-function inferPlanFromRoles(roles?: string[]): PlanTier {
-  const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
-  if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
-  if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
-  return "free";
-}
+import { inferUserPlan } from "@/config/planFeatures";
 
 export default function MyPlanningCoachingIAPage() {
   const { user } = useAuth();
-  const plan = useMemo(() => {
-    const raw = String(user?.plan || "").toLowerCase();
-    if (raw === "free" || raw === "pro" || raw === "team") return raw as PlanTier;
-    return inferPlanFromRoles(user?.roles);
-  }, [user?.plan, user?.roles]);
+  const plan = useMemo(() => inferUserPlan(user), [user]);
   const isFree = plan === "free";
 
   return (
@@ -28,7 +16,7 @@ export default function MyPlanningCoachingIAPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Coaching IA</p>
         <h1 className="mt-4 text-3xl font-semibold text-slate-900">L’IA t’aide à décider quoi faire aujourd’hui.</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
-          Pas à remplir des listes. MyPlanning utilise tes tâches, tes priorités et ton historique pour te proposer un plan exécutable.
+          Pas à remplir des listes. MyPlanning utilise tes tâches, tes priorités et ton historique pour proposer un plan exécutable.
         </p>
 
         {isFree ? (
@@ -51,9 +39,9 @@ export default function MyPlanningCoachingIAPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold text-slate-900">Ce que l’IA fait</p>
           <ul className="mt-3 space-y-2 text-sm text-slate-700">
-            <li>• Suggestions de priorités (impact réel, pas juste urgent)</li>
-            <li>• Ajustement du planning selon la réalité (temps disponible, charge)</li>
-            <li>• Coaching léger : focus, next step, simplification</li>
+            <li>• Suggestions de priorités</li>
+            <li>• Ajustement du planning selon la réalité</li>
+            <li>• Coaching léger sur l’exécution</li>
           </ul>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -61,15 +49,14 @@ export default function MyPlanningCoachingIAPage() {
           <ul className="mt-3 space-y-2 text-sm text-slate-700">
             <li>• Ne décide pas à ta place</li>
             <li>• Ne lance pas d’actions cachées</li>
-            <li>• Ne “sur-optimise” pas : c’est toi qui choisis</li>
+            <li>• Ne remplace pas ton jugement</li>
           </ul>
         </div>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold text-slate-900">Données utilisées</p>
-        <p className="mt-2 text-sm text-slate-700">Tâches, priorités (Eisenhower), historique de complétion, et contraintes de temps déclarées.</p>
-        <p className="mt-2 text-xs text-slate-500">Aucune promesse magique : l’objectif est d’améliorer la décision quotidienne et la régularité.</p>
+        <p className="mt-2 text-sm text-slate-700">Tâches, priorités, historique de complétion, contraintes de temps déclarées.</p>
       </section>
     </div>
   );

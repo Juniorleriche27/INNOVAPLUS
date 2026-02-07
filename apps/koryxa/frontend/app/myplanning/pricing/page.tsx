@@ -1,8 +1,4 @@
-"use client";
-
-import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
 const TIERS = [
   {
@@ -25,7 +21,29 @@ const TIERS = [
   },
 ];
 
-function PricingLayout({ upgradeMessage, feature }: { upgradeMessage?: string; feature?: string }) {
+type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParamsInput = SearchParams | Promise<SearchParams>;
+
+function one(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchParams | undefined> {
+  if (!input) return undefined;
+  if (typeof (input as Promise<SearchParams>).then === "function") {
+    return await (input as Promise<SearchParams>);
+  }
+  return input as SearchParams;
+}
+
+export default async function MyPlanningPricingPage({ searchParams }: { searchParams?: SearchParamsInput }) {
+  const params = await resolveSearchParams(searchParams);
+  const upgrade = one(params?.upgrade);
+  const feature = one(params?.feature);
+  const message = one(params?.message);
+  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
+
   return (
     <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4">
@@ -33,9 +51,7 @@ function PricingLayout({ upgradeMessage, feature }: { upgradeMessage?: string; f
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arrivent apres la phase MVP.</p>
-          <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">
-            Early users: un prix preferentiel sera propose au lancement officiel.
-          </p>
+          <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>
         </div>
         <Link
           href="/myplanning/app"
@@ -75,23 +91,5 @@ function PricingLayout({ upgradeMessage, feature }: { upgradeMessage?: string; f
         ))}
       </div>
     </div>
-  );
-}
-
-function PricingFromQuery() {
-  const searchParams = useSearchParams();
-  const upgrade = searchParams.get("upgrade");
-  const feature = searchParams.get("feature");
-  const message = searchParams.get("message");
-  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
-
-  return <PricingLayout upgradeMessage={upgradeMessage} feature={feature || undefined} />;
-}
-
-export default function MyPlanningPricingPage() {
-  return (
-    <Suspense fallback={<PricingLayout />}>
-      <PricingFromQuery />
-    </Suspense>
   );
 }

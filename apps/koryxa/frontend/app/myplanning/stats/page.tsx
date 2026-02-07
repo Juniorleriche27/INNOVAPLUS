@@ -4,23 +4,11 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import MyPlanningClient from "../MyPlanningClient";
-
-type PlanTier = "free" | "pro" | "team";
-
-function inferPlanFromRoles(roles?: string[]): PlanTier {
-  const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
-  if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
-  if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
-  return "free";
-}
+import { inferUserPlan } from "@/config/planFeatures";
 
 export default function MyPlanningStatsPage() {
   const { user } = useAuth();
-  const plan = useMemo(() => {
-    const raw = String(user?.plan || "").toLowerCase();
-    if (raw === "free" || raw === "pro" || raw === "team") return raw as PlanTier;
-    return inferPlanFromRoles(user?.roles);
-  }, [user?.plan, user?.roles]);
+  const plan = useMemo(() => inferUserPlan(user), [user]);
 
   if (plan === "free") {
     return (
@@ -30,10 +18,7 @@ export default function MyPlanningStatsPage() {
           <h1 className="mt-4 text-3xl font-semibold text-slate-900">Stats & graphiques</h1>
           <p className="mt-3 text-sm text-slate-700">Les statistiques avancées sont disponibles en Pro.</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Link
-              href="/myplanning/pricing?upgrade=pro&feature=stats&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
-              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
-            >
+            <Link href="/myplanning/pricing?upgrade=pro&feature=stats" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
               Voir l’offre Pro
             </Link>
             <Link href="/myplanning/app" className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">

@@ -1,6 +1,7 @@
-import Link from "next/link";
+"use client";
 
-export const revalidate = 3600;
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 const TIERS = [
   {
@@ -23,14 +24,12 @@ const TIERS = [
   },
 ];
 
-export default function MyPlanningPricingPage({
-  searchParams,
-}: {
-  searchParams?: { message?: string; upgrade?: string; feature?: string };
-}) {
-  const upgradeMessage =
-    searchParams?.message ||
-    (searchParams?.upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
+export default function MyPlanningPricingPage() {
+  const searchParams = useSearchParams();
+  const upgrade = searchParams.get("upgrade");
+  const feature = searchParams.get("feature");
+  const message = searchParams.get("message");
+  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
 
   return (
     <div className="mx-auto w-full max-w-6xl">
@@ -54,7 +53,7 @@ export default function MyPlanningPricingPage({
       {upgradeMessage ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">{upgradeMessage}</p>
-          {searchParams?.feature ? <p className="mt-1 text-amber-800">Fonction demandee: {searchParams.feature}</p> : null}
+          {feature ? <p className="mt-1 text-amber-800">Fonction demandee: {feature}</p> : null}
         </div>
       ) : null}
 

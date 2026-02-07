@@ -2,9 +2,9 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
+import { FORCED_PLAN, PlanTier } from "@/config/planFeatures";
 
 type WorkspaceRole = "demandeur" | "prestataire";
-type PlanTier = "free" | "pro" | "team";
 
 type User = {
   id: string;
@@ -27,6 +27,11 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const pendingRefresh = new WeakMap<Window | Document, Promise<void>>();
+
+function withForcedPlan(user: User): User {
+  if (!user || !FORCED_PLAN) return user;
+  return { ...user, plan: FORCED_PLAN };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
@@ -53,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       if (!res.ok) throw new Error("not auth");
       const data = (await res.json()) as User;
-      setUser(data);
+      setUser(withForcedPlan(data));
       setInitialLoggedIn(true);
     } catch (err) {
       if ((err as Error).name !== "AbortError") {

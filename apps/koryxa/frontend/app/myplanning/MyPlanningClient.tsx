@@ -3,8 +3,18 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import PaywallModal from "./components/PaywallModal";
+import {
+  hasPlanAccess,
+  inferUserPlan,
+  lockedBadgeLabel,
+  MyPlanningFeatureId,
+  MYPLANNING_ACTION_ITEMS,
+  MYPLANNING_FEATURE_MAP,
+  MYPLANNING_MENU_ITEMS,
+  MYPLANNING_VIEW_ITEMS,
+} from "@/config/planFeatures";
 
 // Ensure the base does not contain duplicated /innova/api segments (older envs or caches)
 const CLEAN_API_BASE = INNOVA_API_BASE.replace(/(\/innova\/api)+/g, "/innova/api");
@@ -65,47 +75,40 @@ type AiDraft = {
   due_datetime?: string | null;
 };
 
-type SidebarItem = { id: string; label: string; icon?: string };
+type OnboardingIntent = "study_learn" | "work_deliver" | "build_project" | "organize_better";
+type OnboardingBudget = "30_minutes" | "1_hour" | "2_hours" | "plus_2_hours";
+type OnboardingImpactLevel = "élevé" | "moyen";
 
-const VIEWS: SidebarItem[] = [
-  { id: "dashboard", label: "Dashboard quotidien", icon: "📅" },
-  { id: "weekly", label: "Vue hebdomadaire", icon: "🗓️" },
-  { id: "matrix", label: "Matrice temps / tâches", icon: "🪧" },
-  { id: "stats", label: "Stats & graphiques", icon: "📈" },
-];
-
-const ACTIONS: SidebarItem[] = [
-  { id: "create", label: "Nouvelle tâche", icon: "➕" },
-  { id: "manage", label: "Gérer les tâches", icon: "📋" },
-  { id: "coaching", label: "Coaching IA", icon: "🤖" },
-  { id: "automations", label: "Automatisations", icon: "⚡" },
-  { id: "settings", label: "Paramètres IA", icon: "⚙️" },
-];
-
-type PlanTier = "free" | "pro" | "team";
-
-const PLAN_RANK: Record<PlanTier, number> = { free: 0, pro: 1, team: 2 };
-
-function inferPlanFromUser(input?: { plan?: string; roles?: string[] } | null): PlanTier {
-  const plan = String(input?.plan || "").toLowerCase();
-  if (plan === "free" || plan === "pro" || plan === "team") return plan;
-  const roles = input?.roles;
-  const normalized = new Set((roles || []).map((role) => String(role).toLowerCase()));
-  if (normalized.has("admin") || normalized.has("myplanning_team") || normalized.has("team")) return "team";
-  if (normalized.has("myplanning_pro") || normalized.has("pro")) return "pro";
-  return "free";
-}
-
-function canAccess(plan: PlanTier, required: PlanTier) {
-  return PLAN_RANK[plan] >= PLAN_RANK[required];
-}
-
-const FEATURE_PLAN: Record<string, PlanTier> = {
-  stats: "pro",
-  coaching: "pro",
-  automations: "pro",
-  settings: "pro",
+type OnboardingGeneratedTask = {
+  title: string;
+  estimated_time: number;
+  impact_level: OnboardingImpactLevel;
 };
+
+type OnboardingState = {
+  user_intent?: OnboardingIntent | null;
+  main_goal?: string | null;
+  daily_time_budget?: OnboardingBudget | null;
+  onboarding_completed: boolean;
+  generated_tasks: OnboardingGeneratedTask[];
+};
+
+const ONBOARDING_INTENT_OPTIONS: Array<{ value: OnboardingIntent; label: string }> = [
+  { value: "study_learn", label: "Étudier / apprendre" },
+  { value: "work_deliver", label: "Travailler / livrer" },
+  { value: "build_project", label: "Construire un projet" },
+  { value: "organize_better", label: "Mieux m’organiser" },
+];
+
+const ONBOARDING_BUDGET_OPTIONS: Array<{ value: OnboardingBudget; label: string }> = [
+  { value: "30_minutes", label: "30 minutes" },
+  { value: "1_hour", label: "1 heure" },
+  { value: "2_hours", label: "2 heures" },
+  { value: "plus_2_hours", label: "+2 heures" },
+];
+
+const VIEWS = MYPLANNING_VIEW_ITEMS;
+const ACTIONS = MYPLANNING_ACTION_ITEMS;
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent_important: "Urgent & important",
@@ -340,14 +343,17 @@ export default function MyPlanningClient({
   initialSection?: string;
 }) {
   const { user } = useAuth();
-  const router = useRouter();
-  const plan = useMemo(() => inferPlanFromUser(user), [user]);
+  const plan = useMemo(() => inferUserPlan(user), [user]);
+  const initialFeature = useMemo<MyPlanningFeatureId>(
+    () => (initialSection && initialSection in MYPLANNING_FEATURE_MAP ? (initialSection as MyPlanningFeatureId) : "dashboard"),
+    [initialSection]
+  );
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [taskLoadError, setTaskLoadError] = useState<string | null>(null);
   const [banner, setBanner] = useState<{ type: "error" | "success"; message: string } | null>(null);
-  const [activeSection, setActiveSection] = useState<string>(() => initialSection || "dashboard");
+  const [activeSection, setActiveSection] = useState<MyPlanningFeatureId>(initialFeature);
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [formValues, setFormValues] = useState<Partial<Task>>({ priority_eisenhower: "important_not_urgent", high_impact: false, source: "manual" });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -377,6 +383,19 @@ export default function MyPlanningClient({
   }>({ autonomy: "medium", tone: "coach", quietHours: "06:00-22:00", notifications: true });
   const [dueDatePart, setDueDatePart] = useState<string>("");
   const [dueTimePart, setDueTimePart] = useState<string>("");
+  const [paywallFeature, setPaywallFeature] = useState<MyPlanningFeatureId | null>(null);
+  const [onboardingLoading, setOnboardingLoading] = useState(variant === "product");
+  const [onboardingBusy, setOnboardingBusy] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [editingGeneratedTask, setEditingGeneratedTask] = useState<number | null>(null);
+  const [onboardingData, setOnboardingData] = useState<OnboardingState>({
+    user_intent: null,
+    main_goal: "",
+    daily_time_budget: null,
+    onboarding_completed: false,
+    generated_tasks: [],
+  });
 
   const loadTasks = async () => {
     setLoading(true);
@@ -402,22 +421,89 @@ export default function MyPlanningClient({
     }
   };
 
-  useEffect(() => {
-    void loadTasks();
-  }, []);
+  const resolveOnboardingStep = (state: OnboardingState): 1 | 2 | 3 | 4 | 5 => {
+    if (!state.user_intent) return 1;
+    if (!state.main_goal?.trim()) return 2;
+    if (!state.daily_time_budget) return 3;
+    if (!state.generated_tasks?.length) return 4;
+    return 5;
+  };
 
-  function redirectToProUpsell(feature?: string) {
-    const params = new URLSearchParams();
-    params.set("upgrade", "pro");
-    params.set("message", "Fonctionnalité Pro - débloque le pilotage avancé.");
-    if (feature) params.set("feature", feature);
-    router.push(`/myplanning/pricing?${params.toString()}`);
+  const loadOnboardingState = async () => {
+    if (variant !== "product") {
+      setOnboardingLoading(false);
+      return;
+    }
+    setOnboardingLoading(true);
+    setOnboardingError(null);
+    try {
+      const state = await apiFetch<OnboardingState>("/onboarding");
+      setOnboardingData({
+        user_intent: state.user_intent ?? null,
+        main_goal: state.main_goal ?? "",
+        daily_time_budget: state.daily_time_budget ?? null,
+        onboarding_completed: Boolean(state.onboarding_completed),
+        generated_tasks: state.generated_tasks || [],
+      });
+      if (!state.onboarding_completed) {
+        setOnboardingStep(resolveOnboardingStep(state));
+        setLoading(false);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? friendlyError(err.message) : "Impossible de charger l’onboarding";
+      setOnboardingError(message);
+      setLoading(false);
+    } finally {
+      setOnboardingLoading(false);
+    }
+  };
+
+  const persistOnboardingState = async (payload: Partial<OnboardingState>) => {
+    const next = await apiFetch<OnboardingState>("/onboarding", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    setOnboardingData({
+      user_intent: next.user_intent ?? null,
+      main_goal: next.main_goal ?? "",
+      daily_time_budget: next.daily_time_budget ?? null,
+      onboarding_completed: Boolean(next.onboarding_completed),
+      generated_tasks: next.generated_tasks || [],
+    });
+    return next;
+  };
+
+  useEffect(() => {
+    if (variant === "product") {
+      void loadOnboardingState();
+      return;
+    }
+    void loadTasks();
+  }, [variant]);
+
+  useEffect(() => {
+    if (variant === "product" && onboardingData.onboarding_completed) {
+      void loadTasks();
+    }
+  }, [variant, onboardingData.onboarding_completed]);
+
+  function openPaywall(featureId: MyPlanningFeatureId) {
+    setPaywallFeature(featureId);
   }
 
-  function handleSectionClick(sectionId: string) {
-    const required = FEATURE_PLAN[sectionId];
-    if (required && !canAccess(plan, required)) {
-      redirectToProUpsell(sectionId);
+  function closePaywall() {
+    setPaywallFeature(null);
+  }
+
+  function isFeatureLocked(featureId: MyPlanningFeatureId): boolean {
+    const feature = MYPLANNING_FEATURE_MAP[featureId];
+    if (!feature) return false;
+    return !hasPlanAccess(plan, feature.minPlan);
+  }
+
+  function handleSectionClick(sectionId: MyPlanningFeatureId) {
+    if (isFeatureLocked(sectionId)) {
+      openPaywall(sectionId);
       return;
     }
     setActiveSection(sectionId);
@@ -643,8 +729,8 @@ export default function MyPlanningClient({
   };
 
   const handleAiSuggest = async () => {
-    if (!canAccess(plan, "pro")) {
-      redirectToProUpsell("coaching");
+    if (!hasPlanAccess(plan, "pro")) {
+      openPaywall("coaching");
       return;
     }
     if (!aiText.trim()) return;
@@ -685,8 +771,8 @@ export default function MyPlanningClient({
   };
 
   const handleAddDraft = async (draft: AiDraft, index: number) => {
-    if (!canAccess(plan, "pro")) {
-      redirectToProUpsell("coaching");
+    if (!hasPlanAccess(plan, "pro")) {
+      openPaywall("coaching");
       return;
     }
     if (!draft.title) return;
@@ -732,6 +818,337 @@ export default function MyPlanningClient({
     }
   };
 
+  const continueIntentStep = async () => {
+    if (!onboardingData.user_intent) return;
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      await persistOnboardingState({ user_intent: onboardingData.user_intent });
+      setOnboardingStep(2);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer l’intention.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const continueGoalStep = async () => {
+    const goal = onboardingData.main_goal?.trim() || "";
+    if (!goal) return;
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      await persistOnboardingState({ main_goal: goal });
+      setOnboardingStep(3);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer l’objectif.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const continueBudgetStep = async () => {
+    if (!onboardingData.daily_time_budget) return;
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      await persistOnboardingState({ daily_time_budget: onboardingData.daily_time_budget });
+      setOnboardingStep(4);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer le budget temps.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const generateOnboardingTasks = async () => {
+    if (!onboardingData.user_intent || !onboardingData.main_goal?.trim() || !onboardingData.daily_time_budget) {
+      setOnboardingError("Complète d’abord les étapes précédentes.");
+      return;
+    }
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      const response = await apiFetch<{ generated_tasks: OnboardingGeneratedTask[] }>("/onboarding/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          user_intent: onboardingData.user_intent,
+          main_goal: onboardingData.main_goal.trim(),
+          daily_time_budget: onboardingData.daily_time_budget,
+        }),
+      });
+      const generated = response.generated_tasks || [];
+      setOnboardingData((prev) => ({ ...prev, generated_tasks: generated }));
+      setOnboardingStep(5);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible de générer le planning IA.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const saveGeneratedTasks = async (nextTasks: OnboardingGeneratedTask[]) => {
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      await persistOnboardingState({ generated_tasks: nextTasks.slice(0, 3) });
+      setOnboardingData((prev) => ({ ...prev, generated_tasks: nextTasks.slice(0, 3) }));
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible de mettre à jour les tâches.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const acceptOnboardingPlan = async () => {
+    if (!onboardingData.generated_tasks.length) return;
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      const response = await apiFetch<{ created_tasks: Task[]; onboarding_completed: boolean }>("/onboarding/complete", {
+        method: "POST",
+        body: JSON.stringify({ generated_tasks: onboardingData.generated_tasks }),
+      });
+      const createdTasks = response.created_tasks || [];
+      setTasks((prev) => [...createdTasks, ...prev]);
+      setOnboardingData((prev) => ({ ...prev, onboarding_completed: Boolean(response.onboarding_completed) }));
+      setBanner({
+        type: "success",
+        message: `${createdTasks.length} tâche(s) ajoutée(s). Ton dashboard est prêt.`,
+      });
+      setActiveSection("dashboard");
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible de finaliser l’onboarding.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const renderOnboarding = () => {
+    const goalLength = (onboardingData.main_goal || "").length;
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Onboarding MyPlanning</p>
+          <p className="text-sm text-slate-600">Étape {onboardingStep} / 5</p>
+        </div>
+        {onboardingError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{onboardingError}</div> : null}
+
+        {onboardingStep === 1 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Pourquoi utilises-tu MyPlanning aujourd’hui ?</h1>
+            <div className="grid gap-2">
+              {ONBOARDING_INTENT_OPTIONS.map((option) => (
+                <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="onboarding_intent"
+                    checked={onboardingData.user_intent === option.value}
+                    onChange={() => setOnboardingData((prev) => ({ ...prev, user_intent: option.value }))}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={continueIntentStep}
+              disabled={!onboardingData.user_intent || onboardingBusy}
+              className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              Continuer
+            </button>
+          </div>
+        ) : null}
+
+        {onboardingStep === 2 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Quel est ton objectif principal en ce moment ?</h1>
+            <label className="block text-sm text-slate-700">
+              <input
+                value={onboardingData.main_goal || ""}
+                maxLength={120}
+                placeholder="Ex : Réviser mon examen de statistiques"
+                onChange={(event) => setOnboardingData((prev) => ({ ...prev, main_goal: event.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
+              />
+              <span className="mt-1 block text-xs text-slate-500">{goalLength}/120</span>
+            </label>
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Un seul objectif. MyPlanning t’aide à avancer, pas à t’éparpiller.
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setOnboardingStep(1)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                Retour
+              </button>
+              <button
+                onClick={continueGoalStep}
+                disabled={!onboardingData.main_goal?.trim() || onboardingBusy}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Continuer
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {onboardingStep === 3 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Combien de temps peux-tu réellement consacrer par jour ?</h1>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {ONBOARDING_BUDGET_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setOnboardingData((prev) => ({ ...prev, daily_time_budget: option.value }))}
+                  className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                    onboardingData.daily_time_budget === option.value ? "border-sky-500 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setOnboardingStep(2)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                Retour
+              </button>
+              <button
+                onClick={continueBudgetStep}
+                disabled={!onboardingData.daily_time_budget || onboardingBusy}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Continuer
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {onboardingStep === 4 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Voici ce qui fera vraiment avancer ton objectif aujourd’hui</h1>
+            <p className="text-sm text-slate-600">MyPlanning génère un plan court et actionnable: maximum 3 tâches.</p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setOnboardingStep(3)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                Retour
+              </button>
+              <button
+                onClick={generateOnboardingTasks}
+                disabled={onboardingBusy}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {onboardingBusy ? "Génération..." : "Continuer"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {onboardingStep === 5 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">Tu restes maître de ton planning.</h1>
+            <div className="space-y-3">
+              {onboardingData.generated_tasks.map((task, index) => (
+                <div key={`${task.title}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  {editingGeneratedTask === index ? (
+                    <div className="space-y-3">
+                      <input
+                        value={task.title}
+                        maxLength={160}
+                        onChange={(event) =>
+                          setOnboardingData((prev) => ({
+                            ...prev,
+                            generated_tasks: prev.generated_tasks.map((item, idx) =>
+                              idx === index ? { ...item, title: event.target.value } : item
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input
+                          type="number"
+                          min={10}
+                          max={240}
+                          value={task.estimated_time}
+                          onChange={(event) =>
+                            setOnboardingData((prev) => ({
+                              ...prev,
+                              generated_tasks: prev.generated_tasks.map((item, idx) =>
+                                idx === index ? { ...item, estimated_time: Number(event.target.value) || 10 } : item
+                              ),
+                            }))
+                          }
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                        <select
+                          value={task.impact_level}
+                          onChange={(event) =>
+                            setOnboardingData((prev) => ({
+                              ...prev,
+                              generated_tasks: prev.generated_tasks.map((item, idx) =>
+                                idx === index ? { ...item, impact_level: event.target.value as OnboardingImpactLevel } : item
+                              ),
+                            }))
+                          }
+                          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        >
+                          <option value="élevé">élevé</option>
+                          <option value="moyen">moyen</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          await saveGeneratedTasks(onboardingData.generated_tasks);
+                          setEditingGeneratedTask(null);
+                        }}
+                        className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white"
+                      >
+                        Enregistrer la modification
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-slate-900">{task.title}</p>
+                      <p className="text-xs text-slate-600">
+                        Temps estimé: {task.estimated_time} min • Impact: {task.impact_level}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setEditingGeneratedTask(index)}
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700"
+                        >
+                          ✏️ Modifier
+                        </button>
+                        <button
+                          onClick={() =>
+                            void saveGeneratedTasks(onboardingData.generated_tasks.filter((_, idx) => idx !== index))
+                          }
+                          className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-700"
+                        >
+                          ❌ Supprimer une tâche
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={acceptOnboardingPlan}
+                disabled={!onboardingData.generated_tasks.length || onboardingBusy}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                ✅ Accepter le planning
+              </button>
+              <button onClick={() => setOnboardingStep(4)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                Regénérer
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   const renderDashboard = () => {
     const emptyDay = dayTasks.length === 0;
     return (
@@ -770,15 +1187,16 @@ export default function MyPlanningClient({
           </div>
           {emptyDay ? (
             <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-6 text-center text-sm text-slate-600">
-              <p className="font-semibold text-slate-800">Aucune tâche planifiée pour aujourd’hui.</p>
+              <p className="font-semibold text-slate-800">Tu n’as aucune tâche aujourd’hui.</p>
+              <p className="mt-1 text-slate-600">Veux-tu organiser ta journée en 2 minutes ?</p>
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 <button onClick={() => setActiveSection("create")} className="rounded-full bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-700">
                   Créer une nouvelle tâche
                 </button>
                 <button
                   onClick={() => {
-                    if (!canAccess(plan, "pro")) {
-                      redirectToProUpsell("coaching");
+                    if (!hasPlanAccess(plan, "pro")) {
+                      openPaywall("coaching");
                       return;
                     }
                     setActiveSection("coaching");
@@ -825,8 +1243,8 @@ export default function MyPlanningClient({
           <button
             onClick={() => {
               setSelectedDate(monday);
-              if (!canAccess(plan, "pro")) {
-                redirectToProUpsell("coaching");
+              if (!hasPlanAccess(plan, "pro")) {
+                openPaywall("coaching");
                 return;
               }
               setActiveSection("coaching");
@@ -933,7 +1351,7 @@ export default function MyPlanningClient({
   };
 
   const renderStats = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
@@ -1662,7 +2080,7 @@ export default function MyPlanningClient({
   );
 
   const renderSettings = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
@@ -1784,7 +2202,7 @@ export default function MyPlanningClient({
   };
 
   const renderAutomations = () => {
-    if (!canAccess(plan, "pro")) {
+    if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
@@ -1830,6 +2248,50 @@ export default function MyPlanningClient({
     );
   };
 
+  const renderTemplates = () => {
+    if (!hasPlanAccess(plan, "pro")) {
+      return (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
+          <h2 className="mt-3 text-xl font-semibold text-slate-900">Templates universels</h2>
+          <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/myplanning/pricing?upgrade=pro&feature=templates&message=Fonctionnalit%C3%A9%20Pro%20-%20d%C3%A9bloque%20le%20pilotage%20avanc%C3%A9."
+              className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700"
+            >
+              Voir l’offre Pro
+            </Link>
+            <button
+              onClick={() => setActiveSection("dashboard")}
+              className="inline-flex rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Plus tard
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Templates universels</p>
+        <h2 className="mt-2 text-xl font-semibold text-slate-900">
+          Templates <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">BETA</span>
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">Bibliothèque de templates prête pour étudiants, freelances et entrepreneurs.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          {["Étudiant", "Freelance", "Entrepreneur"].map((label) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">{label}</p>
+              <p className="mt-1 text-xs text-slate-500">Template prêt à personnaliser.</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "dashboard":
@@ -1846,6 +2308,8 @@ export default function MyPlanningClient({
         return renderManage();
       case "coaching":
         return renderCoaching();
+      case "templates":
+        return renderTemplates();
       case "automations":
         return renderAutomations();
       case "settings":
@@ -1859,6 +2323,31 @@ export default function MyPlanningClient({
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-slate-100"
     : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
+  const shouldBlockOnboarding = variant === "product" && (onboardingLoading || !onboardingData.onboarding_completed);
+
+  if (shouldBlockOnboarding) {
+    return (
+      <div className="mx-auto w-full max-w-5xl py-6 sm:py-10">
+        {onboardingLoading ? (
+          <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-600 shadow-sm">
+            Chargement de l’onboarding…
+          </div>
+        ) : (
+          <>
+            {renderOnboarding()}
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => void loadOnboardingState()}
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-700"
+              >
+                Recharger l’onboarding
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={containerClasses}>
@@ -1887,8 +2376,7 @@ export default function MyPlanningClient({
               <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Vues</p>
               <div className="mt-2 space-y-2">
                 {VIEWS.map((item) => {
-                  const required = FEATURE_PLAN[item.id];
-                  const locked = required ? !canAccess(plan, required) : false;
+                  const locked = !hasPlanAccess(plan, item.minPlan);
                   return (
                     <button
                       key={item.id}
@@ -1902,7 +2390,11 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
+                          {locked ? (
+                            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
+                              {lockedBadgeLabel(item.minPlan, item.beta)}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </button>
@@ -1914,8 +2406,7 @@ export default function MyPlanningClient({
               <p className={`text-xs uppercase text-slate-400 ${isSidebarCollapsed ? "text-center" : ""}`}>Actions</p>
               <div className="mt-2 space-y-2">
                 {ACTIONS.map((item) => {
-                  const required = FEATURE_PLAN[item.id];
-                  const locked = required ? !canAccess(plan, required) : false;
+                  const locked = !hasPlanAccess(plan, item.minPlan);
                   return (
                     <button
                       key={item.id}
@@ -1929,7 +2420,11 @@ export default function MyPlanningClient({
                       {!isSidebarCollapsed && (
                         <span className="flex-1">
                           {item.label}
-                          {locked ? <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">🔒 PRO</span> : null}
+                          {locked ? (
+                            <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">
+                              {lockedBadgeLabel(item.minPlan, item.beta)}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </button>
@@ -1943,7 +2438,9 @@ export default function MyPlanningClient({
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">{VIEWS.concat(ACTIONS).find((item) => item.id === activeSection)?.label || "MyPlanning"}</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+              {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanning"}
+            </p>
             <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1995,8 +2492,7 @@ export default function MyPlanningClient({
           <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
             <div className="flex items-center gap-2 overflow-x-auto">
               {[...VIEWS, ...ACTIONS].map((item) => {
-                const required = FEATURE_PLAN[item.id];
-                const locked = required ? !canAccess(plan, required) : false;
+                const locked = !hasPlanAccess(plan, item.minPlan);
                 const active = activeSection === item.id;
                 return (
                   <button
@@ -2011,7 +2507,11 @@ export default function MyPlanningClient({
                   >
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
-                    {locked ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>🔒 PRO</span> : null}
+                    {locked ? (
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
+                        {lockedBadgeLabel(item.minPlan, item.beta)}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -2019,6 +2519,14 @@ export default function MyPlanningClient({
           </div>
         </div>
       ) : null}
+
+      <PaywallModal
+        open={Boolean(paywallFeature)}
+        title="Fonctionnalité Pro (bêta)"
+        message="Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanning Pro."
+        ctaHref={paywallFeature ? `/myplanning/pricing?upgrade=pro&feature=${paywallFeature}` : "/myplanning/pricing?upgrade=pro"}
+        onClose={closePaywall}
+      />
 
     </div>
   );

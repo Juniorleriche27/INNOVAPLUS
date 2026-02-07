@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-export const revalidate = 3600;
-
 const TIERS = [
   {
     name: "Free",
@@ -23,14 +21,28 @@ const TIERS = [
   },
 ];
 
-export default function MyPlanningPricingPage({
-  searchParams,
-}: {
-  searchParams?: { message?: string; upgrade?: string; feature?: string };
-}) {
-  const upgradeMessage =
-    searchParams?.message ||
-    (searchParams?.upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
+type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParamsInput = SearchParams | Promise<SearchParams>;
+
+function one(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchParams | undefined> {
+  if (!input) return undefined;
+  if (typeof (input as Promise<SearchParams>).then === "function") {
+    return await (input as Promise<SearchParams>);
+  }
+  return input as SearchParams;
+}
+
+export default async function MyPlanningPricingPage({ searchParams }: { searchParams?: SearchParamsInput }) {
+  const params = await resolveSearchParams(searchParams);
+  const upgrade = one(params?.upgrade);
+  const feature = one(params?.feature);
+  const message = one(params?.message);
+  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
 
   return (
     <div className="mx-auto w-full max-w-6xl">
@@ -39,9 +51,7 @@ export default function MyPlanningPricingPage({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arrivent apres la phase MVP.</p>
-          <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">
-            Early users: un prix preferentiel sera propose au lancement officiel.
-          </p>
+          <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>
         </div>
         <Link
           href="/myplanning/app"
@@ -54,7 +64,7 @@ export default function MyPlanningPricingPage({
       {upgradeMessage ? (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">{upgradeMessage}</p>
-          {searchParams?.feature ? <p className="mt-1 text-amber-800">Fonction demandee: {searchParams.feature}</p> : null}
+          {feature ? <p className="mt-1 text-amber-800">Fonction demandee: {feature}</p> : null}
         </div>
       ) : null}
 

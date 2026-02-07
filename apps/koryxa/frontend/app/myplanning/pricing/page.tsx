@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -24,13 +25,7 @@ const TIERS = [
   },
 ];
 
-export default function MyPlanningPricingPage() {
-  const searchParams = useSearchParams();
-  const upgrade = searchParams.get("upgrade");
-  const feature = searchParams.get("feature");
-  const message = searchParams.get("message");
-  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
-
+function PricingLayout({ upgradeMessage, feature }: { upgradeMessage?: string; feature?: string }) {
   return (
     <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4">
@@ -80,5 +75,23 @@ export default function MyPlanningPricingPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+function PricingFromQuery() {
+  const searchParams = useSearchParams();
+  const upgrade = searchParams.get("upgrade");
+  const feature = searchParams.get("feature");
+  const message = searchParams.get("message");
+  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
+
+  return <PricingLayout upgradeMessage={upgradeMessage} feature={feature || undefined} />;
+}
+
+export default function MyPlanningPricingPage() {
+  return (
+    <Suspense fallback={<PricingLayout />}>
+      <PricingFromQuery />
+    </Suspense>
   );
 }

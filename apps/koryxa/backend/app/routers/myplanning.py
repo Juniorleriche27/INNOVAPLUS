@@ -19,6 +19,12 @@ from app.schemas.myplanning import (
     AiReplanResponse,
     AiSuggestTasksRequest,
     AiSuggestTasksResponse,
+    OnboardingCompletePayload,
+    OnboardingCompleteResponse,
+    OnboardingGeneratePayload,
+    OnboardingGenerateResponse,
+    OnboardingStateResponse,
+    OnboardingUpdatePayload,
     LearningPlanGenerateRequest,
     LearningPlanGenerateResponse,
     LearningPlanImportRequest,
@@ -35,6 +41,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/myplanning", tags=["myplanning"])
 
 COLLECTION = "myplanning_tasks"
+ONBOARDING_COLLECTION = "myplanning_onboarding"
 _RATE_LIMIT_BUCKETS: dict[str, List[float]] = {}
 
 
@@ -150,6 +157,248 @@ def _parse_date_filter(date_str: Optional[str]) -> Optional[tuple[datetime, date
     start = datetime.combine(day, datetime.min.time())
     end = start + timedelta(days=1)
     return start, end
+
+
+def _daily_budget_to_minutes(value: str) -> int:
+    mapping = {
+        "30_minutes": 30,
+        "1_hour": 60,
+        "2_hours": 120,
+        "plus_2_hours": 180,
+    }
+    return mapping.get(value, 60)
+
+
+def _intent_to_text(value: str) -> str:
+    mapping = {
+        "study_learn": "Étudier / apprendre",
+        "work_deliver": "Travailler / livrer",
+        "build_project": "Construire un projet",
+        "organize_better": "Mieux m’organiser",
+    }
+    return mapping.get(value, value)
+
+
+def _serialize_onboarding_state(doc: Optional[Dict[str, Any]]) -> OnboardingStateResponse:
+    if not doc:
+        return OnboardingStateResponse()
+    return OnboardingStateResponse(
+        user_intent=doc.get("user_intent"),
+        main_goal=doc.get("main_goal"),
+        daily_time_budget=doc.get("daily_time_budget"),
+        onboarding_completed=bool(doc.get("onboarding_completed")),
+        generated_tasks=doc.get("generated_tasks") or [],
+        updated_at=_serialize_datetime(doc.get("updated_at")),
+    )
+
+
+def _build_onboarding_brief(intent: str, goal: str, daily_budget: str) -> str:
+    minutes = _daily_budget_to_minutes(daily_budget)
+    return (
+        f"Intent: {_intent_to_text(intent)}.\n"
+        f"Objectif principal: {goal.strip()}.\n"
+        f"Temps réel par jour: {minutes} minutes.\n"
+        "Retourne uniquement les actions les plus utiles aujourd'hui."
+    )
+
+
+def _fallback_onboarding_tasks(main_goal: str, daily_minutes: int) -> List[Dict[str, Any]]:
+    main_block = max(20, min(120, int(daily_minutes * 0.6)))
+    prep_block = max(10, min(40, int(daily_minutes * 0.2)))
+    close_block = max(10, min(30, int(daily_minutes * 0.2)))
+    return [
+        {
+            "title": "Clarifier le livrable du jour",
+            "estimated_time": prep_block,
+            "impact_level": "moyen",
+        },
+        {
+            "title": f"Bloc principal : {main_goal.strip()[:120]}",
+            "estimated_time": main_block,
+            "impact_level": "élevé",
+        },
+        {
+            "title": "Bilan rapide + prochaine étape",
+            "estimated_time": close_block,
+            "impact_level": "moyen",
+        },
+    ]
+
+
+def _normalize_onboarding_tasks(candidates: List[Dict[str, Any]], goal: str, daily_budget: str) -> List[Dict[str, Any]]:
+    daily_minutes = _daily_budget_to_minutes(daily_budget)
+    normalized: List[Dict[str, Any]] = []
+    seen_titles: set[str] = set()
+    for item in candidates:
+        if len(normalized) >= 3:
+            break
+        title = str(item.get("title") or "").strip()
+        if len(title) < 3:
+            continue
+        key = title.lower()
+        if key in seen_titles:
+            continue
+        estimated = item.get("estimated_duration_minutes")
+        if isinstance(estimated, str) and estimated.isdigit():
+            estimated = int(estimated)
+        if not isinstance(estimated, int) or estimated <= 0:
+            estimated = max(15, min(90, int(daily_minutes / 3)))
+        estimated = max(10, min(240, estimated))
+        impact_level = "élevé" if bool(item.get("high_impact")) else "moyen"
+        normalized.append(
+            {
+                "title": title[:160],
+                "estimated_time": estimated,
+                "impact_level": impact_level,
+            }
+        )
+        seen_titles.add(key)
+
+    if len(normalized) < 3:
+        for fallback in _fallback_onboarding_tasks(goal, daily_minutes):
+            if len(normalized) >= 3:
+                break
+            key = fallback["title"].lower()
+            if key in seen_titles:
+                continue
+            normalized.append(fallback)
+            seen_titles.add(key)
+    return normalized[:3]
+
+
+@router.get("/onboarding", response_model=OnboardingStateResponse)
+async def get_onboarding_state(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OnboardingStateResponse:
+    doc = await db[ONBOARDING_COLLECTION].find_one({"user_id": current["_id"]})
+    return _serialize_onboarding_state(doc)
+
+
+@router.put("/onboarding", response_model=OnboardingStateResponse)
+async def update_onboarding_state(
+    payload: OnboardingUpdatePayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OnboardingStateResponse:
+    updates = payload.dict(exclude_unset=True)
+    if not updates:
+        doc = await db[ONBOARDING_COLLECTION].find_one({"user_id": current["_id"]})
+        return _serialize_onboarding_state(doc)
+    if "onboarding_completed" in updates:
+        raise HTTPException(status_code=400, detail="Utilisez /myplanning/onboarding/complete pour terminer l’onboarding.")
+    if "main_goal" in updates and isinstance(updates["main_goal"], str):
+        updates["main_goal"] = updates["main_goal"].strip()
+    if "generated_tasks" in updates and updates["generated_tasks"] is not None:
+        updates["generated_tasks"] = updates["generated_tasks"][:3]
+    now = datetime.utcnow()
+    updates["updated_at"] = now
+    await db[ONBOARDING_COLLECTION].update_one(
+        {"user_id": current["_id"]},
+        {
+            "$set": updates,
+            "$setOnInsert": {
+                "user_id": current["_id"],
+                "created_at": now,
+                "onboarding_completed": False,
+            },
+        },
+        upsert=True,
+    )
+    doc = await db[ONBOARDING_COLLECTION].find_one({"user_id": current["_id"]})
+    return _serialize_onboarding_state(doc)
+
+
+@router.post("/onboarding/generate", response_model=OnboardingGenerateResponse)
+async def generate_onboarding_tasks(
+    payload: OnboardingGeneratePayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OnboardingGenerateResponse:
+    _rate_limit(f"onboarding_generate:{current['_id']}", limit=20, window_seconds=60)
+    goal = payload.main_goal.strip()
+    brief = _build_onboarding_brief(payload.user_intent, goal, payload.daily_time_budget)
+    drafts, _used_fallback = await suggest_tasks_from_text(brief, "fr", None)
+    generated_tasks = _normalize_onboarding_tasks(drafts, goal, payload.daily_time_budget)
+    now = datetime.utcnow()
+    await db[ONBOARDING_COLLECTION].update_one(
+        {"user_id": current["_id"]},
+        {
+            "$set": {
+                "user_intent": payload.user_intent,
+                "main_goal": goal,
+                "daily_time_budget": payload.daily_time_budget,
+                "generated_tasks": generated_tasks,
+                "onboarding_completed": False,
+                "updated_at": now,
+            },
+            "$setOnInsert": {"user_id": current["_id"], "created_at": now},
+        },
+        upsert=True,
+    )
+    return OnboardingGenerateResponse(generated_tasks=generated_tasks)
+
+
+@router.post("/onboarding/complete", response_model=OnboardingCompleteResponse)
+async def complete_onboarding(
+    payload: OnboardingCompletePayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OnboardingCompleteResponse:
+    doc = await db[ONBOARDING_COLLECTION].find_one({"user_id": current["_id"]})
+    if not doc:
+        raise HTTPException(status_code=400, detail="Onboarding introuvable. Reprenez depuis l’étape 1.")
+    if doc.get("onboarding_completed"):
+        raise HTTPException(status_code=409, detail="Onboarding déjà terminé.")
+    if not doc.get("user_intent") or not doc.get("main_goal") or not doc.get("daily_time_budget"):
+        raise HTTPException(status_code=400, detail="Onboarding incomplet. Terminez d’abord les étapes 1 à 4.")
+
+    generated_tasks = [item.dict() for item in payload.generated_tasks][:3]
+    now = datetime.utcnow()
+    due_dt = now.replace(hour=20, minute=0, second=0, microsecond=0)
+    if due_dt < now:
+        due_dt = due_dt + timedelta(days=1)
+
+    docs_to_insert: List[Dict[str, Any]] = []
+    for task in generated_tasks:
+        impact_level = task.get("impact_level") or "moyen"
+        docs_to_insert.append(
+            {
+                "user_id": current["_id"],
+                "title": task["title"],
+                "description": f"Objectif principal: {doc.get('main_goal')}",
+                "category": "Onboarding MyPlanning",
+                "priority_eisenhower": "urgent_important" if impact_level == "élevé" else "important_not_urgent",
+                "kanban_state": "todo",
+                "high_impact": impact_level == "élevé",
+                "estimated_duration_minutes": int(task["estimated_time"]),
+                "due_datetime": due_dt,
+                "linked_goal": str(doc.get("main_goal")),
+                "source": "ia",
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+
+    created_tasks: List[TaskResponse] = []
+    if docs_to_insert:
+        result = await db[COLLECTION].insert_many(docs_to_insert)
+        for oid, task_doc in zip(result.inserted_ids, docs_to_insert):
+            task_doc["_id"] = oid
+            created_tasks.append(_serialize_task(task_doc))
+
+    await db[ONBOARDING_COLLECTION].update_one(
+        {"user_id": current["_id"]},
+        {
+            "$set": {
+                "generated_tasks": generated_tasks,
+                "onboarding_completed": True,
+                "updated_at": now,
+                "completed_at": now,
+            }
+        },
+    )
+    return OnboardingCompleteResponse(created_tasks=created_tasks, onboarding_completed=True)
 
 
 @router.get("/tasks", response_model=TaskListResponse)

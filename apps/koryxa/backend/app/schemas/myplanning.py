@@ -135,6 +135,53 @@ class AiReplanResponse(BaseModel):
     recommendations: List[AiReplanItem]
 
 
+OnboardingIntent = Literal["study_learn", "work_deliver", "build_project", "organize_better"]
+DailyTimeBudget = Literal["30_minutes", "1_hour", "2_hours", "plus_2_hours"]
+ImpactLevel = Literal["élevé", "moyen"]
+
+
+class OnboardingGeneratedTask(BaseModel):
+    title: str = Field(..., min_length=2, max_length=160)
+    estimated_time: int = Field(..., ge=10, le=240)
+    impact_level: ImpactLevel
+
+
+class OnboardingStateResponse(BaseModel):
+    user_intent: Optional[OnboardingIntent] = None
+    main_goal: Optional[str] = Field(default=None, max_length=120)
+    daily_time_budget: Optional[DailyTimeBudget] = None
+    onboarding_completed: bool = False
+    generated_tasks: List[OnboardingGeneratedTask] = Field(default_factory=list)
+    updated_at: Optional[datetime] = None
+
+
+class OnboardingUpdatePayload(BaseModel):
+    user_intent: Optional[OnboardingIntent] = None
+    main_goal: Optional[str] = Field(default=None, max_length=120)
+    daily_time_budget: Optional[DailyTimeBudget] = None
+    generated_tasks: Optional[List[OnboardingGeneratedTask]] = Field(default=None, max_length=3)
+    onboarding_completed: Optional[bool] = None
+
+
+class OnboardingGeneratePayload(BaseModel):
+    user_intent: OnboardingIntent
+    main_goal: str = Field(..., min_length=2, max_length=120)
+    daily_time_budget: DailyTimeBudget
+
+
+class OnboardingGenerateResponse(BaseModel):
+    generated_tasks: List[OnboardingGeneratedTask] = Field(default_factory=list, max_length=3)
+
+
+class OnboardingCompletePayload(BaseModel):
+    generated_tasks: List[OnboardingGeneratedTask] = Field(..., min_length=1, max_length=3)
+
+
+class OnboardingCompleteResponse(BaseModel):
+    created_tasks: List[TaskResponse] = Field(default_factory=list)
+    onboarding_completed: bool = True
+
+
 # --- Learning planning (KORYXA School) ---
 
 class LearningPlanGenerateRequest(BaseModel):

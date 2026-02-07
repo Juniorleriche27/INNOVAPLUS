@@ -87,7 +87,8 @@ type OnboardingGeneratedTask = {
 
 type OnboardingState = {
   user_intent?: OnboardingIntent | null;
-  main_goal?: string | null;
+  main_goal_mid_term?: string | null;
+  daily_focus_hint?: string | null;
   daily_time_budget?: OnboardingBudget | null;
   onboarding_completed: boolean;
   generated_tasks: OnboardingGeneratedTask[];
@@ -387,11 +388,12 @@ export default function MyPlanningClient({
   const [onboardingLoading, setOnboardingLoading] = useState(variant === "product");
   const [onboardingBusy, setOnboardingBusy] = useState(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
-  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [editingGeneratedTask, setEditingGeneratedTask] = useState<number | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingState>({
     user_intent: null,
-    main_goal: "",
+    main_goal_mid_term: "",
+    daily_focus_hint: "",
     daily_time_budget: null,
     onboarding_completed: false,
     generated_tasks: [],
@@ -421,12 +423,14 @@ export default function MyPlanningClient({
     }
   };
 
-  const resolveOnboardingStep = (state: OnboardingState): 1 | 2 | 3 | 4 | 5 => {
+  const resolveOnboardingStep = (state: OnboardingState): 1 | 2 | 3 | 4 | 5 | 6 => {
     if (!state.user_intent) return 1;
-    if (!state.main_goal?.trim()) return 2;
-    if (!state.daily_time_budget) return 3;
-    if (!state.generated_tasks?.length) return 4;
-    return 5;
+    if (!state.main_goal_mid_term?.trim()) return 2;
+    // daily_focus_hint is optional but step is explicit; store "" when confirmed.
+    if (state.daily_focus_hint === undefined || state.daily_focus_hint === null) return 3;
+    if (!state.daily_time_budget) return 4;
+    if (!state.generated_tasks?.length) return 5;
+    return 6;
   };
 
   const loadOnboardingState = async () => {
@@ -440,7 +444,8 @@ export default function MyPlanningClient({
       const state = await apiFetch<OnboardingState>("/onboarding");
       setOnboardingData({
         user_intent: state.user_intent ?? null,
-        main_goal: state.main_goal ?? "",
+        main_goal_mid_term: state.main_goal_mid_term ?? "",
+        daily_focus_hint: state.daily_focus_hint ?? "",
         daily_time_budget: state.daily_time_budget ?? null,
         onboarding_completed: Boolean(state.onboarding_completed),
         generated_tasks: state.generated_tasks || [],
@@ -465,7 +470,8 @@ export default function MyPlanningClient({
     });
     setOnboardingData({
       user_intent: next.user_intent ?? null,
-      main_goal: next.main_goal ?? "",
+      main_goal_mid_term: next.main_goal_mid_term ?? "",
+      daily_focus_hint: next.daily_focus_hint ?? "",
       daily_time_budget: next.daily_time_budget ?? null,
       onboarding_completed: Boolean(next.onboarding_completed),
       generated_tasks: next.generated_tasks || [],
@@ -833,15 +839,29 @@ export default function MyPlanningClient({
   };
 
   const continueGoalStep = async () => {
-    const goal = onboardingData.main_goal?.trim() || "";
+    const goal = onboardingData.main_goal_mid_term?.trim() || "";
     if (!goal) return;
     setOnboardingBusy(true);
     setOnboardingError(null);
     try {
-      await persistOnboardingState({ main_goal: goal });
+      await persistOnboardingState({ main_goal_mid_term: goal });
       setOnboardingStep(3);
     } catch (err) {
       setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer l’objectif.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  };
+
+  const continueDailyFocusStep = async () => {
+    const hint = onboardingData.daily_focus_hint?.trim() || "";
+    setOnboardingBusy(true);
+    setOnboardingError(null);
+    try {
+      await persistOnboardingState({ daily_focus_hint: hint });
+      setOnboardingStep(4);
+    } catch (err) {
+      setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer le focus du jour.");
     } finally {
       setOnboardingBusy(false);
     }
@@ -853,7 +873,7 @@ export default function MyPlanningClient({
     setOnboardingError(null);
     try {
       await persistOnboardingState({ daily_time_budget: onboardingData.daily_time_budget });
-      setOnboardingStep(4);
+      setOnboardingStep(5);
     } catch (err) {
       setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible d’enregistrer le budget temps.");
     } finally {
@@ -862,7 +882,7 @@ export default function MyPlanningClient({
   };
 
   const generateOnboardingTasks = async () => {
-    if (!onboardingData.user_intent || !onboardingData.main_goal?.trim() || !onboardingData.daily_time_budget) {
+    if (!onboardingData.user_intent || !onboardingData.main_goal_mid_term?.trim() || !onboardingData.daily_time_budget) {
       setOnboardingError("Complète d’abord les étapes précédentes.");
       return;
     }
@@ -873,13 +893,14 @@ export default function MyPlanningClient({
         method: "POST",
         body: JSON.stringify({
           user_intent: onboardingData.user_intent,
-          main_goal: onboardingData.main_goal.trim(),
+          main_goal_mid_term: onboardingData.main_goal_mid_term.trim(),
+          daily_focus_hint: onboardingData.daily_focus_hint?.trim() || undefined,
           daily_time_budget: onboardingData.daily_time_budget,
         }),
       });
       const generated = response.generated_tasks || [];
       setOnboardingData((prev) => ({ ...prev, generated_tasks: generated }));
-      setOnboardingStep(5);
+      setOnboardingStep(6);
     } catch (err) {
       setOnboardingError(err instanceof Error ? friendlyError(err.message) : "Impossible de générer le planning IA.");
     } finally {
@@ -925,12 +946,13 @@ export default function MyPlanningClient({
   };
 
   const renderOnboarding = () => {
-    const goalLength = (onboardingData.main_goal || "").length;
+    const goalLength = (onboardingData.main_goal_mid_term || "").length;
+    const dailyHintLength = (onboardingData.daily_focus_hint || "").length;
     return (
       <div className="mx-auto w-full max-w-3xl space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Onboarding MyPlanning</p>
-          <p className="text-sm text-slate-600">Étape {onboardingStep} / 5</p>
+          <p className="text-sm text-slate-600">Étape {onboardingStep} / 6</p>
         </div>
         {onboardingError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{onboardingError}</div> : null}
 
@@ -962,27 +984,30 @@ export default function MyPlanningClient({
 
         {onboardingStep === 2 ? (
           <div className="space-y-4">
-            <h1 className="text-2xl font-semibold text-slate-900">Quel est ton objectif principal en ce moment ?</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Ton objectif principal en ce moment (1-4 semaines)</h1>
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Ce n’est pas ta tâche du jour. C’est ce que tu veux faire avancer sur les prochaines semaines.
+            </p>
             <label className="block text-sm text-slate-700">
               <input
-                value={onboardingData.main_goal || ""}
+                value={onboardingData.main_goal_mid_term || ""}
                 maxLength={120}
-                placeholder="Ex : Réviser mon examen de statistiques"
-                onChange={(event) => setOnboardingData((prev) => ({ ...prev, main_goal: event.target.value }))}
+                placeholder="Ex : Préparer mon examen de statistiques"
+                onChange={(event) => setOnboardingData((prev) => ({ ...prev, main_goal_mid_term: event.target.value }))}
                 className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
               />
               <span className="mt-1 block text-xs text-slate-500">{goalLength}/120</span>
             </label>
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Un seul objectif. MyPlanning t’aide à avancer, pas à t’éparpiller.
-            </p>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+              Exemples: Préparer mon examen de statistiques • Lancer mon MVP • Trouver un premier client
+            </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setOnboardingStep(1)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
                 Retour
               </button>
               <button
                 onClick={continueGoalStep}
-                disabled={!onboardingData.main_goal?.trim() || onboardingBusy}
+                disabled={!onboardingData.main_goal_mid_term?.trim() || onboardingBusy}
                 className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 Continuer
@@ -992,6 +1017,36 @@ export default function MyPlanningClient({
         ) : null}
 
         {onboardingStep === 3 ? (
+          <div className="space-y-4">
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Aujourd’hui, sur quoi dois-tu avancer pour te rapprocher de cet objectif ?
+            </h1>
+            <label className="block text-sm text-slate-700">
+              <input
+                value={onboardingData.daily_focus_hint || ""}
+                maxLength={120}
+                placeholder="Ex : clarifier le livrable, réviser le chapitre 1, écrire la landing"
+                onChange={(event) => setOnboardingData((prev) => ({ ...prev, daily_focus_hint: event.target.value }))}
+                className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:border-sky-500 focus:outline-none"
+              />
+              <span className="mt-1 block text-xs text-slate-500">{dailyHintLength}/120 (facultatif)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setOnboardingStep(2)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+                Retour
+              </button>
+              <button
+                onClick={continueDailyFocusStep}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                disabled={onboardingBusy}
+              >
+                Continuer
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {onboardingStep === 4 ? (
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-slate-900">Combien de temps peux-tu réellement consacrer par jour ?</h1>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -1008,7 +1063,7 @@ export default function MyPlanningClient({
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setOnboardingStep(2)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+              <button onClick={() => setOnboardingStep(3)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
                 Retour
               </button>
               <button
@@ -1022,12 +1077,16 @@ export default function MyPlanningClient({
           </div>
         ) : null}
 
-        {onboardingStep === 4 ? (
+        {onboardingStep === 5 ? (
           <div className="space-y-4">
-            <h1 className="text-2xl font-semibold text-slate-900">Voici ce qui fera vraiment avancer ton objectif aujourd’hui</h1>
-            <p className="text-sm text-slate-600">MyPlanning génère un plan court et actionnable: maximum 3 tâches.</p>
+            <h1 className="text-2xl font-semibold text-slate-900">
+              Voici les 3 actions maximum qui feront avancer ton objectif à long terme, aujourd’hui.
+            </h1>
+            <p className="text-sm text-slate-600">
+              Chaque action doit contribuer directement à ton objectif moyen terme.
+            </p>
             <div className="flex items-center gap-2">
-              <button onClick={() => setOnboardingStep(3)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+              <button onClick={() => setOnboardingStep(4)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
                 Retour
               </button>
               <button
@@ -1041,7 +1100,7 @@ export default function MyPlanningClient({
           </div>
         ) : null}
 
-        {onboardingStep === 5 ? (
+        {onboardingStep === 6 ? (
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-slate-900">Tu restes maître de ton planning.</h1>
             <div className="space-y-3">
@@ -1139,7 +1198,7 @@ export default function MyPlanningClient({
               >
                 ✅ Accepter le planning
               </button>
-              <button onClick={() => setOnboardingStep(4)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
+              <button onClick={() => setOnboardingStep(5)} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">
                 Regénérer
               </button>
             </div>

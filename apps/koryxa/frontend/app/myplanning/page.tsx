@@ -28,6 +28,7 @@ export default function MyPlanningLandingPage() {
             Voir comment ça marche
           </Link>
         </div>
+        <p className="mt-4 text-sm font-medium text-slate-700">Aujourd&apos;hui, pas demain. Ta journée devient claire dès la première utilisation.</p>
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
@@ -82,7 +83,7 @@ export default function MyPlanningLandingPage() {
             <p className="text-sm font-semibold text-slate-900">Elle réduit le bruit</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
-            <p className="text-sm font-semibold text-slate-900">Elle te force à prioriser</p>
+            <p className="text-sm font-semibold text-slate-900">Elle te force à prioriser: pas plus de 3 tâches, même si tu en as 20 en tête</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
             <p className="text-sm font-semibold text-slate-900">Tu gardes toujours le contrôle</p>
@@ -118,7 +119,7 @@ export default function MyPlanningLandingPage() {
             href="/myplanning/app"
             className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700"
           >
-            Créer mon planning du jour (gratuit)
+            Créer mon planning d&apos;aujourd&apos;hui (gratuit)
           </Link>
         </div>
       </section>

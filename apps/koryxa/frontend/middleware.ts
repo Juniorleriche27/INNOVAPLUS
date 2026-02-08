@@ -12,7 +12,21 @@ function isProtectedPath(pathname: string) {
 
 const SESSION_COOKIE = "innova_session";
 const SITE_BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://innovaplus.africa").replace(/\/+$/, "");
-const AUTH_API_BASE = (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa").replace(/\/+$/, "");
+const LEGACY_API_HOST = "https://api.innovaplus.africa";
+const DEFAULT_API_BASE = "https://innovaplus.africa";
+
+function normalizeApiBase(base: string): string {
+  const raw = base.replace(/\/+$/, "");
+  // Keep middleware aligned with frontend env fallback when legacy api host TLS fails.
+  if (raw.startsWith(LEGACY_API_HOST)) {
+    return raw.replace(LEGACY_API_HOST, DEFAULT_API_BASE);
+  }
+  return raw;
+}
+
+const AUTH_API_BASE = normalizeApiBase(
+  (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || DEFAULT_API_BASE).replace(/\/+$/, "")
+);
 
 function normalizeInnovaBase(base: string) {
   let clean = base.replace(/\/+$/, "");

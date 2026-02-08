@@ -1,9 +1,15 @@
 // Default to the same domain as the app unless explicitly overridden in env.
 // This avoids prod breakage when api.* is not configured.
 const DEFAULT_API_BASE = "https://innovaplus.africa";
+const LEGACY_API_HOST = "https://api.innovaplus.africa";
 
 function normalize(base: string | undefined, fallback: string): string {
-  return (base && base.trim() ? base : fallback).replace(/\/+$/, "");
+  const raw = (base && base.trim() ? base : fallback).replace(/\/+$/, "");
+  // Safety fallback: if legacy api host has TLS issues, route through main domain.
+  if (raw.startsWith(LEGACY_API_HOST)) {
+    return raw.replace(LEGACY_API_HOST, DEFAULT_API_BASE);
+  }
+  return raw;
 }
 
 export const AUTH_API_BASE = normalize(

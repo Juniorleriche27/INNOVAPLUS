@@ -10,6 +10,13 @@ function isProtectedPath(pathname: string) {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+function getLoginPath(pathname: string): "/login" | "/myplanning/login" {
+  if (pathname === "/myplanning/app" || pathname.startsWith("/myplanning/app/")) {
+    return "/myplanning/login";
+  }
+  return "/login";
+}
+
 const SESSION_COOKIE = "innova_session";
 const SITE_BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://innovaplus.africa").replace(/\/+$/, "");
 const LEGACY_API_HOST = "https://api.innovaplus.africa";
@@ -124,6 +131,11 @@ const V1_PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/bientot",
+  "/myplanning",
+];
+
+const V1_AUTH_REQUIRED_PREFIXES = [
+  "/myplanning/app",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -142,20 +154,23 @@ export async function middleware(request: NextRequest) {
 
   if (V1_SIMPLE) {
     const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-    if (!hasSession && !isPublic) {
+    const forceAuth = V1_AUTH_REQUIRED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    const allowAnonymous = isPublic && !forceAuth;
+
+    if (!hasSession && !allowAnonymous) {
       const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
+      loginUrl.pathname = getLoginPath(pathname);
       loginUrl.searchParams.set(
         "redirect",
         pathname + (searchParams.toString() ? `?${searchParams}` : "")
       );
       return NextResponse.redirect(loginUrl);
     }
-    if (hasSession && !isPublic) {
+    if (hasSession && !allowAnonymous) {
       const ok = await ensureSessionValid();
       if (!ok) {
         const loginUrl = request.nextUrl.clone();
-        loginUrl.pathname = "/login";
+        loginUrl.pathname = getLoginPath(pathname);
         loginUrl.searchParams.set(
           "redirect",
           pathname + (searchParams.toString() ? `?${searchParams}` : "")
@@ -200,7 +215,7 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath(pathname) && !hasSession) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
+    loginUrl.pathname = getLoginPath(pathname);
     loginUrl.searchParams.set(
       "redirect",
       pathname + (searchParams.toString() ? `?${searchParams}` : "")
@@ -211,7 +226,7 @@ export async function middleware(request: NextRequest) {
     const ok = await ensureSessionValid();
     if (!ok) {
       const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
+      loginUrl.pathname = getLoginPath(pathname);
       loginUrl.searchParams.set(
         "redirect",
         pathname + (searchParams.toString() ? `?${searchParams}` : "")
@@ -222,11 +237,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if ((pathname === "/login" || pathname === "/signup") && hasSession) {
+  if (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/myplanning/login" ||
+    pathname === "/myplanning/signup"
+  ) {
+    if (!hasSession) {
+      return NextResponse.next();
+    }
     const ok = await ensureSessionValid();
     if (ok) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/";
+      if (pathname.startsWith("/myplanning/")) {
+        redirectUrl.pathname = "/myplanning/app";
+      } else {
+        redirectUrl.pathname = "/";
+      }
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }

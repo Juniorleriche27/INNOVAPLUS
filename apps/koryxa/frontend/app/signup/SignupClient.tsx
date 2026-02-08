@@ -7,7 +7,21 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { INNOVA_API_BASE } from "@/lib/env";
 
-export default function SignupClient() {
+type SignupClientProps = {
+  successRedirect?: string;
+  heading?: string;
+  subtitle?: string;
+  loginHref?: string;
+  loginLabel?: string;
+};
+
+export default function SignupClient({
+  successRedirect = "/onboarding",
+  heading = "Créer un compte",
+  subtitle = "Rejoins KORYXA pour accéder aux projets, à la communauté et au copilote CHATLAYA.",
+  loginHref = "/login",
+  loginLabel = "Se connecter",
+}: SignupClientProps = {}) {
   const { refresh, user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,9 +36,9 @@ export default function SignupClient() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/me/recommendations");
+      router.replace(successRedirect);
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, successRedirect]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,7 +83,7 @@ export default function SignupClient() {
 
       setMessage("Compte créé. Bienvenue !");
       await refresh();
-      setTimeout(() => router.replace("/onboarding"), 300);
+      setTimeout(() => router.replace(successRedirect), 300);
       setEmail("");
       setPassword("");
       setFirstName("");
@@ -85,10 +99,8 @@ export default function SignupClient() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Créer un compte</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Rejoins KORYXA pour accéder aux projets, à la communauté et au copilote CHATLAYA.
-        </p>
+        <h1 className="text-2xl font-semibold text-slate-900">{heading}</h1>
+        <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -203,8 +215,8 @@ export default function SignupClient() {
 
         <p className="mt-6 text-sm text-slate-500">
           Déjà un compte ?{" "}
-          <Link href="/login" className="font-semibold text-sky-700 hover:underline">
-            Se connecter
+          <Link href={loginHref} className="font-semibold text-sky-700 hover:underline">
+            {loginLabel}
           </Link>
         </p>
       </section>

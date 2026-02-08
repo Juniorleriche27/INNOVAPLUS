@@ -1,17 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
 
 type Step = "request" | "verify";
 
-export default function LoginClient() {
+type LoginClientProps = {
+  defaultRedirect?: string;
+  requestedRedirect?: string;
+  heading?: string;
+  subtitle?: string;
+  supportHref?: string;
+  supportLabel?: string;
+  signupHref?: string;
+  signupLabel?: string;
+};
+
+export default function LoginClient({
+  defaultRedirect = "/",
+  requestedRedirect,
+  heading = "Connexion sécurisée",
+  subtitle = "Rentre ton email, reçois un code OTP et connecte-toi sans mot de passe.",
+  supportHref = "/account/recover",
+  supportLabel = "Support KORYXA",
+  signupHref = "/signup",
+  signupLabel = "Créer un compte",
+}: LoginClientProps = {}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams?.get("redirect") || "/";
+  const redirect =
+    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : defaultRedirect;
   const { refresh, user, initialLoggedIn } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -109,8 +131,8 @@ export default function LoginClient() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Connexion sécurisée</h1>
-        <p className="mt-2 text-sm text-slate-600">Rentre ton email, reçois un code OTP et connecte-toi sans mot de passe.</p>
+        <h1 className="text-2xl font-semibold text-slate-900">{heading}</h1>
+        <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
         {isPreviewDomain && (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Vous êtes sur un domaine de prévisualisation. Après connexion, vous serez redirigé vers {SITE_BASE_URL} pour
@@ -212,8 +234,14 @@ export default function LoginClient() {
         <div className="mt-6 space-y-2 text-sm text-slate-500">
           <p>
             Envoyer un message à l&apos;équipe ?{" "}
-            <Link href="/account/recover" className="font-semibold text-sky-700 hover:underline">
-              Support KORYXA
+            <Link href={supportHref} className="font-semibold text-sky-700 hover:underline">
+              {supportLabel}
+            </Link>
+          </p>
+          <p>
+            Pas encore de compte ?{" "}
+            <Link href={signupHref} className="font-semibold text-sky-700 hover:underline">
+              {signupLabel}
             </Link>
           </p>
         </div>

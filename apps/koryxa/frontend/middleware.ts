@@ -124,6 +124,11 @@ const V1_PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/bientot",
+  "/myplanning",
+];
+
+const V1_AUTH_REQUIRED_PREFIXES = [
+  "/myplanning/app",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -142,7 +147,10 @@ export async function middleware(request: NextRequest) {
 
   if (V1_SIMPLE) {
     const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-    if (!hasSession && !isPublic) {
+    const forceAuth = V1_AUTH_REQUIRED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    const allowAnonymous = isPublic && !forceAuth;
+
+    if (!hasSession && !allowAnonymous) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/login";
       loginUrl.searchParams.set(
@@ -151,7 +159,7 @@ export async function middleware(request: NextRequest) {
       );
       return NextResponse.redirect(loginUrl);
     }
-    if (hasSession && !isPublic) {
+    if (hasSession && !allowAnonymous) {
       const ok = await ensureSessionValid();
       if (!ok) {
         const loginUrl = request.nextUrl.clone();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
@@ -10,6 +10,7 @@ type Step = "request" | "verify";
 
 type LoginClientProps = {
   defaultRedirect?: string;
+  requestedRedirect?: string;
   heading?: string;
   subtitle?: string;
   supportHref?: string;
@@ -20,6 +21,7 @@ type LoginClientProps = {
 
 export default function LoginClient({
   defaultRedirect = "/",
+  requestedRedirect,
   heading = "Connexion sécurisée",
   subtitle = "Rentre ton email, reçois un code OTP et connecte-toi sans mot de passe.",
   supportHref = "/account/recover",
@@ -28,8 +30,10 @@ export default function LoginClient({
   signupLabel = "Créer un compte",
 }: LoginClientProps = {}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams?.get("redirect") || defaultRedirect;
+  const redirect =
+    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : defaultRedirect;
   const { refresh, user, initialLoggedIn } = useAuth();
 
   const [email, setEmail] = useState("");

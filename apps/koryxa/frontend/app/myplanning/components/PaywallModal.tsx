@@ -24,7 +24,7 @@ export default function PaywallModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">MyPlanning</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">MyPlanningAI</p>
         <h3 className="mt-2 text-xl font-semibold text-slate-900">{title}</h3>
         <p className="mt-3 text-sm text-slate-700">{message}</p>
 

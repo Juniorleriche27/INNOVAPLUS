@@ -6,12 +6,12 @@ export default function MyPlanningLandingPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10">
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/70 to-indigo-50/50 p-8 shadow-sm sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
         <h1 className="mt-4 text-3xl font-semibold text-slate-900 sm:text-5xl">
           Tu travailles beaucoup, mais tu n&apos;avances pas vraiment.
         </h1>
         <h2 className="mt-4 max-w-4xl text-base font-medium text-slate-700">
-          MyPlanning transforme un objectif flou en 3 actions claires par jour, mesurables et alignées avec ce qui compte vraiment.
+          MyPlanningAI transforme un objectif flou en 3 actions claires par jour, mesurables et alignées avec ce qui compte vraiment.
         </h2>
 
         <div className="mt-7 flex flex-wrap gap-3">
@@ -32,10 +32,10 @@ export default function MyPlanningLandingPage() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-        <h2 className="text-2xl font-semibold text-slate-900">Avant / Après MyPlanning</h2>
+        <h2 className="text-2xl font-semibold text-slate-900">Avant / Après MyPlanningAI</h2>
         <div className="mt-6 grid gap-5 lg:grid-cols-2">
           <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-600">Avant (sans MyPlanning)</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-600">Avant (sans MyPlanningAI)</p>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
               <li>Trop de tâches</li>
               <li>Pas de priorité claire</li>
@@ -44,7 +44,7 @@ export default function MyPlanningLandingPage() {
             </ul>
           </div>
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">Après (avec MyPlanning)</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">Après (avec MyPlanningAI)</p>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
               <li>1 objectif clair (1-4 semaines)</li>
               <li>3 actions maximum par jour</li>
@@ -63,7 +63,7 @@ export default function MyPlanningLandingPage() {
             <p className="mt-2 text-sm text-slate-600">Un cap clair pour éviter la dispersion.</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
-            <p className="text-sm font-semibold text-slate-900">MyPlanning te propose 3 actions max pour aujourd&apos;hui</p>
+            <p className="text-sm font-semibold text-slate-900">MyPlanningAI te propose 3 actions max pour aujourd&apos;hui</p>
             <p className="mt-2 text-sm text-slate-600">Court, exécutable, aligné avec l&apos;objectif.</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
@@ -92,7 +92,7 @@ export default function MyPlanningLandingPage() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-        <h2 className="text-2xl font-semibold text-slate-900">Pourquoi ils paient MyPlanning</h2>
+        <h2 className="text-2xl font-semibold text-slate-900">Pourquoi ils paient MyPlanningAI</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
             <p className="text-sm font-semibold text-slate-900">Étudiants sérieux</p>
@@ -112,7 +112,7 @@ export default function MyPlanningLandingPage() {
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
         <h2 className="text-2xl font-semibold text-slate-900">Essaye maintenant</h2>
         <p className="mt-2 text-sm text-slate-700">
-          La valeur de MyPlanning se joue au premier jour: clarté, priorités, exécution.
+          La valeur de MyPlanningAI se joue au premier jour: clarté, priorités, exécution.
         </p>
         <div className="mt-5">
           <Link

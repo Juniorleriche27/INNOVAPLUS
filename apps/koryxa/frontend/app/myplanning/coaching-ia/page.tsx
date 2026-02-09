@@ -16,12 +16,12 @@ export default function MyPlanningCoachingIAPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Coaching IA</p>
         <h1 className="mt-4 text-3xl font-semibold text-slate-900">L’IA t’aide à décider quoi faire aujourd’hui.</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
-          Pas à remplir des listes. MyPlanning utilise tes tâches, tes priorités et ton historique pour proposer un plan exécutable.
+          Pas à remplir des listes. MyPlanningAI utilise tes tâches, tes priorités et ton historique pour proposer un plan exécutable.
         </p>
 
         {isFree ? (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-semibold">Disponible avec MyPlanning Pro.</p>
+            <p className="font-semibold">Disponible avec MyPlanningAI Pro.</p>
             <p className="mt-1 text-amber-800">Tu peux lire cette page, mais les actions IA sont bloquées en Free.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link href="/myplanning/pricing?upgrade=pro&feature=coaching" className="inline-flex rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">

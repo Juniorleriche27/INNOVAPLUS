@@ -12,8 +12,8 @@ export default function MyPlanningProPage() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
-        <h1 className="mt-4 text-3xl font-semibold text-slate-900">MyPlanning Pro — Passe du contrôle à la performance.</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro (bêta)</p>
+        <h1 className="mt-4 text-3xl font-semibold text-slate-900">MyPlanningAI Pro — Passe du contrôle à la performance.</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
           Pro débloque ce qui crée la valeur : IA utile, statistiques d’exécution, templates, automatisations progressives.
         </p>

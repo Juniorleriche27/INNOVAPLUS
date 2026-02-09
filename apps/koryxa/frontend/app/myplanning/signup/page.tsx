@@ -4,10 +4,10 @@ export default function MyPlanningSignupPage() {
   return (
     <SignupClient
       successRedirect="/myplanning/app"
-      heading="Créer un compte MyPlanning"
+      heading="Créer un compte MyPlanningAI"
       subtitle="Crée ton compte pour démarrer ton cockpit de planification."
       loginHref="/myplanning/login?redirect=/myplanning/app"
-      loginLabel="Se connecter à MyPlanning"
+      loginLabel="Se connecter à MyPlanningAI"
     />
   );
 }

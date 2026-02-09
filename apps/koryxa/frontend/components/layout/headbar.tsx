@@ -30,7 +30,7 @@ const PRODUCT_LINKS = [
   { href: "/studio", label: "CHATLAYA Studio", hint: "Rédaction, missions contenu, académie IA" },
   { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
   { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
-  { href: "/myplanning", label: "MyPlanning", hint: "Planification temps & IA Llama (beta)" },
+  { href: "/myplanning", label: "MyPlanningAI", hint: "Planification temps & IA (beta)" },
   { href: "/marketplace", label: "Marketplace social", hint: "Publier talents, services, produits" },
   { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },
 ];
@@ -210,7 +210,7 @@ export default function Headbar() {
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
-                  {isMyPlanning ? "MyPlanning" : "KORYXA"}
+                  {isMyPlanning ? "MyPlanningAI" : "KORYXA"}
                 </p>
                 <div className="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -539,7 +539,7 @@ export default function Headbar() {
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-sm">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
                 </div>
-                <span className="text-lg font-semibold text-slate-900">{isMyPlanning ? "MyPlanning" : "KORYXA"}</span>
+                <span className="text-lg font-semibold text-slate-900">{isMyPlanning ? "MyPlanningAI" : "KORYXA"}</span>
               </Link>
               <button 
                 aria-label="Fermer" 

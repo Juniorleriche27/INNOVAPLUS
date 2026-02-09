@@ -48,7 +48,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
     <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arrivent apres la phase MVP.</p>
           <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>

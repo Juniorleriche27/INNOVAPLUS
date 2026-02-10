@@ -19,6 +19,19 @@ const TIERS = [
     desc: "Pour equipes & organisations (a venir).",
     items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
   },
+  {
+    name: "Entreprise",
+    price: "Sur devis",
+    desc: "Pour pilotage portefeuille, conformité et gouvernance.",
+    items: [
+      "Reporting IA portfolio + projets",
+      "Multi-projets & tableaux de bord",
+      "RBAC + audit logs",
+      "SLA et support prioritaire",
+    ],
+    ctaLabel: "Demander une démo",
+    ctaHref: "/myplanning/enterprise",
+  },
 ];
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -68,7 +81,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {TIERS.map((tier) => (
           <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-9 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">
@@ -87,6 +100,14 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
                 </li>
               ))}
             </ul>
+            {"ctaHref" in tier && tier.ctaHref ? (
+              <Link
+                href={tier.ctaHref}
+                className="mt-6 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                {tier.ctaLabel}
+              </Link>
+            ) : null}
           </div>
         ))}
       </div>

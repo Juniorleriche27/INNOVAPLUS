@@ -1,23 +1,42 @@
 import Link from "next/link";
 
-const TIERS = [
+type Tier = {
+  name: string;
+  price: string;
+  desc: string;
+  items: string[];
+  ctaLabel?: string;
+  ctaHref?: string;
+  ctaVariant?: "primary" | "secondary";
+};
+
+const TIERS: Tier[] = [
   {
     name: "Free",
     price: "0",
     desc: "Pour demarrer et structurer ton quotidien.",
     items: ["Tâches + Kanban", "Vue jour/semaine", "Priorités (Eisenhower)", "Export basique"],
+    ctaLabel: "Commencer",
+    ctaHref: "/myplanning/app",
+    ctaVariant: "secondary",
   },
   {
     name: "Pro",
     price: "Bêta",
     desc: "Pour ceux qui veulent mesurer, decider et progresser.",
     items: ["Coaching IA", "Templates universels", "Stats & graphiques", "Automatisations (bientôt)"],
+    ctaLabel: "Découvrir Pro",
+    ctaHref: "/myplanning/pro",
+    ctaVariant: "secondary",
   },
   {
     name: "Team",
     price: "À venir",
     desc: "Pour equipes & organisations (a venir).",
     items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
+    ctaLabel: "Bientôt disponible",
+    ctaHref: "mailto:hello@innova.plus?subject=Interet%20offre%20Team%20MyPlanningAI",
+    ctaVariant: "secondary",
   },
   {
     name: "Entreprise",
@@ -31,6 +50,7 @@ const TIERS = [
     ],
     ctaLabel: "Demander une démo",
     ctaHref: "/myplanning/enterprise",
+    ctaVariant: "primary",
   },
 ];
 
@@ -100,10 +120,14 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
                 </li>
               ))}
             </ul>
-            {"ctaHref" in tier && tier.ctaHref ? (
+            {tier.ctaHref ? (
               <Link
                 href={tier.ctaHref}
-                className="mt-6 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                className={
+                  tier.ctaVariant === "primary"
+                    ? "mt-6 inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+                    : "mt-6 inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                }
               >
                 {tier.ctaLabel}
               </Link>

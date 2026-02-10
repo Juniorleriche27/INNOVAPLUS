@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { INNOVA_API_BASE } from "@/lib/env";
 
-const API_BASE = INNOVA_API_BASE.replace(/\/+$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/+$/, "");
+const ENTERPRISE_LEADS_ENDPOINT = `${API_BASE}/innova/api/enterprise/leads`;
 
 type LeadFormState = {
   name: string;
@@ -41,7 +41,7 @@ export function EnterpriseLeadForm() {
     setError("");
     setSuccess("");
     try {
-      const response = await fetch(`${API_BASE}/enterprise/leads`, {
+      const response = await fetch(ENTERPRISE_LEADS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

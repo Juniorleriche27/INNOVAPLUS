@@ -24,12 +24,12 @@ export default async function MyPlanningLoginPage({ searchParams }: { searchPara
     <LoginClient
       defaultRedirect="/myplanning/app"
       requestedRedirect={requestedRedirect}
-      heading="Connexion MyPlanning"
-      subtitle="Connecte-toi pour accéder à ton cockpit MyPlanning."
-      supportLabel="Support MyPlanning"
+      heading="Connexion MyPlanningAI"
+      subtitle="Connecte-toi pour accéder à ton cockpit MyPlanningAI."
+      supportLabel="Support MyPlanningAI"
       supportHref="/account/recover"
       signupHref="/myplanning/signup?redirect=/myplanning/app"
-      signupLabel="Créer un compte MyPlanning"
+      signupLabel="Créer un compte MyPlanningAI"
     />
   );
 }

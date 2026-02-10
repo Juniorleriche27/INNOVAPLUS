@@ -14,7 +14,7 @@ export default function MyPlanningStatsPage() {
     return (
       <div className="mx-auto w-full max-w-5xl space-y-6">
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro</p>
           <h1 className="mt-4 text-3xl font-semibold text-slate-900">Stats & graphiques</h1>
           <p className="mt-3 text-sm text-slate-700">Les statistiques avancées sont disponibles en Pro.</p>
           <div className="mt-5 flex flex-wrap gap-2">

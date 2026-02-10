@@ -94,6 +94,15 @@ type OnboardingState = {
   generated_tasks: OnboardingGeneratedTask[];
 };
 
+const EMPTY_ONBOARDING_STATE: OnboardingState = {
+  user_intent: null,
+  main_goal_mid_term: "",
+  daily_focus_hint: "",
+  daily_time_budget: null,
+  onboarding_completed: false,
+  generated_tasks: [],
+};
+
 const ONBOARDING_INTENT_OPTIONS: Array<{ value: OnboardingIntent; label: string }> = [
   { value: "study_learn", label: "Étudier / apprendre" },
   { value: "work_deliver", label: "Travailler / livrer" },
@@ -252,7 +261,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
         }
       }
     } catch {}
-    throw new Error(message || "Impossible de contacter MyPlanning");
+    throw new Error(message || "Impossible de contacter MyPlanningAI");
   }
   if (response.status === 204) return {} as T;
   return (await response.json()) as T;
@@ -390,14 +399,7 @@ export default function MyPlanningClient({
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [editingGeneratedTask, setEditingGeneratedTask] = useState<number | null>(null);
-  const [onboardingData, setOnboardingData] = useState<OnboardingState>({
-    user_intent: null,
-    main_goal_mid_term: "",
-    daily_focus_hint: "",
-    daily_time_budget: null,
-    onboarding_completed: false,
-    generated_tasks: [],
-  });
+  const [onboardingData, setOnboardingData] = useState<OnboardingState>({ ...EMPTY_ONBOARDING_STATE });
 
   const loadTasks = async () => {
     setLoading(true);
@@ -455,6 +457,14 @@ export default function MyPlanningClient({
         setLoading(false);
       }
     } catch (err) {
+      const rawMessage = err instanceof Error ? err.message : "";
+      if (/not found|404/i.test(rawMessage)) {
+        setOnboardingData({ ...EMPTY_ONBOARDING_STATE });
+        setOnboardingStep(1);
+        setOnboardingError(null);
+        setLoading(false);
+        return;
+      }
       const message = err instanceof Error ? friendlyError(err.message) : "Impossible de charger l’onboarding";
       setOnboardingError(message);
       setLoading(false);
@@ -951,14 +961,14 @@ export default function MyPlanningClient({
     return (
       <div className="mx-auto w-full max-w-3xl space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Onboarding MyPlanning</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Onboarding MyPlanningAI</p>
           <p className="text-sm text-slate-600">Étape {onboardingStep} / 6</p>
         </div>
         {onboardingError ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{onboardingError}</div> : null}
 
         {onboardingStep === 1 ? (
           <div className="space-y-4">
-            <h1 className="text-2xl font-semibold text-slate-900">Pourquoi utilises-tu MyPlanning aujourd’hui ?</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Pourquoi utilises-tu MyPlanningAI aujourd’hui ?</h1>
             <div className="grid gap-2">
               {ONBOARDING_INTENT_OPTIONS.map((option) => (
                 <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
@@ -1413,7 +1423,7 @@ export default function MyPlanningClient({
     if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro</p>
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Stats & graphiques</h2>
           <p className="mt-2 text-sm text-slate-600">Les statistiques avancées sont disponibles en Pro.</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -1960,7 +1970,7 @@ export default function MyPlanningClient({
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="rounded-3xl bg-gradient-to-br from-sky-600 via-sky-500 to-slate-900 px-8 py-6 text-white shadow-lg shadow-sky-300/40">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/70">Coaching MyPlanning</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/70">Coaching MyPlanningAI</p>
           <h2 className="mt-1 text-2xl font-semibold leading-tight">Organise ta journée en 1 clic</h2>
           <p className="mt-2 text-sm text-white/85">
             Décris ton flow, l’IA propose des tâches classées et tu envoies tout dans ton planning.
@@ -2088,7 +2098,7 @@ export default function MyPlanningClient({
             disabled={bulkAdding || aiDrafts.every((d) => addedDrafts.has(d.title))}
             className="rounded-full bg-emerald-600 px-3 py-1 font-semibold text-white disabled:opacity-50"
           >
-            {bulkAdding ? "Ajout..." : "Ajouter toutes les tâches à MyPlanning"}
+            {bulkAdding ? "Ajout..." : "Ajouter toutes les tâches à MyPlanningAI"}
           </button>
         </div>
       )}
@@ -2142,7 +2152,7 @@ export default function MyPlanningClient({
     if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro</p>
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Paramètres IA</h2>
           <p className="mt-2 text-sm text-slate-600">Les paramètres IA sont disponibles en Pro.</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -2264,7 +2274,7 @@ export default function MyPlanningClient({
     if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro (bêta)</p>
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Automatisations</h2>
           <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -2311,7 +2321,7 @@ export default function MyPlanningClient({
     if (!hasPlanAccess(plan, "pro")) {
       return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Pro (bêta)</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro (bêta)</p>
           <h2 className="mt-3 text-xl font-semibold text-slate-900">Templates universels</h2>
           <p className="mt-2 text-sm text-slate-600">Fonctionnalité Pro (bêta) — Passe à l’offre Pro pour y accéder.</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -2418,7 +2428,7 @@ export default function MyPlanningClient({
           <div className="flex items-center justify-between">
             {!isSidebarCollapsed && (
               <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanning</p>
+                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">MyPlanningAI</p>
                 <p className="text-lg font-semibold text-slate-900">Cockpit</p>
               </div>
             )}
@@ -2498,7 +2508,7 @@ export default function MyPlanningClient({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-              {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanning"}
+              {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}
             </p>
             <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
           </div>
@@ -2582,7 +2592,7 @@ export default function MyPlanningClient({
       <PaywallModal
         open={Boolean(paywallFeature)}
         title="Fonctionnalité Pro (bêta)"
-        message="Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanning Pro."
+        message="Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanningAI Pro."
         ctaHref={paywallFeature ? `/myplanning/pricing?upgrade=pro&feature=${paywallFeature}` : "/myplanning/pricing?upgrade=pro"}
         onClose={closePaywall}
       />

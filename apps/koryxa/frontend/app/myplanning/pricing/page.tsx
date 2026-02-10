@@ -19,6 +19,19 @@ const TIERS = [
     desc: "Pour equipes & organisations (a venir).",
     items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
   },
+  {
+    name: "Entreprise",
+    price: "Sur devis",
+    desc: "Pour pilotage portefeuille, conformité et gouvernance.",
+    items: [
+      "Reporting IA portfolio + projets",
+      "Multi-projets & tableaux de bord",
+      "RBAC + audit logs",
+      "SLA et support prioritaire",
+    ],
+    ctaLabel: "Demander une démo",
+    ctaHref: "/myplanning/enterprise",
+  },
 ];
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -48,7 +61,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
     <div className="mx-auto w-full max-w-6xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arrivent apres la phase MVP.</p>
           <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>
@@ -68,7 +81,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {TIERS.map((tier) => (
           <div key={tier.name} className="rounded-3xl border border-slate-200 bg-white p-9 shadow-sm">
             <p className="text-sm font-semibold text-slate-900">
@@ -87,6 +100,14 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
                 </li>
               ))}
             </ul>
+            {"ctaHref" in tier && tier.ctaHref ? (
+              <Link
+                href={tier.ctaHref}
+                className="mt-6 inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                {tier.ctaLabel}
+              </Link>
+            ) : null}
           </div>
         ))}
       </div>

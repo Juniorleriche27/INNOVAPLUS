@@ -691,6 +691,18 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
     }
 
 
+@app.get("/innova/api/health", include_in_schema=False)
+async def health_innova_api(db: AsyncIOMotorDatabase = Depends(get_db)):
+    # Keep a stable health URL behind the /innova/api prefix used by the frontend gateway.
+    return await health(db)
+
+
+@app.get("/innova/api/openapi.json", include_in_schema=False)
+def openapi_innova_api():
+    # Provide OpenAPI under the same gateway prefix to avoid proxy-dependent 404s.
+    return app.openapi()
+
+
 @app.get("/mart/app-overview")
 def mart_app_overview():
     try:

@@ -34,8 +34,8 @@ const TIERS: Tier[] = [
     price: "À venir",
     desc: "Pour equipes & organisations (a venir).",
     items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
-    ctaLabel: "Contacter l'équipe",
-    ctaHref: "mailto:hello@innova.plus?subject=Interet%20offre%20Team%20MyPlanningAI",
+    ctaLabel: "Découvrir Team",
+    ctaHref: "/myplanning/team",
     ctaVariant: "secondary",
   },
   {

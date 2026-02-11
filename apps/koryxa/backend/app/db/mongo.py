@@ -49,6 +49,16 @@ async def connect_to_mongo() -> None:
             await _db["myplanning_tasks"].create_index([("user_id", 1), ("due_datetime", 1)])
             await _db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1)])
             await _db["myplanning_onboarding"].create_index([("user_id", 1)], unique=True)
+            await _db["myplanning_workspaces"].create_index([("owner_user_id", 1), ("updated_at", -1)])
+            await _db["myplanning_workspaces"].create_index([("name", 1)])
+            await _db["myplanning_workspace_members"].create_index(
+                [("workspace_id", 1), ("user_id", 1)],
+                unique=True,
+                partialFilterExpression={"user_id": {"$exists": True}, "status": "active"},
+            )
+            await _db["myplanning_workspace_members"].create_index([("workspace_id", 1), ("status", 1)])
+            await _db["myplanning_workspace_members"].create_index([("user_id", 1), ("status", 1)])
+            await _db["myplanning_workspace_members"].create_index([("workspace_id", 1), ("email", 1), ("status", 1)])
             # Data reservoir collections
             await _db["ai_interactions"].create_index([("user_id_anon", 1), ("ts", -1)])
             await _db["social_messages"].create_index([("thread_id", 1), ("ts", 1)])

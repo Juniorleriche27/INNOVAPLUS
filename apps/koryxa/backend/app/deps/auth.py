@@ -17,6 +17,10 @@ async def get_current_user(
 ) -> dict:
     raw_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if not raw_token:
+        authz = (request.headers.get("authorization") or "").strip()
+        if authz.lower().startswith("bearer "):
+            raw_token = authz[7:].strip()
+    if not raw_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
     token_hash = hash_token(raw_token)

@@ -33,9 +33,16 @@ from app.schemas.myplanning import (
     TaskListResponse,
     TaskResponse,
     TaskUpdatePayload,
+    WorkspaceCreatePayload,
+    WorkspaceListResponse,
+    WorkspaceMemberAddPayload,
+    WorkspaceMemberResponse,
+    WorkspaceMembersResponse,
+    WorkspaceResponse,
 )
 from app.services.myplanning_ai import plan_day_with_llama, replan_with_time_limit, suggest_tasks_from_text
 from app.utils.ids import to_object_id
+from app.core.auth import normalize_email
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +50,8 @@ router = APIRouter(prefix="/myplanning", tags=["myplanning"])
 
 COLLECTION = "myplanning_tasks"
 ONBOARDING_COLLECTION = "myplanning_onboarding"
+WORKSPACES_COLLECTION = "myplanning_workspaces"
+WORKSPACE_MEMBERS_COLLECTION = "myplanning_workspace_members"
 _RATE_LIMIT_BUCKETS: dict[str, List[float]] = {}
 
 
@@ -121,6 +130,45 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "updated_at": _serialize_datetime(doc.get("updated_at")),
     }
     return TaskResponse(**payload)
+
+
+def _workspace_role(member_doc: dict) -> str:
+    return str(member_doc.get("role") or "member").lower()
+
+
+def _workspace_role_can_manage(member_doc: dict) -> bool:
+    return _workspace_role(member_doc) in {"owner", "admin"}
+
+
+async def _get_workspace_membership(
+    db: AsyncIOMotorDatabase,
+    workspace_oid: ObjectId,
+    user_oid: ObjectId,
+) -> dict:
+    membership = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "user_id": user_oid, "status": "active"}
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    return membership
+
+
+async def _get_workspace_for_member(
+    db: AsyncIOMotorDatabase,
+    workspace_oid: ObjectId,
+    user_oid: ObjectId,
+) -> tuple[dict, dict]:
+    membership = await _get_workspace_membership(db, workspace_oid, user_oid)
+    workspace = await db[WORKSPACES_COLLECTION].find_one({"_id": workspace_oid})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    return workspace, membership
+
+
+async def _workspace_member_count(db: AsyncIOMotorDatabase, workspace_oid: ObjectId) -> int:
+    return await db[WORKSPACE_MEMBERS_COLLECTION].count_documents(
+        {"workspace_id": workspace_oid, "status": "active"}
+    )
 
 
 def _prepare_task_payload(payload: dict) -> dict:
@@ -455,6 +503,261 @@ async def complete_onboarding(
         },
     )
     return OnboardingCompleteResponse(created_tasks=created_tasks, onboarding_completed=True)
+
+
+@router.get("/workspaces", response_model=WorkspaceListResponse)
+async def list_workspaces(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceListResponse:
+    memberships = await db[WORKSPACE_MEMBERS_COLLECTION].find(
+        {"user_id": current["_id"], "status": "active"}
+    ).to_list(length=500)
+    if not memberships:
+        return WorkspaceListResponse(items=[])
+
+    workspace_ids = [m.get("workspace_id") for m in memberships if m.get("workspace_id")]
+    if not workspace_ids:
+        return WorkspaceListResponse(items=[])
+
+    workspace_docs = await db[WORKSPACES_COLLECTION].find({"_id": {"$in": workspace_ids}}).to_list(length=500)
+    workspaces_map = {doc["_id"]: doc for doc in workspace_docs}
+    counts_cursor = db[WORKSPACE_MEMBERS_COLLECTION].aggregate(
+        [
+            {"$match": {"workspace_id": {"$in": workspace_ids}, "status": "active"}},
+            {"$group": {"_id": "$workspace_id", "count": {"$sum": 1}}},
+        ]
+    )
+    counts: Dict[ObjectId, int] = {}
+    async for row in counts_cursor:
+        counts[row["_id"]] = int(row.get("count") or 0)
+
+    items: List[WorkspaceResponse] = []
+    for membership in memberships:
+        workspace = workspaces_map.get(membership.get("workspace_id"))
+        if not workspace:
+            continue
+        owner_id = workspace.get("owner_user_id") or workspace.get("created_by")
+        items.append(
+            WorkspaceResponse(
+                id=str(workspace["_id"]),
+                name=str(workspace.get("name") or "Workspace"),
+                role=_workspace_role(membership),  # type: ignore[arg-type]
+                owner_user_id=str(owner_id) if owner_id else "",
+                member_count=counts.get(workspace["_id"], 0),
+                created_at=_serialize_datetime(workspace.get("created_at")),
+                updated_at=_serialize_datetime(workspace.get("updated_at")),
+            )
+        )
+    return WorkspaceListResponse(items=items)
+
+
+@router.post("/workspaces", response_model=WorkspaceResponse)
+async def create_workspace(
+    payload: WorkspaceCreatePayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceResponse:
+    now = datetime.utcnow()
+    name = payload.name.strip()
+    workspace_doc = {
+        "name": name,
+        "owner_user_id": current["_id"],
+        "created_by": current["_id"],
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = await db[WORKSPACES_COLLECTION].insert_one(workspace_doc)
+    workspace_doc["_id"] = result.inserted_id
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+        {
+            "workspace_id": result.inserted_id,
+            "user_id": current["_id"],
+            "email": current.get("email"),
+            "role": "owner",
+            "status": "active",
+            "joined_at": now,
+            "created_at": now,
+            "updated_at": now,
+            "created_by": current["_id"],
+        }
+    )
+    return WorkspaceResponse(
+        id=str(result.inserted_id),
+        name=name,
+        role="owner",
+        owner_user_id=str(current["_id"]),
+        member_count=1,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@router.get("/workspaces/{workspace_id}", response_model=WorkspaceResponse)
+async def get_workspace(
+    workspace_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceResponse:
+    workspace_oid = to_object_id(workspace_id)
+    workspace, membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    owner_id = workspace.get("owner_user_id") or workspace.get("created_by")
+    member_count = await _workspace_member_count(db, workspace_oid)
+    return WorkspaceResponse(
+        id=str(workspace["_id"]),
+        name=str(workspace.get("name") or "Workspace"),
+        role=_workspace_role(membership),  # type: ignore[arg-type]
+        owner_user_id=str(owner_id) if owner_id else "",
+        member_count=member_count,
+        created_at=_serialize_datetime(workspace.get("created_at")),
+        updated_at=_serialize_datetime(workspace.get("updated_at")),
+    )
+
+
+@router.get("/workspaces/{workspace_id}/members", response_model=WorkspaceMembersResponse)
+async def list_workspace_members(
+    workspace_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceMembersResponse:
+    workspace_oid = to_object_id(workspace_id)
+    await _get_workspace_membership(db, workspace_oid, current["_id"])
+
+    member_docs = await db[WORKSPACE_MEMBERS_COLLECTION].find(
+        {"workspace_id": workspace_oid, "status": {"$in": ["active", "pending"]}}
+    ).to_list(length=1000)
+    user_ids = [m["user_id"] for m in member_docs if m.get("user_id")]
+    users_map: Dict[ObjectId, dict] = {}
+    if user_ids:
+        users = await db["users"].find({"_id": {"$in": user_ids}}).to_list(length=1000)
+        users_map = {u["_id"]: u for u in users}
+
+    items: List[WorkspaceMemberResponse] = []
+    for member in member_docs:
+        user = users_map.get(member.get("user_id"))
+        items.append(
+            WorkspaceMemberResponse(
+                user_id=str(member["user_id"]) if member.get("user_id") else None,
+                email=str(member.get("email") or (user or {}).get("email") or ""),
+                first_name=(user or {}).get("first_name"),
+                last_name=(user or {}).get("last_name"),
+                role=_workspace_role(member),  # type: ignore[arg-type]
+                status=str(member.get("status") or "active"),  # type: ignore[arg-type]
+                joined_at=_serialize_datetime(member.get("joined_at")),
+                invited_at=_serialize_datetime(member.get("invited_at")),
+            )
+        )
+
+    return WorkspaceMembersResponse(workspace_id=workspace_id, items=items)
+
+
+@router.post("/workspaces/{workspace_id}/members", response_model=WorkspaceMemberResponse)
+async def add_workspace_member(
+    workspace_id: str,
+    payload: WorkspaceMemberAddPayload,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceMemberResponse:
+    workspace_oid = to_object_id(workspace_id)
+    _, requester_membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    if not _workspace_role_can_manage(requester_membership):
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+    role = payload.role
+    if role == "owner":
+        raise HTTPException(status_code=400, detail="Le rôle owner ne peut pas être attribué via cette route")
+    email = normalize_email(payload.email)
+    now = datetime.utcnow()
+
+    user = await db["users"].find_one({"email": email})
+    if user:
+        existing = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+            {"workspace_id": workspace_oid, "user_id": user["_id"], "status": "active"}
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail="Utilisateur déjà membre du workspace")
+
+        await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+            {
+                "workspace_id": workspace_oid,
+                "user_id": user["_id"],
+                "email": email,
+                "role": role,
+                "status": "active",
+                "joined_at": now,
+                "invited_at": now,
+                "invited_by": current["_id"],
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+        return WorkspaceMemberResponse(
+            user_id=str(user["_id"]),
+            email=email,
+            first_name=user.get("first_name"),
+            last_name=user.get("last_name"),
+            role=role,
+            status="active",
+            joined_at=now,
+            invited_at=now,
+        )
+
+    existing_invite = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "email": email, "status": "pending"}
+    )
+    if existing_invite:
+        raise HTTPException(status_code=409, detail="Invitation déjà envoyée")
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+        {
+            "workspace_id": workspace_oid,
+            "email": email,
+            "role": role,
+            "status": "pending",
+            "invited_at": now,
+            "invited_by": current["_id"],
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+    return WorkspaceMemberResponse(
+        user_id=None,
+        email=email,
+        first_name=None,
+        last_name=None,
+        role=role,
+        status="pending",
+        joined_at=None,
+        invited_at=now,
+    )
+
+
+@router.delete("/workspaces/{workspace_id}/members/{user_id}")
+async def delete_workspace_member(
+    workspace_id: str,
+    user_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> dict:
+    workspace_oid = to_object_id(workspace_id)
+    _, requester_membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    if not _workspace_role_can_manage(requester_membership):
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+    target_user_oid = to_object_id(user_id)
+    target = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "user_id": target_user_oid, "status": "active"}
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Membre introuvable")
+    if _workspace_role(target) == "owner":
+        raise HTTPException(status_code=400, detail="Le propriétaire ne peut pas être supprimé")
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].delete_one(
+        {"workspace_id": workspace_oid, "user_id": target_user_oid}
+    )
+    return {"ok": True}
 
 
 @router.get("/tasks", response_model=TaskListResponse)

@@ -64,7 +64,10 @@ import logging
 from app.core.product_mode import is_myplanning_only
 
 
-app = FastAPI(title=settings.APP_NAME)
+API_PROXY_PREFIX = "/innova/api"
+FORWARDED_PREFIX_HEADER = "x-forwarded-prefix"
+
+app = FastAPI(title=settings.APP_NAME, root_path=API_PROXY_PREFIX)
 logger = logging.getLogger(__name__)
 MYPLANNING_ONLY = is_myplanning_only()
 POOL: SimpleConnectionPool | None = None
@@ -73,6 +76,14 @@ LEAD_RATE_LIMIT_WINDOW_S = int(os.environ.get("ENTERPRISE_LEADS_RATE_WINDOW_S", 
 LEAD_RATE_LIMIT_MAX = int(os.environ.get("ENTERPRISE_LEADS_RATE_MAX", "5"))
 _LEAD_RATE_BUCKETS: dict[str, list[float]] = {}
 _LEAD_RATE_LOCK = threading.Lock()
+
+
+def _normalize_prefix(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    clean = f"/{raw.strip('/')}"
+    return clean
 
 
 class EnterpriseLeadIn(BaseModel):
@@ -656,6 +667,35 @@ async def on_shutdown():
 START_TIME = __import__("time").time()
 
 
+@app.middleware("http")
+async def normalize_forwarded_prefix(request: Request, call_next):
+    # Accept both nginx style forwarded prefix and direct prefixed requests.
+    header_prefix = _normalize_prefix(request.headers.get(FORWARDED_PREFIX_HEADER))
+    prefix = header_prefix or API_PROXY_PREFIX
+    scope = request.scope
+    path = scope.get("path", "")
+
+    new_scope = scope
+    if path == prefix or path.startswith(f"{prefix}/"):
+        stripped = path[len(prefix):] or "/"
+        # Handle accidental doubled prefixes: /innova/api/innova/api/*
+        while stripped == prefix or stripped.startswith(f"{prefix}/"):
+            stripped = stripped[len(prefix):] or "/"
+
+        new_scope = dict(scope)
+        new_scope["path"] = stripped
+        if scope.get("raw_path") is not None:
+            new_scope["raw_path"] = stripped.encode("utf-8")
+        new_scope["root_path"] = prefix
+    elif header_prefix:
+        new_scope = dict(scope)
+        new_scope["root_path"] = header_prefix
+
+    if new_scope is scope:
+        return await call_next(request)
+    return await call_next(Request(new_scope, receive=request.receive))
+
+
 @app.get("/", include_in_schema=not MYPLANNING_ONLY)
 async def root():
     return {"status": "ok", "service": settings.APP_NAME, "docs": "/docs"}
@@ -689,18 +729,6 @@ async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
         "version": os.getenv("APP_VERSION", "1.0.0"),
         "commit_sha": (os.getenv("COMMIT_SHA") or (__import__("subprocess").run(["git","-C", os.path.abspath(os.path.join(os.path.dirname(__file__), "..")), "rev-parse","--short","HEAD"], capture_output=True, text=True).stdout.strip() or "unknown")),
     }
-
-
-@app.get("/innova/api/health", include_in_schema=False)
-async def health_innova_api(db: AsyncIOMotorDatabase = Depends(get_db)):
-    # Keep a stable health URL behind the /innova/api prefix used by the frontend gateway.
-    return await health(db)
-
-
-@app.get("/innova/api/openapi.json", include_in_schema=False)
-def openapi_innova_api():
-    # Provide OpenAPI under the same gateway prefix to avoid proxy-dependent 404s.
-    return app.openapi()
 
 
 @app.get("/mart/app-overview")
@@ -911,7 +939,6 @@ def ai_report_portfolio():
 
 
 @app.post("/enterprise/leads")
-@app.post("/innova/api/enterprise/leads", include_in_schema=False)
 def create_enterprise_lead(payload: EnterpriseLeadIn, request: Request):
     try:
         client_ip = _client_ip(request)
@@ -958,7 +985,6 @@ def create_enterprise_lead(payload: EnterpriseLeadIn, request: Request):
 
 
 @app.get("/enterprise/leads")
-@app.get("/innova/api/enterprise/leads", include_in_schema=False)
 def list_enterprise_leads(
     request: Request,
     limit: int = Query(50, ge=1, le=200),
@@ -975,7 +1001,6 @@ def list_enterprise_leads(
 
 
 @app.get("/enterprise/leads/export.csv")
-@app.get("/innova/api/enterprise/leads/export.csv", include_in_schema=False)
 def export_enterprise_leads_csv(
     request: Request,
     limit: int = Query(50, ge=1, le=2000),
@@ -1032,7 +1057,6 @@ def export_enterprise_leads_csv(
 
 
 @app.patch("/enterprise/leads/{lead_id}")
-@app.patch("/innova/api/enterprise/leads/{lead_id}", include_in_schema=False)
 def patch_enterprise_lead(lead_id: int, payload: EnterpriseLeadUpdateIn, request: Request):
     try:
         _require_admin_token(request)
@@ -1059,7 +1083,6 @@ def patch_enterprise_lead(lead_id: int, payload: EnterpriseLeadUpdateIn, request
 
 
 @app.post("/enterprise/leads/webhook")
-@app.post("/innova/api/enterprise/leads/webhook", include_in_schema=False)
 async def enterprise_leads_webhook(request: Request):
     try:
         _require_webhook_secret(request)
@@ -1087,15 +1110,14 @@ async def enterprise_leads_webhook(request: Request):
 
 
 if MYPLANNING_ONLY:
-    # Minimal footprint: only auth, notifications, myplanning (under /innova/api) + health
-    minimal = APIRouter(prefix="/innova/api")
+    # Minimal footprint: auth, notifications, myplanning.
+    # /innova/api prefix is handled by proxy + forwarded-prefix normalization middleware.
+    minimal = APIRouter(prefix="")
     minimal.include_router(auth_router)
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
     app.include_router(minimal)
-    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
-    app.include_router(minimal, prefix="/innova/api", include_in_schema=False)
     logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning only")
 else:
     # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
@@ -1106,8 +1128,8 @@ else:
     app.include_router(rag_router)
     app.include_router(chatlaya_router)
 
-    # Mount module-prefixed routes
-    innova_api = APIRouter(prefix="/innova/api")
+    # Mount API routes at root; /innova/api prefix is normalized by middleware.
+    innova_api = APIRouter(prefix="")
     # Legacy INNOVA core lists (domains/contributors/technologies) disabled
     # innova_api.include_router(innova_core_router)
     innova_api.include_router(opportunities_router)
@@ -1131,9 +1153,6 @@ else:
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
     app.include_router(innova_api)
-    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
-    # by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
-    app.include_router(innova_api, prefix="/innova/api", include_in_schema=False)
     innova_rag = APIRouter(prefix="/innova")
     innova_rag.include_router(rag_router)
     app.include_router(innova_rag)

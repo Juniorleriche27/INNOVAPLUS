@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import logging
 import re
+import os
+import uuid
+import json
+import base64
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 import time
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user
@@ -63,6 +69,57 @@ def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
         raise HTTPException(status_code=429, detail="Trop de requêtes. Réessayez dans quelques instants.")
     bucket.append(now)
     _RATE_LIMIT_BUCKETS[key] = bucket
+
+
+def _myplanning_store() -> str:
+    return (os.environ.get("MYPLANNING_STORE") or "mongo").strip().lower()
+
+
+def _pg_dsn() -> str:
+    dsn = (os.environ.get("DATABASE_URL") or "").strip().strip('"').strip("'")
+    if not dsn:
+        raise HTTPException(status_code=500, detail="DATABASE_URL not configured")
+    return dsn
+
+
+def _extract_jwt_sub_if_uuid(token: str | None) -> str | None:
+    raw = (token or "").strip()
+    if not raw or raw.count(".") != 2:
+        return None
+    try:
+        payload_b64 = raw.split(".")[1]
+        payload_b64 += "=" * (-len(payload_b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8"))
+        sub = str(payload.get("sub") or "").strip()
+        if not sub:
+            return None
+        return str(uuid.UUID(sub))
+    except Exception:
+        return None
+
+
+async def _resolve_pg_actor_id(
+    db: AsyncIOMotorDatabase,
+    current: dict,
+    bearer_token: str | None,
+) -> str:
+    jwt_sub = _extract_jwt_sub_if_uuid(bearer_token)
+    if jwt_sub:
+        return jwt_sub
+
+    existing = current.get("pg_actor_id")
+    if isinstance(existing, str):
+        try:
+            return str(uuid.UUID(existing))
+        except Exception:
+            pass
+
+    generated = str(uuid.uuid5(uuid.NAMESPACE_URL, f"koryxa-user:{str(current.get('_id'))}"))
+    await db["users"].update_one(
+        {"_id": current["_id"]},
+        {"$set": {"pg_actor_id": generated, "updated_at": datetime.utcnow()}},
+    )
+    return generated
 
 
 def _user_plan(current: dict) -> str:
@@ -592,6 +649,85 @@ async def create_workspace(
         created_at=now,
         updated_at=now,
     )
+
+
+@router.post("/_sanity/workspace")
+async def sanity_postgres_workspace(
+    payload: WorkspaceCreatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> dict:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    authz = (request.headers.get("authorization") or "").strip()
+    bearer_token = authz[7:].strip() if authz.lower().startswith("bearer ") else None
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+
+    name = payload.name.strip()
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        workspace_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            actor_email = str(current.get("email") or f"{actor_id}@koryxa.local").strip().lower()
+            cur.execute(
+                """
+                insert into auth.users (
+                  id, aud, role, email, created_at, updated_at, raw_app_meta_data, raw_user_meta_data
+                )
+                values (
+                  %s::uuid, 'authenticated', 'authenticated', %s, now(), now(), '{}'::jsonb, '{}'::jsonb
+                )
+                on conflict (id) do update set updated_at = now();
+                """,
+                (actor_id, actor_email),
+            )
+            cur.execute("set local role authenticated;")
+            cur.execute("set local request.jwt.claim.role = 'authenticated';")
+            cur.execute("set local request.jwt.claim.sub = %s;", (actor_id,))
+            cur.execute(
+                """
+                insert into app.workspaces(id, name, owner_id, created_at, updated_at)
+                values (%s::uuid, %s, %s::uuid, %s, %s);
+                """,
+                (workspace_id, name, actor_id, now, now),
+            )
+            # Revert to connection role for readback because current RLS policies recurse
+            # between workspaces and workspace_members on SELECT.
+            cur.execute("reset role;")
+            cur.execute(
+                """
+                select id::text as id, name, owner_id::text as owner_id, created_at, updated_at
+                from app.workspaces
+                where id = %s::uuid;
+                """,
+                (workspace_id,),
+            )
+            workspace_read = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres sanity error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return {"ok": True, "store": "postgres", "actor_id": actor_id, "workspace": workspace_read}
 
 
 @router.get("/workspaces/{workspace_id}", response_model=WorkspaceResponse)

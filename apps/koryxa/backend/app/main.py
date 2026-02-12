@@ -546,6 +546,25 @@ def ensure_myplanning_tasks_tables() -> None:
     db_execute("alter table app.tasks add column if not exists assignee_id uuid null;")
     db_execute("alter table app.tasks add column if not exists created_at timestamptz not null default now();")
     db_execute("alter table app.tasks add column if not exists updated_at timestamptz not null default now();")
+    db_execute("alter table app.tasks alter column project_id drop not null;")
+    db_execute(
+        """
+        do $$
+        begin
+          if exists (
+            select 1
+            from information_schema.columns
+            where table_schema = 'app'
+              and table_name = 'tasks'
+              and column_name = 'priority'
+              and data_type <> 'text'
+          ) then
+            execute 'alter table app.tasks alter column priority type text using priority::text';
+          end if;
+        end $$;
+        """
+    )
+    db_execute("alter table app.tasks alter column priority drop not null;")
     db_execute("alter table app.tasks drop constraint if exists tasks_status_check;")
     db_execute(
         """
@@ -601,6 +620,16 @@ def ensure_myplanning_tasks_tables() -> None:
     db_execute("create index if not exists idx_tasks_assignee_user_created_at on app.tasks(assignee_user_id, created_at desc);")
 
     db_execute("grant select, insert, update, delete on app.tasks to authenticated;")
+    db_execute(
+        """
+        do $$
+        begin
+          if to_regclass('app.projects') is not null then
+            execute 'grant select on app.projects to authenticated';
+          end if;
+        end $$;
+        """
+    )
     db_execute("alter table app.tasks enable row level security;")
 
     db_execute("drop policy if exists tasks_select_auth on app.tasks;")

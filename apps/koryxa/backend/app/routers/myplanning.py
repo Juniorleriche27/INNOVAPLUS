@@ -1451,14 +1451,23 @@ def _normalize_pg_task_payload(payload: dict[str, Any], *, now: datetime, for_up
         doc["due_datetime"] = datetime.combine(due_date, datetime.min.time())
 
     if not for_update:
-        doc.setdefault("context_type", "personal")
-        doc.setdefault("priority_eisenhower", "important_not_urgent")
-        doc.setdefault("kanban_state", "todo")
-        doc.setdefault("high_impact", False)
-        doc.setdefault("source", "manual")
+        if doc.get("context_type") is None:
+            doc["context_type"] = "personal"
+        if doc.get("priority_eisenhower") is None:
+            doc["priority_eisenhower"] = "important_not_urgent"
+        if doc.get("kanban_state") is None:
+            doc["kanban_state"] = "todo"
+        if doc.get("status") is None:
+            doc["status"] = "todo"
+        if doc.get("high_impact") is None:
+            doc["high_impact"] = False
+        if doc.get("source") is None:
+            doc["source"] = "manual"
         if doc.get("kanban_state") == "done" and not doc.get("completed_at"):
             doc["completed_at"] = now
     else:
+        if doc.get("status") is None:
+            doc.pop("status", None)
         if "kanban_state" in doc and "completed_at" not in doc:
             if doc.get("kanban_state") == "done":
                 doc["completed_at"] = now
@@ -1804,6 +1813,7 @@ async def _pg_create_task(
                 pass
         raise
     except Exception as exc:
+        logger.exception("postgres task create failed")
         if conn is not None:
             try:
                 conn.rollback()

@@ -17,6 +17,8 @@ MoSCoWOption = Literal["must", "should", "could", "wont"]
 EnergyLevel = Literal["low", "medium", "high"]
 TaskSource = Literal["manual", "ia"]
 TaskContextType = Literal["personal", "professional", "learning"]
+WorkspaceMemberRole = Literal["owner", "admin", "member"]
+WorkspaceMemberStatus = Literal["active", "pending"]
 
 
 class TaskBase(BaseModel):
@@ -82,6 +84,45 @@ class TaskListResponse(BaseModel):
     items: List[TaskResponse]
     total: int = 0
     has_more: bool = False
+
+
+class WorkspaceCreatePayload(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+
+
+class WorkspaceResponse(BaseModel):
+    id: str
+    name: str
+    role: WorkspaceMemberRole
+    owner_user_id: str
+    member_count: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class WorkspaceListResponse(BaseModel):
+    items: List[WorkspaceResponse] = Field(default_factory=list)
+
+
+class WorkspaceMemberAddPayload(BaseModel):
+    email: str = Field(..., min_length=3, max_length=255)
+    role: WorkspaceMemberRole = "member"
+
+
+class WorkspaceMemberResponse(BaseModel):
+    user_id: Optional[str] = None
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    role: WorkspaceMemberRole
+    status: WorkspaceMemberStatus = "active"
+    joined_at: Optional[datetime] = None
+    invited_at: Optional[datetime] = None
+
+
+class WorkspaceMembersResponse(BaseModel):
+    workspace_id: str
+    items: List[WorkspaceMemberResponse] = Field(default_factory=list)
 
 
 class AiTaskDraft(BaseModel):

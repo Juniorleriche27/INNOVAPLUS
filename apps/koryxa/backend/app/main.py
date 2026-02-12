@@ -64,7 +64,10 @@ import logging
 from app.core.product_mode import is_myplanning_only
 
 
-app = FastAPI(title=settings.APP_NAME)
+API_PROXY_PREFIX = "/innova/api"
+FORWARDED_PREFIX_HEADER = "x-forwarded-prefix"
+
+app = FastAPI(title=settings.APP_NAME, root_path=API_PROXY_PREFIX)
 logger = logging.getLogger(__name__)
 MYPLANNING_ONLY = is_myplanning_only()
 POOL: SimpleConnectionPool | None = None
@@ -73,6 +76,14 @@ LEAD_RATE_LIMIT_WINDOW_S = int(os.environ.get("ENTERPRISE_LEADS_RATE_WINDOW_S", 
 LEAD_RATE_LIMIT_MAX = int(os.environ.get("ENTERPRISE_LEADS_RATE_MAX", "5"))
 _LEAD_RATE_BUCKETS: dict[str, list[float]] = {}
 _LEAD_RATE_LOCK = threading.Lock()
+
+
+def _normalize_prefix(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    clean = f"/{raw.strip('/')}"
+    return clean
 
 
 class EnterpriseLeadIn(BaseModel):
@@ -268,6 +279,186 @@ def ensure_enterprise_leads_table() -> None:
     )
     db_execute(
         "create index if not exists idx_enterprise_leads_status_created_at on public.enterprise_leads (status, created_at desc);"
+    )
+
+
+def ensure_myplanning_team_tables() -> None:
+    # Bootstrap Team collaboration tables/policies in Postgres app schema.
+    # Keep SQL idempotent so startup is safe across environments.
+    if not POOL:
+        return
+
+    db_execute("grant usage on schema app to authenticated;")
+    db_execute(
+        """
+        create table if not exists app.workspace_invites (
+          id uuid primary key,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          email text not null,
+          role text not null check (role in ('admin','member')),
+          token text not null,
+          status text not null default 'pending' check (status in ('pending','accepted','expired','revoked')),
+          invited_by uuid not null,
+          invited_at timestamptz not null default now(),
+          accepted_at timestamptz
+        );
+        """
+    )
+    db_execute(
+        "create unique index if not exists workspace_invites_workspace_id_email_key on app.workspace_invites (workspace_id, email);"
+    )
+    db_execute(
+        "create index if not exists idx_workspace_invites_workspace_status on app.workspace_invites (workspace_id, status, invited_at desc);"
+    )
+
+    db_execute("grant select, insert, update, delete on app.workspaces to authenticated;")
+    db_execute("grant select, insert, update, delete on app.workspace_members to authenticated;")
+    db_execute("grant select, insert, update, delete on app.workspace_invites to authenticated;")
+
+    db_execute("alter table app.workspaces enable row level security;")
+    db_execute("alter table app.workspace_members enable row level security;")
+    db_execute("alter table app.workspace_invites enable row level security;")
+
+    # Reset policies to avoid recursive policy dependencies between
+    # app.workspaces and app.workspace_members.
+    db_execute("drop policy if exists workspaces_select_member on app.workspaces;")
+    db_execute("drop policy if exists workspaces_insert_owner on app.workspaces;")
+    db_execute("drop policy if exists workspaces_update_owner on app.workspaces;")
+    db_execute("drop policy if exists workspaces_delete_owner on app.workspaces;")
+    db_execute("drop policy if exists members_select on app.workspace_members;")
+    db_execute("drop policy if exists members_insert_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_update_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_delete_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_select_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_insert_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_update_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_delete_auth on app.workspace_members;")
+    db_execute("drop policy if exists invites_select_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_insert_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_update_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_delete_auth on app.workspace_invites;")
+
+    db_execute(
+        """
+        create policy workspaces_select_member
+          on app.workspaces
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or exists (
+              select 1
+              from app.workspace_members m
+              where m.workspace_id = workspaces.id
+                and m.user_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_insert_owner
+          on app.workspaces
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_update_owner
+          on app.workspaces
+          for update
+          to authenticated
+          using (owner_id = auth.uid())
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_delete_owner
+          on app.workspaces
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    # Workspace member/invite permissions are constrained by route-level checks.
+    # Keeping these policies simple avoids recursive policy evaluation.
+    db_execute(
+        """
+        create policy members_select_auth
+          on app.workspace_members
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_insert_auth
+          on app.workspace_members
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_update_auth
+          on app.workspace_members
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_delete_auth
+          on app.workspace_members
+          for delete
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_select_auth
+          on app.workspace_invites
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_insert_auth
+          on app.workspace_invites
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_update_auth
+          on app.workspace_invites
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_delete_auth
+          on app.workspace_invites
+          for delete
+          to authenticated
+          using (true);
+        """
     )
 
 
@@ -644,6 +835,10 @@ async def on_startup():
         ensure_enterprise_leads_table()
     except Exception:
         logger.exception("Failed to ensure enterprise_leads table")
+    try:
+        ensure_myplanning_team_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning team postgres tables/policies")
     init_cohere_client()
 
 
@@ -654,6 +849,35 @@ async def on_shutdown():
 
 
 START_TIME = __import__("time").time()
+
+
+@app.middleware("http")
+async def normalize_forwarded_prefix(request: Request, call_next):
+    # Accept both nginx style forwarded prefix and direct prefixed requests.
+    header_prefix = _normalize_prefix(request.headers.get(FORWARDED_PREFIX_HEADER))
+    prefix = header_prefix or API_PROXY_PREFIX
+    scope = request.scope
+    path = scope.get("path", "")
+
+    new_scope = scope
+    if path == prefix or path.startswith(f"{prefix}/"):
+        stripped = path[len(prefix):] or "/"
+        # Handle accidental doubled prefixes: /innova/api/innova/api/*
+        while stripped == prefix or stripped.startswith(f"{prefix}/"):
+            stripped = stripped[len(prefix):] or "/"
+
+        new_scope = dict(scope)
+        new_scope["path"] = stripped
+        if scope.get("raw_path") is not None:
+            new_scope["raw_path"] = stripped.encode("utf-8")
+        new_scope["root_path"] = prefix
+    elif header_prefix:
+        new_scope = dict(scope)
+        new_scope["root_path"] = header_prefix
+
+    if new_scope is scope:
+        return await call_next(request)
+    return await call_next(Request(new_scope, receive=request.receive))
 
 
 @app.get("/", include_in_schema=not MYPLANNING_ONLY)
@@ -899,7 +1123,6 @@ def ai_report_portfolio():
 
 
 @app.post("/enterprise/leads")
-@app.post("/innova/api/enterprise/leads", include_in_schema=False)
 def create_enterprise_lead(payload: EnterpriseLeadIn, request: Request):
     try:
         client_ip = _client_ip(request)
@@ -946,7 +1169,6 @@ def create_enterprise_lead(payload: EnterpriseLeadIn, request: Request):
 
 
 @app.get("/enterprise/leads")
-@app.get("/innova/api/enterprise/leads", include_in_schema=False)
 def list_enterprise_leads(
     request: Request,
     limit: int = Query(50, ge=1, le=200),
@@ -963,7 +1185,6 @@ def list_enterprise_leads(
 
 
 @app.get("/enterprise/leads/export.csv")
-@app.get("/innova/api/enterprise/leads/export.csv", include_in_schema=False)
 def export_enterprise_leads_csv(
     request: Request,
     limit: int = Query(50, ge=1, le=2000),
@@ -1020,7 +1241,6 @@ def export_enterprise_leads_csv(
 
 
 @app.patch("/enterprise/leads/{lead_id}")
-@app.patch("/innova/api/enterprise/leads/{lead_id}", include_in_schema=False)
 def patch_enterprise_lead(lead_id: int, payload: EnterpriseLeadUpdateIn, request: Request):
     try:
         _require_admin_token(request)
@@ -1047,7 +1267,6 @@ def patch_enterprise_lead(lead_id: int, payload: EnterpriseLeadUpdateIn, request
 
 
 @app.post("/enterprise/leads/webhook")
-@app.post("/innova/api/enterprise/leads/webhook", include_in_schema=False)
 async def enterprise_leads_webhook(request: Request):
     try:
         _require_webhook_secret(request)
@@ -1075,15 +1294,14 @@ async def enterprise_leads_webhook(request: Request):
 
 
 if MYPLANNING_ONLY:
-    # Minimal footprint: only auth, notifications, myplanning (under /innova/api) + health
-    minimal = APIRouter(prefix="/innova/api")
+    # Minimal footprint: auth, notifications, myplanning.
+    # /innova/api prefix is handled by proxy + forwarded-prefix normalization middleware.
+    minimal = APIRouter(prefix="")
     minimal.include_router(auth_router)
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
     app.include_router(minimal)
-    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
-    app.include_router(minimal, prefix="/innova/api", include_in_schema=False)
     logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning only")
 else:
     # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
@@ -1094,8 +1312,8 @@ else:
     app.include_router(rag_router)
     app.include_router(chatlaya_router)
 
-    # Mount module-prefixed routes
-    innova_api = APIRouter(prefix="/innova/api")
+    # Mount API routes at root; /innova/api prefix is normalized by middleware.
+    innova_api = APIRouter(prefix="")
     # Legacy INNOVA core lists (domains/contributors/technologies) disabled
     # innova_api.include_router(innova_core_router)
     innova_api.include_router(opportunities_router)
@@ -1119,9 +1337,6 @@ else:
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
     app.include_router(innova_api)
-    # Temporary compatibility: handle clients that accidentally send /innova/api/innova/api/*
-    # by mounting the same router with an extra prefix. This avoids 404 while frontend caches expire.
-    app.include_router(innova_api, prefix="/innova/api", include_in_schema=False)
     innova_rag = APIRouter(prefix="/innova")
     innova_rag.include_router(rag_router)
     app.include_router(innova_rag)

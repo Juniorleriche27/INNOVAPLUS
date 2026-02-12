@@ -2,14 +2,20 @@ from __future__ import annotations
 
 import logging
 import re
+import os
+import uuid
+import json
+import base64
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 import time
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pymongo import ReturnDocument
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user
@@ -33,9 +39,16 @@ from app.schemas.myplanning import (
     TaskListResponse,
     TaskResponse,
     TaskUpdatePayload,
+    WorkspaceCreatePayload,
+    WorkspaceListResponse,
+    WorkspaceMemberAddPayload,
+    WorkspaceMemberResponse,
+    WorkspaceMembersResponse,
+    WorkspaceResponse,
 )
 from app.services.myplanning_ai import plan_day_with_llama, replan_with_time_limit, suggest_tasks_from_text
 from app.utils.ids import to_object_id
+from app.core.auth import normalize_email
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +56,8 @@ router = APIRouter(prefix="/myplanning", tags=["myplanning"])
 
 COLLECTION = "myplanning_tasks"
 ONBOARDING_COLLECTION = "myplanning_onboarding"
+WORKSPACES_COLLECTION = "myplanning_workspaces"
+WORKSPACE_MEMBERS_COLLECTION = "myplanning_workspace_members"
 _RATE_LIMIT_BUCKETS: dict[str, List[float]] = {}
 
 
@@ -54,6 +69,57 @@ def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
         raise HTTPException(status_code=429, detail="Trop de requêtes. Réessayez dans quelques instants.")
     bucket.append(now)
     _RATE_LIMIT_BUCKETS[key] = bucket
+
+
+def _myplanning_store() -> str:
+    return (os.environ.get("MYPLANNING_STORE") or "mongo").strip().lower()
+
+
+def _pg_dsn() -> str:
+    dsn = (os.environ.get("DATABASE_URL") or "").strip().strip('"').strip("'")
+    if not dsn:
+        raise HTTPException(status_code=500, detail="DATABASE_URL not configured")
+    return dsn
+
+
+def _extract_jwt_sub_if_uuid(token: str | None) -> str | None:
+    raw = (token or "").strip()
+    if not raw or raw.count(".") != 2:
+        return None
+    try:
+        payload_b64 = raw.split(".")[1]
+        payload_b64 += "=" * (-len(payload_b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8"))
+        sub = str(payload.get("sub") or "").strip()
+        if not sub:
+            return None
+        return str(uuid.UUID(sub))
+    except Exception:
+        return None
+
+
+async def _resolve_pg_actor_id(
+    db: AsyncIOMotorDatabase,
+    current: dict,
+    bearer_token: str | None,
+) -> str:
+    jwt_sub = _extract_jwt_sub_if_uuid(bearer_token)
+    if jwt_sub:
+        return jwt_sub
+
+    existing = current.get("pg_actor_id")
+    if isinstance(existing, str):
+        try:
+            return str(uuid.UUID(existing))
+        except Exception:
+            pass
+
+    generated = str(uuid.uuid5(uuid.NAMESPACE_URL, f"koryxa-user:{str(current.get('_id'))}"))
+    await db["users"].update_one(
+        {"_id": current["_id"]},
+        {"$set": {"pg_actor_id": generated, "updated_at": datetime.utcnow()}},
+    )
+    return generated
 
 
 def _user_plan(current: dict) -> str:
@@ -121,6 +187,45 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "updated_at": _serialize_datetime(doc.get("updated_at")),
     }
     return TaskResponse(**payload)
+
+
+def _workspace_role(member_doc: dict) -> str:
+    return str(member_doc.get("role") or "member").lower()
+
+
+def _workspace_role_can_manage(member_doc: dict) -> bool:
+    return _workspace_role(member_doc) in {"owner", "admin"}
+
+
+async def _get_workspace_membership(
+    db: AsyncIOMotorDatabase,
+    workspace_oid: ObjectId,
+    user_oid: ObjectId,
+) -> dict:
+    membership = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "user_id": user_oid, "status": "active"}
+    )
+    if not membership:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    return membership
+
+
+async def _get_workspace_for_member(
+    db: AsyncIOMotorDatabase,
+    workspace_oid: ObjectId,
+    user_oid: ObjectId,
+) -> tuple[dict, dict]:
+    membership = await _get_workspace_membership(db, workspace_oid, user_oid)
+    workspace = await db[WORKSPACES_COLLECTION].find_one({"_id": workspace_oid})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    return workspace, membership
+
+
+async def _workspace_member_count(db: AsyncIOMotorDatabase, workspace_oid: ObjectId) -> int:
+    return await db[WORKSPACE_MEMBERS_COLLECTION].count_documents(
+        {"workspace_id": workspace_oid, "status": "active"}
+    )
 
 
 def _prepare_task_payload(payload: dict) -> dict:
@@ -455,6 +560,917 @@ async def complete_onboarding(
         },
     )
     return OnboardingCompleteResponse(created_tasks=created_tasks, onboarding_completed=True)
+
+
+def _parse_bearer_token(request: Request) -> str | None:
+    authz = (request.headers.get("authorization") or "").strip()
+    if authz.lower().startswith("bearer "):
+        token = authz[7:].strip()
+        return token or None
+    return None
+
+
+async def _ensure_pg_actor_id_for_user_doc(db: AsyncIOMotorDatabase, user_doc: dict) -> str:
+    existing = user_doc.get("pg_actor_id")
+    if isinstance(existing, str):
+        try:
+            return str(uuid.UUID(existing))
+        except Exception:
+            pass
+    generated = str(uuid.uuid5(uuid.NAMESPACE_URL, f"koryxa-user:{str(user_doc.get('_id'))}"))
+    await db["users"].update_one(
+        {"_id": user_doc["_id"]},
+        {"$set": {"pg_actor_id": generated, "updated_at": datetime.utcnow()}},
+    )
+    return generated
+
+
+def _pg_upsert_auth_user(cur, actor_id: str, email: str) -> None:
+    actor_email = (email or f"{actor_id}@koryxa.local").strip().lower()
+    cur.execute(
+        """
+        insert into auth.users (
+          id, aud, role, email, created_at, updated_at, raw_app_meta_data, raw_user_meta_data
+        )
+        values (
+          %s::uuid, 'authenticated', 'authenticated', %s, now(), now(), '{}'::jsonb, '{}'::jsonb
+        )
+        on conflict (id) do update
+          set email = coalesce(auth.users.email, excluded.email),
+              updated_at = now();
+        """,
+        (actor_id, actor_email),
+    )
+
+
+def _pg_set_rls_actor(cur, actor_id: str) -> None:
+    cur.execute("set local role authenticated;")
+    cur.execute("set local request.jwt.claim.role = 'authenticated';")
+    cur.execute("set local request.jwt.claim.sub = %s;", (actor_id,))
+
+
+async def _mongo_list_workspaces(
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceListResponse:
+    memberships = await db[WORKSPACE_MEMBERS_COLLECTION].find(
+        {"user_id": current["_id"], "status": "active"}
+    ).to_list(length=500)
+    if not memberships:
+        return WorkspaceListResponse(items=[])
+
+    workspace_ids = [m.get("workspace_id") for m in memberships if m.get("workspace_id")]
+    if not workspace_ids:
+        return WorkspaceListResponse(items=[])
+
+    workspace_docs = await db[WORKSPACES_COLLECTION].find({"_id": {"$in": workspace_ids}}).to_list(length=500)
+    workspaces_map = {doc["_id"]: doc for doc in workspace_docs}
+    counts_cursor = db[WORKSPACE_MEMBERS_COLLECTION].aggregate(
+        [
+            {"$match": {"workspace_id": {"$in": workspace_ids}, "status": "active"}},
+            {"$group": {"_id": "$workspace_id", "count": {"$sum": 1}}},
+        ]
+    )
+    counts: Dict[ObjectId, int] = {}
+    async for row in counts_cursor:
+        counts[row["_id"]] = int(row.get("count") or 0)
+
+    items: List[WorkspaceResponse] = []
+    for membership in memberships:
+        workspace = workspaces_map.get(membership.get("workspace_id"))
+        if not workspace:
+            continue
+        owner_id = workspace.get("owner_user_id") or workspace.get("created_by")
+        items.append(
+            WorkspaceResponse(
+                id=str(workspace["_id"]),
+                name=str(workspace.get("name") or "Workspace"),
+                role=_workspace_role(membership),  # type: ignore[arg-type]
+                owner_user_id=str(owner_id) if owner_id else "",
+                member_count=counts.get(workspace["_id"], 0),
+                created_at=_serialize_datetime(workspace.get("created_at")),
+                updated_at=_serialize_datetime(workspace.get("updated_at")),
+            )
+        )
+    return WorkspaceListResponse(items=items)
+
+
+async def _mongo_create_workspace(
+    payload: WorkspaceCreatePayload,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceResponse:
+    now = datetime.utcnow()
+    name = payload.name.strip()
+    workspace_doc = {
+        "name": name,
+        "owner_user_id": current["_id"],
+        "created_by": current["_id"],
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = await db[WORKSPACES_COLLECTION].insert_one(workspace_doc)
+    workspace_doc["_id"] = result.inserted_id
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+        {
+            "workspace_id": result.inserted_id,
+            "user_id": current["_id"],
+            "email": current.get("email"),
+            "role": "owner",
+            "status": "active",
+            "joined_at": now,
+            "created_at": now,
+            "updated_at": now,
+            "created_by": current["_id"],
+        }
+    )
+    return WorkspaceResponse(
+        id=str(result.inserted_id),
+        name=name,
+        role="owner",
+        owner_user_id=str(current["_id"]),
+        member_count=1,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+async def _pg_list_workspaces(
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceListResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select
+                  w.id::text as id,
+                  w.name,
+                  w.owner_id::text as owner_id,
+                  coalesce(wm.role, 'owner') as role,
+                  coalesce(mc.member_count, 0)::int as member_count,
+                  w.created_at,
+                  w.updated_at
+                from app.workspaces w
+                left join app.workspace_members wm
+                  on wm.workspace_id = w.id
+                 and wm.user_id = %s::uuid
+                left join (
+                  select workspace_id, count(*)::int as member_count
+                  from app.workspace_members
+                  group by workspace_id
+                ) mc on mc.workspace_id = w.id
+                where w.owner_id = %s::uuid
+                   or exists (
+                        select 1
+                        from app.workspace_members me
+                        where me.workspace_id = w.id
+                          and me.user_id = %s::uuid
+                   )
+                order by w.created_at desc;
+                """,
+                (actor_id, actor_id, actor_id),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres workspace list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    items = [
+        WorkspaceResponse(
+            id=str(r["id"]),
+            name=str(r["name"]),
+            role=str(r["role"]),  # type: ignore[arg-type]
+            owner_user_id=str(r["owner_id"]),
+            member_count=int(r.get("member_count") or 0),
+            created_at=_serialize_datetime(r.get("created_at")),
+            updated_at=_serialize_datetime(r.get("updated_at")),
+        )
+        for r in rows
+    ]
+    return WorkspaceListResponse(items=items)
+
+
+async def _pg_create_workspace(
+    payload: WorkspaceCreatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    workspace_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                insert into app.workspaces(id, name, owner_id, created_at, updated_at)
+                values (%s::uuid, %s, %s::uuid, %s, %s);
+                """,
+                (workspace_id, payload.name.strip(), actor_id, now, now),
+            )
+            cur.execute(
+                """
+                insert into app.workspace_members(workspace_id, user_id, role, created_at)
+                values (%s::uuid, %s::uuid, 'owner', %s);
+                """,
+                (workspace_id, actor_id, now),
+            )
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres workspace create error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return WorkspaceResponse(
+        id=workspace_id,
+        name=payload.name.strip(),
+        role="owner",
+        owner_user_id=actor_id,
+        member_count=1,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+async def _pg_get_workspace(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select
+                  w.id::text as id,
+                  w.name,
+                  w.owner_id::text as owner_id,
+                  coalesce(wm.role, 'owner') as role,
+                  coalesce(mc.member_count, 0)::int as member_count,
+                  w.created_at,
+                  w.updated_at
+                from app.workspaces w
+                left join app.workspace_members wm
+                  on wm.workspace_id = w.id
+                 and wm.user_id = %s::uuid
+                left join (
+                  select workspace_id, count(*)::int as member_count
+                  from app.workspace_members
+                  group by workspace_id
+                ) mc on mc.workspace_id = w.id
+                where w.id = %s::uuid
+                limit 1;
+                """,
+                (actor_id, workspace_id),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres workspace get error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    return WorkspaceResponse(
+        id=str(row["id"]),
+        name=str(row["name"]),
+        role=str(row["role"]),  # type: ignore[arg-type]
+        owner_user_id=str(row["owner_id"]),
+        member_count=int(row.get("member_count") or 0),
+        created_at=_serialize_datetime(row.get("created_at")),
+        updated_at=_serialize_datetime(row.get("updated_at")),
+    )
+
+
+async def _mongo_get_workspace(
+    workspace_id: str,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceResponse:
+    workspace_oid = to_object_id(workspace_id)
+    workspace, membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    owner_id = workspace.get("owner_user_id") or workspace.get("created_by")
+    member_count = await _workspace_member_count(db, workspace_oid)
+    return WorkspaceResponse(
+        id=str(workspace["_id"]),
+        name=str(workspace.get("name") or "Workspace"),
+        role=_workspace_role(membership),  # type: ignore[arg-type]
+        owner_user_id=str(owner_id) if owner_id else "",
+        member_count=member_count,
+        created_at=_serialize_datetime(workspace.get("created_at")),
+        updated_at=_serialize_datetime(workspace.get("updated_at")),
+    )
+
+
+async def _pg_list_workspace_members(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceMembersResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select w.id::text as workspace_id, w.owner_id::text as owner_id
+                from app.workspaces w
+                where w.id = %s::uuid
+                limit 1;
+                """,
+                (workspace_id,),
+            )
+            workspace = dict(cur.fetchone() or {})
+            if not workspace:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            cur.execute(
+                """
+                select user_id::text as user_id, role, created_at as joined_at
+                from app.workspace_members
+                where workspace_id = %s::uuid
+                order by created_at asc;
+                """,
+                (workspace_id,),
+            )
+            members = [dict(r) for r in cur.fetchall()]
+            cur.execute(
+                """
+                select email, role, status, invited_at, accepted_at
+                from app.workspace_invites
+                where workspace_id = %s::uuid
+                order by invited_at desc;
+                """,
+                (workspace_id,),
+            )
+            invites = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres members list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    pg_ids = [m.get("user_id") for m in members if m.get("user_id")]
+    users_map: Dict[str, dict] = {}
+    if pg_ids:
+        user_docs = await db["users"].find({"pg_actor_id": {"$in": pg_ids}}).to_list(length=1000)
+        users_map = {str(u.get("pg_actor_id")): u for u in user_docs if u.get("pg_actor_id")}
+
+    items: List[WorkspaceMemberResponse] = []
+    for m in members:
+        uid = str(m.get("user_id") or "")
+        user_doc = users_map.get(uid, {})
+        email = str(user_doc.get("email") or "")
+        if uid == actor_id and current.get("email"):
+            email = str(current.get("email"))
+        items.append(
+            WorkspaceMemberResponse(
+                user_id=uid or None,
+                email=email or None,
+                first_name=user_doc.get("first_name"),
+                last_name=user_doc.get("last_name"),
+                role=str(m.get("role") or "member"),  # type: ignore[arg-type]
+                status="active",
+                joined_at=_serialize_datetime(m.get("joined_at")),
+                invited_at=None,
+            )
+        )
+    for inv in invites:
+        items.append(
+            WorkspaceMemberResponse(
+                user_id=None,
+                email=str(inv.get("email") or ""),
+                first_name=None,
+                last_name=None,
+                role=str(inv.get("role") or "member"),  # type: ignore[arg-type]
+                status=str(inv.get("status") or "pending"),  # type: ignore[arg-type]
+                joined_at=_serialize_datetime(inv.get("accepted_at")),
+                invited_at=_serialize_datetime(inv.get("invited_at")),
+            )
+        )
+    return WorkspaceMembersResponse(workspace_id=workspace_id, items=items)
+
+
+async def _mongo_list_workspace_members(
+    workspace_id: str,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceMembersResponse:
+    workspace_oid = to_object_id(workspace_id)
+    await _get_workspace_membership(db, workspace_oid, current["_id"])
+
+    member_docs = await db[WORKSPACE_MEMBERS_COLLECTION].find(
+        {"workspace_id": workspace_oid, "status": {"$in": ["active", "pending"]}}
+    ).to_list(length=1000)
+    user_ids = [m["user_id"] for m in member_docs if m.get("user_id")]
+    users_map: Dict[ObjectId, dict] = {}
+    if user_ids:
+        users = await db["users"].find({"_id": {"$in": user_ids}}).to_list(length=1000)
+        users_map = {u["_id"]: u for u in users}
+
+    items: List[WorkspaceMemberResponse] = []
+    for member in member_docs:
+        user = users_map.get(member.get("user_id"))
+        items.append(
+            WorkspaceMemberResponse(
+                user_id=str(member["user_id"]) if member.get("user_id") else None,
+                email=str(member.get("email") or (user or {}).get("email") or ""),
+                first_name=(user or {}).get("first_name"),
+                last_name=(user or {}).get("last_name"),
+                role=_workspace_role(member),  # type: ignore[arg-type]
+                status=str(member.get("status") or "active"),  # type: ignore[arg-type]
+                joined_at=_serialize_datetime(member.get("joined_at")),
+                invited_at=_serialize_datetime(member.get("invited_at")),
+            )
+        )
+
+    return WorkspaceMembersResponse(workspace_id=workspace_id, items=items)
+
+
+async def _pg_add_workspace_member(
+    workspace_id: str,
+    payload: WorkspaceMemberAddPayload,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceMemberResponse:
+    role = payload.role
+    if role == "owner":
+        raise HTTPException(status_code=400, detail="Le rôle owner ne peut pas être attribué via cette route")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    email = normalize_email(payload.email)
+    now = datetime.utcnow()
+    user = await db["users"].find_one({"email": email})
+    target_actor_id = await _ensure_pg_actor_id_for_user_doc(db, user) if user else None
+
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            if target_actor_id:
+                _pg_upsert_auth_user(cur, target_actor_id, email)
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select w.owner_id::text as owner_id, wm.role
+                from app.workspaces w
+                left join app.workspace_members wm
+                  on wm.workspace_id = w.id
+                 and wm.user_id = %s::uuid
+                where w.id = %s::uuid
+                limit 1;
+                """,
+                (actor_id, workspace_id),
+            )
+            authz_row = dict(cur.fetchone() or {})
+            if not authz_row:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            requester_role = "owner" if authz_row.get("owner_id") == actor_id else str(authz_row.get("role") or "")
+            if requester_role not in {"owner", "admin"}:
+                raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+            if target_actor_id:
+                cur.execute(
+                    """
+                    insert into app.workspace_members(workspace_id, user_id, role, created_at)
+                    values (%s::uuid, %s::uuid, %s, %s)
+                    on conflict (workspace_id, user_id) do nothing
+                    returning user_id::text as user_id;
+                    """,
+                    (workspace_id, target_actor_id, role, now),
+                )
+                inserted = cur.fetchone()
+                if not inserted:
+                    raise HTTPException(status_code=409, detail="Utilisateur déjà membre du workspace")
+                cur.execute(
+                    """
+                    delete from app.workspace_invites
+                    where workspace_id = %s::uuid
+                      and lower(email) = lower(%s);
+                    """,
+                    (workspace_id, email),
+                )
+            else:
+                invite_id = str(uuid.uuid4())
+                invite_token = str(uuid.uuid4())
+                cur.execute(
+                    """
+                    insert into app.workspace_invites(
+                      id, workspace_id, email, role, token, status, invited_by, invited_at, accepted_at
+                    )
+                    values (
+                      %s::uuid, %s::uuid, %s, %s, %s, 'pending', %s::uuid, %s, null
+                    )
+                    on conflict (workspace_id, email)
+                    do update set
+                      role = excluded.role,
+                      token = excluded.token,
+                      status = 'pending',
+                      invited_by = excluded.invited_by,
+                      invited_at = excluded.invited_at,
+                      accepted_at = null;
+                    """,
+                    (invite_id, workspace_id, email, role, invite_token, actor_id, now),
+                )
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres member add error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    if target_actor_id:
+        return WorkspaceMemberResponse(
+            user_id=target_actor_id,
+            email=email,
+            first_name=user.get("first_name") if user else None,
+            last_name=user.get("last_name") if user else None,
+            role=role,
+            status="active",
+            joined_at=now,
+            invited_at=now,
+        )
+    return WorkspaceMemberResponse(
+        user_id=None,
+        email=email,
+        first_name=None,
+        last_name=None,
+        role=role,
+        status="pending",
+        joined_at=None,
+        invited_at=now,
+    )
+
+
+async def _mongo_add_workspace_member(
+    workspace_id: str,
+    payload: WorkspaceMemberAddPayload,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> WorkspaceMemberResponse:
+    workspace_oid = to_object_id(workspace_id)
+    _, requester_membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    if not _workspace_role_can_manage(requester_membership):
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+    role = payload.role
+    if role == "owner":
+        raise HTTPException(status_code=400, detail="Le rôle owner ne peut pas être attribué via cette route")
+    email = normalize_email(payload.email)
+    now = datetime.utcnow()
+
+    user = await db["users"].find_one({"email": email})
+    if user:
+        existing = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+            {"workspace_id": workspace_oid, "user_id": user["_id"], "status": "active"}
+        )
+        if existing:
+            raise HTTPException(status_code=409, detail="Utilisateur déjà membre du workspace")
+
+        await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+            {
+                "workspace_id": workspace_oid,
+                "user_id": user["_id"],
+                "email": email,
+                "role": role,
+                "status": "active",
+                "joined_at": now,
+                "invited_at": now,
+                "invited_by": current["_id"],
+                "created_at": now,
+                "updated_at": now,
+            }
+        )
+        return WorkspaceMemberResponse(
+            user_id=str(user["_id"]),
+            email=email,
+            first_name=user.get("first_name"),
+            last_name=user.get("last_name"),
+            role=role,
+            status="active",
+            joined_at=now,
+            invited_at=now,
+        )
+
+    existing_invite = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "email": email, "status": "pending"}
+    )
+    if existing_invite:
+        raise HTTPException(status_code=409, detail="Invitation déjà envoyée")
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].insert_one(
+        {
+            "workspace_id": workspace_oid,
+            "email": email,
+            "role": role,
+            "status": "pending",
+            "invited_at": now,
+            "invited_by": current["_id"],
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+    return WorkspaceMemberResponse(
+        user_id=None,
+        email=email,
+        first_name=None,
+        last_name=None,
+        role=role,
+        status="pending",
+        joined_at=None,
+        invited_at=now,
+    )
+
+
+async def _pg_delete_workspace_member(
+    workspace_id: str,
+    user_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> dict:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select w.owner_id::text as owner_id, wm.role
+                from app.workspaces w
+                left join app.workspace_members wm
+                  on wm.workspace_id = w.id
+                 and wm.user_id = %s::uuid
+                where w.id = %s::uuid
+                limit 1;
+                """,
+                (actor_id, workspace_id),
+            )
+            authz_row = dict(cur.fetchone() or {})
+            if not authz_row:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            requester_role = "owner" if authz_row.get("owner_id") == actor_id else str(authz_row.get("role") or "")
+            if requester_role not in {"owner", "admin"}:
+                raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+            if str(authz_row.get("owner_id") or "") == user_id:
+                raise HTTPException(status_code=400, detail="Le propriétaire ne peut pas être supprimé")
+
+            cur.execute(
+                """
+                delete from app.workspace_members
+                where workspace_id = %s::uuid
+                  and user_id = %s::uuid
+                returning user_id::text;
+                """,
+                (workspace_id, user_id),
+            )
+            deleted = cur.fetchone()
+            if not deleted:
+                raise HTTPException(status_code=404, detail="Membre introuvable")
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres member delete error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return {"ok": True}
+
+
+async def _mongo_delete_workspace_member(
+    workspace_id: str,
+    user_id: str,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> dict:
+    workspace_oid = to_object_id(workspace_id)
+    _, requester_membership = await _get_workspace_for_member(db, workspace_oid, current["_id"])
+    if not _workspace_role_can_manage(requester_membership):
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+    target_user_oid = to_object_id(user_id)
+    target = await db[WORKSPACE_MEMBERS_COLLECTION].find_one(
+        {"workspace_id": workspace_oid, "user_id": target_user_oid, "status": "active"}
+    )
+    if not target:
+        raise HTTPException(status_code=404, detail="Membre introuvable")
+    if _workspace_role(target) == "owner":
+        raise HTTPException(status_code=400, detail="Le propriétaire ne peut pas être supprimé")
+
+    await db[WORKSPACE_MEMBERS_COLLECTION].delete_one(
+        {"workspace_id": workspace_oid, "user_id": target_user_oid}
+    )
+    return {"ok": True}
+
+
+@router.get("/workspaces", response_model=WorkspaceListResponse)
+async def list_workspaces(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceListResponse:
+    if _myplanning_store() == "postgres":
+        return await _pg_list_workspaces(request, db, current)
+    return await _mongo_list_workspaces(db, current)
+
+
+@router.post("/workspaces", response_model=WorkspaceResponse)
+async def create_workspace(
+    payload: WorkspaceCreatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceResponse:
+    if _myplanning_store() == "postgres":
+        return await _pg_create_workspace(payload, request, db, current)
+    return await _mongo_create_workspace(payload, db, current)
+
+
+@router.post("/_sanity/workspace")
+async def sanity_postgres_workspace(
+    payload: WorkspaceCreatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> dict:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace = await _pg_create_workspace(payload, request, db, current)
+    return {
+        "ok": True,
+        "store": "postgres",
+        "actor_id": workspace.owner_user_id,
+        "workspace": workspace.dict(),
+    }
+
+
+@router.get("/workspaces/{workspace_id}", response_model=WorkspaceResponse)
+async def get_workspace(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceResponse:
+    if _myplanning_store() == "postgres":
+        return await _pg_get_workspace(workspace_id, request, db, current)
+    return await _mongo_get_workspace(workspace_id, db, current)
+
+
+@router.get("/workspaces/{workspace_id}/members", response_model=WorkspaceMembersResponse)
+async def list_workspace_members(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceMembersResponse:
+    if _myplanning_store() == "postgres":
+        return await _pg_list_workspace_members(workspace_id, request, db, current)
+    return await _mongo_list_workspace_members(workspace_id, db, current)
+
+
+@router.post("/workspaces/{workspace_id}/members", response_model=WorkspaceMemberResponse)
+async def add_workspace_member(
+    workspace_id: str,
+    payload: WorkspaceMemberAddPayload,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> WorkspaceMemberResponse:
+    if _myplanning_store() == "postgres":
+        return await _pg_add_workspace_member(workspace_id, payload, request, db, current)
+    return await _mongo_add_workspace_member(workspace_id, payload, db, current)
+
+
+@router.delete("/workspaces/{workspace_id}/members/{user_id}")
+async def delete_workspace_member(
+    workspace_id: str,
+    user_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> dict:
+    if _myplanning_store() == "postgres":
+        return await _pg_delete_workspace_member(workspace_id, user_id, request, db, current)
+    return await _mongo_delete_workspace_member(workspace_id, user_id, db, current)
 
 
 @router.get("/tasks", response_model=TaskListResponse)

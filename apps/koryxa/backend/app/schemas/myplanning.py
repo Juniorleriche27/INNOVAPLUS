@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -22,6 +22,8 @@ WorkspaceMemberStatus = Literal["active", "pending"]
 
 
 class TaskBase(BaseModel):
+    workspace_id: Optional[str] = Field(default=None, max_length=80)
+    project_id: Optional[str] = Field(default=None, max_length=80)
     title: str = Field(..., min_length=2, max_length=260)
     description: Optional[str] = Field(default=None, max_length=4000)
     category: Optional[str] = Field(default=None, max_length=60)
@@ -41,8 +43,15 @@ class TaskBase(BaseModel):
     pomodoro_done: Optional[int] = Field(default=None, ge=0, le=96)
     comments: Optional[str] = Field(default=None, max_length=2000)
     assignee_user_id: Optional[str] = Field(default=None, max_length=50)
+    assignee_id: Optional[str] = Field(default=None, max_length=80)
     collaborator_ids: Optional[List[str]] = None
     source: TaskSource = "manual"
+    priority: Optional[str] = Field(default=None, max_length=60)
+    due_date: Optional[date] = None
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    estimated_minutes: Optional[int] = Field(default=None, ge=0, le=10080)
+    spent_minutes: Optional[int] = Field(default=None, ge=0, le=10080)
     completed_at: Optional[datetime] = None
 
 
@@ -51,6 +60,8 @@ class TaskCreatePayload(TaskBase):
 
 
 class TaskUpdatePayload(BaseModel):
+    workspace_id: Optional[str] = Field(default=None, max_length=80)
+    project_id: Optional[str] = Field(default=None, max_length=80)
     title: Optional[str] = Field(default=None, min_length=2, max_length=260)
     description: Optional[str] = Field(default=None, max_length=4000)
     category: Optional[str] = Field(default=None, max_length=60)
@@ -68,8 +79,15 @@ class TaskUpdatePayload(BaseModel):
     pomodoro_done: Optional[int] = Field(default=None, ge=0, le=96)
     comments: Optional[str] = Field(default=None, max_length=2000)
     assignee_user_id: Optional[str] = Field(default=None, max_length=50)
+    assignee_id: Optional[str] = Field(default=None, max_length=80)
     collaborator_ids: Optional[List[str]] = None
     source: Optional[TaskSource] = None
+    priority: Optional[str] = Field(default=None, max_length=60)
+    due_date: Optional[date] = None
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    estimated_minutes: Optional[int] = Field(default=None, ge=0, le=10080)
+    spent_minutes: Optional[int] = Field(default=None, ge=0, le=10080)
     completed_at: Optional[datetime] = None
 
 

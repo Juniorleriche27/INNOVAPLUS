@@ -6,7 +6,7 @@ import os
 import uuid
 import json
 import base64
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 import time
 
@@ -59,6 +59,7 @@ ONBOARDING_COLLECTION = "myplanning_onboarding"
 WORKSPACES_COLLECTION = "myplanning_workspaces"
 WORKSPACE_MEMBERS_COLLECTION = "myplanning_workspace_members"
 _RATE_LIMIT_BUCKETS: dict[str, List[float]] = {}
+TASKS_STORE_MODES = {"mongo", "postgres", "dual"}
 
 
 def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
@@ -73,6 +74,13 @@ def _rate_limit(key: str, limit: int = 30, window_seconds: int = 60) -> None:
 
 def _myplanning_store() -> str:
     return (os.environ.get("MYPLANNING_STORE") or "mongo").strip().lower()
+
+
+def _myplanning_tasks_store() -> str:
+    mode = (os.environ.get("MYPLANNING_TASKS_STORE") or "mongo").strip().lower()
+    if mode not in TASKS_STORE_MODES:
+        return "mongo"
+    return mode
 
 
 def _pg_dsn() -> str:
@@ -161,6 +169,8 @@ def _serialize_task(doc: dict) -> TaskResponse:
     payload = {
         "id": str(doc["_id"]),
         "user_id": str(doc.get("user_id")),
+        "workspace_id": str(doc.get("workspace_id")) if doc.get("workspace_id") else None,
+        "project_id": str(doc.get("project_id")) if doc.get("project_id") else None,
         "title": doc.get("title", ""),
         "description": doc.get("description"),
         "category": doc.get("category"),
@@ -181,8 +191,15 @@ def _serialize_task(doc: dict) -> TaskResponse:
         "pomodoro_done": doc.get("pomodoro_done"),
         "comments": doc.get("comments"),
         "assignee_user_id": str(doc.get("assignee_user_id")) if doc.get("assignee_user_id") else None,
+        "assignee_id": str(doc.get("assignee_id")) if doc.get("assignee_id") else None,
         "collaborator_ids": collaborators,
         "source": doc.get("source") or "manual",
+        "priority": doc.get("priority"),
+        "due_date": doc.get("due_date"),
+        "start_at": _serialize_datetime(doc.get("start_at")),
+        "end_at": _serialize_datetime(doc.get("end_at")),
+        "estimated_minutes": doc.get("estimated_minutes"),
+        "spent_minutes": doc.get("spent_minutes"),
         "created_at": _serialize_datetime(doc.get("created_at")),
         "updated_at": _serialize_datetime(doc.get("updated_at")),
     }
@@ -1381,6 +1398,760 @@ async def _mongo_delete_workspace_member(
     return {"ok": True}
 
 
+def _as_uuid_or_none(raw: Any, field_name: str) -> str | None:
+    if raw is None:
+        return None
+    value = str(raw).strip()
+    if not value:
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be a UUID") from exc
+
+
+def _normalize_pg_collaborators(raw: Any) -> list[str] | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        raise HTTPException(status_code=400, detail="collaborator_ids must be a list")
+    result: list[str] = []
+    for value in raw:
+        parsed = _as_uuid_or_none(value, "collaborator_ids")
+        if parsed:
+            result.append(parsed)
+    return result
+
+
+def _normalize_pg_task_payload(payload: dict[str, Any], *, now: datetime, for_update: bool) -> dict[str, Any]:
+    doc = payload.copy()
+
+    for field_name in ("workspace_id", "project_id", "assignee_user_id", "assignee_id"):
+        if field_name in doc:
+            doc[field_name] = _as_uuid_or_none(doc.get(field_name), field_name)
+
+    if "assignee_user_id" in doc and "assignee_id" not in doc:
+        doc["assignee_id"] = doc.get("assignee_user_id")
+    if "assignee_id" in doc and "assignee_user_id" not in doc:
+        doc["assignee_user_id"] = doc.get("assignee_id")
+
+    if "collaborator_ids" in doc:
+        doc["collaborator_ids"] = _normalize_pg_collaborators(doc.get("collaborator_ids"))
+
+    if "estimated_duration_minutes" in doc and "estimated_minutes" not in doc:
+        doc["estimated_minutes"] = doc.get("estimated_duration_minutes")
+    if "estimated_minutes" in doc and "estimated_duration_minutes" not in doc:
+        doc["estimated_duration_minutes"] = doc.get("estimated_minutes")
+
+    due_datetime = doc.get("due_datetime")
+    due_date = doc.get("due_date")
+    if due_datetime and not due_date and isinstance(due_datetime, datetime):
+        doc["due_date"] = due_datetime.date()
+    if due_date and not due_datetime and isinstance(due_date, date):
+        doc["due_datetime"] = datetime.combine(due_date, datetime.min.time())
+
+    if not for_update:
+        doc.setdefault("context_type", "personal")
+        doc.setdefault("priority_eisenhower", "important_not_urgent")
+        doc.setdefault("kanban_state", "todo")
+        doc.setdefault("high_impact", False)
+        doc.setdefault("source", "manual")
+        if doc.get("kanban_state") == "done" and not doc.get("completed_at"):
+            doc["completed_at"] = now
+    else:
+        if "kanban_state" in doc and "completed_at" not in doc:
+            if doc.get("kanban_state") == "done":
+                doc["completed_at"] = now
+            else:
+                doc["completed_at"] = None
+
+    return doc
+
+
+def _pg_task_access_sql(alias: str = "t") -> str:
+    return (
+        f"({alias}.owner_id = %s::uuid or ("
+        f"{alias}.workspace_id is not null and exists ("
+        f"select 1 from app.workspace_members wm "
+        f"where wm.workspace_id = {alias}.workspace_id "
+        f"and wm.user_id = %s::uuid "
+        f"and coalesce(wm.status, 'active') = 'active'"
+        f")))"
+    )
+
+
+def _pg_task_select_sql(where_sql: str, order_sql: str = "", limit_sql: str = "") -> str:
+    return f"""
+    select
+      t.id::text as id,
+      t.owner_id::text as owner_id,
+      t.workspace_id::text as workspace_id,
+      t.project_id::text as project_id,
+      t.title,
+      t.description,
+      t.category,
+      t.context_type,
+      t.context_id,
+      t.priority_eisenhower,
+      t.kanban_state,
+      t.high_impact,
+      t.estimated_duration_minutes,
+      t.start_datetime,
+      t.due_datetime,
+      t.linked_goal,
+      t.moscow,
+      t.status,
+      t.energy_level,
+      t.pomodoro_estimated,
+      t.pomodoro_done,
+      t.comments,
+      t.assignee_user_id::text as assignee_user_id,
+      t.collaborator_ids::text[] as collaborator_ids,
+      t.source,
+      t.completed_at,
+      t.priority,
+      t.due_date,
+      t.start_at,
+      t.end_at,
+      t.estimated_minutes,
+      t.spent_minutes,
+      t.assignee_id::text as assignee_id,
+      t.created_at,
+      t.updated_at
+    from app.tasks t
+    {where_sql}
+    {order_sql}
+    {limit_sql}
+    """
+
+
+def _serialize_pg_task(row: dict[str, Any]) -> TaskResponse:
+    collaborators = row.get("collaborator_ids") or []
+    if collaborators and isinstance(collaborators, list):
+        collaborators = [str(v) for v in collaborators if v]
+    payload = {
+        "id": str(row.get("id") or ""),
+        "user_id": str(row.get("owner_id") or ""),
+        "workspace_id": str(row.get("workspace_id")) if row.get("workspace_id") else None,
+        "project_id": str(row.get("project_id")) if row.get("project_id") else None,
+        "title": row.get("title") or "",
+        "description": row.get("description"),
+        "category": row.get("category"),
+        "context_type": row.get("context_type") or "personal",
+        "context_id": row.get("context_id"),
+        "priority_eisenhower": row.get("priority_eisenhower") or "important_not_urgent",
+        "kanban_state": row.get("kanban_state") or "todo",
+        "high_impact": bool(row.get("high_impact")),
+        "estimated_duration_minutes": row.get("estimated_duration_minutes"),
+        "start_datetime": _serialize_datetime(row.get("start_datetime")),
+        "due_datetime": _serialize_datetime(row.get("due_datetime")),
+        "completed_at": _serialize_datetime(row.get("completed_at")),
+        "linked_goal": row.get("linked_goal"),
+        "moscow": row.get("moscow"),
+        "status": row.get("status"),
+        "energy_level": row.get("energy_level"),
+        "pomodoro_estimated": row.get("pomodoro_estimated"),
+        "pomodoro_done": row.get("pomodoro_done"),
+        "comments": row.get("comments"),
+        "assignee_user_id": str(row.get("assignee_user_id")) if row.get("assignee_user_id") else None,
+        "assignee_id": str(row.get("assignee_id")) if row.get("assignee_id") else None,
+        "collaborator_ids": collaborators,
+        "source": row.get("source") or "manual",
+        "priority": row.get("priority"),
+        "due_date": row.get("due_date"),
+        "start_at": _serialize_datetime(row.get("start_at")),
+        "end_at": _serialize_datetime(row.get("end_at")),
+        "estimated_minutes": row.get("estimated_minutes"),
+        "spent_minutes": row.get("spent_minutes"),
+        "created_at": _serialize_datetime(row.get("created_at")),
+        "updated_at": _serialize_datetime(row.get("updated_at")),
+    }
+    return TaskResponse(**payload)
+
+
+def _pg_assert_workspace_access(cur: RealDictCursor, workspace_id: str, actor_id: str) -> None:
+    cur.execute(
+        """
+        select 1
+        from app.workspaces w
+        where w.id = %s::uuid
+          and (
+            w.owner_id = %s::uuid
+            or exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = w.id
+                  and wm.user_id = %s::uuid
+                  and coalesce(wm.status, 'active') = 'active'
+            )
+          )
+        limit 1;
+        """,
+        (workspace_id, actor_id, actor_id),
+    )
+    if not cur.fetchone():
+        raise HTTPException(status_code=403, detail="Workspace access denied")
+
+
+def _pg_assert_assignee(cur: RealDictCursor, assignee_id: str, workspace_id: str | None, actor_id: str) -> None:
+    if not workspace_id:
+        if assignee_id != actor_id:
+            raise HTTPException(status_code=400, detail="assignee_id requires workspace_id")
+        return
+    cur.execute(
+        """
+        select 1
+        from app.workspace_members wm
+        where wm.workspace_id = %s::uuid
+          and wm.user_id = %s::uuid
+          and coalesce(wm.status, 'active') = 'active'
+        limit 1;
+        """,
+        (workspace_id, assignee_id),
+    )
+    if not cur.fetchone():
+        raise HTTPException(status_code=400, detail="assignee_id is not an active member of workspace")
+
+
+async def _pg_list_tasks(
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+    *,
+    kanban_state: Optional[str],
+    high_impact: Optional[bool],
+    context_type: Optional[str],
+    context_id: Optional[str],
+    workspace_id: Optional[str],
+    date_filter: Optional[str],
+    week_start: Optional[str],
+    page: int,
+    limit: int,
+) -> TaskListResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    params: list[Any] = [actor_id, actor_id]
+    where_clauses: list[str] = [_pg_task_access_sql("t")]
+    if kanban_state:
+        where_clauses.append("t.kanban_state = %s")
+        params.append(kanban_state)
+    if high_impact is not None:
+        where_clauses.append("t.high_impact = %s")
+        params.append(bool(high_impact))
+    if context_type:
+        where_clauses.append("t.context_type = %s")
+        params.append(context_type)
+    if context_id:
+        where_clauses.append("t.context_id = %s")
+        params.append(context_id)
+    if workspace_id:
+        workspace_uuid = _as_uuid_or_none(workspace_id, "workspace_id")
+        if not workspace_uuid:
+            raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+        where_clauses.append("t.workspace_id = %s::uuid")
+        params.append(workspace_uuid)
+    date_range = _parse_date_filter(date_filter)
+    if date_range:
+        start, end = date_range
+        where_clauses.append("((t.start_datetime >= %s and t.start_datetime < %s) or (t.due_datetime >= %s and t.due_datetime < %s))")
+        params.extend([start, end, start, end])
+    elif week_start:
+        weekly = _parse_date_filter(week_start)
+        if weekly:
+            start, _ = weekly
+            end = start + timedelta(days=7)
+            where_clauses.append("t.due_datetime >= %s and t.due_datetime <= %s")
+            params.extend([start, end])
+    where_sql = "where " + " and ".join(where_clauses)
+    offset = (page - 1) * limit
+    list_sql = _pg_task_select_sql(
+        where_sql=where_sql,
+        order_sql="order by t.high_impact desc, t.due_datetime asc nulls last, t.created_at desc",
+        limit_sql="limit %s offset %s",
+    )
+    count_sql = f"select count(*)::int as total from app.tasks t {where_sql}"
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(list_sql, tuple(params + [limit, offset]))
+            rows = [dict(r) for r in cur.fetchall()]
+            cur.execute(count_sql, tuple(params))
+            total_row = dict(cur.fetchone() or {})
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"postgres tasks list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    items = [_serialize_pg_task(row) for row in rows]
+    total = int(total_row.get("total") or 0)
+    has_more = page * limit < total
+    return TaskListResponse(items=items, total=total, has_more=has_more)
+
+
+async def _pg_create_task(
+    payload: TaskCreatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> TaskResponse:
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    now = datetime.utcnow()
+    doc = _normalize_pg_task_payload(payload.dict(), now=now, for_update=False)
+    _validate_dates(doc)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            workspace_uuid = _as_uuid_or_none(doc.get("workspace_id"), "workspace_id")
+            if workspace_uuid:
+                _pg_assert_workspace_access(cur, workspace_uuid, actor_id)
+            assignee_uuid = _as_uuid_or_none(doc.get("assignee_id"), "assignee_id")
+            if assignee_uuid:
+                _pg_assert_assignee(cur, assignee_uuid, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                insert into app.tasks(
+                  owner_id,workspace_id,project_id,title,description,category,context_type,context_id,
+                  priority_eisenhower,kanban_state,high_impact,estimated_duration_minutes,start_datetime,due_datetime,
+                  linked_goal,moscow,status,energy_level,pomodoro_estimated,pomodoro_done,comments,
+                  assignee_user_id,collaborator_ids,source,completed_at,
+                  priority,due_date,start_at,end_at,estimated_minutes,spent_minutes,assignee_id,created_at,updated_at
+                ) values (
+                  %s::uuid,%s::uuid,%s::uuid,%s,%s,%s,%s,%s,
+                  %s,%s,%s,%s,%s,%s,
+                  %s,%s,%s,%s,%s,%s,%s,
+                  %s::uuid,%s::uuid[],%s,%s,
+                  %s,%s,%s,%s,%s,%s,%s::uuid,%s,%s
+                )
+                returning id::text as id;
+                """,
+                (
+                    actor_id,
+                    workspace_uuid,
+                    _as_uuid_or_none(doc.get("project_id"), "project_id"),
+                    doc.get("title"),
+                    doc.get("description"),
+                    doc.get("category"),
+                    doc.get("context_type"),
+                    doc.get("context_id"),
+                    doc.get("priority_eisenhower"),
+                    doc.get("kanban_state"),
+                    bool(doc.get("high_impact")),
+                    doc.get("estimated_duration_minutes"),
+                    doc.get("start_datetime"),
+                    doc.get("due_datetime"),
+                    doc.get("linked_goal"),
+                    doc.get("moscow"),
+                    doc.get("status"),
+                    doc.get("energy_level"),
+                    doc.get("pomodoro_estimated"),
+                    doc.get("pomodoro_done"),
+                    doc.get("comments"),
+                    _as_uuid_or_none(doc.get("assignee_user_id"), "assignee_user_id"),
+                    doc.get("collaborator_ids") or [],
+                    doc.get("source"),
+                    doc.get("completed_at"),
+                    doc.get("priority"),
+                    doc.get("due_date"),
+                    doc.get("start_at"),
+                    doc.get("end_at"),
+                    doc.get("estimated_minutes"),
+                    doc.get("spent_minutes"),
+                    assignee_uuid,
+                    now,
+                    now,
+                ),
+            )
+            created_row = dict(cur.fetchone() or {})
+            created_id = str(created_row.get("id") or "")
+            if created_id:
+                cur.execute(
+                    _pg_task_select_sql(where_sql="where t.id = %s::uuid", limit_sql="limit 1"),
+                    (created_id,),
+                )
+                row = dict(cur.fetchone() or {})
+            else:
+                row = {}
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres task create error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    if not row:
+        raise HTTPException(status_code=500, detail="postgres task create error")
+    return _serialize_pg_task(row)
+
+
+async def _pg_get_task_for_actor(cur: RealDictCursor, task_id: str, actor_id: str) -> dict[str, Any] | None:
+    cur.execute(
+        _pg_task_select_sql(where_sql=f"where t.id = %s::uuid and {_pg_task_access_sql('t')}", limit_sql="limit 1"),
+        (task_id, actor_id, actor_id),
+    )
+    row = cur.fetchone()
+    return dict(row) if row else None
+
+
+async def _pg_update_task(
+    task_id: str,
+    payload: TaskUpdatePayload,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> TaskResponse:
+    task_uuid = _as_uuid_or_none(task_id, "task_id")
+    if not task_uuid:
+        raise HTTPException(status_code=400, detail="task_id must be a UUID")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    updates = payload.dict(exclude_unset=True)
+    now = datetime.utcnow()
+    updates = _normalize_pg_task_payload(updates, now=now, for_update=True)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            existing = await _pg_get_task_for_actor(cur, task_uuid, actor_id)
+            if not existing:
+                raise HTTPException(status_code=404, detail="Tâche introuvable")
+            if not updates:
+                conn.commit()
+                return _serialize_pg_task(existing)
+
+            effective_workspace = updates.get("workspace_id", existing.get("workspace_id"))
+            if effective_workspace:
+                _pg_assert_workspace_access(cur, str(effective_workspace), actor_id)
+            effective_assignee = updates.get("assignee_id", updates.get("assignee_user_id"))
+            if effective_assignee is None:
+                effective_assignee = existing.get("assignee_id") or existing.get("assignee_user_id")
+            if effective_assignee:
+                _pg_assert_assignee(cur, str(effective_assignee), str(effective_workspace) if effective_workspace else None, actor_id)
+
+            merged = {**existing, **updates}
+            _validate_dates(merged)
+
+            allowed_fields = {
+                "workspace_id",
+                "project_id",
+                "title",
+                "description",
+                "category",
+                "context_type",
+                "context_id",
+                "priority_eisenhower",
+                "kanban_state",
+                "high_impact",
+                "estimated_duration_minutes",
+                "start_datetime",
+                "due_datetime",
+                "linked_goal",
+                "moscow",
+                "status",
+                "energy_level",
+                "pomodoro_estimated",
+                "pomodoro_done",
+                "comments",
+                "assignee_user_id",
+                "assignee_id",
+                "collaborator_ids",
+                "source",
+                "completed_at",
+                "priority",
+                "due_date",
+                "start_at",
+                "end_at",
+                "estimated_minutes",
+                "spent_minutes",
+            }
+            set_parts: list[str] = []
+            params: list[Any] = []
+            for key, value in updates.items():
+                if key not in allowed_fields:
+                    continue
+                if key in {"workspace_id", "project_id", "assignee_user_id", "assignee_id"}:
+                    set_parts.append(f"{key} = %s::uuid")
+                    params.append(value)
+                elif key == "collaborator_ids":
+                    set_parts.append("collaborator_ids = %s::uuid[]")
+                    params.append(value or [])
+                else:
+                    set_parts.append(f"{key} = %s")
+                    params.append(value)
+            if not set_parts:
+                conn.commit()
+                return _serialize_pg_task(existing)
+
+            cur.execute(
+                f"""
+                update app.tasks
+                set {', '.join(set_parts)}, updated_at = now()
+                where id = %s::uuid
+                  and {_pg_task_access_sql('app.tasks')}
+                returning id::text as id;
+                """,
+                tuple(params + [task_uuid, actor_id, actor_id]),
+            )
+            updated_row = dict(cur.fetchone() or {})
+            updated_id = str(updated_row.get("id") or "")
+            if not updated_id:
+                raise HTTPException(status_code=404, detail="Tâche introuvable")
+            cur.execute(
+                _pg_task_select_sql(where_sql="where t.id = %s::uuid", limit_sql="limit 1"),
+                (updated_id,),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres task update error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    if not row:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
+    return _serialize_pg_task(row)
+
+
+async def _pg_delete_task(
+    task_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> None:
+    task_uuid = _as_uuid_or_none(task_id, "task_id")
+    if not task_uuid:
+        raise HTTPException(status_code=400, detail="task_id must be a UUID")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                f"delete from app.tasks where id = %s::uuid and {_pg_task_access_sql('app.tasks')} returning id::text;",
+                (task_uuid, actor_id, actor_id),
+            )
+            deleted = cur.fetchone()
+        conn.commit()
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres task delete error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Tâche introuvable")
+
+
+async def _pg_bulk_create_tasks(
+    payload: List[TaskCreatePayload],
+    request: Request,
+    db: AsyncIOMotorDatabase,
+    current: dict,
+) -> TaskListResponse:
+    if not payload:
+        return TaskListResponse(items=[])
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    now = datetime.utcnow()
+    docs = [_normalize_pg_task_payload(item.dict(), now=now, for_update=False) for item in payload]
+    for doc in docs:
+        _validate_dates(doc)
+    dsn = _pg_dsn()
+    conn = None
+    inserted: list[TaskResponse] = []
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            titles = [str(d.get("title") or "") for d in docs if d.get("title")]
+            skip_keys: set[tuple[str, date | None]] = set()
+            if titles:
+                cur.execute(
+                    """
+                    select title, due_date
+                    from app.tasks
+                    where owner_id = %s::uuid
+                      and source = 'ia'
+                      and title = any(%s);
+                    """,
+                    (actor_id, titles),
+                )
+                for row in cur.fetchall():
+                    rec = dict(row)
+                    skip_keys.add((str(rec.get("title") or ""), rec.get("due_date")))
+
+            for doc in docs:
+                title = str(doc.get("title") or "")
+                dedupe_due = doc.get("due_date")
+                if doc.get("source") == "ia" and (title, dedupe_due) in skip_keys:
+                    continue
+                workspace_uuid = _as_uuid_or_none(doc.get("workspace_id"), "workspace_id")
+                if workspace_uuid:
+                    _pg_assert_workspace_access(cur, workspace_uuid, actor_id)
+                assignee_uuid = _as_uuid_or_none(doc.get("assignee_id"), "assignee_id")
+                if assignee_uuid:
+                    _pg_assert_assignee(cur, assignee_uuid, workspace_uuid, actor_id)
+                cur.execute(
+                    """
+                    insert into app.tasks(
+                      owner_id,workspace_id,project_id,title,description,category,context_type,context_id,
+                      priority_eisenhower,kanban_state,high_impact,estimated_duration_minutes,start_datetime,due_datetime,
+                      linked_goal,moscow,status,energy_level,pomodoro_estimated,pomodoro_done,comments,
+                      assignee_user_id,collaborator_ids,source,completed_at,
+                      priority,due_date,start_at,end_at,estimated_minutes,spent_minutes,assignee_id,created_at,updated_at
+                    ) values (
+                      %s::uuid,%s::uuid,%s::uuid,%s,%s,%s,%s,%s,
+                      %s,%s,%s,%s,%s,%s,
+                      %s,%s,%s,%s,%s,%s,%s,
+                      %s::uuid,%s::uuid[],%s,%s,
+                      %s,%s,%s,%s,%s,%s,%s::uuid,%s,%s
+                    )
+                    returning id::text as id;
+                    """,
+                    (
+                        actor_id,
+                        workspace_uuid,
+                        _as_uuid_or_none(doc.get("project_id"), "project_id"),
+                        doc.get("title"),
+                        doc.get("description"),
+                        doc.get("category"),
+                        doc.get("context_type"),
+                        doc.get("context_id"),
+                        doc.get("priority_eisenhower"),
+                        doc.get("kanban_state"),
+                        bool(doc.get("high_impact")),
+                        doc.get("estimated_duration_minutes"),
+                        doc.get("start_datetime"),
+                        doc.get("due_datetime"),
+                        doc.get("linked_goal"),
+                        doc.get("moscow"),
+                        doc.get("status"),
+                        doc.get("energy_level"),
+                        doc.get("pomodoro_estimated"),
+                        doc.get("pomodoro_done"),
+                        doc.get("comments"),
+                        _as_uuid_or_none(doc.get("assignee_user_id"), "assignee_user_id"),
+                        doc.get("collaborator_ids") or [],
+                        doc.get("source"),
+                        doc.get("completed_at"),
+                        doc.get("priority"),
+                        doc.get("due_date"),
+                        doc.get("start_at"),
+                        doc.get("end_at"),
+                        doc.get("estimated_minutes"),
+                        doc.get("spent_minutes"),
+                        assignee_uuid,
+                        now,
+                        now,
+                    ),
+                )
+                created_row = dict(cur.fetchone() or {})
+                created_id = str(created_row.get("id") or "")
+                if created_id:
+                    cur.execute(
+                        _pg_task_select_sql(where_sql="where t.id = %s::uuid", limit_sql="limit 1"),
+                        (created_id,),
+                    )
+                    row = dict(cur.fetchone() or {})
+                    if row:
+                        inserted.append(_serialize_pg_task(row))
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"postgres task bulk create error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return TaskListResponse(items=inserted)
+
+
 @router.get("/workspaces", response_model=WorkspaceListResponse)
 async def list_workspaces(
     request: Request,
@@ -1475,10 +2246,12 @@ async def delete_workspace_member(
 
 @router.get("/tasks", response_model=TaskListResponse)
 async def list_tasks(
+    request: Request,
     kanban_state: Optional[str] = Query(default=None),
     high_impact: Optional[bool] = Query(default=None),
     context_type: Optional[str] = Query(default=None, description="personal|professional|learning"),
     context_id: Optional[str] = Query(default=None, description="Identifier du contexte (ex: certificate_id)"),
+    workspace_id: Optional[str] = Query(default=None, description="UUID workspace (Team)"),
     date: Optional[str] = Query(default=None, description="ISO date filter for today view"),
     week_start: Optional[str] = Query(default=None, description="ISO date for the starting Monday"),
     page: int = Query(default=1, ge=1),
@@ -1486,6 +2259,21 @@ async def list_tasks(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> TaskListResponse:
+    if _myplanning_tasks_store() == "postgres":
+        return await _pg_list_tasks(
+            request,
+            db,
+            current,
+            kanban_state=kanban_state,
+            high_impact=high_impact,
+            context_type=context_type,
+            context_id=context_id,
+            workspace_id=workspace_id,
+            date_filter=date,
+            week_start=week_start,
+            page=page,
+            limit=limit,
+        )
     criteria: Dict[str, Any] = {"user_id": current["_id"]}
     if kanban_state:
         criteria["kanban_state"] = kanban_state
@@ -1495,6 +2283,8 @@ async def list_tasks(
         criteria["context_type"] = context_type
     if context_id:
         criteria["context_id"] = context_id
+    if workspace_id:
+        criteria["workspace_id"] = workspace_id
     date_range = _parse_date_filter(date)
     if date_range:
         start, end = date_range
@@ -1729,9 +2519,12 @@ async def import_learning_plan(
 @router.post("/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     payload: TaskCreatePayload,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> TaskResponse:
+    if _myplanning_tasks_store() == "postgres":
+        return await _pg_create_task(payload, request, db, current)
     now = datetime.utcnow()
     doc = payload.dict()
     doc = _prepare_task_payload(doc)
@@ -1751,9 +2544,12 @@ async def create_task(
 async def update_task(
     task_id: str,
     payload: TaskUpdatePayload,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> TaskResponse:
+    if _myplanning_tasks_store() == "postgres":
+        return await _pg_update_task(task_id, payload, request, db, current)
     oid = to_object_id(task_id)
     updates = payload.dict(exclude_unset=True)
     if not updates:
@@ -1789,9 +2585,13 @@ async def update_task(
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_task(
     task_id: str,
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> Response:
+    if _myplanning_tasks_store() == "postgres":
+        await _pg_delete_task(task_id, request, db, current)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     oid = to_object_id(task_id)
     result = await db[COLLECTION].delete_one({"_id": oid, "user_id": current["_id"]})
     if result.deleted_count == 0:
@@ -1802,9 +2602,12 @@ async def delete_task(
 @router.post("/tasks/bulk_create", response_model=TaskListResponse)
 async def bulk_create_tasks(
     payload: List[TaskCreatePayload],
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ) -> TaskListResponse:
+    if _myplanning_tasks_store() == "postgres":
+        return await _pg_bulk_create_tasks(payload, request, db, current)
     now = datetime.utcnow()
     if not payload:
         return TaskListResponse(items=[])

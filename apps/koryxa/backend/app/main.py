@@ -462,6 +462,254 @@ def ensure_myplanning_team_tables() -> None:
     )
 
 
+def ensure_myplanning_tasks_tables() -> None:
+    # Bootstrap MyPlanning tasks table/policies in Postgres app schema.
+    # Keep SQL idempotent so startup remains safe.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+    db_execute("alter table app.workspace_members add column if not exists status text not null default 'active';")
+    db_execute(
+        """
+        create table if not exists app.tasks (
+          id uuid primary key default gen_random_uuid(),
+          owner_id uuid not null,
+          workspace_id uuid null references app.workspaces(id) on delete set null,
+          project_id uuid null,
+          title text not null,
+          description text null,
+          category text null,
+          context_type text not null default 'personal',
+          context_id text null,
+          priority_eisenhower text not null default 'important_not_urgent',
+          kanban_state text not null default 'todo',
+          high_impact boolean not null default false,
+          estimated_duration_minutes int null,
+          start_datetime timestamptz null,
+          due_datetime timestamptz null,
+          linked_goal text null,
+          moscow text null,
+          status text null,
+          energy_level text null,
+          pomodoro_estimated int null,
+          pomodoro_done int null,
+          comments text null,
+          assignee_user_id uuid null,
+          collaborator_ids uuid[] null,
+          source text not null default 'manual',
+          completed_at timestamptz null,
+          priority text null,
+          due_date date null,
+          start_at timestamptz null,
+          end_at timestamptz null,
+          estimated_minutes int null,
+          spent_minutes int null,
+          assignee_id uuid null,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("alter table app.tasks add column if not exists owner_id uuid;")
+    db_execute("alter table app.tasks add column if not exists title text;")
+    db_execute("alter table app.tasks add column if not exists description text null;")
+    db_execute("alter table app.tasks add column if not exists priority_eisenhower text not null default 'important_not_urgent';")
+    db_execute("alter table app.tasks add column if not exists status text null;")
+    db_execute("alter table app.tasks add column if not exists workspace_id uuid null references app.workspaces(id) on delete set null;")
+    db_execute("alter table app.tasks add column if not exists project_id uuid null;")
+    db_execute("alter table app.tasks add column if not exists category text null;")
+    db_execute("alter table app.tasks add column if not exists context_type text not null default 'personal';")
+    db_execute("alter table app.tasks add column if not exists context_id text null;")
+    db_execute("alter table app.tasks add column if not exists kanban_state text not null default 'todo';")
+    db_execute("alter table app.tasks add column if not exists high_impact boolean not null default false;")
+    db_execute("alter table app.tasks add column if not exists estimated_duration_minutes int null;")
+    db_execute("alter table app.tasks add column if not exists start_datetime timestamptz null;")
+    db_execute("alter table app.tasks add column if not exists due_datetime timestamptz null;")
+    db_execute("alter table app.tasks add column if not exists linked_goal text null;")
+    db_execute("alter table app.tasks add column if not exists moscow text null;")
+    db_execute("alter table app.tasks add column if not exists energy_level text null;")
+    db_execute("alter table app.tasks add column if not exists pomodoro_estimated int null;")
+    db_execute("alter table app.tasks add column if not exists pomodoro_done int null;")
+    db_execute("alter table app.tasks add column if not exists comments text null;")
+    db_execute("alter table app.tasks add column if not exists assignee_user_id uuid null;")
+    db_execute("alter table app.tasks add column if not exists collaborator_ids uuid[] null;")
+    db_execute("alter table app.tasks add column if not exists source text not null default 'manual';")
+    db_execute("alter table app.tasks add column if not exists completed_at timestamptz null;")
+    db_execute("alter table app.tasks add column if not exists priority text null;")
+    db_execute("alter table app.tasks add column if not exists due_date date null;")
+    db_execute("alter table app.tasks add column if not exists start_at timestamptz null;")
+    db_execute("alter table app.tasks add column if not exists end_at timestamptz null;")
+    db_execute("alter table app.tasks add column if not exists estimated_minutes int null;")
+    db_execute("alter table app.tasks add column if not exists spent_minutes int null;")
+    db_execute("alter table app.tasks add column if not exists assignee_id uuid null;")
+    db_execute("alter table app.tasks add column if not exists created_at timestamptz not null default now();")
+    db_execute("alter table app.tasks add column if not exists updated_at timestamptz not null default now();")
+    db_execute("alter table app.tasks drop constraint if exists tasks_status_check;")
+    db_execute(
+        """
+        alter table app.tasks
+        add constraint tasks_status_check
+        check (status is null or status in ('todo','doing','done'))
+        not valid;
+        """
+    )
+    db_execute("alter table app.tasks drop constraint if exists tasks_kanban_state_check;")
+    db_execute(
+        """
+        alter table app.tasks
+        add constraint tasks_kanban_state_check
+        check (kanban_state in ('todo','in_progress','done'))
+        not valid;
+        """
+    )
+    db_execute("alter table app.tasks drop constraint if exists tasks_priority_eisenhower_check;")
+    db_execute(
+        """
+        alter table app.tasks
+        add constraint tasks_priority_eisenhower_check
+        check (priority_eisenhower in ('urgent_important','important_not_urgent','urgent_not_important','not_urgent_not_important'))
+        not valid;
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.set_tasks_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute("drop trigger if exists trg_tasks_updated_at on app.tasks;")
+    db_execute(
+        """
+        create trigger trg_tasks_updated_at
+        before update on app.tasks
+        for each row
+        execute function app.set_tasks_updated_at();
+        """
+    )
+    db_execute("create index if not exists idx_tasks_owner_created_at on app.tasks(owner_id, created_at desc);")
+    db_execute("create index if not exists idx_tasks_workspace_created_at on app.tasks(workspace_id, created_at desc);")
+    db_execute("create index if not exists idx_tasks_assignee_created_at on app.tasks(assignee_id, created_at desc);")
+    db_execute("create index if not exists idx_tasks_assignee_user_created_at on app.tasks(assignee_user_id, created_at desc);")
+
+    db_execute("grant select, insert, update, delete on app.tasks to authenticated;")
+    db_execute("alter table app.tasks enable row level security;")
+
+    db_execute("drop policy if exists tasks_select_auth on app.tasks;")
+    db_execute("drop policy if exists tasks_insert_auth on app.tasks;")
+    db_execute("drop policy if exists tasks_update_auth on app.tasks;")
+    db_execute("drop policy if exists tasks_delete_auth on app.tasks;")
+
+    db_execute(
+        """
+        create policy tasks_select_auth
+          on app.tasks
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or (
+              workspace_id is not null
+              and exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = tasks.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status, 'active') = 'active'
+              )
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy tasks_insert_auth
+          on app.tasks
+          for insert
+          to authenticated
+          with check (
+            owner_id = auth.uid()
+            and (
+              workspace_id is null
+              or exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = tasks.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status, 'active') = 'active'
+              )
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy tasks_update_auth
+          on app.tasks
+          for update
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or (
+              workspace_id is not null
+              and exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = tasks.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status, 'active') = 'active'
+                  and wm.role in ('owner','admin')
+              )
+            )
+          )
+          with check (
+            owner_id = auth.uid()
+            or (
+              workspace_id is not null
+              and exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = tasks.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status, 'active') = 'active'
+                  and wm.role in ('owner','admin')
+              )
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy tasks_delete_auth
+          on app.tasks
+          for delete
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or (
+              workspace_id is not null
+              and exists (
+                select 1
+                from app.workspace_members wm
+                where wm.workspace_id = tasks.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status, 'active') = 'active'
+                  and wm.role in ('owner','admin')
+              )
+            )
+          );
+        """
+    )
+
+
 def _client_ip(request: Request) -> str:
     xff = (request.headers.get("x-forwarded-for") or "").strip()
     if xff:
@@ -839,6 +1087,10 @@ async def on_startup():
         ensure_myplanning_team_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning team postgres tables/policies")
+    try:
+        ensure_myplanning_tasks_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning tasks postgres table/policies")
     init_cohere_client()
 
 

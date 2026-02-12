@@ -282,6 +282,186 @@ def ensure_enterprise_leads_table() -> None:
     )
 
 
+def ensure_myplanning_team_tables() -> None:
+    # Bootstrap Team collaboration tables/policies in Postgres app schema.
+    # Keep SQL idempotent so startup is safe across environments.
+    if not POOL:
+        return
+
+    db_execute("grant usage on schema app to authenticated;")
+    db_execute(
+        """
+        create table if not exists app.workspace_invites (
+          id uuid primary key,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          email text not null,
+          role text not null check (role in ('admin','member')),
+          token text not null,
+          status text not null default 'pending' check (status in ('pending','accepted','expired','revoked')),
+          invited_by uuid not null,
+          invited_at timestamptz not null default now(),
+          accepted_at timestamptz
+        );
+        """
+    )
+    db_execute(
+        "create unique index if not exists workspace_invites_workspace_id_email_key on app.workspace_invites (workspace_id, email);"
+    )
+    db_execute(
+        "create index if not exists idx_workspace_invites_workspace_status on app.workspace_invites (workspace_id, status, invited_at desc);"
+    )
+
+    db_execute("grant select, insert, update, delete on app.workspaces to authenticated;")
+    db_execute("grant select, insert, update, delete on app.workspace_members to authenticated;")
+    db_execute("grant select, insert, update, delete on app.workspace_invites to authenticated;")
+
+    db_execute("alter table app.workspaces enable row level security;")
+    db_execute("alter table app.workspace_members enable row level security;")
+    db_execute("alter table app.workspace_invites enable row level security;")
+
+    # Reset policies to avoid recursive policy dependencies between
+    # app.workspaces and app.workspace_members.
+    db_execute("drop policy if exists workspaces_select_member on app.workspaces;")
+    db_execute("drop policy if exists workspaces_insert_owner on app.workspaces;")
+    db_execute("drop policy if exists workspaces_update_owner on app.workspaces;")
+    db_execute("drop policy if exists workspaces_delete_owner on app.workspaces;")
+    db_execute("drop policy if exists members_select on app.workspace_members;")
+    db_execute("drop policy if exists members_insert_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_update_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_delete_owner on app.workspace_members;")
+    db_execute("drop policy if exists members_select_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_insert_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_update_auth on app.workspace_members;")
+    db_execute("drop policy if exists members_delete_auth on app.workspace_members;")
+    db_execute("drop policy if exists invites_select_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_insert_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_update_auth on app.workspace_invites;")
+    db_execute("drop policy if exists invites_delete_auth on app.workspace_invites;")
+
+    db_execute(
+        """
+        create policy workspaces_select_member
+          on app.workspaces
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or exists (
+              select 1
+              from app.workspace_members m
+              where m.workspace_id = workspaces.id
+                and m.user_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_insert_owner
+          on app.workspaces
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_update_owner
+          on app.workspaces
+          for update
+          to authenticated
+          using (owner_id = auth.uid())
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy workspaces_delete_owner
+          on app.workspaces
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    # Workspace member/invite permissions are constrained by route-level checks.
+    # Keeping these policies simple avoids recursive policy evaluation.
+    db_execute(
+        """
+        create policy members_select_auth
+          on app.workspace_members
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_insert_auth
+          on app.workspace_members
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_update_auth
+          on app.workspace_members
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy members_delete_auth
+          on app.workspace_members
+          for delete
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_select_auth
+          on app.workspace_invites
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_insert_auth
+          on app.workspace_invites
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_update_auth
+          on app.workspace_invites
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy invites_delete_auth
+          on app.workspace_invites
+          for delete
+          to authenticated
+          using (true);
+        """
+    )
+
+
 def _client_ip(request: Request) -> str:
     xff = (request.headers.get("x-forwarded-for") or "").strip()
     if xff:
@@ -655,6 +835,10 @@ async def on_startup():
         ensure_enterprise_leads_table()
     except Exception:
         logger.exception("Failed to ensure enterprise_leads table")
+    try:
+        ensure_myplanning_team_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning team postgres tables/policies")
     init_cohere_client()
 
 

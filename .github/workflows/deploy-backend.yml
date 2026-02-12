@@ -17,7 +17,7 @@ jobs:
       REMOTE_ROOT: ${{ secrets.DEPLOY_PATH }}
       REMOTE_VENV: ${{ secrets.DEPLOY_PATH }}/.venv
       REQUIREMENTS_FILE: ${{ secrets.DEPLOY_PATH }}/requirements.txt
-      HEALTHCHECK_URL: https://api.innovaplus.africa/health
+      HEALTHCHECK_URL: http://127.0.0.1:8000/health
       HEALTHCHECK_INTERVAL: "5"
       HEALTHCHECK_TIMEOUT: "180"
       SSH_OPTS: "-o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519"
@@ -83,7 +83,7 @@ jobs:
           sudo systemctl status "${SERVICE_NAME}" --no-pager
           EOF
 
-      - name: Validate public health endpoint
+      - name: Validate backend health endpoint
         run: |
           set -euo pipefail
           SERVICE_NAME="${{ env.SERVICE_NAME }}"
@@ -101,7 +101,9 @@ jobs:
           last_response=""
           while [ $SECONDS -lt $deadline ]; do
             echo "Health attempt ${attempt}..."
-            response=$(curl -sS --max-time 10 "${HEALTH_URL}" || true)
+            response=$(ssh ${{ env.SSH_OPTS }} \
+              ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+              "curl -fsS --max-time 10 '${HEALTH_URL}'" || true)
             last_response="${response}"
             status=$(printf '%s' "${response}" | jq -r '.status // empty' 2>/dev/null || true)
             mongo=$(printf '%s' "${response}" | jq -r '.mongo // empty' 2>/dev/null || true)

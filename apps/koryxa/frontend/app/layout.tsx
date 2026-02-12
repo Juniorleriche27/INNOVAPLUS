@@ -37,25 +37,25 @@ export default function RootLayout(props: { children: ReactNode }) {
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className="h-screen overflow-hidden bg-slate-50 text-slate-900 antialiased">
+      <body className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 antialiased">
         <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
-        <div className="relative flex h-screen flex-col">
+        <div className="relative flex min-h-screen flex-col">
           <AuthProvider>
             <PWARegister />
             <div className="sticky top-0 z-40">
               <Headbar />
             </div>
             <div
-              className="grid flex-1 gap-0 overflow-hidden"
+              className="grid flex-1 gap-0"
               style={{ gridTemplateColumns: "auto minmax(0,1fr)" }}
             >
-              <div className="hidden h-full overflow-hidden sm:block">
+              <div className="hidden h-full sm:block">
                 <Sidebar />
               </div>
-              <div className="min-w-0 flex h-full flex-col overflow-hidden">
+              <div className="min-w-0 flex min-h-0 flex-col">
                 <main
                   id="content"
-                  className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col overflow-y-auto overscroll-contain px-4 pb-10 pt-6 sm:px-6 lg:px-8"
+                  className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col px-4 pb-10 pt-6 sm:px-6 lg:px-8"
                 >
                   <div className="flex-1">{children}</div>
                   <Footer />

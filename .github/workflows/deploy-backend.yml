@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'apps/koryxa/backend/**'
+      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 jobs:

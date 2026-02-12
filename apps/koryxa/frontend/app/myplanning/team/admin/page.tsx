@@ -1,5 +1,5 @@
-import TeamComingSoonPage from "../_components/TeamComingSoonPage";
+import { redirect } from "next/navigation";
 
 export default function TeamAdminPage() {
-  return <TeamComingSoonPage title="Admin" description="Gérer les permissions, règles d’accès et paramètres d’organisation." />;
+  redirect("/myplanning/team");
 }

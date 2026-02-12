@@ -24,17 +24,17 @@ const TIERS: Tier[] = [
     name: "Pro",
     price: "Bêta",
     desc: "Pour ceux qui veulent mesurer, decider et progresser.",
-    items: ["Coaching IA", "Templates universels", "Stats & graphiques", "Automatisations (bientôt)"],
+    items: ["Coaching IA", "Templates universels", "Stats & graphiques", "Automatisations"],
     ctaLabel: "Découvrir Pro",
     ctaHref: "/myplanning/pro",
     ctaVariant: "secondary",
   },
   {
     name: "Team",
-    price: "À venir",
-    desc: "Pour equipes & organisations (a venir).",
-    items: ["Collaborateurs", "Assignation", "Reporting", "Admin (à venir)"],
-    ctaLabel: "Découvrir Team",
+    price: "Bêta",
+    desc: "Pour equipes & organisations.",
+    items: ["Collaborateurs", "Assignation", "Reporting", "Admin workspace"],
+    ctaLabel: "Accéder Team",
     ctaHref: "/myplanning/team",
     ctaVariant: "secondary",
   },
@@ -83,7 +83,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement. Les plans payants arrivent apres la phase MVP.</p>
+          <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement et évoluer vers Pro, Team ou Entreprise selon ton usage.</p>
           <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>
         </div>
         <Link

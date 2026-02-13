@@ -1198,6 +1198,445 @@ def ensure_myplanning_alerts_tables() -> None:
     )
 
 
+def ensure_myplanning_attendance_tables() -> None:
+    # Bootstrap Attendance v1 tables/policies in Postgres app schema.
+    # Keep SQL idempotent so startup remains safe.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+
+    db_execute(
+        """
+        create table if not exists app.attendance_locations (
+          id uuid primary key default gen_random_uuid(),
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          name text not null,
+          is_active boolean not null default true,
+          created_by uuid not null,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists attendance_locations_workspace_active_idx on app.attendance_locations(workspace_id, is_active);"
+    )
+
+    # Prepared for v1.1 (device signature): included now for forward-compatibility.
+    db_execute(
+        """
+        create table if not exists app.attendance_devices (
+          id uuid primary key default gen_random_uuid(),
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          label text not null,
+          device_public_key text null,
+          is_active boolean not null default true,
+          created_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists attendance_devices_workspace_active_idx on app.attendance_devices(workspace_id, is_active);"
+    )
+
+    db_execute(
+        """
+        create table if not exists app.attendance_qr_tokens (
+          id bigserial primary key,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          location_id uuid not null references app.attendance_locations(id) on delete cascade,
+          token_hash text not null,
+          valid_from timestamptz not null,
+          valid_to timestamptz not null,
+          created_at timestamptz not null default now(),
+          constraint attendance_qr_tokens_valid_range check (valid_to > valid_from)
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists attendance_qr_tokens_workspace_loc_from_idx on app.attendance_qr_tokens(workspace_id, location_id, valid_from desc);"
+    )
+    db_execute("create unique index if not exists attendance_qr_tokens_token_hash_uniq on app.attendance_qr_tokens(token_hash);")
+
+    db_execute(
+        """
+        create table if not exists app.attendance_events (
+          id bigserial primary key,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          user_id uuid not null,
+          location_id uuid not null references app.attendance_locations(id) on delete cascade,
+          event_type text not null check (event_type in ('check_in','check_out')),
+          event_ts timestamptz not null default now(),
+          client_ts timestamptz null,
+          client_tz text null,
+          client_ip inet null,
+          user_agent text null,
+          metadata jsonb not null default '{}'::jsonb
+        );
+        """
+    )
+    db_execute("create index if not exists attendance_events_workspace_user_ts_idx on app.attendance_events(workspace_id, user_id, event_ts desc);")
+    db_execute("create index if not exists attendance_events_workspace_ts_idx on app.attendance_events(workspace_id, event_ts desc);")
+
+    db_execute(
+        """
+        create table if not exists app.attendance_daily (
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          user_id uuid not null,
+          day date not null,
+          first_check_in timestamptz null,
+          last_check_out timestamptz null,
+          minutes_present int not null default 0,
+          status text not null default 'absent' check (status in ('present','partial','absent')),
+          computed_at timestamptz not null default now(),
+          primary key (workspace_id, user_id, day)
+        );
+        """
+    )
+    db_execute("create index if not exists attendance_daily_workspace_day_idx on app.attendance_daily(workspace_id, day);")
+
+    db_execute("grant select, insert, update, delete on app.attendance_locations to authenticated;")
+    db_execute("grant select, insert, update, delete on app.attendance_devices to authenticated;")
+    db_execute("grant select, insert, update, delete on app.attendance_qr_tokens to authenticated;")
+    db_execute("grant select, insert, update, delete on app.attendance_events to authenticated;")
+    db_execute("grant select, insert, update, delete on app.attendance_daily to authenticated;")
+
+    db_execute(
+        """
+        create or replace function app.set_attendance_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute("drop trigger if exists trg_attendance_locations_updated_at on app.attendance_locations;")
+    db_execute(
+        """
+        create trigger trg_attendance_locations_updated_at
+        before update on app.attendance_locations
+        for each row
+        execute function app.set_attendance_updated_at();
+        """
+    )
+
+    db_execute("alter table app.attendance_locations enable row level security;")
+    db_execute("alter table app.attendance_devices enable row level security;")
+    db_execute("alter table app.attendance_qr_tokens enable row level security;")
+    db_execute("alter table app.attendance_events enable row level security;")
+    db_execute("alter table app.attendance_daily enable row level security;")
+
+    # Reset policies (idempotent).
+    for table, prefix in [
+        ("app.attendance_locations", "attendance_locations"),
+        ("app.attendance_devices", "attendance_devices"),
+        ("app.attendance_qr_tokens", "attendance_qr_tokens"),
+        ("app.attendance_events", "attendance_events"),
+        ("app.attendance_daily", "attendance_daily"),
+    ]:
+        db_execute(f"drop policy if exists {prefix}_select_auth on {table};")
+        db_execute(f"drop policy if exists {prefix}_insert_auth on {table};")
+        db_execute(f"drop policy if exists {prefix}_update_auth on {table};")
+        db_execute(f"drop policy if exists {prefix}_delete_auth on {table};")
+
+    member_active = """
+      exists (
+        select 1 from app.workspace_members wm
+        where wm.workspace_id = workspace_id
+          and wm.user_id = auth.uid()
+          and coalesce(wm.status, 'active') = 'active'
+      )
+      or exists (
+        select 1 from app.workspaces w
+        where w.id = workspace_id
+          and w.owner_id = auth.uid()
+      )
+    """
+    member_admin = """
+      exists (
+        select 1 from app.workspace_members wm
+        where wm.workspace_id = workspace_id
+          and wm.user_id = auth.uid()
+          and coalesce(wm.status, 'active') = 'active'
+          and coalesce(wm.role, '') in ('owner','admin')
+      )
+      or exists (
+        select 1 from app.workspaces w
+        where w.id = workspace_id
+          and w.owner_id = auth.uid()
+      )
+    """
+
+    # Locations
+    db_execute(
+        f"""
+        create policy attendance_locations_select_auth
+          on app.attendance_locations
+          for select
+          to authenticated
+          using ({member_active});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_locations_insert_auth
+          on app.attendance_locations
+          for insert
+          to authenticated
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_locations_update_auth
+          on app.attendance_locations
+          for update
+          to authenticated
+          using ({member_admin})
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_locations_delete_auth
+          on app.attendance_locations
+          for delete
+          to authenticated
+          using ({member_admin});
+        """
+    )
+
+    # Devices
+    db_execute(
+        f"""
+        create policy attendance_devices_select_auth
+          on app.attendance_devices
+          for select
+          to authenticated
+          using ({member_active});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_devices_insert_auth
+          on app.attendance_devices
+          for insert
+          to authenticated
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_devices_update_auth
+          on app.attendance_devices
+          for update
+          to authenticated
+          using ({member_admin})
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_devices_delete_auth
+          on app.attendance_devices
+          for delete
+          to authenticated
+          using ({member_admin});
+        """
+    )
+
+    # QR tokens
+    db_execute(
+        f"""
+        create policy attendance_qr_tokens_select_auth
+          on app.attendance_qr_tokens
+          for select
+          to authenticated
+          using ({member_active});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_qr_tokens_insert_auth
+          on app.attendance_qr_tokens
+          for insert
+          to authenticated
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_qr_tokens_update_auth
+          on app.attendance_qr_tokens
+          for update
+          to authenticated
+          using ({member_admin})
+          with check ({member_admin});
+        """
+    )
+    db_execute(
+        f"""
+        create policy attendance_qr_tokens_delete_auth
+          on app.attendance_qr_tokens
+          for delete
+          to authenticated
+          using ({member_admin});
+        """
+    )
+
+    # Events
+    db_execute(
+        """
+        create policy attendance_events_select_auth
+          on app.attendance_events
+          for select
+          to authenticated
+          using (
+            user_id = auth.uid()
+            or exists (
+              select 1 from app.workspace_members wm
+              where wm.workspace_id = attendance_events.workspace_id
+                and wm.user_id = auth.uid()
+                and coalesce(wm.status,'active') = 'active'
+                and coalesce(wm.role,'') in ('owner','admin')
+            )
+            or exists (
+              select 1 from app.workspaces w
+              where w.id = attendance_events.workspace_id
+                and w.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_events_insert_auth
+          on app.attendance_events
+          for insert
+          to authenticated
+          with check (
+            user_id = auth.uid()
+            and (
+              exists (
+                select 1 from app.workspace_members wm
+                where wm.workspace_id = attendance_events.workspace_id
+                  and wm.user_id = auth.uid()
+                  and coalesce(wm.status,'active') = 'active'
+              )
+              or exists (
+                select 1 from app.workspaces w
+                where w.id = attendance_events.workspace_id
+                  and w.owner_id = auth.uid()
+              )
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_events_update_auth
+          on app.attendance_events
+          for update
+          to authenticated
+          using (false)
+          with check (false);
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_events_delete_auth
+          on app.attendance_events
+          for delete
+          to authenticated
+          using (false);
+        """
+    )
+
+    # Daily
+    db_execute(
+        """
+        create policy attendance_daily_select_auth
+          on app.attendance_daily
+          for select
+          to authenticated
+          using (
+            user_id = auth.uid()
+            or exists (
+              select 1 from app.workspace_members wm
+              where wm.workspace_id = attendance_daily.workspace_id
+                and wm.user_id = auth.uid()
+                and coalesce(wm.status,'active') = 'active'
+                and coalesce(wm.role,'') in ('owner','admin')
+            )
+            or exists (
+              select 1 from app.workspaces w
+              where w.id = attendance_daily.workspace_id
+                and w.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_daily_insert_auth
+          on app.attendance_daily
+          for insert
+          to authenticated
+          with check (
+            exists (
+              select 1 from app.workspace_members wm
+              where wm.workspace_id = attendance_daily.workspace_id
+                and wm.user_id = auth.uid()
+                and coalesce(wm.status,'active') = 'active'
+            )
+            or exists (
+              select 1 from app.workspaces w
+              where w.id = attendance_daily.workspace_id
+                and w.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_daily_update_auth
+          on app.attendance_daily
+          for update
+          to authenticated
+          using (
+            exists (
+              select 1 from app.workspace_members wm
+              where wm.workspace_id = attendance_daily.workspace_id
+                and wm.user_id = auth.uid()
+                and coalesce(wm.status,'active') = 'active'
+                and coalesce(wm.role,'') in ('owner','admin')
+            )
+            or exists (
+              select 1 from app.workspaces w
+              where w.id = attendance_daily.workspace_id
+                and w.owner_id = auth.uid()
+            )
+          )
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy attendance_daily_delete_auth
+          on app.attendance_daily
+          for delete
+          to authenticated
+          using (false);
+        """
+    )
+
+
 def _client_ip(request: Request) -> str:
     xff = (request.headers.get("x-forwarded-for") or "").strip()
     if xff:
@@ -1583,6 +2022,10 @@ async def on_startup():
         ensure_myplanning_alerts_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning alerts postgres tables/policies")
+    try:
+        ensure_myplanning_attendance_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning attendance postgres tables/policies")
     init_cohere_client()
 
 

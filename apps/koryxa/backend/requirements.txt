@@ -18,3 +18,4 @@ torch>=2.0.0
 safetensors>=0.4.0
 accelerate>=0.25.0
 protobuf>=4.24
+segno==1.6.1

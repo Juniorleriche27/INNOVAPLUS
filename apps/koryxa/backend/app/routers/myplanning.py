@@ -56,6 +56,14 @@ from app.utils.ids import to_object_id
 from app.core.auth import normalize_email
 
 from app.services.alerts_v1 import generate_notifications_now, worker_tick_async
+from app.services.attendance_v1 import (
+    clamp_date_window,
+    decode_qr_payload,
+    issue_qr_token,
+    parse_day,
+    render_qr_svg,
+    sha256_hex,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -4445,3 +4453,893 @@ async def ai_replan_with_time(
         for item in recs
     ]
     return AiReplanResponse(recommendations=formatted)
+
+
+# -----------------------------
+# Attendance v1 (QR dynamique)
+# -----------------------------
+
+
+class AttendanceLocationCreateIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=160)
+
+
+class AttendanceLocationPatchIn(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=160)
+    is_active: bool | None = None
+
+
+class AttendanceLocationOut(BaseModel):
+    id: str
+    workspace_id: str
+    name: str
+    is_active: bool
+    created_by: str
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class AttendanceQrOut(BaseModel):
+    location_id: str
+    workspace_id: str
+    location_name: str
+    qr_payload: str
+    valid_to: datetime
+    qr_svg: str
+
+
+class AttendanceScanIn(BaseModel):
+    qr_payload: str = Field(..., min_length=8)
+    event_type: Literal["check_in", "check_out"]
+    client_ts: str | None = None
+    client_tz: str | None = Field(default=None, max_length=64)
+
+
+class AttendanceDailyOut(BaseModel):
+    workspace_id: str
+    user_id: str
+    day: date
+    first_check_in: datetime | None = None
+    last_check_out: datetime | None = None
+    minutes_present: int
+    status: Literal["present", "partial", "absent"]
+    computed_at: datetime | None = None
+
+
+class AttendanceScanOut(BaseModel):
+    ok: bool = True
+    event_id: int
+    daily: AttendanceDailyOut
+
+
+class AttendanceOverviewSeriesPoint(BaseModel):
+    day: date
+    present: int
+    partial: int
+    absent: int
+
+
+class AttendanceOverviewOut(BaseModel):
+    workspace_id: str
+    window: dict[str, str]
+    present_rate: float
+    n_present: int
+    n_absent: int
+    n_partial: int
+    series: list[AttendanceOverviewSeriesPoint]
+
+
+def _pg_assert_workspace_admin(cur: RealDictCursor, workspace_id: str, actor_id: str) -> None:
+    cur.execute(
+        """
+        select w.owner_id::text as owner_id, wm.role
+        from app.workspaces w
+        left join app.workspace_members wm
+          on wm.workspace_id = w.id
+         and wm.user_id = %s::uuid
+        where w.id = %s::uuid
+        limit 1;
+        """,
+        (actor_id, workspace_id),
+    )
+    row = dict(cur.fetchone() or {})
+    if not row:
+        raise HTTPException(status_code=404, detail="Workspace introuvable")
+    requester_role = "owner" if row.get("owner_id") == actor_id else str(row.get("role") or "")
+    if requester_role not in {"owner", "admin"}:
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+
+
+def _pg_assert_workspace_member(cur: RealDictCursor, workspace_id: str, actor_id: str) -> None:
+    cur.execute(
+        """
+        select 1
+        from app.workspaces w
+        where w.id = %s::uuid
+          and (
+            w.owner_id = %s::uuid
+            or exists (
+              select 1
+              from app.workspace_members wm
+              where wm.workspace_id = w.id
+                and wm.user_id = %s::uuid
+                and coalesce(wm.status, 'active') = 'active'
+            )
+          )
+        limit 1;
+        """,
+        (workspace_id, actor_id, actor_id),
+    )
+    if not cur.fetchone():
+        raise HTTPException(status_code=403, detail="Workspace access denied")
+
+
+def _coerce_inet_or_none(value: str | None) -> str | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    # Minimal validation: postgres will validate inet cast.
+    return raw
+
+
+def _attendance_rotation_s() -> int:
+    try:
+        return int(os.environ.get("ATTENDANCE_QR_ROTATION_S", "60"))
+    except Exception:
+        return 60
+
+
+def _attendance_keep_s() -> int:
+    try:
+        return int(os.environ.get("ATTENDANCE_QR_KEEP_S", "300"))
+    except Exception:
+        return 300
+
+
+def _attendance_present_minutes() -> int:
+    try:
+        return int(os.environ.get("ATTENDANCE_PRESENT_MINUTES", "360"))
+    except Exception:
+        return 360
+
+
+def _pg_compute_attendance_daily_range(
+    cur: RealDictCursor,
+    *,
+    workspace_id: str,
+    from_day: date,
+    to_day: date,
+    actor_scope_user_id: str | None = None,
+) -> None:
+    threshold = max(60, _attendance_present_minutes())
+    params: list[Any] = [from_day, to_day]
+    member_where = "where wm.workspace_id = %s::uuid and coalesce(wm.status,'active')='active'"
+    if actor_scope_user_id:
+        member_where += " and wm.user_id = %s::uuid"
+    # Placeholders order:
+    # days(from,to), members(workspace_id[,user_id]), union(workspace_id[,owner_id]), grid(workspace_id), threshold
+    params.append(workspace_id)
+    if actor_scope_user_id:
+        params.append(actor_scope_user_id)
+    params.append(workspace_id)
+    if actor_scope_user_id:
+        params.append(actor_scope_user_id)
+    params.append(workspace_id)
+    params.append(threshold)
+    cur.execute(
+        f"""
+        with days as (
+          select generate_series(%s::date, %s::date, interval '1 day')::date as day
+        ),
+        members as (
+          select wm.user_id
+          from app.workspace_members wm
+          {member_where}
+          union
+          select w.owner_id as user_id
+          from app.workspaces w
+          where w.id = %s::uuid
+          {"and w.owner_id = %s::uuid" if actor_scope_user_id else ""}
+        ),
+        grid as (
+          select %s::uuid as workspace_id, m.user_id, d.day
+          from members m
+          cross join days d
+        ),
+        agg as (
+          select
+            g.workspace_id,
+            g.user_id,
+            g.day,
+            min(e.event_ts) filter (where e.event_type='check_in') as first_check_in,
+            max(e.event_ts) filter (where e.event_type='check_out') as last_check_out
+          from grid g
+          left join app.attendance_events e
+            on e.workspace_id = g.workspace_id
+           and e.user_id = g.user_id
+           and e.event_ts::date = g.day
+          group by g.workspace_id, g.user_id, g.day
+        ),
+        computed as (
+          select
+            workspace_id,
+            user_id,
+            day,
+            first_check_in,
+            last_check_out,
+            case
+              when first_check_in is not null and last_check_out is not null and last_check_out > first_check_in
+                then floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int
+              else 0
+            end as minutes_present,
+            case
+              when (first_check_in is not null and last_check_out is not null and last_check_out > first_check_in)
+                   and (floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int) >= %s
+                then 'present'
+              when (first_check_in is not null)
+                   and (case
+                          when last_check_out is not null and last_check_out > first_check_in
+                            then floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int
+                          else 0
+                        end) >= 1
+                then 'partial'
+              else 'absent'
+            end as status
+          from agg
+        )
+        insert into app.attendance_daily(workspace_id, user_id, day, first_check_in, last_check_out, minutes_present, status, computed_at)
+        select workspace_id, user_id, day, first_check_in, last_check_out, minutes_present, status, now()
+        from computed
+        on conflict (workspace_id, user_id, day) do update
+          set first_check_in = excluded.first_check_in,
+              last_check_out = excluded.last_check_out,
+              minutes_present = excluded.minutes_present,
+              status = excluded.status,
+              computed_at = now();
+        """,
+        tuple(params),
+    )
+
+
+@router.get("/workspaces/{workspace_id}/attendance/locations", response_model=list[AttendanceLocationOut])
+async def list_attendance_locations(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> list[AttendanceLocationOut]:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_id, actor_id)
+            cur.execute(
+                """
+                select id::text as id,
+                       workspace_id::text as workspace_id,
+                       name,
+                       is_active,
+                       created_by::text as created_by,
+                       created_at,
+                       updated_at
+                from app.attendance_locations
+                where workspace_id = %s::uuid
+                order by created_at desc;
+                """,
+                (workspace_id,),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance locations list error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return [AttendanceLocationOut(**r) for r in rows]
+
+
+@router.post("/workspaces/{workspace_id}/attendance/locations", response_model=AttendanceLocationOut)
+async def create_attendance_location(
+    workspace_id: str,
+    payload: AttendanceLocationCreateIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceLocationOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    location_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_id, actor_id)
+            cur.execute(
+                """
+                insert into app.attendance_locations(id, workspace_id, name, is_active, created_by, created_at, updated_at)
+                values (%s::uuid, %s::uuid, %s, true, %s::uuid, %s, %s)
+                returning id::text as id,
+                          workspace_id::text as workspace_id,
+                          name,
+                          is_active,
+                          created_by::text as created_by,
+                          created_at,
+                          updated_at;
+                """,
+                (location_id, workspace_id, payload.name.strip(), actor_id, now, now),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance location create error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return AttendanceLocationOut(**row)
+
+
+@router.patch("/attendance/locations/{location_id}", response_model=AttendanceLocationOut)
+async def patch_attendance_location(
+    location_id: str,
+    payload: AttendanceLocationPatchIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceLocationOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select id::text as id,
+                       workspace_id::text as workspace_id,
+                       name,
+                       is_active,
+                       created_by::text as created_by,
+                       created_at,
+                       updated_at
+                from app.attendance_locations
+                where id = %s::uuid
+                limit 1;
+                """,
+                (location_id,),
+            )
+            existing = dict(cur.fetchone() or {})
+            if not existing:
+                raise HTTPException(status_code=404, detail="Location introuvable")
+            _pg_assert_workspace_admin(cur, str(existing["workspace_id"]), actor_id)
+
+            fields: list[str] = []
+            params: list[Any] = []
+            if payload.name is not None:
+                fields.append("name = %s")
+                params.append(payload.name.strip())
+            if payload.is_active is not None:
+                fields.append("is_active = %s")
+                params.append(bool(payload.is_active))
+            if not fields:
+                return AttendanceLocationOut(**existing)
+            params.append(location_id)
+            cur.execute(
+                f"""
+                update app.attendance_locations
+                set {', '.join(fields)}
+                where id = %s::uuid
+                returning id::text as id,
+                          workspace_id::text as workspace_id,
+                          name,
+                          is_active,
+                          created_by::text as created_by,
+                          created_at,
+                          updated_at;
+                """,
+                tuple(params),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance location patch error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return AttendanceLocationOut(**row)
+
+
+@router.get("/attendance/locations/{location_id}/qr", response_model=AttendanceQrOut)
+async def get_attendance_location_qr(
+    location_id: str,
+    request: Request,
+    response: Response,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceQrOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    # Avoid caching of rotating tokens.
+    response.headers["Cache-Control"] = "no-store"
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    dsn = _pg_dsn()
+    conn = None
+    now = datetime.utcnow()
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select id::text as id,
+                       workspace_id::text as workspace_id,
+                       name,
+                       is_active
+                from app.attendance_locations
+                where id = %s::uuid
+                limit 1;
+                """,
+                (location_id,),
+            )
+            loc = dict(cur.fetchone() or {})
+            if not loc:
+                raise HTTPException(status_code=404, detail="Location introuvable")
+            if not bool(loc.get("is_active")):
+                raise HTTPException(status_code=400, detail="Location inactive")
+
+            workspace_id = str(loc["workspace_id"])
+            _pg_assert_workspace_admin(cur, workspace_id, actor_id)
+
+            # Purge expired tokens (keep a short history for a few minutes).
+            keep_s = max(60, _attendance_keep_s())
+            cur.execute(
+                "delete from app.attendance_qr_tokens where valid_to < (now() - (%s::int * interval '1 second'));",
+                (keep_s,),
+            )
+
+            rotation = _attendance_rotation_s()
+            issued = issue_qr_token(workspace_id=workspace_id, location_id=location_id, rotation_seconds=rotation)
+            cur.execute(
+                """
+                insert into app.attendance_qr_tokens(workspace_id, location_id, token_hash, valid_from, valid_to, created_at)
+                values (%s::uuid, %s::uuid, %s, %s, %s, %s);
+                """,
+                (workspace_id, location_id, issued.token_hash, now, issued.valid_to, now),
+            )
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance qr error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    return AttendanceQrOut(
+        location_id=location_id,
+        workspace_id=workspace_id,
+        location_name=str(loc.get("name") or "Location"),
+        qr_payload=issued.qr_payload,
+        valid_to=issued.valid_to,
+        qr_svg=render_qr_svg(issued.qr_payload),
+    )
+
+
+@router.post("/attendance/scan", response_model=AttendanceScanOut)
+async def attendance_scan(
+    payload: AttendanceScanIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceScanOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip() or (request.client.host if request.client else "")
+    _rate_limit(f"attendance_scan:{client_ip}", limit=30, window_seconds=60)
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    try:
+        decoded = decode_qr_payload(payload.qr_payload)
+    except Exception:
+        raise HTTPException(status_code=400, detail="QR invalide")
+
+    if int(decoded.get("v") or 0) != 1:
+        raise HTTPException(status_code=400, detail="QR invalide")
+    workspace_id = str(decoded.get("w") or "").strip()
+    location_id = str(decoded.get("l") or "").strip()
+    token_plain = str(decoded.get("t") or "").strip()
+    exp = decoded.get("exp")
+    try:
+        exp_int = int(exp)
+    except Exception:
+        raise HTTPException(status_code=400, detail="QR invalide")
+    if not workspace_id or not location_id or not token_plain:
+        raise HTTPException(status_code=400, detail="QR invalide")
+    if int(time.time()) > exp_int:
+        raise HTTPException(status_code=400, detail="QR expiré")
+
+    token_hash = sha256_hex(token_plain)
+    client_ts = None
+    try:
+        # keep as timestamptz (naive UTC) for storage
+        client_ts = datetime.fromisoformat(payload.client_ts[:-1] + "+00:00" if payload.client_ts and payload.client_ts.endswith("Z") else (payload.client_ts or ""))
+        if client_ts and client_ts.tzinfo is not None:
+            client_ts = client_ts.astimezone(timezone.utc).replace(tzinfo=None)
+    except Exception:
+        client_ts = None
+
+    dsn = _pg_dsn()
+    conn = None
+    now = datetime.utcnow()
+    day = now.date()
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+
+            _pg_assert_workspace_member(cur, workspace_id, actor_id)
+
+            cur.execute(
+                """
+                select 1
+                from app.attendance_qr_tokens
+                where token_hash = %s
+                  and workspace_id = %s::uuid
+                  and location_id = %s::uuid
+                  and now() between valid_from and valid_to
+                limit 1;
+                """,
+                (token_hash, workspace_id, location_id),
+            )
+            if not cur.fetchone():
+                raise HTTPException(status_code=400, detail="QR invalide ou expiré")
+
+            cur.execute(
+                """
+                select id::text as id, workspace_id::text as workspace_id, is_active
+                from app.attendance_locations
+                where id = %s::uuid
+                limit 1;
+                """,
+                (location_id,),
+            )
+            loc = dict(cur.fetchone() or {})
+            if not loc or str(loc.get("workspace_id") or "") != workspace_id:
+                raise HTTPException(status_code=400, detail="QR invalide")
+            if not bool(loc.get("is_active")):
+                raise HTTPException(status_code=400, detail="Location inactive")
+
+            cur.execute(
+                """
+                select event_type, event_ts
+                from app.attendance_events
+                where workspace_id = %s::uuid
+                  and user_id = %s::uuid
+                order by event_ts desc
+                limit 1;
+                """,
+                (workspace_id, actor_id),
+            )
+            last = dict(cur.fetchone() or {})
+            last_type = str(last.get("event_type") or "")
+            last_ts = last.get("event_ts")
+            if payload.event_type == "check_in":
+                if last_type == "check_in":
+                    raise HTTPException(status_code=409, detail="Déjà en check-in (check-out requis).")
+            else:
+                if last_type != "check_in":
+                    raise HTTPException(status_code=409, detail="Check-out impossible sans check-in.")
+                if isinstance(last_ts, datetime) and last_ts.date() != day:
+                    raise HTTPException(status_code=409, detail="Check-out doit être le même jour que le check-in.")
+
+            cur.execute(
+                """
+                insert into app.attendance_events(
+                  workspace_id, user_id, location_id, event_type, event_ts, client_ts, client_tz, client_ip, user_agent, metadata
+                )
+                values (
+                  %s::uuid, %s::uuid, %s::uuid, %s, %s, %s, %s, %s::inet, %s, '{}'::jsonb
+                )
+                returning id;
+                """,
+                (
+                    workspace_id,
+                    actor_id,
+                    location_id,
+                    payload.event_type,
+                    now,
+                    client_ts,
+                    (payload.client_tz or "").strip() or None,
+                    _coerce_inet_or_none(client_ip),
+                    (request.headers.get("user-agent") or "").strip() or None,
+                ),
+            )
+            event_id = int((cur.fetchone() or {}).get("id") or 0)
+
+            _pg_compute_attendance_daily_range(
+                cur,
+                workspace_id=workspace_id,
+                from_day=day,
+                to_day=day,
+                actor_scope_user_id=actor_id,
+            )
+            cur.execute(
+                """
+                select workspace_id::text as workspace_id,
+                       user_id::text as user_id,
+                       day,
+                       first_check_in,
+                       last_check_out,
+                       minutes_present,
+                       status,
+                       computed_at
+                from app.attendance_daily
+                where workspace_id = %s::uuid
+                  and user_id = %s::uuid
+                  and day = %s::date
+                limit 1;
+                """,
+                (workspace_id, actor_id, day),
+            )
+            daily = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance scan error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    return AttendanceScanOut(event_id=event_id, daily=AttendanceDailyOut(**daily))
+
+
+@router.get("/workspaces/{workspace_id}/attendance/overview", response_model=AttendanceOverviewOut)
+async def attendance_overview(
+    workspace_id: str,
+    request: Request,
+    from_day: str | None = Query(default=None, alias="from"),
+    to_day: str | None = Query(default=None, alias="to"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceOverviewOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    start, end = clamp_date_window(parse_day(from_day), parse_day(to_day), default_days=30)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_id, actor_id)
+
+            _pg_compute_attendance_daily_range(cur, workspace_id=workspace_id, from_day=start, to_day=end)
+
+            cur.execute(
+                """
+                select day,
+                       sum((status='present')::int)::int as present,
+                       sum((status='partial')::int)::int as partial,
+                       sum((status='absent')::int)::int as absent
+                from app.attendance_daily
+                where workspace_id = %s::uuid
+                  and day >= %s::date
+                  and day <= %s::date
+                group by day
+                order by day asc;
+                """,
+                (workspace_id, start, end),
+            )
+            series = [dict(r) for r in cur.fetchall()]
+            cur.execute(
+                """
+                select
+                  sum((status='present')::int)::int as present,
+                  sum((status='partial')::int)::int as partial,
+                  sum((status='absent')::int)::int as absent
+                from app.attendance_daily
+                where workspace_id = %s::uuid
+                  and day >= %s::date
+                  and day <= %s::date;
+                """,
+                (workspace_id, start, end),
+            )
+            totals = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance overview error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    n_present = int(totals.get("present") or 0)
+    n_partial = int(totals.get("partial") or 0)
+    n_absent = int(totals.get("absent") or 0)
+    denom = n_present + n_partial + n_absent
+    present_rate = (float(n_present + n_partial) / float(denom)) if denom else 0.0
+    return AttendanceOverviewOut(
+        workspace_id=workspace_id,
+        window={"from": start.isoformat(), "to": end.isoformat()},
+        present_rate=present_rate,
+        n_present=n_present,
+        n_absent=n_absent,
+        n_partial=n_partial,
+        series=[AttendanceOverviewSeriesPoint(**p) for p in series],
+    )
+
+
+@router.get("/attendance/me", response_model=list[AttendanceDailyOut])
+async def attendance_me(
+    request: Request,
+    from_day: str | None = Query(default=None, alias="from"),
+    to_day: str | None = Query(default=None, alias="to"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> list[AttendanceDailyOut]:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    start, end = clamp_date_window(parse_day(from_day), parse_day(to_day), default_days=30)
+    dsn = _pg_dsn()
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            # Best effort: compute for all workspaces where the user is an active member.
+            cur.execute(
+                """
+                select w.id::text as workspace_id
+                from app.workspaces w
+                where w.owner_id = %s::uuid
+                   or exists (
+                     select 1 from app.workspace_members wm
+                     where wm.workspace_id = w.id
+                       and wm.user_id = %s::uuid
+                       and coalesce(wm.status,'active')='active'
+                   );
+                """,
+                (actor_id, actor_id),
+            )
+            workspaces = [str(r.get("workspace_id")) for r in cur.fetchall() if r.get("workspace_id")]
+            for ws in workspaces:
+                _pg_compute_attendance_daily_range(cur, workspace_id=ws, from_day=start, to_day=end, actor_scope_user_id=actor_id)
+
+            cur.execute(
+                """
+                select workspace_id::text as workspace_id,
+                       user_id::text as user_id,
+                       day,
+                       first_check_in,
+                       last_check_out,
+                       minutes_present,
+                       status,
+                       computed_at
+                from app.attendance_daily
+                where user_id = %s::uuid
+                  and day >= %s::date
+                  and day <= %s::date
+                order by day desc, workspace_id asc
+                limit 2000;
+                """,
+                (actor_id, start, end),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance me error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return [AttendanceDailyOut(**r) for r in rows]

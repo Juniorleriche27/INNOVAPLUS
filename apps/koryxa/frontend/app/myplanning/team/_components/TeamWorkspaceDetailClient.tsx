@@ -148,12 +148,20 @@ export default function TeamWorkspaceDetailClient({ workspaceId }: Props) {
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">{workspace?.name || "Workspace Team"}</h1>
             <p className="mt-2 text-sm text-slate-700">ID: {workspaceId}</p>
           </div>
-          <Link
-            href="/myplanning/team"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Retour Team
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/myplanning/team/${encodeURIComponent(workspaceId)}/attendance`}
+              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+            >
+              Attendance
+            </Link>
+            <Link
+              href="/myplanning/team"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Retour Team
+            </Link>
+          </div>
         </div>
       </section>
 

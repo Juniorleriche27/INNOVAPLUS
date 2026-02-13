@@ -544,6 +544,7 @@ def ensure_myplanning_tasks_tables() -> None:
     db_execute("alter table app.tasks add column if not exists estimated_minutes int null;")
     db_execute("alter table app.tasks add column if not exists spent_minutes int null;")
     db_execute("alter table app.tasks add column if not exists assignee_id uuid null;")
+    db_execute("alter table app.tasks add column if not exists done_at timestamptz null;")
     db_execute("alter table app.tasks add column if not exists created_at timestamptz not null default now();")
     db_execute("alter table app.tasks add column if not exists updated_at timestamptz not null default now();")
     db_execute("alter table app.tasks alter column project_id drop not null;")
@@ -618,8 +619,54 @@ def ensure_myplanning_tasks_tables() -> None:
     db_execute("create index if not exists idx_tasks_workspace_created_at on app.tasks(workspace_id, created_at desc);")
     db_execute("create index if not exists idx_tasks_assignee_created_at on app.tasks(assignee_id, created_at desc);")
     db_execute("create index if not exists idx_tasks_assignee_user_created_at on app.tasks(assignee_user_id, created_at desc);")
+    db_execute("create index if not exists tasks_owner_done_at_idx on app.tasks(owner_id, done_at);")
+    db_execute("create index if not exists tasks_workspace_done_at_idx on app.tasks(workspace_id, done_at);")
+    db_execute(
+        """
+        create table if not exists app.task_id_map (
+          mongo_id text primary key,
+          pg_id uuid not null unique,
+          owner_id uuid not null,
+          created_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists idx_task_id_map_owner_created_at on app.task_id_map(owner_id, created_at desc);")
+    db_execute(
+        """
+        create table if not exists app.migration_state (
+          key text primary key,
+          value text,
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.set_migration_state_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute("drop trigger if exists trg_migration_state_updated_at on app.migration_state;")
+    db_execute(
+        """
+        create trigger trg_migration_state_updated_at
+        before update on app.migration_state
+        for each row
+        execute function app.set_migration_state_updated_at();
+        """
+    )
 
     db_execute("grant select, insert, update, delete on app.tasks to authenticated;")
+    db_execute("grant select, insert, update, delete on app.task_id_map to authenticated;")
+    db_execute("grant select, insert, update, delete on app.migration_state to authenticated;")
     db_execute(
         """
         do $$
@@ -631,11 +678,21 @@ def ensure_myplanning_tasks_tables() -> None:
         """
     )
     db_execute("alter table app.tasks enable row level security;")
+    db_execute("alter table app.task_id_map enable row level security;")
+    db_execute("alter table app.migration_state enable row level security;")
 
     db_execute("drop policy if exists tasks_select_auth on app.tasks;")
     db_execute("drop policy if exists tasks_insert_auth on app.tasks;")
     db_execute("drop policy if exists tasks_update_auth on app.tasks;")
     db_execute("drop policy if exists tasks_delete_auth on app.tasks;")
+    db_execute("drop policy if exists task_id_map_select_auth on app.task_id_map;")
+    db_execute("drop policy if exists task_id_map_insert_auth on app.task_id_map;")
+    db_execute("drop policy if exists task_id_map_update_auth on app.task_id_map;")
+    db_execute("drop policy if exists task_id_map_delete_auth on app.task_id_map;")
+    db_execute("drop policy if exists migration_state_select_auth on app.migration_state;")
+    db_execute("drop policy if exists migration_state_insert_auth on app.migration_state;")
+    db_execute("drop policy if exists migration_state_update_auth on app.migration_state;")
+    db_execute("drop policy if exists migration_state_delete_auth on app.migration_state;")
 
     db_execute(
         """
@@ -735,6 +792,408 @@ def ensure_myplanning_tasks_tables() -> None:
               )
             )
           );
+        """
+    )
+    db_execute(
+        """
+        create policy task_id_map_select_auth
+          on app.task_id_map
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy task_id_map_insert_auth
+          on app.task_id_map
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy task_id_map_update_auth
+          on app.task_id_map
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy task_id_map_delete_auth
+          on app.task_id_map
+          for delete
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy migration_state_select_auth
+          on app.migration_state
+          for select
+          to authenticated
+          using (true);
+        """
+    )
+    db_execute(
+        """
+        create policy migration_state_insert_auth
+          on app.migration_state
+          for insert
+          to authenticated
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy migration_state_update_auth
+          on app.migration_state
+          for update
+          to authenticated
+          using (true)
+          with check (true);
+        """
+    )
+    db_execute(
+        """
+        create policy migration_state_delete_auth
+          on app.migration_state
+          for delete
+          to authenticated
+          using (true);
+        """
+    )
+
+
+def ensure_myplanning_alerts_tables() -> None:
+    # Bootstrap Alerts v1 tables/policies in Postgres app schema.
+    # Keep SQL idempotent so startup remains safe.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+
+    db_execute(
+        """
+        create table if not exists app.notification_preferences (
+          owner_id uuid primary key,
+          email_enabled boolean not null default true,
+          whatsapp_enabled boolean not null default false,
+          whatsapp_e164 text null,
+          daily_digest_enabled boolean not null default true,
+          digest_time_local time not null default '07:00:00',
+          timezone text not null default 'Africa/Lome',
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists notification_preferences_owner_idx on app.notification_preferences(owner_id);")
+
+    db_execute(
+        """
+        create table if not exists app.alert_rules (
+          id uuid primary key default gen_random_uuid(),
+          owner_id uuid not null,
+          workspace_id uuid null references app.workspaces(id) on delete set null,
+          rule_type text not null,
+          channel text not null,
+          is_enabled boolean not null default true,
+          params jsonb not null default '{}'::jsonb,
+          last_run_at timestamptz null,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists alert_rules_owner_idx on app.alert_rules(owner_id, created_at desc);")
+    db_execute("create index if not exists alert_rules_workspace_idx on app.alert_rules(workspace_id, created_at desc);")
+    db_execute("create index if not exists alert_rules_enabled_idx on app.alert_rules(is_enabled, rule_type);")
+
+    db_execute(
+        """
+        create table if not exists app.notifications (
+          id bigserial primary key,
+          owner_id uuid not null,
+          workspace_id uuid null references app.workspaces(id) on delete set null,
+          channel text not null,
+          template text not null,
+          payload jsonb not null,
+          status text not null default 'pending',
+          provider_message_id text null,
+          error text null,
+          dedupe_key text null,
+          scheduled_at timestamptz not null default now(),
+          sent_at timestamptz null,
+          created_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists notifications_status_scheduled_idx on app.notifications(status, scheduled_at);")
+    db_execute("create index if not exists notifications_owner_created_idx on app.notifications(owner_id, created_at desc);")
+    # ON CONFLICT (dedupe_key) requires a non-partial unique index/constraint to be inferred.
+    # Postgres UNIQUE already allows multiple NULL values, so we don't need a partial index.
+    db_execute(
+        """
+        do $$
+        declare
+          idxdef text;
+        begin
+          select indexdef into idxdef
+          from pg_indexes
+          where schemaname='app' and indexname='notifications_dedupe_key_uniq';
+          if idxdef is not null and position(' where ' in lower(idxdef)) > 0 then
+            execute 'drop index if exists app.notifications_dedupe_key_uniq';
+          end if;
+        end $$;
+        """
+    )
+    db_execute("create unique index if not exists notifications_dedupe_key_uniq on app.notifications(dedupe_key);")
+
+    db_execute(
+        """
+        create table if not exists app.notification_events (
+          id bigserial primary key,
+          notification_id bigint not null references app.notifications(id) on delete cascade,
+          event text not null,
+          meta jsonb not null default '{}'::jsonb,
+          created_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists notification_events_notification_idx on app.notification_events(notification_id, created_at desc);")
+
+    db_execute("grant select, insert, update, delete on app.notification_preferences to authenticated;")
+    db_execute("grant select, insert, update, delete on app.alert_rules to authenticated;")
+    db_execute("grant select, insert, update, delete on app.notifications to authenticated;")
+    db_execute("grant select, insert, update, delete on app.notification_events to authenticated;")
+
+    db_execute(
+        """
+        create or replace function app.set_alerts_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute("drop trigger if exists trg_notification_preferences_updated_at on app.notification_preferences;")
+    db_execute(
+        """
+        create trigger trg_notification_preferences_updated_at
+        before update on app.notification_preferences
+        for each row
+        execute function app.set_alerts_updated_at();
+        """
+    )
+    db_execute("drop trigger if exists trg_alert_rules_updated_at on app.alert_rules;")
+    db_execute(
+        """
+        create trigger trg_alert_rules_updated_at
+        before update on app.alert_rules
+        for each row
+        execute function app.set_alerts_updated_at();
+        """
+    )
+
+    db_execute("alter table app.notification_preferences enable row level security;")
+    db_execute("alter table app.alert_rules enable row level security;")
+    db_execute("alter table app.notifications enable row level security;")
+    db_execute("alter table app.notification_events enable row level security;")
+
+    db_execute("drop policy if exists notification_preferences_select_auth on app.notification_preferences;")
+    db_execute("drop policy if exists notification_preferences_insert_auth on app.notification_preferences;")
+    db_execute("drop policy if exists notification_preferences_update_auth on app.notification_preferences;")
+    db_execute("drop policy if exists notification_preferences_delete_auth on app.notification_preferences;")
+
+    db_execute("drop policy if exists alert_rules_select_auth on app.alert_rules;")
+    db_execute("drop policy if exists alert_rules_insert_auth on app.alert_rules;")
+    db_execute("drop policy if exists alert_rules_update_auth on app.alert_rules;")
+    db_execute("drop policy if exists alert_rules_delete_auth on app.alert_rules;")
+
+    db_execute("drop policy if exists notifications_select_auth on app.notifications;")
+    db_execute("drop policy if exists notifications_insert_auth on app.notifications;")
+    db_execute("drop policy if exists notifications_update_auth on app.notifications;")
+    db_execute("drop policy if exists notifications_delete_auth on app.notifications;")
+
+    db_execute("drop policy if exists notification_events_select_auth on app.notification_events;")
+    db_execute("drop policy if exists notification_events_insert_auth on app.notification_events;")
+    db_execute("drop policy if exists notification_events_update_auth on app.notification_events;")
+    db_execute("drop policy if exists notification_events_delete_auth on app.notification_events;")
+
+    db_execute(
+        """
+        create policy notification_preferences_select_auth
+          on app.notification_preferences
+          for select
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notification_preferences_insert_auth
+          on app.notification_preferences
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notification_preferences_update_auth
+          on app.notification_preferences
+          for update
+          to authenticated
+          using (owner_id = auth.uid())
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notification_preferences_delete_auth
+          on app.notification_preferences
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    db_execute(
+        """
+        create policy alert_rules_select_auth
+          on app.alert_rules
+          for select
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy alert_rules_insert_auth
+          on app.alert_rules
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy alert_rules_update_auth
+          on app.alert_rules
+          for update
+          to authenticated
+          using (owner_id = auth.uid())
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy alert_rules_delete_auth
+          on app.alert_rules
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    db_execute(
+        """
+        create policy notifications_select_auth
+          on app.notifications
+          for select
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notifications_insert_auth
+          on app.notifications
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notifications_update_auth
+          on app.notifications
+          for update
+          to authenticated
+          using (owner_id = auth.uid())
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy notifications_delete_auth
+          on app.notifications
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    db_execute(
+        """
+        create policy notification_events_select_auth
+          on app.notification_events
+          for select
+          to authenticated
+          using (
+            exists (
+              select 1
+              from app.notifications n
+              where n.id = notification_events.notification_id
+                and n.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy notification_events_insert_auth
+          on app.notification_events
+          for insert
+          to authenticated
+          with check (
+            exists (
+              select 1
+              from app.notifications n
+              where n.id = notification_events.notification_id
+                and n.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy notification_events_update_auth
+          on app.notification_events
+          for update
+          to authenticated
+          using (false)
+          with check (false);
+        """
+    )
+    db_execute(
+        """
+        create policy notification_events_delete_auth
+          on app.notification_events
+          for delete
+          to authenticated
+          using (false);
         """
     )
 
@@ -1062,7 +1521,7 @@ app.add_middleware(
     # Include PATCH/PUT/DELETE for task updates (MyPlanning) and other mutations
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     # Allow lab APIs that use custom headers (e.g. X-API-Key).
-    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Admin-Token"],
 )
 
 
@@ -1120,6 +1579,10 @@ async def on_startup():
         ensure_myplanning_tasks_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning tasks postgres table/policies")
+    try:
+        ensure_myplanning_alerts_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning alerts postgres tables/policies")
     init_cohere_client()
 
 

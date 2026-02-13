@@ -4669,17 +4669,17 @@ def _pg_compute_attendance_daily_range(
             last_check_out,
             case
               when first_check_in is not null and last_check_out is not null and last_check_out > first_check_in
-                then floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int
+                then ceil(extract(epoch from (last_check_out - first_check_in)) / 60.0)::int
               else 0
             end as minutes_present,
             case
               when (first_check_in is not null and last_check_out is not null and last_check_out > first_check_in)
-                   and (floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int) >= %s
+                   and (ceil(extract(epoch from (last_check_out - first_check_in)) / 60.0)::int) >= %s
                 then 'present'
               when (first_check_in is not null)
                    and (case
                           when last_check_out is not null and last_check_out > first_check_in
-                            then floor(extract(epoch from (last_check_out - first_check_in)) / 60)::int
+                            then ceil(extract(epoch from (last_check_out - first_check_in)) / 60.0)::int
                           else 0
                         end) >= 1
                 then 'partial'

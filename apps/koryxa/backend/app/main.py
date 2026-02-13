@@ -1206,6 +1206,8 @@ def ensure_myplanning_attendance_tables() -> None:
 
     db_execute("create extension if not exists pgcrypto;")
     db_execute("grant usage on schema app to authenticated;")
+    # Bigserial tables require sequence privileges for inserts under role authenticated.
+    db_execute("grant usage, select on all sequences in schema app to authenticated;")
 
     db_execute(
         """

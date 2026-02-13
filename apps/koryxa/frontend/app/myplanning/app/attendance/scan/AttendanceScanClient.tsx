@@ -104,8 +104,9 @@ export default function AttendanceScanClient() {
   useEffect(() => {
     if (!scanning) return;
     if (!detectorAvailable) return;
-    const detector = new window.BarcodeDetector?.({ formats: ["qr_code"] });
-    if (!detector) return;
+    const Detector = window.BarcodeDetector;
+    if (!Detector) return;
+    const detector = new Detector({ formats: ["qr_code"] });
 
     const loop = async () => {
       try {
@@ -301,4 +302,3 @@ export default function AttendanceScanClient() {
     </div>
   );
 }
-

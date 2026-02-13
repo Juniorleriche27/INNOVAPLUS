@@ -1,0 +1,15 @@
+[Unit]
+Description=INNOVAPLUS Alerts Worker (MyPlanning)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/innovaplus/KORYXA/apps/koryxa/backend
+EnvironmentFile=/etc/innovaplus/backend.env
+ExecStart=/opt/innovaplus/KORYXA/apps/koryxa/backend/.venv/bin/python -m app.workers.alerts_worker
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+

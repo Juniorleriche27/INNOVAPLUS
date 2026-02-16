@@ -5956,14 +5956,53 @@ class AttendanceOverviewSeriesPoint(BaseModel):
     absent: int
 
 
+class AttendanceOverviewByDayPoint(BaseModel):
+    date: date
+    present: int
+    partial: int
+    absent: int
+    minutes_present_total: int
+
+
+class AttendanceTopLateOut(BaseModel):
+    user_id: str
+    minutes_present: int
+    first_in: datetime | None = None
+    last_out: datetime | None = None
+
+
 class AttendanceOverviewOut(BaseModel):
     workspace_id: str
     window: dict[str, str]
+    members_total: int
+    present_count: int
+    partial_count: int
+    absent_count: int
+    presence_rate: float
+    avg_minutes_present: float
+    by_day: list[AttendanceOverviewByDayPoint]
+    top_late: list[AttendanceTopLateOut] = Field(default_factory=list)
+    # Legacy keys kept for backward compatibility with existing frontend clients.
     present_rate: float
     n_present: int
     n_absent: int
     n_partial: int
     series: list[AttendanceOverviewSeriesPoint]
+
+
+class AttendanceLastEventOut(BaseModel):
+    event_type: Literal["check_in", "check_out"]
+    event_ts: datetime
+    workspace_id: str
+    location_id: str
+
+
+class AttendanceMeOut(BaseModel):
+    window: dict[str, str]
+    today_status: Literal["present", "partial", "absent"] | None = None
+    minutes_present_today: int
+    last_event: AttendanceLastEventOut | None = None
+    daily: list[AttendanceDailyOut]
 
 
 def _pg_assert_workspace_admin(cur: RealDictCursor, workspace_id: str, actor_id: str) -> None:
@@ -6642,6 +6681,10 @@ async def attendance_overview(
     start, end = clamp_date_window(parse_day(from_day), parse_day(to_day), default_days=30)
     dsn = _pg_dsn()
     conn = None
+    members_total = 0
+    series: list[dict[str, Any]] = []
+    top_late: list[dict[str, Any]] = []
+    totals: dict[str, Any] = {}
     try:
         conn = psycopg2.connect(dsn)
         conn.autocommit = False
@@ -6655,18 +6698,31 @@ async def attendance_overview(
 
             cur.execute(
                 """
-                select day,
-                       sum((status='present')::int)::int as present,
-                       sum((status='partial')::int)::int as partial,
-                       sum((status='absent')::int)::int as absent
-                from app.attendance_daily
-                where workspace_id = %s::uuid
-                  and day >= %s::date
-                  and day <= %s::date
-                group by day
-                order by day asc;
+                with days as (
+                  select generate_series(%s::date, %s::date, interval '1 day')::date as day
+                ),
+                agg as (
+                  select day,
+                         sum((status='present')::int)::int as present,
+                         sum((status='partial')::int)::int as partial,
+                         sum((status='absent')::int)::int as absent,
+                         coalesce(sum(minutes_present), 0)::int as minutes_present_total
+                  from app.attendance_daily
+                  where workspace_id = %s::uuid
+                    and day >= %s::date
+                    and day <= %s::date
+                  group by day
+                )
+                select d.day as date,
+                       coalesce(a.present, 0)::int as present,
+                       coalesce(a.partial, 0)::int as partial,
+                       coalesce(a.absent, 0)::int as absent,
+                       coalesce(a.minutes_present_total, 0)::int as minutes_present_total
+                from days d
+                left join agg a on a.day = d.day
+                order by d.day asc;
                 """,
-                (workspace_id, start, end),
+                (start, end, workspace_id, start, end),
             )
             series = [dict(r) for r in cur.fetchall()]
             cur.execute(
@@ -6674,7 +6730,8 @@ async def attendance_overview(
                 select
                   sum((status='present')::int)::int as present,
                   sum((status='partial')::int)::int as partial,
-                  sum((status='absent')::int)::int as absent
+                  sum((status='absent')::int)::int as absent,
+                  coalesce(avg(minutes_present), 0)::float8 as avg_minutes_present
                 from app.attendance_daily
                 where workspace_id = %s::uuid
                   and day >= %s::date
@@ -6683,6 +6740,41 @@ async def attendance_overview(
                 (workspace_id, start, end),
             )
             totals = dict(cur.fetchone() or {})
+
+            cur.execute(
+                """
+                select count(*)::int as members_total
+                from (
+                  select w.owner_id as user_id
+                  from app.workspaces w
+                  where w.id = %s::uuid
+                  union
+                  select wm.user_id
+                  from app.workspace_members wm
+                  where wm.workspace_id = %s::uuid
+                    and coalesce(wm.status,'active')='active'
+                ) x;
+                """,
+                (workspace_id, workspace_id),
+            )
+            members_total = int((cur.fetchone() or {}).get("members_total") or 0)
+
+            cur.execute(
+                """
+                select user_id::text as user_id,
+                       minutes_present::int as minutes_present,
+                       first_check_in as first_in,
+                       last_check_out as last_out
+                from app.attendance_daily
+                where workspace_id = %s::uuid
+                  and day = %s::date
+                  and first_check_in is not null
+                order by first_check_in desc
+                limit 5;
+                """,
+                (workspace_id, end),
+            )
+            top_late = [dict(r) for r in cur.fetchall()]
         conn.commit()
     except HTTPException:
         raise
@@ -6704,26 +6796,44 @@ async def attendance_overview(
     n_partial = int(totals.get("partial") or 0)
     n_absent = int(totals.get("absent") or 0)
     denom = n_present + n_partial + n_absent
-    present_rate = (float(n_present + n_partial) / float(denom)) if denom else 0.0
+    presence_rate = (float(n_present + n_partial) / float(denom)) if denom else 0.0
+    avg_minutes_present = float(totals.get("avg_minutes_present") or 0.0)
     return AttendanceOverviewOut(
         workspace_id=workspace_id,
         window={"from": start.isoformat(), "to": end.isoformat()},
-        present_rate=present_rate,
+        members_total=members_total,
+        present_count=n_present,
+        partial_count=n_partial,
+        absent_count=n_absent,
+        presence_rate=presence_rate,
+        avg_minutes_present=avg_minutes_present,
+        by_day=[AttendanceOverviewByDayPoint(**p) for p in series],
+        top_late=[AttendanceTopLateOut(**p) for p in top_late],
+        present_rate=presence_rate,
         n_present=n_present,
         n_absent=n_absent,
         n_partial=n_partial,
-        series=[AttendanceOverviewSeriesPoint(**p) for p in series],
+        series=[
+            AttendanceOverviewSeriesPoint(
+                day=p["date"],
+                present=int(p["present"]),
+                partial=int(p["partial"]),
+                absent=int(p["absent"]),
+            )
+            for p in series
+        ],
     )
 
 
-@router.get("/attendance/me", response_model=list[AttendanceDailyOut])
-async def attendance_me(
+@router.get("/workspaces/{workspace_id}/attendance/export.csv")
+async def attendance_export_csv(
+    workspace_id: str,
     request: Request,
     from_day: str | None = Query(default=None, alias="from"),
     to_day: str | None = Query(default=None, alias="to"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
-) -> list[AttendanceDailyOut]:
+) -> Response:
     if _myplanning_store() != "postgres":
         raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
     bearer_token = _parse_bearer_token(request)
@@ -6731,6 +6841,95 @@ async def attendance_me(
     start, end = clamp_date_window(parse_day(from_day), parse_day(to_day), default_days=30)
     dsn = _pg_dsn()
     conn = None
+    rows: list[dict[str, Any]] = []
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_id, actor_id)
+            _pg_compute_attendance_daily_range(cur, workspace_id=workspace_id, from_day=start, to_day=end)
+            cur.execute(
+                """
+                select ad.day,
+                       coalesce(nullif(u.email, ''), ad.user_id::text) as user_email,
+                       ad.status,
+                       ad.first_check_in as first_in,
+                       ad.last_check_out as last_out,
+                       ad.minutes_present::int as minutes_present
+                from app.attendance_daily ad
+                left join auth.users u
+                  on u.id = ad.user_id
+                where ad.workspace_id = %s::uuid
+                  and ad.day >= %s::date
+                  and ad.day <= %s::date
+                order by ad.day asc, user_email asc;
+                """,
+                (workspace_id, start, end),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"attendance export error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["date", "user_email", "status", "first_in", "last_out", "minutes_present"])
+    for row in rows:
+        writer.writerow(
+            [
+                row.get("day").isoformat() if row.get("day") else "",
+                str(row.get("user_email") or ""),
+                str(row.get("status") or ""),
+                row.get("first_in").isoformat() if row.get("first_in") else "",
+                row.get("last_out").isoformat() if row.get("last_out") else "",
+                int(row.get("minutes_present") or 0),
+            ]
+        )
+    filename = f"attendance_{workspace_id}_{start.isoformat()}_{end.isoformat()}.csv"
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.get("/attendance/me", response_model=AttendanceMeOut)
+async def attendance_me(
+    request: Request,
+    from_day: str | None = Query(default=None, alias="from"),
+    to_day: str | None = Query(default=None, alias="to"),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> AttendanceMeOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    start, end = clamp_date_window(parse_day(from_day), parse_day(to_day), default_days=30)
+    dsn = _pg_dsn()
+    conn = None
+    rows: list[dict[str, Any]] = []
+    today_daily: dict[str, Any] = {}
+    last_event: dict[str, Any] = {}
     try:
         conn = psycopg2.connect(dsn)
         conn.autocommit = False
@@ -6777,6 +6976,42 @@ async def attendance_me(
                 (actor_id, start, end),
             )
             rows = [dict(r) for r in cur.fetchall()]
+
+            today = datetime.utcnow().date()
+            cur.execute(
+                """
+                select workspace_id::text as workspace_id,
+                       user_id::text as user_id,
+                       day,
+                       first_check_in,
+                       last_check_out,
+                       minutes_present,
+                       status,
+                       computed_at
+                from app.attendance_daily
+                where user_id = %s::uuid
+                  and day = %s::date
+                order by computed_at desc nulls last
+                limit 1;
+                """,
+                (actor_id, today),
+            )
+            today_daily = dict(cur.fetchone() or {})
+
+            cur.execute(
+                """
+                select event_type,
+                       event_ts,
+                       workspace_id::text as workspace_id,
+                       location_id::text as location_id
+                from app.attendance_events
+                where user_id = %s::uuid
+                order by event_ts desc
+                limit 1;
+                """,
+                (actor_id,),
+            )
+            last_event = dict(cur.fetchone() or {})
         conn.commit()
     except Exception as exc:
         if conn is not None:
@@ -6791,4 +7026,11 @@ async def attendance_me(
                 conn.close()
             except Exception:
                 pass
-    return [AttendanceDailyOut(**r) for r in rows]
+    payload_last_event = AttendanceLastEventOut(**last_event) if last_event else None
+    return AttendanceMeOut(
+        window={"from": start.isoformat(), "to": end.isoformat()},
+        today_status=today_daily.get("status"),
+        minutes_present_today=int(today_daily.get("minutes_present") or 0),
+        last_event=payload_last_event,
+        daily=[AttendanceDailyOut(**r) for r in rows],
+    )

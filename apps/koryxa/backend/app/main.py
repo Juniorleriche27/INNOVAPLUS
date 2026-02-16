@@ -2015,19 +2015,44 @@ def ensure_myplanning_enterprise_ops_tables() -> None:
           owner_id uuid not null,
           workspace_id uuid not null references app.workspaces(id) on delete cascade,
           type text not null,
+          event_type text null,
           payload_json jsonb not null default '{}'::jsonb,
           status text not null default 'pending' check (status in ('pending','sent','failed','skipped')),
           attempts int not null default 0,
           response_code int null,
+          http_code int null,
           last_error text null,
           created_at timestamptz not null default now(),
           delivered_at timestamptz null
         );
         """
     )
+    db_execute("alter table app.integration_events add column if not exists event_type text null;")
+    db_execute("alter table app.integration_events add column if not exists http_code int null;")
+    db_execute("update app.integration_events set event_type = type where event_type is null;")
+    db_execute("update app.integration_events set http_code = response_code where http_code is null and response_code is not null;")
     db_execute("create index if not exists integration_events_status_created_idx on app.integration_events(status, created_at);")
     db_execute("create index if not exists integration_events_workspace_created_idx on app.integration_events(workspace_id, created_at desc);")
     db_execute("create index if not exists integration_events_owner_created_idx on app.integration_events(owner_id, created_at desc);")
+    db_execute("create index if not exists integration_events_event_type_created_idx on app.integration_events(event_type, created_at desc);")
+
+    db_execute(
+        """
+        create table if not exists app.integration_mock_receipts (
+          id bigserial primary key,
+          event_id bigint null references app.integration_events(id) on delete set null,
+          owner_id uuid null,
+          workspace_id uuid null references app.workspaces(id) on delete set null,
+          event_type text not null default 'manual.test',
+          request_url text null,
+          headers_json jsonb not null default '{}'::jsonb,
+          payload_json jsonb not null default '{}'::jsonb,
+          received_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists integration_mock_receipts_event_id_idx on app.integration_mock_receipts(event_id);")
+    db_execute("create index if not exists integration_mock_receipts_received_idx on app.integration_mock_receipts(received_at desc);")
 
     db_execute(
         """

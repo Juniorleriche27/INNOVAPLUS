@@ -11,6 +11,7 @@ import hmac
 import csv
 import io
 import urllib.request
+import urllib.parse
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Literal, Optional
 import time
@@ -3199,13 +3200,65 @@ def _integration_signature(secret: str, timestamp: str, body: str) -> str:
     return f"sha256={mac.hexdigest()}"
 
 
+def _is_internal_mock_receiver_url(url: str) -> bool:
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        return False
+    host = str(parsed.hostname or "").lower()
+    path = str(parsed.path or "").rstrip("/")
+    if path != "/innova/api/myplanning/admin/integrations/mock-receiver":
+        return False
+    allowed_hosts = {
+        "innovaplus.africa",
+        "www.innovaplus.africa",
+        "127.0.0.1",
+        "localhost",
+    }
+    return host in allowed_hosts
+
+
+def _insert_integration_mock_receipt(
+    cur: RealDictCursor,
+    *,
+    event_id: int | None,
+    owner_id: str | None,
+    workspace_id: str | None,
+    event_type: str,
+    request_url: str,
+    headers: dict[str, Any],
+    payload: dict[str, Any],
+) -> int:
+    cur.execute(
+        """
+        insert into app.integration_mock_receipts(
+          event_id, owner_id, workspace_id, event_type, request_url, headers_json, payload_json, received_at
+        )
+        values (%s, %s::uuid, %s::uuid, %s, %s, %s::jsonb, %s::jsonb, now())
+        returning id;
+        """,
+        (
+            event_id,
+            owner_id,
+            workspace_id,
+            event_type,
+            request_url,
+            json.dumps(headers, ensure_ascii=False),
+            json.dumps(payload, ensure_ascii=False),
+        ),
+    )
+    row = dict(cur.fetchone() or {})
+    return int(row.get("id") or 0)
+
+
 def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, Any]:
     cur.execute(
         """
         select
           e.id,
+          e.owner_id::text as owner_id,
           e.workspace_id::text as workspace_id,
-          e.type,
+          coalesce(e.event_type, e.type) as event_type,
           e.payload_json,
           ep.n8n_webhook_url,
           ep.secret,
@@ -3231,7 +3284,9 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
             update app.integration_events
             set status = 'pending',
                 last_error = 'endpoint not enabled/configured',
-                attempts = coalesce(attempts, 0) + 1
+                attempts = coalesce(attempts, 0) + 1,
+                response_code = null,
+                http_code = null
             where id = %s;
             """,
             (event_id,),
@@ -3244,7 +3299,7 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
     body = json.dumps(
         {
             "id": int(row.get("id") or 0),
-            "type": str(row.get("type") or ""),
+            "type": str(row.get("event_type") or ""),
             "workspace_id": str(row.get("workspace_id") or ""),
             "payload": payload,
         },
@@ -3253,15 +3308,43 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
     )
     ts = str(int(time.time()))
     signature = _integration_signature(secret, ts, body)
+    headers_payload = {
+        "Content-Type": "application/json",
+        "X-MyPlanning-Signature": signature,
+        "X-MyPlanning-Timestamp": ts,
+        "X-MyPlanning-Event": str(row.get("event_type") or ""),
+    }
+    if _is_internal_mock_receiver_url(url):
+        _insert_integration_mock_receipt(
+            cur,
+            event_id=event_id,
+            owner_id=str(row.get("owner_id") or ""),
+            workspace_id=str(row.get("workspace_id") or ""),
+            event_type=str(row.get("event_type") or ""),
+            request_url=url,
+            headers=headers_payload,
+            payload=json.loads(body),
+        )
+        cur.execute(
+            """
+            update app.integration_events
+            set status = 'sent',
+                delivered_at = now(),
+                response_code = 200,
+                http_code = 200,
+                event_type = coalesce(event_type, type),
+                last_error = null,
+                attempts = coalesce(attempts, 0) + 1
+            where id = %s;
+            """,
+            (event_id,),
+        )
+        return {"status": "sent", "response_code": 200, "error": None}
+
     req = urllib.request.Request(
         url,
         data=body.encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "X-MyPlanning-Signature": signature,
-            "X-MyPlanning-Timestamp": ts,
-            "X-MyPlanning-Event": str(row.get("type") or ""),
-        },
+        headers=headers_payload,
         method="POST",
     )
     try:
@@ -3274,11 +3357,13 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
                 set status = 'sent',
                     delivered_at = now(),
                     response_code = %s,
+                    http_code = %s,
+                    event_type = coalesce(event_type, type),
                     last_error = null,
                     attempts = coalesce(attempts, 0) + 1
                 where id = %s;
                 """,
-                (code, event_id),
+                (code, code, event_id),
             )
             return {"status": "sent", "response_code": code, "error": None}
         cur.execute(
@@ -3286,11 +3371,13 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
             update app.integration_events
             set status = 'failed',
                 response_code = %s,
+                http_code = %s,
+                event_type = coalesce(event_type, type),
                 last_error = 'non-2xx response',
                 attempts = coalesce(attempts, 0) + 1
             where id = %s;
             """,
-            (code, event_id),
+            (code, code, event_id),
         )
         return {"status": "failed", "response_code": code, "error": "non-2xx response"}
     except Exception as exc:
@@ -3299,6 +3386,8 @@ def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, 
             update app.integration_events
             set status = 'failed',
                 response_code = null,
+                http_code = null,
+                event_type = coalesce(event_type, type),
                 last_error = %s,
                 attempts = coalesce(attempts, 0) + 1
             where id = %s;
@@ -3321,11 +3410,11 @@ def _insert_integration_event(
         return None
     cur.execute(
         """
-        insert into app.integration_events(owner_id, workspace_id, type, payload_json, status, created_at)
-        values (%s::uuid, %s::uuid, %s, %s::jsonb, 'pending', now())
+        insert into app.integration_events(owner_id, workspace_id, type, event_type, payload_json, status, created_at)
+        values (%s::uuid, %s::uuid, %s, %s, %s::jsonb, 'pending', now())
         returning id;
         """,
-        (owner_id, ws_uuid, event_type, json.dumps(payload, ensure_ascii=False)),
+        (owner_id, ws_uuid, event_type, event_type, json.dumps(payload, ensure_ascii=False)),
     )
     row = dict(cur.fetchone() or {})
     return int(row.get("id")) if row.get("id") is not None else None
@@ -4289,6 +4378,87 @@ async def test_workspace_n8n_integration(
         delivery_status=str(delivery.get("status") or "failed"),  # type: ignore[arg-type]
         response_code=delivery.get("response_code"),
     )
+
+
+@router.post("/admin/integrations/mock-receiver")
+async def admin_integrations_mock_receiver(request: Request) -> dict[str, Any]:
+    _require_admin_token_for_myplanning(request)
+    dsn = _pg_dsn()
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+
+    raw_event_id = body.get("id")
+    event_id: int | None = None
+    try:
+        if raw_event_id is not None:
+            event_id = int(raw_event_id)
+    except Exception:
+        event_id = None
+
+    event_type = str(body.get("type") or "manual.test").strip() or "manual.test"
+    workspace_uuid = _coerce_uuid_text(body.get("workspace_id"))
+    owner_uuid = _coerce_uuid_text(body.get("owner_id"))
+
+    headers_payload = {
+        "content-type": request.headers.get("content-type"),
+        "x-myplanning-signature": request.headers.get("x-myplanning-signature"),
+        "x-myplanning-timestamp": request.headers.get("x-myplanning-timestamp"),
+        "x-myplanning-event": request.headers.get("x-myplanning-event"),
+    }
+
+    conn = None
+    receipt_id = 0
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            if event_id is not None and (workspace_uuid is None or owner_uuid is None):
+                cur.execute(
+                    """
+                    select owner_id::text as owner_id, workspace_id::text as workspace_id, coalesce(event_type, type) as event_type
+                    from app.integration_events
+                    where id = %s
+                    limit 1;
+                    """,
+                    (event_id,),
+                )
+                linked = dict(cur.fetchone() or {})
+                if linked:
+                    owner_uuid = owner_uuid or _coerce_uuid_text(linked.get("owner_id"))
+                    workspace_uuid = workspace_uuid or _coerce_uuid_text(linked.get("workspace_id"))
+                    event_type = str(linked.get("event_type") or event_type)
+
+            receipt_id = _insert_integration_mock_receipt(
+                cur,
+                event_id=event_id,
+                owner_id=owner_uuid,
+                workspace_id=workspace_uuid,
+                event_type=event_type,
+                request_url=str(request.url),
+                headers=headers_payload,
+                payload=body,
+            )
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"integrations mock receiver error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return {"ok": True, "receipt_id": int(receipt_id), "event_id": event_id, "event_type": event_type}
 
 
 @router.post("/admin/integrations/worker-tick")

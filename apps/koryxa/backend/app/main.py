@@ -837,6 +837,22 @@ def ensure_myplanning_tasks_tables() -> None:
         end $$;
         """
     )
+    db_execute(
+        """
+        do $$
+        begin
+          if exists (
+            select 1
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'app'
+              and c.relname = 'integration_mock_receipts_id_seq'
+          ) then
+            execute 'grant usage, select on sequence app.integration_mock_receipts_id_seq to authenticated';
+          end if;
+        end $$;
+        """
+    )
     db_execute("alter table app.tasks alter column priority drop not null;")
     db_execute("alter table app.tasks drop constraint if exists tasks_status_check;")
     db_execute(

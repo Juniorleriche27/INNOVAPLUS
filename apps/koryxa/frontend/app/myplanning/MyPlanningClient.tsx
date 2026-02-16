@@ -2427,8 +2427,10 @@ export default function MyPlanningClient({
 
   const sidebarWidth = isSidebarCollapsed ? "72px" : "260px";
   const containerClasses = isFullscreen
-    ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-slate-100"
-    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
+    ? "fixed inset-0 z-50 flex min-h-screen w-full overflow-hidden bg-slate-100"
+    : variant === "product"
+      ? "relative left-1/2 -mt-6 -mb-10 flex min-h-screen w-screen -translate-x-1/2 overflow-hidden bg-slate-100"
+      : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
   const showProductDesktopSidebar = variant === "product" && productDesktopNav === "sidebar" && !isFullscreen;
   const showProductBottomNav = variant === "product" && !isFullscreen;
   const contentPaddingBottomClass =
@@ -2546,7 +2548,7 @@ export default function MyPlanningClient({
         </aside>
       ) : null}
       {showProductDesktopSidebar ? (
-        <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white/95 p-4 md:flex">
+        <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white/95 p-4 lg:flex">
           <div>
             <p className="text-xs uppercase tracking-[0.35em] text-slate-400">MyPlanningAI</p>
             <p className="mt-1 text-lg font-semibold text-slate-900">App</p>
@@ -2664,7 +2666,7 @@ export default function MyPlanningClient({
       {showProductBottomNav ? (
         <div
           className={`fixed bottom-4 left-1/2 z-50 w-[min(980px,calc(100vw-24px))] -translate-x-1/2 ${
-            productDesktopNav === "sidebar" ? "md:hidden" : ""
+            productDesktopNav === "sidebar" ? "lg:hidden" : ""
           }`}
         >
           <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">

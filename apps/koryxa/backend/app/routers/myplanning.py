@@ -3083,6 +3083,587 @@ async def delete_workspace_member(
     return await _mongo_delete_workspace_member(workspace_id, user_id, db, current)
 
 
+# -----------------------------
+# Entreprise v1: Organizations
+# -----------------------------
+
+
+class OrganizationCreateIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=160)
+
+
+class OrganizationOut(BaseModel):
+    id: str
+    name: str
+    owner_id: str
+    role: Literal["owner", "admin", "member"]
+    status: Literal["trial", "active"] = "trial"
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class OrganizationDetailOut(OrganizationOut):
+    member_count: int = 0
+    workspace_count: int = 0
+
+
+class OrganizationWorkspaceCreateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    workspace_id: str | None = None
+
+
+class OrganizationWorkspaceOut(BaseModel):
+    organization_id: str
+    workspace: WorkspaceResponse
+
+
+def _pg_assert_org_member(cur: RealDictCursor, organization_id: str, actor_id: str) -> dict[str, Any]:
+    cur.execute(
+        """
+        select
+          o.id::text as id,
+          o.name,
+          o.owner_id::text as owner_id,
+          om.role,
+          om.status
+        from app.organizations o
+        left join app.organization_members om
+          on om.organization_id = o.id
+         and om.user_id = %s::uuid
+        where o.id = %s::uuid
+        limit 1;
+        """,
+        (actor_id, organization_id),
+    )
+    row = dict(cur.fetchone() or {})
+    if not row:
+        raise HTTPException(status_code=404, detail="Organisation introuvable")
+    if row.get("owner_id") == actor_id:
+        row["role"] = "owner"
+        row["status"] = "active"
+        return row
+    if str(row.get("status") or "") not in {"active", "pending"}:
+        raise HTTPException(status_code=403, detail="Accès organisation refusé")
+    role = str(row.get("role") or "").lower()
+    if role not in {"owner", "admin", "member"}:
+        raise HTTPException(status_code=403, detail="Accès organisation refusé")
+    return row
+
+
+def _pg_assert_org_admin(cur: RealDictCursor, organization_id: str, actor_id: str) -> dict[str, Any]:
+    row = _pg_assert_org_member(cur, organization_id, actor_id)
+    role = str(row.get("role") or "").lower()
+    status_value = str(row.get("status") or "").lower()
+    if status_value != "active":
+        raise HTTPException(status_code=403, detail="Organisation inactive")
+    if role not in {"owner", "admin"}:
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+    return row
+
+
+@router.get("/orgs", response_model=list[OrganizationOut])
+async def list_orgs(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> list[OrganizationOut]:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select
+                  o.id::text as id,
+                  o.name,
+                  o.owner_id::text as owner_id,
+                  coalesce(om.role, 'member') as role,
+                  o.created_at,
+                  o.updated_at
+                from app.organizations o
+                join app.organization_members om
+                  on om.organization_id = o.id
+                 and om.user_id = %s::uuid
+                where om.status in ('active','pending')
+                order by o.created_at desc;
+                """,
+                (actor_id,),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"orgs list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    out: list[OrganizationOut] = []
+    for r in rows:
+        role = str(r.get("role") or "member").lower()
+        if role not in {"owner", "admin", "member"}:
+            role = "member"
+        out.append(
+            OrganizationOut(
+                id=str(r.get("id") or ""),
+                name=str(r.get("name") or ""),
+                owner_id=str(r.get("owner_id") or ""),
+                role=role,  # type: ignore[arg-type]
+                status="trial",
+                created_at=_serialize_datetime(r.get("created_at")),
+                updated_at=_serialize_datetime(r.get("updated_at")),
+            )
+        )
+    return out
+
+
+@router.post("/orgs", response_model=OrganizationOut)
+async def create_org(
+    payload: OrganizationCreateIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OrganizationOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    org_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    name = payload.name.strip()
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select 1
+                from app.organizations o
+                where o.owner_id = %s::uuid
+                  and lower(o.name) = lower(%s)
+                limit 1;
+                """,
+                (actor_id, name),
+            )
+            if cur.fetchone():
+                raise HTTPException(status_code=409, detail="Organisation déjà existante pour ce nom")
+            cur.execute(
+                """
+                insert into app.organizations(id, name, owner_id, created_at, updated_at)
+                values (%s::uuid, %s, %s::uuid, %s, %s);
+                """,
+                (org_id, name, actor_id, now, now),
+            )
+            cur.execute(
+                """
+                insert into app.organization_members(organization_id, user_id, role, status, joined_at)
+                values (%s::uuid, %s::uuid, 'owner', 'active', %s)
+                on conflict (organization_id, user_id) do nothing;
+                """,
+                (org_id, actor_id, now),
+            )
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"org create error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return OrganizationOut(
+        id=org_id,
+        name=name,
+        owner_id=actor_id,
+        role="owner",
+        status="trial",
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@router.get("/orgs/{org_id}", response_model=OrganizationDetailOut)
+async def get_org(
+    org_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OrganizationDetailOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    org_uuid = _coerce_uuid_text(org_id)
+    if not org_uuid:
+        raise HTTPException(status_code=400, detail="org_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            cur.execute(
+                """
+                select
+                  o.id::text as id,
+                  o.name,
+                  o.owner_id::text as owner_id,
+                  coalesce(om.role, case when o.owner_id = %s::uuid then 'owner' end, 'member') as role,
+                  o.created_at,
+                  o.updated_at,
+                  (select count(*)::int from app.organization_members m where m.organization_id = o.id) as member_count,
+                  (select count(*)::int from app.organization_workspaces ow where ow.organization_id = o.id) as workspace_count
+                from app.organizations o
+                left join app.organization_members om
+                  on om.organization_id = o.id
+                 and om.user_id = %s::uuid
+                where o.id = %s::uuid
+                limit 1;
+                """,
+                (actor_id, actor_id, org_uuid),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"org get error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Organisation introuvable")
+    role = str(row.get("role") or "member").lower()
+    if role not in {"owner", "admin", "member"}:
+        role = "member"
+    return OrganizationDetailOut(
+        id=str(row.get("id") or ""),
+        name=str(row.get("name") or ""),
+        owner_id=str(row.get("owner_id") or ""),
+        role=role,  # type: ignore[arg-type]
+        status="trial",
+        created_at=_serialize_datetime(row.get("created_at")),
+        updated_at=_serialize_datetime(row.get("updated_at")),
+        member_count=int(row.get("member_count") or 0),
+        workspace_count=int(row.get("workspace_count") or 0),
+    )
+
+
+@router.get("/orgs/{org_id}/workspaces", response_model=list[WorkspaceResponse])
+async def list_org_workspaces(
+    org_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> list[WorkspaceResponse]:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    org_uuid = _coerce_uuid_text(org_id)
+    if not org_uuid:
+        raise HTTPException(status_code=400, detail="org_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_org_member(cur, org_uuid, actor_id)
+            cur.execute(
+                """
+                select
+                  w.id::text as id,
+                  w.name,
+                  w.owner_id::text as owner_id,
+                  coalesce(wm.role, case when w.owner_id = %s::uuid then 'owner' end, 'member') as role,
+                  coalesce(mc.member_count, 0)::int as member_count,
+                  w.created_at,
+                  w.updated_at
+                from app.organization_workspaces ow
+                join app.workspaces w on w.id = ow.workspace_id
+                left join app.workspace_members wm
+                  on wm.workspace_id = w.id
+                 and wm.user_id = %s::uuid
+                left join (
+                  select workspace_id, count(*)::int as member_count
+                  from app.workspace_members
+                  group by workspace_id
+                ) mc on mc.workspace_id = w.id
+                where ow.organization_id = %s::uuid
+                order by w.created_at desc;
+                """,
+                (actor_id, actor_id, org_uuid),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"org workspaces list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    out: list[WorkspaceResponse] = []
+    for r in rows:
+        role = str(r.get("role") or "member").lower()
+        if role not in {"owner", "admin", "member"}:
+            role = "member"
+        out.append(
+            WorkspaceResponse(
+                id=str(r.get("id") or ""),
+                name=str(r.get("name") or ""),
+                role=role,  # type: ignore[arg-type]
+                owner_user_id=str(r.get("owner_id") or ""),
+                member_count=int(r.get("member_count") or 0),
+                created_at=_serialize_datetime(r.get("created_at")),
+                updated_at=_serialize_datetime(r.get("updated_at")),
+            )
+        )
+    return out
+
+
+@router.post("/orgs/{org_id}/workspaces", response_model=OrganizationWorkspaceOut)
+async def create_org_workspace(
+    org_id: str,
+    payload: OrganizationWorkspaceCreateIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> OrganizationWorkspaceOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    org_uuid = _coerce_uuid_text(org_id)
+    if not org_uuid:
+        raise HTTPException(status_code=400, detail="org_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    workspace_uuid = _coerce_uuid_text(payload.workspace_id) if payload.workspace_id else None
+    if payload.workspace_id and not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+    workspace_name = payload.name.strip() if payload.name else ""
+    if not workspace_uuid and not workspace_name:
+        raise HTTPException(status_code=400, detail="Provide name or workspace_id")
+
+    conn = None
+    now = datetime.utcnow()
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_org_admin(cur, org_uuid, actor_id)
+
+            if workspace_uuid:
+                cur.execute(
+                    """
+                    select w.owner_id::text as owner_id, wm.role
+                    from app.workspaces w
+                    left join app.workspace_members wm
+                      on wm.workspace_id = w.id
+                     and wm.user_id = %s::uuid
+                    where w.id = %s::uuid
+                    limit 1;
+                    """,
+                    (actor_id, workspace_uuid),
+                )
+                ws_row = dict(cur.fetchone() or {})
+                if not ws_row:
+                    raise HTTPException(status_code=404, detail="Workspace introuvable")
+                ws_role = "owner" if ws_row.get("owner_id") == actor_id else str(ws_row.get("role") or "")
+                if ws_role not in {"owner", "admin"}:
+                    raise HTTPException(status_code=403, detail="Permissions insuffisantes pour lier ce workspace")
+                cur.execute(
+                    """
+                    insert into app.organization_workspaces(organization_id, workspace_id)
+                    values (%s::uuid, %s::uuid)
+                    on conflict do nothing
+                    returning 1;
+                    """,
+                    (org_uuid, workspace_uuid),
+                )
+                if not cur.fetchone():
+                    raise HTTPException(status_code=409, detail="Workspace déjà lié à l'organisation")
+                # Load workspace response
+                cur.execute(
+                    """
+                    select
+                      w.id::text as id,
+                      w.name,
+                      w.owner_id::text as owner_id,
+                      coalesce(wm.role, case when w.owner_id = %s::uuid then 'owner' end, 'member') as role,
+                      coalesce(mc.member_count, 0)::int as member_count,
+                      w.created_at,
+                      w.updated_at
+                    from app.workspaces w
+                    left join app.workspace_members wm
+                      on wm.workspace_id = w.id
+                     and wm.user_id = %s::uuid
+                    left join (
+                      select workspace_id, count(*)::int as member_count
+                      from app.workspace_members
+                      group by workspace_id
+                    ) mc on mc.workspace_id = w.id
+                    where w.id = %s::uuid
+                    limit 1;
+                    """,
+                    (actor_id, actor_id, workspace_uuid),
+                )
+                ws = dict(cur.fetchone() or {})
+                if not ws:
+                    raise HTTPException(status_code=404, detail="Workspace introuvable")
+                role = str(ws.get("role") or "member").lower()
+                if role not in {"owner", "admin", "member"}:
+                    role = "member"
+                workspace = WorkspaceResponse(
+                    id=str(ws.get("id") or ""),
+                    name=str(ws.get("name") or ""),
+                    role=role,  # type: ignore[arg-type]
+                    owner_user_id=str(ws.get("owner_id") or ""),
+                    member_count=int(ws.get("member_count") or 0),
+                    created_at=_serialize_datetime(ws.get("created_at")),
+                    updated_at=_serialize_datetime(ws.get("updated_at")),
+                )
+            else:
+                new_workspace_id = str(uuid.uuid4())
+                cur.execute(
+                    """
+                    insert into app.workspaces(id, name, owner_id, created_at, updated_at)
+                    values (%s::uuid, %s, %s::uuid, %s, %s);
+                    """,
+                    (new_workspace_id, workspace_name, actor_id, now, now),
+                )
+                cur.execute(
+                    """
+                    insert into app.workspace_members(workspace_id, user_id, role, created_at)
+                    values (%s::uuid, %s::uuid, 'owner', %s);
+                    """,
+                    (new_workspace_id, actor_id, now),
+                )
+                cur.execute(
+                    """
+                    insert into app.organization_workspaces(organization_id, workspace_id)
+                    values (%s::uuid, %s::uuid)
+                    on conflict do nothing;
+                    """,
+                    (org_uuid, new_workspace_id),
+                )
+                workspace = WorkspaceResponse(
+                    id=new_workspace_id,
+                    name=workspace_name,
+                    role="owner",
+                    owner_user_id=actor_id,
+                    member_count=1,
+                    created_at=now,
+                    updated_at=now,
+                )
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"org workspace error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return OrganizationWorkspaceOut(organization_id=org_uuid, workspace=workspace)
+
+
 @router.get("/notifications/preferences", response_model=NotificationPreferencesOut)
 async def get_notification_preferences(
     request: Request,

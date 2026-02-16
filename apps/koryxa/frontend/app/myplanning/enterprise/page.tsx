@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EnterpriseLeadForm } from "./_components/EnterpriseLeadForm";
+import EnterpriseOnboardingClient from "./_components/EnterpriseOnboardingClient";
 
 const USE_CASES = [
   "Pilotage multi-projets pour directions opérationnelles",
@@ -47,10 +48,16 @@ export default function MyPlanningEnterprisePage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a
-            href="#enterprise-lead-form"
-            className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700"
+            href="#enterprise-activation"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
           >
-            Demander une démo
+            Créer mon organisation
+          </a>
+          <a
+            href="#enterprise-how"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Voir comment ça marche
           </a>
           <Link
             href="/myplanning/pricing"
@@ -59,6 +66,10 @@ export default function MyPlanningEnterprisePage() {
             Retour aux tarifs
           </Link>
         </div>
+      </section>
+
+      <section id="enterprise-activation">
+        <EnterpriseOnboardingClient />
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -84,7 +95,7 @@ export default function MyPlanningEnterprisePage() {
             ))}
           </ul>
         </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div id="enterprise-how" className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Comment ça marche</h2>
           <ol className="mt-4 space-y-2 text-sm text-slate-700">
             {FLOW.map((item, idx) => (
@@ -128,8 +139,14 @@ export default function MyPlanningEnterprisePage() {
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <a
-            href="#enterprise-lead-form"
+            href="#enterprise-activation"
             className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
+          >
+            Créer mon organisation
+          </a>
+          <a
+            href="#enterprise-lead-form"
+            className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
           >
             Demander une démo
           </a>

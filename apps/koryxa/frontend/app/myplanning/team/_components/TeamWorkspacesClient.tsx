@@ -30,7 +30,7 @@ export default function TeamWorkspacesClient() {
   const isAuthenticated = !!user?.email;
 
   const emptyMessage = useMemo(() => {
-    if (!isAuthenticated) return "Connecte-toi pour voir et créer tes workspaces Team.";
+    if (!isAuthenticated) return "Connecte-toi pour voir et créer tes espaces (workspaces).";
     return "Aucun workspace pour le moment. Crée le premier espace d'équipe.";
   }, [isAuthenticated]);
 
@@ -85,8 +85,8 @@ export default function TeamWorkspacesClient() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Team</p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Collaboration équipe</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Espaces</p>
+        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Espaces d'équipe</h1>
         <p className="mt-2 text-sm text-slate-700">
           Crée tes workspaces, invite des membres et pilote les accès sur une base Postgres unifiée.
         </p>

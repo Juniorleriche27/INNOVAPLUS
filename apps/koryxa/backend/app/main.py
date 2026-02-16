@@ -462,6 +462,260 @@ def ensure_myplanning_team_tables() -> None:
     )
 
 
+def ensure_myplanning_org_tables() -> None:
+    # Bootstrap "Entreprise = Organisation" tables/policies in Postgres app schema.
+    # Keep SQL idempotent so startup is safe across environments.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+
+    db_execute(
+        """
+        create table if not exists app.organizations (
+          id uuid primary key default gen_random_uuid(),
+          name text not null,
+          owner_id uuid not null,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("alter table app.organizations add column if not exists name text;")
+    db_execute("alter table app.organizations add column if not exists owner_id uuid;")
+    db_execute("alter table app.organizations add column if not exists created_at timestamptz not null default now();")
+    db_execute("alter table app.organizations add column if not exists updated_at timestamptz not null default now();")
+
+    db_execute(
+        """
+        create table if not exists app.organization_members (
+          organization_id uuid not null references app.organizations(id) on delete cascade,
+          user_id uuid not null,
+          role text not null check (role in ('owner','admin','member')),
+          status text not null default 'active' check (status in ('active','pending')),
+          joined_at timestamptz not null default now(),
+          primary key (organization_id, user_id)
+        );
+        """
+    )
+    db_execute("create index if not exists org_members_user_id_idx on app.organization_members(user_id);")
+    db_execute("create index if not exists org_members_org_id_status_idx on app.organization_members(organization_id, status);")
+
+    db_execute(
+        """
+        create table if not exists app.organization_workspaces (
+          organization_id uuid not null references app.organizations(id) on delete cascade,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          primary key (organization_id, workspace_id)
+        );
+        """
+    )
+    db_execute("create index if not exists org_workspaces_workspace_id_idx on app.organization_workspaces(workspace_id);")
+
+    db_execute("grant select, insert, update, delete on app.organizations to authenticated;")
+    db_execute("grant select, insert, update, delete on app.organization_members to authenticated;")
+    db_execute("grant select, insert, update, delete on app.organization_workspaces to authenticated;")
+
+    db_execute("alter table app.organizations enable row level security;")
+    db_execute("alter table app.organization_members enable row level security;")
+    db_execute("alter table app.organization_workspaces enable row level security;")
+
+    db_execute(
+        """
+        create or replace function app.set_orgs_updated_at()
+        returns trigger as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$ language plpgsql;
+        """
+    )
+    db_execute("drop trigger if exists organizations_set_updated_at on app.organizations;")
+    db_execute(
+        """
+        create trigger organizations_set_updated_at
+        before update on app.organizations
+        for each row
+        execute function app.set_orgs_updated_at();
+        """
+    )
+
+    # Helper functions used inside policies to avoid recursive RLS dependencies.
+    db_execute(
+        """
+        create or replace function app.is_org_member(org_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.organization_members m
+            where m.organization_id = org_id
+              and m.user_id = uid
+              and m.status in ('active','pending')
+          );
+        $$;
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.is_org_admin(org_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.organization_members m
+            where m.organization_id = org_id
+              and m.user_id = uid
+              and m.status = 'active'
+              and m.role in ('owner','admin')
+          );
+        $$;
+        """
+    )
+    db_execute("grant execute on function app.is_org_member(uuid, uuid) to authenticated;")
+    db_execute("grant execute on function app.is_org_admin(uuid, uuid) to authenticated;")
+
+    # Reset policies (safe idempotent).
+    db_execute("drop policy if exists orgs_select_member on app.organizations;")
+    db_execute("drop policy if exists orgs_insert_owner on app.organizations;")
+    db_execute("drop policy if exists orgs_update_admin on app.organizations;")
+    db_execute("drop policy if exists orgs_delete_owner on app.organizations;")
+    db_execute("drop policy if exists org_members_select_member on app.organization_members;")
+    db_execute("drop policy if exists org_members_insert_admin on app.organization_members;")
+    db_execute("drop policy if exists org_members_update_admin on app.organization_members;")
+    db_execute("drop policy if exists org_members_delete_admin on app.organization_members;")
+    db_execute("drop policy if exists org_workspaces_select_member on app.organization_workspaces;")
+    db_execute("drop policy if exists org_workspaces_insert_admin on app.organization_workspaces;")
+    db_execute("drop policy if exists org_workspaces_delete_admin on app.organization_workspaces;")
+
+    db_execute(
+        """
+        create policy orgs_select_member
+          on app.organizations
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or app.is_org_member(organizations.id, auth.uid())
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy orgs_insert_owner
+          on app.organizations
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy orgs_update_admin
+          on app.organizations
+          for update
+          to authenticated
+          using (owner_id = auth.uid() or app.is_org_admin(organizations.id, auth.uid()))
+          with check (owner_id = auth.uid() or app.is_org_admin(organizations.id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy orgs_delete_owner
+          on app.organizations
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+    db_execute(
+        """
+        create policy org_members_select_member
+          on app.organization_members
+          for select
+          to authenticated
+          using (app.is_org_member(organization_members.organization_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy org_members_insert_admin
+          on app.organization_members
+          for insert
+          to authenticated
+          with check (
+            app.is_org_admin(organization_members.organization_id, auth.uid())
+            or exists (
+              select 1
+              from app.organizations o
+              where o.id = organization_members.organization_id
+                and o.owner_id = auth.uid()
+            )
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy org_members_update_admin
+          on app.organization_members
+          for update
+          to authenticated
+          using (app.is_org_admin(organization_members.organization_id, auth.uid()))
+          with check (app.is_org_admin(organization_members.organization_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy org_members_delete_admin
+          on app.organization_members
+          for delete
+          to authenticated
+          using (app.is_org_admin(organization_members.organization_id, auth.uid()));
+        """
+    )
+
+    db_execute(
+        """
+        create policy org_workspaces_select_member
+          on app.organization_workspaces
+          for select
+          to authenticated
+          using (app.is_org_member(organization_workspaces.organization_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy org_workspaces_insert_admin
+          on app.organization_workspaces
+          for insert
+          to authenticated
+          with check (app.is_org_admin(organization_workspaces.organization_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy org_workspaces_delete_admin
+          on app.organization_workspaces
+          for delete
+          to authenticated
+          using (app.is_org_admin(organization_workspaces.organization_id, auth.uid()));
+        """
+    )
+
+
 def ensure_myplanning_tasks_tables() -> None:
     # Bootstrap MyPlanning tasks table/policies in Postgres app schema.
     # Keep SQL idempotent so startup remains safe.
@@ -2016,6 +2270,10 @@ async def on_startup():
         ensure_myplanning_team_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning team postgres tables/policies")
+    try:
+        ensure_myplanning_org_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning org postgres tables/policies")
     try:
         ensure_myplanning_tasks_tables()
     except Exception:

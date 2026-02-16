@@ -30,11 +30,11 @@ const TIERS: Tier[] = [
     ctaVariant: "secondary",
   },
   {
-    name: "Team",
+    name: "Espaces",
     price: "Bêta",
     desc: "Pour equipes & organisations.",
-    items: ["Collaborateurs", "Assignation", "Reporting", "Admin workspace"],
-    ctaLabel: "Accéder Team",
+    items: ["Collaborateurs", "Assignation", "Reporting", "Administration"],
+    ctaLabel: "Accéder aux espaces",
     ctaHref: "/myplanning/team",
     ctaVariant: "secondary",
   },
@@ -83,7 +83,9 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-700">Tu peux commencer gratuitement et évoluer vers Pro, Team ou Entreprise selon ton usage.</p>
+          <p className="mt-2 max-w-2xl text-sm text-slate-700">
+            Tu peux commencer gratuitement et évoluer vers Pro, Espaces ou Entreprise selon ton usage.
+          </p>
           <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">Early users: un prix preferentiel sera propose au lancement officiel.</p>
         </div>
         <Link

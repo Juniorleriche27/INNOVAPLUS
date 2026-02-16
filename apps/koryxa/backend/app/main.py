@@ -289,6 +289,24 @@ def ensure_myplanning_team_tables() -> None:
         return
 
     db_execute("grant usage on schema app to authenticated;")
+    db_execute("alter table app.workspaces add column if not exists workspace_type text not null default 'team';")
+    db_execute("create index if not exists workspaces_workspace_type_idx on app.workspaces(workspace_type);")
+    db_execute(
+        """
+        do $$
+        begin
+          if not exists (
+            select 1
+            from pg_constraint
+            where conname = 'workspaces_workspace_type_check'
+          ) then
+            alter table app.workspaces
+              add constraint workspaces_workspace_type_check
+              check (workspace_type in ('team','enterprise'));
+          end if;
+        end $$;
+        """
+    )
     db_execute(
         """
         create table if not exists app.workspace_invites (
@@ -1893,6 +1911,318 @@ def ensure_myplanning_attendance_tables() -> None:
     )
 
 
+def ensure_myplanning_enterprise_ops_tables() -> None:
+    # Enterprise modules: departments + n8n integration outbox.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+
+    db_execute(
+        """
+        create or replace function app.is_workspace_member(ws_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.workspaces w
+            where w.id = ws_id
+              and (
+                w.owner_id = uid
+                or exists (
+                  select 1
+                  from app.workspace_members wm
+                  where wm.workspace_id = ws_id
+                    and wm.user_id = uid
+                    and coalesce(wm.status, 'active') = 'active'
+                )
+              )
+          );
+        $$;
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.is_workspace_admin(ws_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.workspaces w
+            where w.id = ws_id
+              and (
+                w.owner_id = uid
+                or exists (
+                  select 1
+                  from app.workspace_members wm
+                  where wm.workspace_id = ws_id
+                    and wm.user_id = uid
+                    and coalesce(wm.status, 'active') = 'active'
+                    and coalesce(wm.role, '') in ('owner', 'admin')
+                )
+              )
+          );
+        $$;
+        """
+    )
+    db_execute("grant execute on function app.is_workspace_member(uuid, uuid) to authenticated;")
+    db_execute("grant execute on function app.is_workspace_admin(uuid, uuid) to authenticated;")
+
+    db_execute(
+        """
+        create table if not exists app.departments (
+          id uuid primary key default gen_random_uuid(),
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          name text not null,
+          created_by uuid not null,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create unique index if not exists departments_workspace_name_key on app.departments(workspace_id, lower(name));")
+    db_execute("create index if not exists departments_workspace_created_idx on app.departments(workspace_id, created_at desc);")
+
+    db_execute(
+        """
+        create table if not exists app.integration_endpoints (
+          workspace_id uuid primary key references app.workspaces(id) on delete cascade,
+          n8n_webhook_url text null,
+          secret text not null default encode(gen_random_bytes(32), 'hex'),
+          enabled boolean not null default false,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists integration_endpoints_enabled_idx on app.integration_endpoints(enabled);")
+
+    db_execute(
+        """
+        create table if not exists app.integration_events (
+          id bigserial primary key,
+          owner_id uuid not null,
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          type text not null,
+          payload_json jsonb not null default '{}'::jsonb,
+          status text not null default 'pending' check (status in ('pending','sent','failed','skipped')),
+          attempts int not null default 0,
+          response_code int null,
+          last_error text null,
+          created_at timestamptz not null default now(),
+          delivered_at timestamptz null
+        );
+        """
+    )
+    db_execute("create index if not exists integration_events_status_created_idx on app.integration_events(status, created_at);")
+    db_execute("create index if not exists integration_events_workspace_created_idx on app.integration_events(workspace_id, created_at desc);")
+    db_execute("create index if not exists integration_events_owner_created_idx on app.integration_events(owner_id, created_at desc);")
+
+    db_execute(
+        """
+        do $$
+        begin
+          if exists (
+            select 1
+            from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'app'
+              and c.relname = 'integration_events_id_seq'
+          ) then
+            execute 'grant usage, select on sequence app.integration_events_id_seq to authenticated';
+          end if;
+        end $$;
+        """
+    )
+
+    db_execute("grant select, insert, update, delete on app.departments to authenticated;")
+    db_execute("grant select, insert, update, delete on app.integration_endpoints to authenticated;")
+    db_execute("grant select, insert, update, delete on app.integration_events to authenticated;")
+
+    db_execute(
+        """
+        create or replace function app.set_enterprise_ops_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute("drop trigger if exists trg_departments_updated_at on app.departments;")
+    db_execute(
+        """
+        create trigger trg_departments_updated_at
+        before update on app.departments
+        for each row
+        execute function app.set_enterprise_ops_updated_at();
+        """
+    )
+    db_execute("drop trigger if exists trg_integration_endpoints_updated_at on app.integration_endpoints;")
+    db_execute(
+        """
+        create trigger trg_integration_endpoints_updated_at
+        before update on app.integration_endpoints
+        for each row
+        execute function app.set_enterprise_ops_updated_at();
+        """
+    )
+
+    db_execute("alter table app.departments enable row level security;")
+    db_execute("alter table app.integration_endpoints enable row level security;")
+    db_execute("alter table app.integration_events enable row level security;")
+
+    db_execute("drop policy if exists departments_select_member on app.departments;")
+    db_execute("drop policy if exists departments_insert_admin on app.departments;")
+    db_execute("drop policy if exists departments_update_admin on app.departments;")
+    db_execute("drop policy if exists departments_delete_admin on app.departments;")
+    db_execute("drop policy if exists integration_endpoints_select_member on app.integration_endpoints;")
+    db_execute("drop policy if exists integration_endpoints_insert_admin on app.integration_endpoints;")
+    db_execute("drop policy if exists integration_endpoints_update_admin on app.integration_endpoints;")
+    db_execute("drop policy if exists integration_endpoints_delete_admin on app.integration_endpoints;")
+    db_execute("drop policy if exists integration_events_select_member on app.integration_events;")
+    db_execute("drop policy if exists integration_events_insert_member on app.integration_events;")
+    db_execute("drop policy if exists integration_events_update_admin on app.integration_events;")
+    db_execute("drop policy if exists integration_events_delete_admin on app.integration_events;")
+
+    db_execute(
+        """
+        create policy departments_select_member
+          on app.departments
+          for select
+          to authenticated
+          using (app.is_workspace_member(departments.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy departments_insert_admin
+          on app.departments
+          for insert
+          to authenticated
+          with check (
+            app.is_workspace_admin(departments.workspace_id, auth.uid())
+            and created_by = auth.uid()
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy departments_update_admin
+          on app.departments
+          for update
+          to authenticated
+          using (app.is_workspace_admin(departments.workspace_id, auth.uid()))
+          with check (app.is_workspace_admin(departments.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy departments_delete_admin
+          on app.departments
+          for delete
+          to authenticated
+          using (app.is_workspace_admin(departments.workspace_id, auth.uid()));
+        """
+    )
+
+    db_execute(
+        """
+        create policy integration_endpoints_select_member
+          on app.integration_endpoints
+          for select
+          to authenticated
+          using (app.is_workspace_member(integration_endpoints.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy integration_endpoints_insert_admin
+          on app.integration_endpoints
+          for insert
+          to authenticated
+          with check (app.is_workspace_admin(integration_endpoints.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy integration_endpoints_update_admin
+          on app.integration_endpoints
+          for update
+          to authenticated
+          using (app.is_workspace_admin(integration_endpoints.workspace_id, auth.uid()))
+          with check (app.is_workspace_admin(integration_endpoints.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy integration_endpoints_delete_admin
+          on app.integration_endpoints
+          for delete
+          to authenticated
+          using (app.is_workspace_admin(integration_endpoints.workspace_id, auth.uid()));
+        """
+    )
+
+    db_execute(
+        """
+        create policy integration_events_select_member
+          on app.integration_events
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or app.is_workspace_member(integration_events.workspace_id, auth.uid())
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy integration_events_insert_member
+          on app.integration_events
+          for insert
+          to authenticated
+          with check (
+            owner_id = auth.uid()
+            and app.is_workspace_member(integration_events.workspace_id, auth.uid())
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy integration_events_update_admin
+          on app.integration_events
+          for update
+          to authenticated
+          using (app.is_workspace_admin(integration_events.workspace_id, auth.uid()))
+          with check (app.is_workspace_admin(integration_events.workspace_id, auth.uid()));
+        """
+    )
+    db_execute(
+        """
+        create policy integration_events_delete_admin
+          on app.integration_events
+          for delete
+          to authenticated
+          using (app.is_workspace_admin(integration_events.workspace_id, auth.uid()));
+        """
+    )
+
+
 def _client_ip(request: Request) -> str:
     xff = (request.headers.get("x-forwarded-for") or "").strip()
     if xff:
@@ -2286,6 +2616,10 @@ async def on_startup():
         ensure_myplanning_attendance_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning attendance postgres tables/policies")
+    try:
+        ensure_myplanning_enterprise_ops_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning enterprise ops postgres tables/policies")
     init_cohere_client()
 
 

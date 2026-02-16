@@ -6,9 +6,11 @@ import os
 import uuid
 import json
 import base64
+import hashlib
 import hmac
 import csv
 import io
+import urllib.request
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Literal, Optional
 import time
@@ -2240,6 +2242,19 @@ async def _pg_create_task(
                     (created_id,),
                 )
                 row = dict(cur.fetchone() or {})
+                _insert_integration_event(
+                    cur,
+                    owner_id=actor_id,
+                    workspace_id=workspace_uuid,
+                    event_type="task.created",
+                    payload={
+                        "task_id": created_id,
+                        "title": row.get("title"),
+                        "status": row.get("status"),
+                        "priority": row.get("priority"),
+                        "priority_eisenhower": row.get("priority_eisenhower"),
+                    },
+                )
             else:
                 row = {}
         conn.commit()
@@ -2401,6 +2416,18 @@ async def _pg_update_task(
                 (updated_id,),
             )
             row = dict(cur.fetchone() or {})
+            _insert_integration_event(
+                cur,
+                owner_id=actor_id,
+                workspace_id=str(row.get("workspace_id") or ""),
+                event_type="task.updated",
+                payload={
+                    "task_id": updated_id,
+                    "status": row.get("status"),
+                    "title": row.get("title"),
+                    "changes": sorted(updates.keys()),
+                },
+            )
         conn.commit()
     except HTTPException:
         if conn is not None:
@@ -3117,6 +3144,193 @@ class OrganizationWorkspaceOut(BaseModel):
     workspace: WorkspaceResponse
 
 
+class DepartmentCreateIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+
+
+class DepartmentOut(BaseModel):
+    id: str
+    workspace_id: str
+    name: str
+    created_by: str
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class N8nIntegrationPatchIn(BaseModel):
+    n8n_webhook_url: str | None = Field(default=None, max_length=2048)
+    enabled: bool | None = None
+    secret: str | None = Field(default=None, max_length=256)
+
+
+class N8nIntegrationOut(BaseModel):
+    workspace_id: str
+    n8n_webhook_url: str | None = None
+    enabled: bool = False
+    secret: str
+    updated_at: datetime | None = None
+
+
+class N8nIntegrationTestIn(BaseModel):
+    event_type: str = Field(default="manual.test", min_length=3, max_length=120)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class N8nIntegrationTestOut(BaseModel):
+    ok: bool
+    event_id: int
+    delivery_status: Literal["sent", "failed", "pending"]
+    response_code: int | None = None
+
+
+def _clean_webhook_url(raw: str | None) -> str | None:
+    value = (raw or "").strip()
+    if not value:
+        return None
+    if not (value.startswith("https://") or value.startswith("http://")):
+        raise HTTPException(status_code=400, detail="Webhook URL must start with http:// or https://")
+    if " " in value:
+        raise HTTPException(status_code=400, detail="Webhook URL is invalid")
+    return value
+
+
+def _integration_signature(secret: str, timestamp: str, body: str) -> str:
+    mac = hmac.new(secret.encode("utf-8"), f"{timestamp}.{body}".encode("utf-8"), hashlib.sha256)
+    return f"sha256={mac.hexdigest()}"
+
+
+def _deliver_integration_event(cur: RealDictCursor, event_id: int) -> dict[str, Any]:
+    cur.execute(
+        """
+        select
+          e.id,
+          e.workspace_id::text as workspace_id,
+          e.type,
+          e.payload_json,
+          ep.n8n_webhook_url,
+          ep.secret,
+          coalesce(ep.enabled, false) as enabled
+        from app.integration_events e
+        left join app.integration_endpoints ep
+          on ep.workspace_id = e.workspace_id
+        where e.id = %s
+        limit 1;
+        """,
+        (event_id,),
+    )
+    row = dict(cur.fetchone() or {})
+    if not row:
+        return {"status": "failed", "response_code": None, "error": "event not found"}
+
+    url = _clean_webhook_url(row.get("n8n_webhook_url"))
+    secret = str(row.get("secret") or "")
+    enabled = bool(row.get("enabled"))
+    if not enabled or not url or not secret:
+        cur.execute(
+            """
+            update app.integration_events
+            set status = 'pending',
+                last_error = 'endpoint not enabled/configured',
+                attempts = coalesce(attempts, 0) + 1
+            where id = %s;
+            """,
+            (event_id,),
+        )
+        return {"status": "pending", "response_code": None, "error": "endpoint not enabled/configured"}
+
+    payload = row.get("payload_json")
+    if not isinstance(payload, dict):
+        payload = {}
+    body = json.dumps(
+        {
+            "id": int(row.get("id") or 0),
+            "type": str(row.get("type") or ""),
+            "workspace_id": str(row.get("workspace_id") or ""),
+            "payload": payload,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    ts = str(int(time.time()))
+    signature = _integration_signature(secret, ts, body)
+    req = urllib.request.Request(
+        url,
+        data=body.encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "X-MyPlanning-Signature": signature,
+            "X-MyPlanning-Timestamp": ts,
+            "X-MyPlanning-Event": str(row.get("type") or ""),
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            code = int(resp.getcode() or 0)
+        if 200 <= code < 300:
+            cur.execute(
+                """
+                update app.integration_events
+                set status = 'sent',
+                    delivered_at = now(),
+                    response_code = %s,
+                    last_error = null,
+                    attempts = coalesce(attempts, 0) + 1
+                where id = %s;
+                """,
+                (code, event_id),
+            )
+            return {"status": "sent", "response_code": code, "error": None}
+        cur.execute(
+            """
+            update app.integration_events
+            set status = 'failed',
+                response_code = %s,
+                last_error = 'non-2xx response',
+                attempts = coalesce(attempts, 0) + 1
+            where id = %s;
+            """,
+            (code, event_id),
+        )
+        return {"status": "failed", "response_code": code, "error": "non-2xx response"}
+    except Exception as exc:
+        cur.execute(
+            """
+            update app.integration_events
+            set status = 'failed',
+                response_code = null,
+                last_error = %s,
+                attempts = coalesce(attempts, 0) + 1
+            where id = %s;
+            """,
+            (f"delivery error: {exc.__class__.__name__}", event_id),
+        )
+        return {"status": "failed", "response_code": None, "error": f"delivery error: {exc.__class__.__name__}"}
+
+
+def _insert_integration_event(
+    cur: RealDictCursor,
+    *,
+    owner_id: str,
+    workspace_id: str | None,
+    event_type: str,
+    payload: dict[str, Any],
+) -> int | None:
+    ws_uuid = _coerce_uuid_text(workspace_id)
+    if not ws_uuid:
+        return None
+    cur.execute(
+        """
+        insert into app.integration_events(owner_id, workspace_id, type, payload_json, status, created_at)
+        values (%s::uuid, %s::uuid, %s, %s::jsonb, 'pending', now())
+        returning id;
+        """,
+        (owner_id, ws_uuid, event_type, json.dumps(payload, ensure_ascii=False)),
+    )
+    row = dict(cur.fetchone() or {})
+    return int(row.get("id")) if row.get("id") is not None else None
+
+
 def _pg_assert_org_member(cur: RealDictCursor, organization_id: str, actor_id: str) -> dict[str, Any]:
     cur.execute(
         """
@@ -3609,8 +3823,8 @@ async def create_org_workspace(
                 new_workspace_id = str(uuid.uuid4())
                 cur.execute(
                     """
-                    insert into app.workspaces(id, name, owner_id, created_at, updated_at)
-                    values (%s::uuid, %s, %s::uuid, %s, %s);
+                    insert into app.workspaces(id, name, owner_id, workspace_type, created_at, updated_at)
+                    values (%s::uuid, %s, %s::uuid, 'enterprise', %s, %s);
                     """,
                     (new_workspace_id, workspace_name, actor_id, now, now),
                 )
@@ -3661,6 +3875,479 @@ async def create_org_workspace(
             pass
 
     return OrganizationWorkspaceOut(organization_id=org_uuid, workspace=workspace)
+
+
+@router.get("/workspaces/{workspace_id}/departments", response_model=list[DepartmentOut])
+async def list_workspace_departments(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> list[DepartmentOut]:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace_uuid = _coerce_uuid_text(workspace_id)
+    if not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_member(cur, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                select
+                  id::text as id,
+                  workspace_id::text as workspace_id,
+                  name,
+                  created_by::text as created_by,
+                  created_at,
+                  updated_at
+                from app.departments
+                where workspace_id = %s::uuid
+                order by created_at desc;
+                """,
+                (workspace_uuid,),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"departments list error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return [
+        DepartmentOut(
+            id=str(r.get("id") or ""),
+            workspace_id=str(r.get("workspace_id") or ""),
+            name=str(r.get("name") or ""),
+            created_by=str(r.get("created_by") or ""),
+            created_at=_serialize_datetime(r.get("created_at")),
+            updated_at=_serialize_datetime(r.get("updated_at")),
+        )
+        for r in rows
+    ]
+
+
+@router.post("/workspaces/{workspace_id}/departments", response_model=DepartmentOut)
+async def create_workspace_department(
+    workspace_id: str,
+    payload: DepartmentCreateIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> DepartmentOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace_uuid = _coerce_uuid_text(workspace_id)
+    if not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="name required")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+    now = datetime.utcnow()
+    dep_id = str(uuid.uuid4())
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                insert into app.departments(id, workspace_id, name, created_by, created_at, updated_at)
+                values (%s::uuid, %s::uuid, %s, %s::uuid, %s, %s)
+                returning id::text as id, workspace_id::text as workspace_id, name, created_by::text as created_by, created_at, updated_at;
+                """,
+                (dep_id, workspace_uuid, name, actor_id, now, now),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except psycopg2.errors.UniqueViolation:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=409, detail="Département déjà existant")
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"department create error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    if not row:
+        raise HTTPException(status_code=500, detail="department create error")
+    return DepartmentOut(
+        id=str(row.get("id") or ""),
+        workspace_id=str(row.get("workspace_id") or ""),
+        name=str(row.get("name") or ""),
+        created_by=str(row.get("created_by") or ""),
+        created_at=_serialize_datetime(row.get("created_at")),
+        updated_at=_serialize_datetime(row.get("updated_at")),
+    )
+
+
+@router.get("/workspaces/{workspace_id}/integrations/n8n", response_model=N8nIntegrationOut)
+async def get_workspace_n8n_integration(
+    workspace_id: str,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> N8nIntegrationOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace_uuid = _coerce_uuid_text(workspace_id)
+    if not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_member(cur, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                insert into app.integration_endpoints(workspace_id)
+                values (%s::uuid)
+                on conflict (workspace_id) do nothing;
+                """,
+                (workspace_uuid,),
+            )
+            cur.execute(
+                """
+                select workspace_id::text as workspace_id, n8n_webhook_url, enabled, secret, updated_at
+                from app.integration_endpoints
+                where workspace_id = %s::uuid
+                limit 1;
+                """,
+                (workspace_uuid,),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"n8n config get error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    if not row:
+        raise HTTPException(status_code=500, detail="n8n config get error")
+    return N8nIntegrationOut(
+        workspace_id=str(row.get("workspace_id") or workspace_uuid),
+        n8n_webhook_url=row.get("n8n_webhook_url"),
+        enabled=bool(row.get("enabled")),
+        secret=str(row.get("secret") or ""),
+        updated_at=_serialize_datetime(row.get("updated_at")),
+    )
+
+
+@router.patch("/workspaces/{workspace_id}/integrations/n8n", response_model=N8nIntegrationOut)
+async def patch_workspace_n8n_integration(
+    workspace_id: str,
+    payload: N8nIntegrationPatchIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> N8nIntegrationOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace_uuid = _coerce_uuid_text(workspace_id)
+    if not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    next_url = _clean_webhook_url(payload.n8n_webhook_url) if payload.n8n_webhook_url is not None else None
+    next_enabled = payload.enabled
+    next_secret = (payload.secret or "").strip() if payload.secret is not None else None
+    if next_secret == "":
+        next_secret = None
+
+    conn = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                insert into app.integration_endpoints(workspace_id)
+                values (%s::uuid)
+                on conflict (workspace_id) do nothing;
+                """,
+                (workspace_uuid,),
+            )
+            cur.execute(
+                """
+                update app.integration_endpoints
+                set
+                  n8n_webhook_url = coalesce(%s, n8n_webhook_url),
+                  enabled = coalesce(%s, enabled),
+                  secret = coalesce(%s, secret),
+                  updated_at = now()
+                where workspace_id = %s::uuid
+                returning workspace_id::text as workspace_id, n8n_webhook_url, enabled, secret, updated_at;
+                """,
+                (next_url, next_enabled, next_secret, workspace_uuid),
+            )
+            row = dict(cur.fetchone() or {})
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"n8n config patch error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    if not row:
+        raise HTTPException(status_code=500, detail="n8n config patch error")
+    return N8nIntegrationOut(
+        workspace_id=str(row.get("workspace_id") or workspace_uuid),
+        n8n_webhook_url=row.get("n8n_webhook_url"),
+        enabled=bool(row.get("enabled")),
+        secret=str(row.get("secret") or ""),
+        updated_at=_serialize_datetime(row.get("updated_at")),
+    )
+
+
+@router.post("/workspaces/{workspace_id}/integrations/n8n/test", response_model=N8nIntegrationTestOut)
+async def test_workspace_n8n_integration(
+    workspace_id: str,
+    payload: N8nIntegrationTestIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> N8nIntegrationTestOut:
+    if _myplanning_store() != "postgres":
+        raise HTTPException(status_code=409, detail="postgres store disabled (set MYPLANNING_STORE=postgres)")
+
+    workspace_uuid = _coerce_uuid_text(workspace_id)
+    if not workspace_uuid:
+        raise HTTPException(status_code=400, detail="workspace_id must be a UUID")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    event_payload = payload.payload or {}
+    event_payload.setdefault("probe", "n8n-test")
+    event_payload.setdefault("at", datetime.utcnow().isoformat())
+
+    conn = None
+    event_id = 0
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            _pg_assert_workspace_admin(cur, workspace_uuid, actor_id)
+            cur.execute(
+                """
+                insert into app.integration_endpoints(workspace_id)
+                values (%s::uuid)
+                on conflict (workspace_id) do nothing;
+                """,
+                (workspace_uuid,),
+            )
+            event_id = _insert_integration_event(
+                cur,
+                owner_id=actor_id,
+                workspace_id=workspace_uuid,
+                event_type=payload.event_type,
+                payload=event_payload,
+            )
+            if not event_id:
+                raise HTTPException(status_code=500, detail="Unable to enqueue integration event")
+            delivery = _deliver_integration_event(cur, event_id)
+        conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"n8n test error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return N8nIntegrationTestOut(
+        ok=delivery.get("status") in {"sent", "pending"},
+        event_id=int(event_id),
+        delivery_status=str(delivery.get("status") or "failed"),  # type: ignore[arg-type]
+        response_code=delivery.get("response_code"),
+    )
+
+
+@router.post("/admin/integrations/worker-tick")
+async def admin_integrations_worker_tick(
+    request: Request,
+    batch: int = Query(default=50, ge=1, le=500),
+) -> dict:
+    _require_admin_token_for_myplanning(request)
+    dsn = _pg_dsn()
+
+    conn = None
+    processed = 0
+    sent = 0
+    failed = 0
+    pending = 0
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            cur.execute(
+                """
+                select id
+                from app.integration_events
+                where status = 'pending'
+                order by id asc
+                limit %s
+                for update skip locked;
+                """,
+                (batch,),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+            for row in rows:
+                event_id = int(row.get("id"))
+                result = _deliver_integration_event(cur, event_id)
+                processed += 1
+                status_value = str(result.get("status") or "")
+                if status_value == "sent":
+                    sent += 1
+                elif status_value == "pending":
+                    pending += 1
+                else:
+                    failed += 1
+        conn.commit()
+    except Exception as exc:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"integrations worker-tick error: {exc.__class__.__name__}")
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
+    return {"ok": True, "processed": processed, "sent": sent, "failed": failed, "pending": pending}
 
 
 @router.get("/notifications/preferences", response_model=NotificationPreferencesOut)
@@ -5705,6 +6392,18 @@ async def attendance_scan(
                 ),
             )
             event_id = int((cur.fetchone() or {}).get("id") or 0)
+            _insert_integration_event(
+                cur,
+                owner_id=actor_id,
+                workspace_id=workspace_id,
+                event_type="attendance.checked_in" if payload.event_type == "check_in" else "attendance.checked_out",
+                payload={
+                    "event_id": event_id,
+                    "event_type": payload.event_type,
+                    "location_id": location_id,
+                    "event_ts": now.isoformat(),
+                },
+            )
 
             _pg_compute_attendance_daily_range(
                 cur,

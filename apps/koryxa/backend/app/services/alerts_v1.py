@@ -93,6 +93,30 @@ def _task_due_ts_sql() -> str:
     return "coalesce(t.due_datetime, (t.due_date::timestamptz + interval '23:59:59'))"
 
 
+def _enqueue_alert_sent_integration_event(cur: RealDictCursor, notification_row: dict[str, Any], provider_message_id: str | None) -> None:
+    workspace_id = str(notification_row.get("workspace_id") or "").strip()
+    owner_id = str(notification_row.get("owner_id") or "").strip()
+    if not workspace_id or not owner_id:
+        return
+    payload = {
+        "notification_id": int(notification_row.get("id") or 0),
+        "template": str(notification_row.get("template") or ""),
+        "channel": str(notification_row.get("channel") or ""),
+        "provider_message_id": provider_message_id,
+        "sent_at": _utc_now().isoformat(),
+    }
+    try:
+        cur.execute(
+            """
+            insert into app.integration_events(owner_id, workspace_id, type, payload_json, status, created_at)
+            values (%s::uuid, %s::uuid, 'alert.sent', %s::jsonb, 'pending', now());
+            """,
+            (owner_id, workspace_id, _json(payload)),
+        )
+    except Exception:
+        logger.warning("Could not enqueue alert.sent integration event", exc_info=True)
+
+
 def _render_email(template: str, payload: dict[str, Any]) -> tuple[str, str, str]:
     base = _frontend_base_url()
     link = f"{base}/myplanning/app"
@@ -501,6 +525,7 @@ async def worker_tick_async(*, batch: int = 50) -> dict[str, Any]:
                             "insert into app.notification_events(notification_id,event,meta) values (%s,'sent',%s::jsonb)",
                             (notif_id, _json({"provider_message_id": result.provider_message_id})),
                         )
+                        _enqueue_alert_sent_integration_event(cur, n, result.provider_message_id)
                         sent += 1
                     else:
                         cur.execute(
@@ -537,6 +562,7 @@ async def worker_tick_async(*, batch: int = 50) -> dict[str, Any]:
                             "insert into app.notification_events(notification_id,event,meta) values (%s,'sent',%s::jsonb)",
                             (notif_id, _json({"provider_message_id": result.provider_message_id})),
                         )
+                        _enqueue_alert_sent_integration_event(cur, n, result.provider_message_id)
                         sent += 1
                     else:
                         # Not configured: mark skipped (v1).

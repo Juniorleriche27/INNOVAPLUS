@@ -27,7 +27,11 @@ const INITIAL_FORM: LeadFormState = {
   website: "",
 };
 
-export function EnterpriseLeadForm() {
+type Props = {
+  sourcePage?: string;
+};
+
+export function EnterpriseLeadForm({ sourcePage = "/myplanning/enterprise" }: Props) {
   const [form, setForm] = useState<LeadFormState>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -46,7 +50,7 @@ export function EnterpriseLeadForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          source_page: "/myplanning/enterprise",
+          source_page: sourcePage,
           source_ts: new Date().toISOString(),
         }),
       });

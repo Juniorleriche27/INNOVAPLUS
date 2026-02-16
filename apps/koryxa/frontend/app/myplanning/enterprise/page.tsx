@@ -1,38 +1,37 @@
 import Link from "next/link";
 import { EnterpriseLeadForm } from "./_components/EnterpriseLeadForm";
-import EnterpriseOnboardingClient from "./_components/EnterpriseOnboardingClient";
 
 const USE_CASES = [
-  "Pilotage multi-projets pour directions opérationnelles",
-  "Suivi des risques (présence, progression, coûts) avec alertes",
-  "Reporting portefeuille pour comité de direction",
+  "Pilotage multi-projets pour directions opérationnelles (portefeuille unifié)",
+  "Suivi des risques (présence, progression, coûts) avec alertes actionnables",
+  "Gouvernance: rôles, traçabilité, intégrations et reporting comité de direction",
 ];
 
 const OFFER_ITEMS = [
   "Rapports IA projet + portefeuille (données mart)",
   "Tableaux de bord consolidés par secteur/pays/entreprise",
-  "Gouvernance: rôles, traçabilité, journal d’actions",
-  "Accompagnement déploiement et support prioritaire",
+  "Organisation complète: plusieurs espaces, départements, managers",
+  "Intégrations n8n (Notion, Google Calendar, Slack, Webhooks)",
 ];
 
 const FLOW = [
-  "Cadrage: objectifs, périmètre, indicateurs décisionnels",
-  "Intégration: connexion des données et configuration des vues",
-  "Go-live: formation des équipes + suivi des usages",
+  "Voir la démo interactive (sans login)",
+  "Activer votre organisation (onboarding guidé)",
+  "Connecter les intégrations et lancer la présence + reporting",
 ];
 
 const FAQ = [
   {
-    q: "Où sont stockées les données ?",
-    a: "Les données restent dans votre socle (Supabase/Postgres) et sont exposées via des vues mart contrôlées.",
+    q: "Quelle différence entre Espaces et Entreprise ?",
+    a: "Espaces = collaboration d’équipe (workspace). Entreprise = organisation complète: gouvernance, multi-espaces, reporting portefeuille et intégrations.",
   },
   {
-    q: "Le prix est-il fixe ?",
-    a: "Le plan Entreprise est sur devis selon le volume, le niveau de service et les besoins d’intégration.",
+    q: "Faut-il connecter toutes les données dès le début ?",
+    a: "Non. Vous pouvez démarrer avec un workspace et un flux n8n, puis étendre progressivement.",
   },
   {
-    q: "L’IA invente-t-elle des résultats ?",
-    a: "Non. Les rapports sont contraints par les données injectées et signalent 'non disponible' quand une information manque.",
+    q: "Le plan Entreprise est-il immédiat ?",
+    a: "Oui, le parcours d’activation est disponible: création d’organisation, premier espace, présence et intégrations.",
   },
 ];
 
@@ -41,24 +40,24 @@ export default function MyPlanningEnterprisePage() {
     <div className="mx-auto w-full max-w-6xl space-y-10">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Entreprise</p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Pilotage portefeuille + reporting IA</h1>
+        <h1 className="mt-3 text-3xl font-semibold text-slate-900">Organisation complète + gouvernance + reporting IA</h1>
         <p className="mt-3 max-w-3xl text-sm text-slate-700">
-          Passez d’un suivi artisanal à un pilotage structuré: visibilité en temps réel, alertes exploitables,
-          décisions plus rapides.
+          Entreprise n’est pas un simple workspace: c’est la couche au-dessus des Espaces, avec pilotage portefeuille,
+          présence, alertes et intégrations n8n.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <a
-            href="#enterprise-activation"
+          <Link
+            href="/myplanning/enterprise/onboarding"
             className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
           >
             Créer mon organisation
-          </a>
-          <a
-            href="#enterprise-how"
+          </Link>
+          <Link
+            href="/myplanning/enterprise/demo"
             className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Voir comment ça marche
-          </a>
+            Voir démo
+          </Link>
           <Link
             href="/myplanning/pricing"
             className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -66,10 +65,6 @@ export default function MyPlanningEnterprisePage() {
             Retour aux tarifs
           </Link>
         </div>
-      </section>
-
-      <section id="enterprise-activation">
-        <EnterpriseOnboardingClient />
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -111,9 +106,9 @@ export default function MyPlanningEnterprisePage() {
       </section>
 
       <section id="enterprise-lead-form" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-900">Parlez-nous de votre besoin</h2>
+        <h2 className="text-2xl font-semibold text-slate-900">Activer sur vos données</h2>
         <p className="mt-2 text-sm text-slate-700">
-          Nous revenons vers vous avec une proposition adaptée à votre contexte et vos objectifs.
+          Lancez un pilote sur vos données réelles (organisation, espaces, présence, reporting, intégrations).
         </p>
         <div className="mt-6">
           <EnterpriseLeadForm />
@@ -133,17 +128,23 @@ export default function MyPlanningEnterprisePage() {
       </section>
 
       <section className="rounded-3xl border border-slate-200 bg-slate-900 p-8 text-white shadow-sm">
-        <h2 className="text-2xl font-semibold">Prêt à structurer le pilotage de vos projets ?</h2>
+        <h2 className="text-2xl font-semibold">Prêt à activer Entreprise dans votre organisation ?</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-200">
-          Activez une base de reporting fiable et des recommandations actionnables pour vos équipes.
+          Démarrez par la démo interactive, puis activez votre onboarding pour connecter vos équipes et vos flux.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <a
-            href="#enterprise-activation"
+          <Link
+            href="/myplanning/enterprise/onboarding"
             className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100"
           >
             Créer mon organisation
-          </a>
+          </Link>
+          <Link
+            href="/myplanning/enterprise/demo"
+            className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            Voir démo
+          </Link>
           <a
             href="#enterprise-lead-form"
             className="inline-flex items-center justify-center rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"

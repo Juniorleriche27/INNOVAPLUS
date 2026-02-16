@@ -12,7 +12,7 @@ export default function MyPlanningStatsPage() {
 
   if (plan === "free") {
     return (
-      <div className="mx-auto w-full max-w-5xl space-y-6">
+      <div className="w-full space-y-6">
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI Pro</p>
           <h1 className="mt-4 text-3xl font-semibold text-slate-900">Stats & graphiques</h1>

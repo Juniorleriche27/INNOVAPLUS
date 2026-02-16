@@ -310,7 +310,7 @@ export default function EnterpriseOnboardingClient() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Enterprise onboarding</p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-900">Activer une organisation Entreprise</h1>

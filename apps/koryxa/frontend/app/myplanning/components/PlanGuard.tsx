@@ -19,7 +19,7 @@ export default function PlanGuard({ minPlan, featureName, children, ctaHref = "/
   if (hasPlanAccess(userPlan, minPlan)) return <>{children}</>;
 
   return (
-    <div className="mx-auto w-full max-w-4xl rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
+    <div className="w-full rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-800">Accès limité</p>
       <h1 className="mt-3 text-2xl font-semibold text-slate-900">{featureName}</h1>
       <p className="mt-3 text-sm text-slate-700">Cette fonctionnalité t’aide à mieux exécuter. Disponible avec MyPlanningAI Pro.</p>

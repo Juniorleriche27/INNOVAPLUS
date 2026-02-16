@@ -124,7 +124,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
   const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="w-full">
       <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 p-8 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

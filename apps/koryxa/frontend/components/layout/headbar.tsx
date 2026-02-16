@@ -96,7 +96,7 @@ function MyPlanningMarketingHeadbar({ pathname, isAuthenticated }: { pathname: s
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/myplanning" className="flex min-w-0 items-center gap-3">
           <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
             <span className="text-xs font-semibold text-white">MP</span>

@@ -123,7 +123,7 @@ export default function MyPlanningOrgDashboardPage({ params }: OrgDashboardPageP
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Enterprise Org Dashboard</p>
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">

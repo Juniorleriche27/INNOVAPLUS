@@ -140,7 +140,7 @@ export default function TeamWorkspaceDetailClient({ workspaceId }: Props) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

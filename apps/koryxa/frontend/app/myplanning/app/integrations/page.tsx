@@ -139,7 +139,7 @@ export default function MyPlanningIntegrationsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanning Integrations</p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-900">Connecter n8n</h1>

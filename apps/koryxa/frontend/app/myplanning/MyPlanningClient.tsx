@@ -996,7 +996,7 @@ export default function MyPlanningClient({
     const goalLength = (onboardingData.main_goal_mid_term || "").length;
     const dailyHintLength = (onboardingData.daily_focus_hint || "").length;
     return (
-      <div className="mx-auto w-full max-w-3xl space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="w-full space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Onboarding MyPlanningAI</p>
           <p className="text-sm text-slate-600">Étape {onboardingStep} / 6</p>
@@ -2005,7 +2005,7 @@ export default function MyPlanningClient({
 
   const renderCoaching = () => (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mx-auto max-w-5xl space-y-4">
+      <div className="w-full space-y-4">
         <div className="rounded-3xl bg-gradient-to-br from-sky-600 via-sky-500 to-slate-900 px-8 py-6 text-white shadow-lg shadow-sky-300/40">
           <p className="text-xs uppercase tracking-[0.3em] text-white/70">Coaching MyPlanningAI</p>
           <h2 className="mt-1 text-2xl font-semibold leading-tight">Organise ta journée en 1 clic</h2>
@@ -2076,7 +2076,7 @@ export default function MyPlanningClient({
           </button>
         </div>
       )}
-      <div className="mx-auto mt-3 flex max-w-5xl flex-col gap-3">
+      <div className="mt-3 flex w-full flex-col gap-3">
         <textarea
           value={aiText}
           onChange={(event) => setAiText(event.target.value)}
@@ -2439,7 +2439,7 @@ export default function MyPlanningClient({
 
   if (shouldBlockOnboarding) {
     return (
-      <div className="mx-auto w-full max-w-5xl py-6 sm:py-10">
+      <div className="w-full py-6 sm:py-10">
         {onboardingLoading ? (
           <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-sm text-slate-600 shadow-sm">
             Chargement de l’onboarding…

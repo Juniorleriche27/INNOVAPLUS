@@ -110,7 +110,7 @@ export default function EnterpriseDemoClient() {
   }, [overview, topRisks]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10">
+    <div className="w-full space-y-10">
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Enterprise demo</p>
         <h1 className="mt-3 text-3xl font-semibold text-slate-900">Démo interactive: portefeuille + risques + présence</h1>

@@ -348,9 +348,11 @@ const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute
 export default function MyPlanningClient({
   variant = "product",
   initialSection,
+  productDesktopNav = "bottom",
 }: {
   variant?: "product" | "learning";
   initialSection?: string;
+  productDesktopNav?: "bottom" | "sidebar";
 }) {
   const { user } = useAuth();
   const plan = useMemo(() => inferUserPlan(user), [user]);
@@ -2392,6 +2394,10 @@ export default function MyPlanningClient({
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-slate-100"
     : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
+  const showProductDesktopSidebar = variant === "product" && productDesktopNav === "sidebar" && !isFullscreen;
+  const showProductBottomNav = variant === "product" && !isFullscreen;
+  const contentPaddingBottomClass =
+    variant === "product" ? (productDesktopNav === "sidebar" ? "pb-24 md:pb-6" : "pb-24") : "";
   const shouldBlockOnboarding = variant === "product" && (onboardingLoading || !onboardingData.onboarding_completed);
 
   if (shouldBlockOnboarding) {
@@ -2504,6 +2510,70 @@ export default function MyPlanningClient({
           </nav>
         </aside>
       ) : null}
+      {showProductDesktopSidebar ? (
+        <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white/95 p-4 md:flex">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">MyPlanningAI</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">App</p>
+          </div>
+          <nav className="mt-5 space-y-5 text-sm font-semibold">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Vues</p>
+              <div className="mt-2 space-y-2">
+                {VIEWS.map((item) => {
+                  const locked = !hasPlanAccess(plan, item.minPlan);
+                  const active = activeSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSectionClick(item.id)}
+                      className={`flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition ${
+                        active ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
+                      title={item.label}
+                    >
+                      <span>{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {locked ? (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
+                          {lockedBadgeLabel(item.minPlan, item.beta)}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Actions</p>
+              <div className="mt-2 space-y-2">
+                {ACTIONS.map((item) => {
+                  const locked = !hasPlanAccess(plan, item.minPlan);
+                  const active = activeSection === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSectionClick(item.id)}
+                      className={`flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition ${
+                        active ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
+                      title={item.label}
+                    >
+                      <span>{item.icon}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {locked ? (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
+                          {lockedBadgeLabel(item.minPlan, item.beta)}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </nav>
+        </aside>
+      ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
           <div>
@@ -2542,7 +2612,7 @@ export default function MyPlanningClient({
             </button>
           </div>
         </div>
-        <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${variant === "product" ? "pb-24" : ""}`}>
+        <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${contentPaddingBottomClass}`}>
           {banner && (
             <div
               className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
@@ -2556,8 +2626,12 @@ export default function MyPlanningClient({
         </div>
       </main>
 
-      {variant === "product" ? (
-        <div className="fixed bottom-4 left-1/2 z-50 w-[min(980px,calc(100vw-24px))] -translate-x-1/2">
+      {showProductBottomNav ? (
+        <div
+          className={`fixed bottom-4 left-1/2 z-50 w-[min(980px,calc(100vw-24px))] -translate-x-1/2 ${
+            productDesktopNav === "sidebar" ? "md:hidden" : ""
+          }`}
+        >
           <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
             <div className="flex items-center gap-2 overflow-x-auto">
               {[...VIEWS, ...ACTIONS].map((item) => {

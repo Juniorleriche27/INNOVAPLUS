@@ -43,9 +43,33 @@ export type AttendanceOverviewPoint = {
   absent: number;
 };
 
+export type AttendanceOverviewByDayPoint = {
+  date: string;
+  present: number;
+  partial: number;
+  absent: number;
+  minutes_present_total: number;
+};
+
+export type AttendanceTopLate = {
+  user_id: string;
+  minutes_present: number;
+  first_in?: string | null;
+  last_out?: string | null;
+};
+
 export type AttendanceOverview = {
   workspace_id: string;
   window: { from: string; to: string };
+  members_total: number;
+  present_count: number;
+  partial_count: number;
+  absent_count: number;
+  presence_rate: number;
+  avg_minutes_present: number;
+  by_day: AttendanceOverviewByDayPoint[];
+  top_late?: AttendanceTopLate[];
+  // Legacy fields kept for compatibility with older payloads.
   present_rate: number;
   n_present: number;
   n_absent: number;
@@ -106,3 +130,7 @@ export async function myplanningRequest<T>(path: string, init?: RequestInit): Pr
   return payload as T;
 }
 
+export function myplanningApiUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${MYPLANNING_API_BASE}${normalized}`;
+}

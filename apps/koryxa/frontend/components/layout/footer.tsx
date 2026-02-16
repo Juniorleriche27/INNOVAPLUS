@@ -7,6 +7,7 @@ import { IS_V1_SIMPLE } from "@/lib/env";
 export default function Footer() {
   const pathname = usePathname();
   if (pathname.startsWith("/school")) return null;
+  if (pathname.startsWith("/myplanning/app")) return null;
   const isMyPlanning = pathname.startsWith("/myplanning");
   const hasMyPlanningFloatingNav =
     isMyPlanning &&

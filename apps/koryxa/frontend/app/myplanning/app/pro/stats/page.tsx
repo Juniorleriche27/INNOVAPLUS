@@ -6,7 +6,7 @@ import PlanGuard from "@/app/myplanning/components/PlanGuard";
 export default function MyPlanningProStatsPage() {
   return (
     <PlanGuard minPlan="pro" featureName="Stats & graphiques" ctaHref="/myplanning/pro">
-      <MyPlanningClient variant="product" initialSection="stats" />
+      <MyPlanningClient variant="product" initialSection="stats" productDesktopNav="sidebar" />
     </PlanGuard>
   );
 }

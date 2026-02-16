@@ -2074,6 +2074,7 @@ def ensure_myplanning_enterprise_ops_tables() -> None:
     db_execute("grant select, insert, update, delete on app.departments to authenticated;")
     db_execute("grant select, insert, update, delete on app.integration_endpoints to authenticated;")
     db_execute("grant select, insert, update, delete on app.integration_events to authenticated;")
+    db_execute("grant select, insert on app.integration_mock_receipts to authenticated;")
 
     db_execute(
         """
@@ -2110,6 +2111,7 @@ def ensure_myplanning_enterprise_ops_tables() -> None:
     db_execute("alter table app.departments enable row level security;")
     db_execute("alter table app.integration_endpoints enable row level security;")
     db_execute("alter table app.integration_events enable row level security;")
+    db_execute("alter table app.integration_mock_receipts enable row level security;")
 
     db_execute("drop policy if exists departments_select_member on app.departments;")
     db_execute("drop policy if exists departments_insert_admin on app.departments;")
@@ -2123,6 +2125,8 @@ def ensure_myplanning_enterprise_ops_tables() -> None:
     db_execute("drop policy if exists integration_events_insert_member on app.integration_events;")
     db_execute("drop policy if exists integration_events_update_admin on app.integration_events;")
     db_execute("drop policy if exists integration_events_delete_admin on app.integration_events;")
+    db_execute("drop policy if exists integration_mock_receipts_select_member on app.integration_mock_receipts;")
+    db_execute("drop policy if exists integration_mock_receipts_insert_member on app.integration_mock_receipts;")
 
     db_execute(
         """
@@ -2244,6 +2248,31 @@ def ensure_myplanning_enterprise_ops_tables() -> None:
           for delete
           to authenticated
           using (app.is_workspace_admin(integration_events.workspace_id, auth.uid()));
+        """
+    )
+
+    db_execute(
+        """
+        create policy integration_mock_receipts_select_member
+          on app.integration_mock_receipts
+          for select
+          to authenticated
+          using (
+            owner_id = auth.uid()
+            or app.is_workspace_member(integration_mock_receipts.workspace_id, auth.uid())
+          );
+        """
+    )
+    db_execute(
+        """
+        create policy integration_mock_receipts_insert_member
+          on app.integration_mock_receipts
+          for insert
+          to authenticated
+          with check (
+            owner_id = auth.uid()
+            and app.is_workspace_member(integration_mock_receipts.workspace_id, auth.uid())
+          );
         """
     )
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import PaywallModal from "./components/PaywallModal";
 import {
@@ -137,6 +138,14 @@ const MOSCOW_LABEL: Record<Priority, string> = {
 const SOURCE_LABEL: Record<TaskSource, string> = {
   manual: "Manuel",
   ia: "IA",
+};
+
+const SECTION_ROUTE_MAP: Partial<Record<MyPlanningFeatureId, string>> = {
+  dashboard: "/myplanning/app",
+  stats: "/myplanning/app/pro/stats",
+  coaching: "/myplanning/app/pro/coaching",
+  templates: "/myplanning/app/pro/templates",
+  automations: "/myplanning/app/pro/automations",
 };
 
 function hasHour(text: string): boolean {
@@ -348,12 +357,15 @@ const timeFormatter = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute
 export default function MyPlanningClient({
   variant = "product",
   initialSection,
-  productDesktopNav = "bottom",
+  productDesktopNav = "sidebar",
 }: {
   variant?: "product" | "learning";
   initialSection?: string;
   productDesktopNav?: "bottom" | "sidebar";
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const plan = useMemo(() => inferUserPlan(user), [user]);
   const initialFeature = useMemo<MyPlanningFeatureId>(
@@ -380,7 +392,7 @@ export default function MyPlanningClient({
   const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
   const [bulkAdding, setBulkAdding] = useState(false);
   const [addedDrafts, setAddedDrafts] = useState<Set<string>>(new Set());
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [manualFullscreen, setManualFullscreen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showCoachingGuide, setShowCoachingGuide] = useState(true);
   const [aiSummary, setAiSummary] = useState<{ total: number; counts: Record<Priority, number>; highImpact: number } | null>(null);
@@ -402,6 +414,23 @@ export default function MyPlanningClient({
   const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [editingGeneratedTask, setEditingGeneratedTask] = useState<number | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingState>({ ...EMPTY_ONBOARDING_STATE });
+
+  const queryFullscreen = useMemo(() => {
+    const raw = (searchParams.get("fullscreen") || "").toLowerCase();
+    return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+  }, [searchParams]);
+  const isFullscreen = manualFullscreen || queryFullscreen;
+
+  const toggleFullscreen = () => {
+    if (queryFullscreen) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("fullscreen");
+      const nextPath = nextParams.size ? `${pathname}?${nextParams.toString()}` : pathname;
+      router.replace(nextPath, { scroll: false });
+      return;
+    }
+    setManualFullscreen((value) => !value);
+  };
 
   const loadTasks = async () => {
     setLoading(true);
@@ -525,6 +554,12 @@ export default function MyPlanningClient({
       return;
     }
     setActiveSection(sectionId);
+    if (variant === "product" && pathname.startsWith("/myplanning/app")) {
+      const targetRoute = SECTION_ROUTE_MAP[sectionId];
+      if (targetRoute && targetRoute !== pathname) {
+        router.push(targetRoute);
+      }
+    }
   }
 
   useEffect(() => {
@@ -2605,7 +2640,7 @@ export default function MyPlanningClient({
               Organiser ma journée (IA)
             </button>
             <button
-              onClick={() => setIsFullscreen((value) => !value)}
+              onClick={toggleFullscreen}
               className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
             >
               {isFullscreen ? "Quitter le plein écran" : "Plein écran"}

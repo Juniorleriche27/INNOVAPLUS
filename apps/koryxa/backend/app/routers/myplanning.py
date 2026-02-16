@@ -3261,7 +3261,6 @@ async def create_org(
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
             _pg_upsert_auth_user(cur, actor_id, actor_email)
-            _pg_set_rls_actor(cur, actor_id)
             cur.execute(
                 """
                 select 1

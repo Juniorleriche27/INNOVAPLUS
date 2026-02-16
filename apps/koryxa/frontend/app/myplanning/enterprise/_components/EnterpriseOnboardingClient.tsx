@@ -272,7 +272,7 @@ export default function EnterpriseOnboardingClient() {
 
   function onFinish() {
     if (!workspaceId) return;
-    router.push(`/myplanning/enterprise/dashboard?org_id=${encodeURIComponent(orgId)}&workspace_id=${encodeURIComponent(workspaceId)}`);
+    router.push(`/myplanning/orgs/${encodeURIComponent(orgId)}?workspace_id=${encodeURIComponent(workspaceId)}`);
   }
 
   if (authLoading) {
@@ -591,4 +591,3 @@ export default function EnterpriseOnboardingClient() {
     </div>
   );
 }
-

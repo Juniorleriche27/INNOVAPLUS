@@ -63,6 +63,10 @@ export async function listOrgs(): Promise<Organization[]> {
   return myplanningRequest<Organization[]>("/orgs");
 }
 
+export async function getOrg(orgId: string): Promise<OrganizationDetail> {
+  return myplanningRequest<OrganizationDetail>(`/orgs/${encodeURIComponent(orgId)}`);
+}
+
 export async function createOrg(name: string): Promise<Organization> {
   const trimmed = name.trim();
   if (!trimmed) {

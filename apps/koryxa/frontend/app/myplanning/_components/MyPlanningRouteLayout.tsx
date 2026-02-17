@@ -440,7 +440,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
-  const profileHref = isAuthenticated ? "/account/role" : "/myplanning/login?redirect=/myplanning";
+  const profileHref = isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/myplanning/profile";
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.email || "";
   const userInitial = displayName ? displayName.charAt(0).toUpperCase() : "M";
 

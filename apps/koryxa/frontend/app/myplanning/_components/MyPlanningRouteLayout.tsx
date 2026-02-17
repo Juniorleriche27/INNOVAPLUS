@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -96,10 +96,10 @@ function breadcrumbTitle(pathname: string): string {
 function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; collapsed: boolean; onToggle: () => void }) {
   return (
     <aside
-      className="hidden h-screen shrink-0 border-r border-slate-200 bg-white/95 p-3 lg:flex lg:flex-col"
+      className="hidden h-screen shrink-0 border-r border-slate-200 bg-white/95 p-3 pl-4 lg:flex lg:flex-col"
       style={{ width: collapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)" }}
     >
-      <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
         {!collapsed ? (
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">MyPlanningAI</p>
@@ -153,11 +153,11 @@ function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; c
 
 function ProductTopbar({
   pathname,
-  fullscreenHref,
+  onToggleFullscreen,
   isFullscreen,
 }: {
   pathname: string;
-  fullscreenHref: string;
+  onToggleFullscreen: () => void;
   isFullscreen: boolean;
 }) {
   return (
@@ -170,12 +170,13 @@ function ProductTopbar({
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
         </div>
 
-        <Link
-          href={fullscreenHref}
+        <button
+          type="button"
+          onClick={onToggleFullscreen}
           className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
         >
           {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-        </Link>
+        </button>
       </div>
     </header>
   );
@@ -230,15 +231,22 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   const productRoute = isProductRoute(pathname);
   const standaloneWorkspace = isStandaloneWorkspace(pathname);
 
-  const [search, setSearch] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [sidebarMode, setSidebarMode] = useState<"expanded" | "collapsed">("expanded");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const sync = () => setSearch(window.location.search || "");
+    const sync = () => {
+      const raw = (new URLSearchParams(window.location.search).get("fullscreen") || "").toLowerCase();
+      setIsFullscreen(raw === "1" || raw === "true" || raw === "yes" || raw === "on");
+    };
     sync();
     window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
+    window.addEventListener("myplanning:querychange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("myplanning:querychange", sync);
+    };
   }, [pathname]);
 
   useEffect(() => {
@@ -254,17 +262,17 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     window.localStorage.setItem("myplanning.sidebar", sidebarMode);
   }, [sidebarMode]);
 
-  const currentParams = useMemo(() => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search), [search]);
-  const isFullscreen = currentParams.get("fullscreen") === "1";
   const isSidebarCollapsed = sidebarMode === "collapsed";
 
-  const fullscreenHref = useMemo(() => {
-    const params = new URLSearchParams(currentParams.toString());
-    if (isFullscreen) params.delete("fullscreen");
-    else params.set("fullscreen", "1");
-    const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }, [isFullscreen, pathname, currentParams]);
+  const toggleFullscreen = () => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (isFullscreen) url.searchParams.delete("fullscreen");
+    else url.searchParams.set("fullscreen", "1");
+    window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setIsFullscreen(!isFullscreen);
+    window.dispatchEvent(new Event("myplanning:querychange"));
+  };
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
@@ -301,7 +309,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   if (isFullscreen) {
     return (
-      <div className="min-h-screen w-full bg-slate-100">
+      <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
         <main className="min-h-screen w-full overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
           <div className="mx-auto w-full">
             {children}
@@ -312,11 +320,11 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-100">
-      <div className="flex min-h-screen w-full">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <ProductSidebar pathname={pathname} collapsed={isSidebarCollapsed} onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <ProductTopbar pathname={pathname} fullscreenHref={fullscreenHref} isFullscreen={isFullscreen} />
+          <ProductTopbar pathname={pathname} onToggleFullscreen={toggleFullscreen} isFullscreen={isFullscreen} />
           <main className="min-h-0 flex-1 overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
             <div className="mx-auto w-full">
               {children}

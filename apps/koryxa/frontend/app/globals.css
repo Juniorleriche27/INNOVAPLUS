@@ -6,8 +6,8 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --app-max-w: 1440px;
-  --marketing-max-w: 1320px;
+  --app-max-w: 1280px;
+  --marketing-max-w: 1240px;
   --content-pad: 24px;
   --content-pad-sm: 16px;
   --sidebar-w: 280px;

@@ -237,10 +237,18 @@ function ProductTopbar({
   pathname,
   onToggleFullscreen,
   isFullscreen,
+  isAuthenticated,
+  profileHref,
+  userInitial,
+  displayName,
 }: {
   pathname: string;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
+  isAuthenticated: boolean;
+  profileHref: string;
+  userInitial: string;
+  displayName: string;
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
@@ -253,6 +261,18 @@ function ProductTopbar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={profileHref}
+            prefetch
+            scroll={false}
+            title={isAuthenticated ? (displayName || "Mon profil") : "Se connecter"}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+          >
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700">
+              {userInitial}
+            </span>
+            <span>{isAuthenticated ? "Mon profil" : "Connexion"}</span>
+          </Link>
           <Link
             href="/myplanning/pricing"
             prefetch
@@ -276,7 +296,23 @@ function ProductTopbar({
   );
 }
 
-function MarketingHeader({ ctaHref, ctaLabel, pathname }: { ctaHref: string; ctaLabel: string; pathname: string }) {
+function MarketingHeader({
+  ctaHref,
+  ctaLabel,
+  pathname,
+  isAuthenticated,
+  profileHref,
+  userInitial,
+  displayName,
+}: {
+  ctaHref: string;
+  ctaLabel: string;
+  pathname: string;
+  isAuthenticated: boolean;
+  profileHref: string;
+  userInitial: string;
+  displayName: string;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur sm:px-[var(--content-pad)] lg:px-8">
       <div className="mx-auto flex w-full items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
@@ -312,9 +348,23 @@ function MarketingHeader({ ctaHref, ctaLabel, pathname }: { ctaHref: string; cta
           })}
         </nav>
 
-        <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-          {ctaLabel}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={profileHref}
+            prefetch
+            scroll={false}
+            title={isAuthenticated ? (displayName || "Mon profil") : "Se connecter"}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+          >
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
+              {userInitial}
+            </span>
+            <span className="hidden sm:inline">{isAuthenticated ? "Mon profil" : "Connexion"}</span>
+          </Link>
+          <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+            {ctaLabel}
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -390,11 +440,22 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
+  const profileHref = isAuthenticated ? "/account/role" : "/myplanning/login?redirect=/myplanning";
+  const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.email || "";
+  const userInitial = displayName ? displayName.charAt(0).toUpperCase() : "M";
 
   if (!productRoute) {
     return (
       <div className="min-h-screen w-full bg-slate-50">
-        <MarketingHeader ctaHref={ctaHref} ctaLabel={ctaLabel} pathname={pathname} />
+        <MarketingHeader
+          ctaHref={ctaHref}
+          ctaLabel={ctaLabel}
+          pathname={pathname}
+          isAuthenticated={isAuthenticated}
+          profileHref={profileHref}
+          userInitial={userInitial}
+          displayName={displayName}
+        />
         <main className="w-full px-[var(--content-pad-sm)] py-6 sm:px-[var(--content-pad)] lg:px-8">
           <div className="mx-auto w-full" style={{ maxWidth: "var(--marketing-max-w)" }}>
             {children}
@@ -479,7 +540,15 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
           tier={sidebarTier}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <ProductTopbar pathname={pathname} onToggleFullscreen={toggleFullscreen} isFullscreen={isFullscreen} />
+          <ProductTopbar
+            pathname={pathname}
+            onToggleFullscreen={toggleFullscreen}
+            isFullscreen={isFullscreen}
+            isAuthenticated={isAuthenticated}
+            profileHref={profileHref}
+            userInitial={userInitial}
+            displayName={displayName}
+          />
           <main className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
             <div className="mx-auto w-full">
               {children}

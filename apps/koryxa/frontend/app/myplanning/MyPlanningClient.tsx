@@ -429,13 +429,28 @@ export default function MyPlanningClient({
     };
   }, [pathname]);
 
-  const toggleFullscreen = () => {
+  const applyFullscreenParam = (nextFullscreen: boolean) => {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
-    if (isFullscreen) url.searchParams.delete("fullscreen");
-    else url.searchParams.set("fullscreen", "1");
-    window.location.assign(`${url.pathname}${url.search}${url.hash}`);
+    if (nextFullscreen) url.searchParams.set("fullscreen", "1");
+    else url.searchParams.delete("fullscreen");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setIsFullscreen(nextFullscreen);
+    window.dispatchEvent(new Event("myplanning:querychange"));
   };
+
+  const toggleFullscreen = () => {
+    applyFullscreenParam(!isFullscreen);
+  };
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") applyFullscreenParam(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isFullscreen]);
 
   const loadTasks = async () => {
     setLoading(true);
@@ -2679,8 +2694,10 @@ export default function MyPlanningClient({
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
+                title={isFullscreen ? "Quitter le plein écran (Esc)" : "Activer le plein écran"}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
               >
+                <span aria-hidden className="text-sm leading-none">{isFullscreen ? "🗗" : "⛶"}</span>
                 {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
               </button>
             </div>

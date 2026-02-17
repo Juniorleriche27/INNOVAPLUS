@@ -93,6 +93,10 @@ function breadcrumbTitle(pathname: string): string {
   return "MyPlanning";
 }
 
+function FullscreenIcon({ active }: { active: boolean }) {
+  return <span aria-hidden className="text-sm leading-none">{active ? "🗗" : "⛶"}</span>;
+}
+
 function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; collapsed: boolean; onToggle: () => void }) {
   return (
     <aside
@@ -129,6 +133,8 @@ function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; c
                   <Link
                     key={`${group.title}-${entry.href}-${entry.label}`}
                     href={entry.href}
+                    prefetch
+                    scroll={false}
                     title={entry.label}
                     className={clsx(
                       "flex items-center rounded-xl px-2 py-2 text-sm font-medium transition",
@@ -164,7 +170,7 @@ function ProductTopbar({
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
       <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/" className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+          <Link href="/" prefetch className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
             ← Site KORYXA
           </Link>
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
@@ -173,8 +179,10 @@ function ProductTopbar({
         <button
           type="button"
           onClick={onToggleFullscreen}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+          title={isFullscreen ? "Quitter le plein écran (Esc)" : "Activer le plein écran"}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
         >
+          <FullscreenIcon active={isFullscreen} />
           {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
         </button>
       </div>
@@ -203,6 +211,8 @@ function MarketingHeader({ ctaHref, ctaLabel, pathname }: { ctaHref: string; cta
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch
+                scroll={false}
                 className={clsx(
                   "inline-flex min-w-[110px] justify-center rounded-xl border px-3 py-2 text-[12px] font-semibold shadow-sm transition",
                   active
@@ -216,7 +226,7 @@ function MarketingHeader({ ctaHref, ctaLabel, pathname }: { ctaHref: string; cta
           })}
         </nav>
 
-        <Link href={ctaHref} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+        <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
           {ctaLabel}
         </Link>
       </div>
@@ -269,8 +279,24 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     const url = new URL(window.location.href);
     if (isFullscreen) url.searchParams.delete("fullscreen");
     else url.searchParams.set("fullscreen", "1");
-    window.location.assign(`${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setIsFullscreen(!isFullscreen);
+    window.dispatchEvent(new Event("myplanning:querychange"));
   };
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const url = new URL(window.location.href);
+      url.searchParams.delete("fullscreen");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      setIsFullscreen(false);
+      window.dispatchEvent(new Event("myplanning:querychange"));
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isFullscreen]);
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
@@ -308,6 +334,15 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   if (isFullscreen) {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          title="Quitter le plein écran (Esc)"
+          className="fixed right-3 top-3 z-50 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700"
+        >
+          <FullscreenIcon active />
+          Quitter
+        </button>
         <main className="min-h-screen w-full overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
           <div className="mx-auto w-full">
             {children}
@@ -342,6 +377,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
             <Link
               key={item.href}
               href={item.href}
+              prefetch
+              scroll={false}
               className={clsx(
                 "rounded-xl px-2 py-2 text-center text-xs font-semibold",
                 pathname.startsWith(item.href) ? "bg-sky-600 text-white" : "text-slate-700 hover:bg-slate-100"

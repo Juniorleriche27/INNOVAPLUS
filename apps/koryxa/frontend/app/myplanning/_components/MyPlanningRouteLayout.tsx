@@ -96,10 +96,10 @@ function breadcrumbTitle(pathname: string): string {
 function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; collapsed: boolean; onToggle: () => void }) {
   return (
     <aside
-      className="hidden h-screen shrink-0 border-r border-slate-200 bg-white/95 p-3 lg:flex lg:flex-col"
+      className="hidden h-screen shrink-0 border-r border-slate-200 bg-white/95 p-3 pl-4 lg:flex lg:flex-col"
       style={{ width: collapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)" }}
     >
-      <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
         {!collapsed ? (
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">MyPlanningAI</p>
@@ -301,7 +301,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   if (isFullscreen) {
     return (
-      <div className="min-h-screen w-full bg-slate-100">
+      <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
         <main className="min-h-screen w-full overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
           <div className="mx-auto w-full">
             {children}
@@ -312,8 +312,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-100">
-      <div className="flex min-h-screen w-full">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <ProductSidebar pathname={pathname} collapsed={isSidebarCollapsed} onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))} />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar pathname={pathname} fullscreenHref={fullscreenHref} isFullscreen={isFullscreen} />

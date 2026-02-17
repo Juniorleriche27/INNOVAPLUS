@@ -2564,7 +2564,7 @@ export default function MyPlanningClient({
       ) : null}
       {showProductDesktopSidebar ? (
         <aside
-          className="hidden h-full shrink-0 flex-col border-r border-slate-200 bg-white/95 p-3 lg:flex"
+          className="hidden h-full shrink-0 flex-col border-r border-slate-200 bg-white/95 p-3 pl-4 lg:flex"
           style={{ width: isSidebarCollapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)" }}
         >
           <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2">

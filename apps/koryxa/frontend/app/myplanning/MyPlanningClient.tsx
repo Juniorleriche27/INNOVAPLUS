@@ -443,6 +443,20 @@ export default function MyPlanningClient({
     applyFullscreenParam(!isFullscreen);
   };
 
+  const navigateWithFallback = (href: string) => {
+    router.push(href);
+    if (typeof window === "undefined") return;
+    const targetUrl = new URL(href, window.location.origin);
+    window.setTimeout(() => {
+      const atTarget =
+        window.location.pathname === targetUrl.pathname &&
+        (targetUrl.search ? window.location.search === targetUrl.search : true);
+      if (!atTarget) {
+        window.location.assign(`${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`);
+      }
+    }, 250);
+  };
+
   useEffect(() => {
     if (!isFullscreen) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -2654,22 +2668,20 @@ export default function MyPlanningClient({
           <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <Link
-                  href="/"
-                  prefetch
-                  scroll={false}
+                <button
+                  type="button"
+                  onClick={() => navigateWithFallback("/")}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
                 >
                   ← Site KORYXA
-                </Link>
-                <Link
-                  href="/myplanning"
-                  prefetch
-                  scroll={false}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateWithFallback("/myplanning")}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
                 >
                   Accueil MyPlanning
-                </Link>
+                </button>
               </div>
               <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
                 {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}

@@ -2643,59 +2643,61 @@ export default function MyPlanningClient({
         </aside>
       ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/"
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
-              >
-                ← Site KORYXA
-              </Link>
-              <Link
-                href="/myplanning"
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
-              >
-                Accueil MyPlanning
-              </Link>
+        <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
+          <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--app-max-w)" }}>
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href="/"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                >
+                  ← Site KORYXA
+                </Link>
+                <Link
+                  href="/myplanning"
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                >
+                  Accueil MyPlanning
+                </Link>
+              </div>
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+                {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}
+              </p>
+              <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
             </div>
-            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-              {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}
-            </p>
-            <p className="text-lg font-semibold text-slate-900">{dayFormatter.format(selectedDate)}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => shiftSelectedDate(-1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-              ← Jour précédent
-            </button>
-            <input
-              type="date"
-              value={dateInputValue}
-              onChange={(event) => {
-                const next = new Date(event.target.value);
-                if (!Number.isNaN(next.getTime())) setSelectedDateAndFocus(next);
-              }}
-              className="rounded-full border border-slate-200 px-3 py-1 text-xs"
-            />
-            <button onClick={() => shiftSelectedDate(1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-              Jour suivant →
-            </button>
-            <button
-              onClick={() => handleSectionClick("coaching")}
-              className="rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500"
-            >
-              Organiser ma journée (IA)
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
-            >
-              {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => shiftSelectedDate(-1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+                ← Jour précédent
+              </button>
+              <input
+                type="date"
+                value={dateInputValue}
+                onChange={(event) => {
+                  const next = new Date(event.target.value);
+                  if (!Number.isNaN(next.getTime())) setSelectedDateAndFocus(next);
+                }}
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs"
+              />
+              <button onClick={() => shiftSelectedDate(1)} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
+                Jour suivant →
+              </button>
+              <button
+                onClick={() => handleSectionClick("coaching")}
+                className="rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-500"
+              >
+                Organiser ma journée (IA)
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
+              >
+                {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+              </button>
+            </div>
           </div>
         </div>
         <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${contentPaddingBottomClass}`}>
-          <div className="mx-auto w-full max-w-[var(--app-max-w)]">
+          <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
             {banner && (
               <div
                 className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${

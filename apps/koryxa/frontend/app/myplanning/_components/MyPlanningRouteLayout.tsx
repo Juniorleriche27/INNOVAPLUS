@@ -162,7 +162,7 @@ function ProductTopbar({
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur sm:px-[var(--content-pad)]" style={{ minHeight: "var(--topbar-h)" }}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--app-max-w)" }}>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/" className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
             ← Site KORYXA
@@ -184,7 +184,7 @@ function ProductTopbar({
 function MarketingHeader({ ctaHref, ctaLabel, pathname }: { ctaHref: string; ctaLabel: string; pathname: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur sm:px-[var(--content-pad)] lg:px-8">
-      <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] items-center justify-between gap-3">
+      <div className="mx-auto flex w-full items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
         <Link href="/myplanning" className="flex min-w-0 items-center gap-3">
           <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
             <span className="text-xs font-semibold text-white">MP</span>
@@ -274,10 +274,12 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
       <div className="min-h-screen w-full bg-slate-50">
         <MarketingHeader ctaHref={ctaHref} ctaLabel={ctaLabel} pathname={pathname} />
         <main className="w-full px-[var(--content-pad-sm)] py-6 sm:px-[var(--content-pad)] lg:px-8">
-          <div className="mx-auto w-full max-w-[var(--marketing-max-w)]">{children}</div>
+          <div className="mx-auto w-full" style={{ maxWidth: "var(--marketing-max-w)" }}>
+            {children}
+          </div>
         </main>
         <footer className="border-t border-slate-200 bg-white px-[var(--content-pad-sm)] py-4 text-xs text-slate-500 sm:px-[var(--content-pad)] lg:px-8">
-          <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] flex-wrap items-center justify-between gap-3">
+          <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
             <p>MyPlanningAI • Produit SaaS de pilotage quotidien.</p>
             <div className="flex items-center gap-3">
               <Link href="/privacy" className="hover:text-sky-700">
@@ -301,7 +303,9 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     return (
       <div className="min-h-screen w-full bg-slate-100">
         <main className="min-h-screen w-full overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
-          <div className="mx-auto w-full max-w-[var(--app-max-w)]">{children}</div>
+          <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
+            {children}
+          </div>
         </main>
       </div>
     );
@@ -314,7 +318,9 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar pathname={pathname} fullscreenHref={fullscreenHref} isFullscreen={isFullscreen} />
           <main className="min-h-0 flex-1 overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
-            <div className="mx-auto w-full max-w-[var(--app-max-w)]">{children}</div>
+            <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
+              {children}
+            </div>
           </main>
         </div>
       </div>

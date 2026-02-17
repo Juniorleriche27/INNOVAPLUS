@@ -41,12 +41,6 @@ const NAV_PILL_CLASS =
 const CTA_PILL_CLASS =
   "inline-flex min-w-[128px] justify-center items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-xl transition-all duration-200 shadow-sm whitespace-nowrap";
 
-const MYPLANNING_MARKETING_LINKS = [
-  { href: "/myplanning", label: "Accueil" },
-  { href: "/myplanning/pricing", label: "Tarifs" },
-  { href: "/myplanning/enterprise", label: "Entreprise" },
-];
-
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -90,65 +84,14 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function MyPlanningMarketingHeadbar({ pathname, isAuthenticated }: { pathname: string; isAuthenticated: boolean }) {
-  const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
-  const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
-
-  return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
-      <div className="flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/myplanning" className="flex min-w-0 items-center gap-3">
-          <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
-            <span className="text-xs font-semibold text-white">MP</span>
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-base font-black tracking-wide text-slate-900">MyPlanningAI</p>
-            <p className="hidden truncate text-[11px] text-slate-500 md:block">Organisation universelle • Powered by KORYXA</p>
-          </div>
-        </Link>
-
-        <nav className="hidden items-center gap-2 md:flex">
-          {MYPLANNING_MARKETING_LINKS.map((link) => {
-            const active = link.href === "/myplanning" ? pathname === "/myplanning" : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={clsx(
-                  NAV_PILL_CLASS,
-                  active
-                    ? "text-sky-700 border-sky-200 bg-sky-50/90 shadow-sky-100/60"
-                    : "text-slate-600 border-slate-200/70 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <Link
-          href={ctaHref}
-          className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700"
-        >
-          {ctaLabel}
-        </Link>
-      </div>
-    </header>
-  );
-}
-
 export default function Headbar() {
   const pathname = usePathname();
+  if (pathname.startsWith("/myplanning")) {
+    return null;
+  }
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
   const isMyPlanning = pathname.startsWith("/myplanning");
-  const isMyPlanningProduct = pathname.startsWith("/myplanning/app");
-  const showMyPlanningBottomNav =
-    isMyPlanning &&
-    !pathname.startsWith("/myplanning/login") &&
-    !pathname.startsWith("/myplanning/signup") &&
-    !pathname.startsWith("/myplanning/stats");
   const navLinks = useMemo(() => {
     if (isMyPlanning) {
       return [
@@ -241,14 +184,6 @@ export default function Headbar() {
       })
       .catch(() => void 0);
   }, [notifOpen, notifs, showAccount, user]);
-
-  if (isMyPlanningProduct) {
-    return null;
-  }
-
-  if (isMyPlanning) {
-    return <MyPlanningMarketingHeadbar pathname={pathname} isAuthenticated={showAccount} />;
-  }
 
   return (
     <header
@@ -696,29 +631,6 @@ export default function Headbar() {
         </div>
       )}
 
-      {showMyPlanningBottomNav ? (
-        <div className="fixed bottom-4 left-1/2 z-40 w-[min(820px,calc(100vw-24px))] -translate-x-1/2">
-          <div className="rounded-3xl border border-slate-200/70 bg-white/95 px-3 py-2 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
-            <nav className="flex items-center justify-center gap-2">
-              {navLinks.map((link) => {
-                const active = link.href === "/myplanning" ? pathname === "/myplanning" : pathname.startsWith(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={clsx(
-                      "relative inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition",
-                      active ? "bg-sky-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

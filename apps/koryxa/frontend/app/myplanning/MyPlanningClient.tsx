@@ -2429,7 +2429,7 @@ export default function MyPlanningClient({
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex min-h-screen w-full overflow-hidden bg-slate-100"
     : variant === "product"
-      ? "relative left-1/2 flex min-h-screen w-screen -translate-x-1/2 overflow-hidden bg-slate-100"
+      ? "flex min-h-screen w-full overflow-hidden bg-slate-100"
       : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
   const showProductDesktopSidebar = variant === "product" && productDesktopNav === "sidebar" && !isFullscreen;
   const showProductBottomNav = variant === "product" && !isFullscreen;

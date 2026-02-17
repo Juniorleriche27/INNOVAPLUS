@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { INNOVA_API_BASE } from "@/lib/env";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import PaywallModal from "./components/PaywallModal";
 import {
@@ -365,7 +365,7 @@ export default function MyPlanningClient({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [search, setSearch] = useState("");
   const { user } = useAuth();
   const plan = useMemo(() => inferUserPlan(user), [user]);
   const initialFeature = useMemo<MyPlanningFeatureId>(
@@ -415,17 +415,32 @@ export default function MyPlanningClient({
   const [editingGeneratedTask, setEditingGeneratedTask] = useState<number | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingState>({ ...EMPTY_ONBOARDING_STATE });
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => setSearch(window.location.search || "");
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, [pathname]);
+
+  const currentParams = useMemo(
+    () => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search),
+    [search]
+  );
+
   const queryFullscreen = useMemo(() => {
-    const raw = (searchParams.get("fullscreen") || "").toLowerCase();
+    const raw = (currentParams.get("fullscreen") || "").toLowerCase();
     return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
-  }, [searchParams]);
+  }, [currentParams]);
   const isFullscreen = manualFullscreen || queryFullscreen;
 
   const toggleFullscreen = () => {
     if (queryFullscreen) {
-      const nextParams = new URLSearchParams(searchParams.toString());
+      const nextParams = new URLSearchParams(currentParams.toString());
       nextParams.delete("fullscreen");
-      const nextPath = nextParams.size ? `${pathname}?${nextParams.toString()}` : pathname;
+      const nextQs = nextParams.toString();
+      const nextPath = nextQs ? `${pathname}?${nextQs}` : pathname;
+      setSearch(nextQs ? `?${nextQs}` : "");
       router.replace(nextPath, { scroll: false });
       return;
     }
@@ -2429,7 +2444,7 @@ export default function MyPlanningClient({
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex min-h-screen w-full overflow-hidden bg-slate-100"
     : variant === "product"
-      ? "relative left-1/2 flex min-h-screen w-screen -translate-x-1/2 overflow-hidden bg-slate-100"
+      ? "flex min-h-screen w-full overflow-hidden bg-slate-100"
       : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
   const showProductDesktopSidebar = variant === "product" && productDesktopNav === "sidebar" && !isFullscreen;
   const showProductBottomNav = variant === "product" && !isFullscreen;

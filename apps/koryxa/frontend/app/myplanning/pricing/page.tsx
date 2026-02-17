@@ -1,14 +1,15 @@
-import Link from "next/link";
+"use client";
 
-type TierCta = {
-  label: string;
-  href: string;
-  variant?: "primary" | "secondary";
-};
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+type BillingMode = "monthly" | "yearly";
+type TierCta = { label: string; href: string; variant?: "primary" | "secondary" };
 
 type Tier = {
   name: string;
-  price: string;
+  monthly: string;
+  yearly: string;
   desc: string;
   audience: string;
   items: string[];
@@ -20,7 +21,8 @@ type Tier = {
 const TIERS: Tier[] = [
   {
     name: "Free",
-    price: "0",
+    monthly: "0",
+    yearly: "0",
     desc: "Pour démarrer et structurer ta journée.",
     audience: "Pour qui ? Solo, étudiant, indépendant.",
     items: ["Tâches + Kanban", "Vue jour/semaine", "Priorités (Eisenhower)", "Export basique"],
@@ -28,25 +30,28 @@ const TIERS: Tier[] = [
   },
   {
     name: "Pro",
-    price: "Bêta",
+    monthly: "Bêta",
+    yearly: "Bêta",
     desc: "Pour mesurer, décider et progresser.",
     audience: "Pour qui ? Utilisateurs qui pilotent leur performance.",
     items: ["Stats & graphiques (30/90j)", "Templates universels", "Alertes email (rappels)", "Coaching IA"],
-    ctas: [{ label: "Passer en Pro", href: "/myplanning/pro", variant: "primary" }],
+    ctas: [{ label: "Activer Pro", href: "/myplanning/pro", variant: "primary" }],
     highlight: true,
     badge: "Recommandé",
   },
   {
     name: "Espaces",
-    price: "Bêta",
-    desc: "Pour équipes & organisations.",
+    monthly: "Bêta",
+    yearly: "Bêta",
+    desc: "Pour équipes et organisations.",
     audience: "Pour qui ? Managers et équipes opérationnelles.",
     items: ["Collaborateurs + rôles", "Assignation & suivi", "Reporting équipe", "Présence (QR dynamique) + export CSV"],
     ctas: [{ label: "Créer un espace", href: "/myplanning/team", variant: "secondary" }],
   },
   {
-    name: "Entreprise",
-    price: "Sur devis",
+    name: "Enterprise",
+    monthly: "Sur devis",
+    yearly: "Sur devis",
     desc: "Pour piloter une organisation complète.",
     audience: "Pour qui ? Directions RH, Ops, PMO et DSI.",
     items: [
@@ -55,21 +60,11 @@ const TIERS: Tier[] = [
       "Gouvernance (RBAC + audit)",
       "Reporting + alertes + SLA",
     ],
-    ctas: [
-      { label: "Voir la démo", href: "/myplanning/enterprise/demo", variant: "secondary" },
-      { label: "Demander une démo", href: "/myplanning/enterprise", variant: "primary" },
-    ],
+    ctas: [{ label: "Demander une démo", href: "/myplanning/enterprise", variant: "primary" }],
   },
 ];
 
-type CompareRow = {
-  feature: string;
-  free: boolean;
-  pro: boolean;
-  espaces: boolean;
-  enterprise: boolean;
-};
-
+type CompareRow = { feature: string; free: boolean; pro: boolean; espaces: boolean; enterprise: boolean };
 const COMPARE_ROWS: CompareRow[] = [
   { feature: "Tâches + Kanban", free: true, pro: true, espaces: true, enterprise: true },
   { feature: "Stats & graphiques", free: false, pro: true, espaces: true, enterprise: true },
@@ -84,76 +79,78 @@ const COMPARE_ROWS: CompareRow[] = [
 const FAQ = [
   {
     q: "Quand la facturation sera activée ?",
-    a: "Free est disponible tout de suite. Pro, Espaces et Enterprise sont en déploiement progressif selon votre usage.",
+    a: "Free est disponible immédiatement. Pro, Espaces et Enterprise sont déployés progressivement.",
   },
   {
     q: "Mes données restent-elles privées ?",
-    a: "Oui. Les accès sont contrôlés par rôles et les endpoints sensibles passent par des contrôles d’authentification côté backend.",
+    a: "Oui. Les accès sont contrôlés par rôles et les endpoints sensibles sont protégés côté backend.",
   },
   {
-    q: "Peut-on annuler ou changer de plan facilement ?",
+    q: "Peut-on changer de plan facilement ?",
     a: "Oui. Le changement de plan se fait sans verrouillage technique du compte.",
   },
   {
     q: "Quel support pour Enterprise ?",
-    a: "Enterprise inclut accompagnement de déploiement, SLA et support prioritaire selon le périmètre défini.",
+    a: "Enterprise inclut accompagnement de déploiement, SLA et support prioritaire.",
   },
 ];
 
-type SearchParams = Record<string, string | string[] | undefined>;
-type SearchParamsInput = SearchParams | Promise<SearchParams>;
-
-function one(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
-
-async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchParams | undefined> {
-  if (!input) return undefined;
-  if (typeof (input as Promise<SearchParams>).then === "function") {
-    return await (input as Promise<SearchParams>);
-  }
-  return input as SearchParams;
-}
-
-export default async function MyPlanningPricingPage({ searchParams }: { searchParams?: SearchParamsInput }) {
-  const params = await resolveSearchParams(searchParams);
-  const upgrade = one(params?.upgrade);
-  const feature = one(params?.feature);
-  const message = one(params?.message);
-  const upgradeMessage = message || (upgrade === "pro" ? "Fonctionnalite Pro - debloque le pilotage avance." : "");
+export default function MyPlanningPricingPage() {
+  const [billing, setBilling] = useState<BillingMode>("monthly");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSearch(window.location.search || "");
+  }, []);
+  const searchParams = useMemo(() => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search), [search]);
+  const upgradeMessage = useMemo(() => {
+    const custom = searchParams.get("message");
+    if (custom) return custom;
+    return searchParams.get("upgrade") === "pro" ? "Fonctionnalité Pro : débloque le pilotage avancé." : "";
+  }, [searchParams]);
+  const feature = searchParams.get("feature") || "";
 
   return (
-    <div className="w-full">
-      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 p-8 shadow-sm">
+    <div className="w-full space-y-8">
+      <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 p-8 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">MyPlanningAI</p>
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">Tarifs</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-700">
-              Commence gratuitement, puis active Pro, Espaces ou Enterprise selon ton niveau de pilotage.
-            </p>
-            <p className="mt-2 max-w-2xl text-xs font-medium text-slate-500">
-              Early users: un prix préférentiel sera proposé au lancement officiel.
-            </p>
+            <p className="mt-2 max-w-2xl text-sm text-slate-700">Commence gratuitement, puis active Pro, Espaces ou Enterprise selon ton niveau de pilotage.</p>
           </div>
-          <Link
-            href="/myplanning/app"
-            className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 hover:bg-sky-700"
-          >
-            Commencer gratuitement
-          </Link>
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setBilling("monthly")}
+              className={billing === "monthly" ? "rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white" : "rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"}
+            >
+              Mensuel
+            </button>
+            <button
+              type="button"
+              onClick={() => setBilling("yearly")}
+              className={billing === "yearly" ? "rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white" : "rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"}
+            >
+              Annuel
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">En 7 jours tu obtiens</p>
+        <p className="mt-2 text-sm text-emerald-900">Un planning stabilisé, des priorités visibles, un suivi de progression et des automatisations prêtes à déployer.</p>
+      </section>
 
       {upgradeMessage ? (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p className="font-semibold">{upgradeMessage}</p>
-          {feature ? <p className="mt-1 text-amber-800">Fonction demandée: {feature}</p> : null}
-        </div>
+          {feature ? <p className="mt-1 text-amber-800">Fonction demandée : {feature}</p> : null}
+        </section>
       ) : null}
 
-      <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {TIERS.map((tier) => (
           <article
             key={tier.name}
@@ -169,19 +166,17 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
               </span>
             ) : null}
             <p className="text-sm font-semibold text-slate-900">{tier.name}</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">{tier.price}</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{billing === "monthly" ? tier.monthly : tier.yearly}</p>
             <p className="mt-3 text-sm font-medium text-slate-700">{tier.desc}</p>
             <p className="mt-2 text-xs text-slate-500">{tier.audience}</p>
-
             <ul className="mt-5 space-y-2 text-sm text-slate-700">
-              {tier.items.map((it) => (
-                <li key={it} className="flex items-start gap-2">
+              {tier.items.map((item) => (
+                <li key={item} className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                  <span>{it}</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
-
             <div className="mt-6 flex flex-col gap-2">
               {tier.ctas.map((cta) => (
                 <Link
@@ -199,11 +194,10 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
             </div>
           </article>
         ))}
-      </div>
+      </section>
 
-      <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-xl font-semibold text-slate-900">Comparatif</h2>
-        <p className="mt-2 text-sm text-slate-700">Vue rapide des fonctionnalités par plan.</p>
         <div className="mt-4 overflow-auto rounded-2xl border border-slate-200">
           <table className="min-w-[760px] w-full text-left text-sm">
             <thead className="bg-slate-50">
@@ -230,7 +224,7 @@ export default async function MyPlanningPricingPage({ searchParams }: { searchPa
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h2 className="text-xl font-semibold text-slate-900">FAQ</h2>
         <div className="mt-4 space-y-4">
           {FAQ.map((item) => (

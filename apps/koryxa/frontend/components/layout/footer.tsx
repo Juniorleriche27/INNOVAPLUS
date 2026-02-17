@@ -6,15 +6,9 @@ import { IS_V1_SIMPLE } from "@/lib/env";
 
 export default function Footer() {
   const pathname = usePathname();
+  if (pathname.startsWith("/myplanning")) return null;
   if (pathname.startsWith("/school")) return null;
-  if (pathname.startsWith("/myplanning/app")) return null;
   const isMyPlanning = pathname.startsWith("/myplanning");
-  const hasMyPlanningFloatingNav =
-    isMyPlanning &&
-    !pathname.startsWith("/myplanning/app") &&
-    !pathname.startsWith("/myplanning/login") &&
-    !pathname.startsWith("/myplanning/signup") &&
-    !pathname.startsWith("/myplanning/stats");
 
   const year = new Date().getFullYear();
 
@@ -54,7 +48,6 @@ export default function Footer() {
           Copyright {year} {isMyPlanning ? "MyPlanningAI" : "KORYXA"}. Tous droits réservés.
         </p>
       </div>
-      {hasMyPlanningFloatingNav ? <div className="h-20" aria-hidden="true" /> : null}
     </footer>
   );
 }

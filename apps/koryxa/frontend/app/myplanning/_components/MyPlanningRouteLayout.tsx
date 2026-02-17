@@ -57,6 +57,13 @@ const PRODUCT_SIDEBAR: Array<{ title: string; links: NavEntry[] }> = [
   },
 ];
 
+const PRODUCT_FULLSCREEN_QUICK_LINKS: NavEntry[] = [
+  { href: "/myplanning/app", label: "App" },
+  { href: "/myplanning/team", label: "Espaces" },
+  { href: "/myplanning/enterprise", label: "Organisation" },
+  { href: "/myplanning/app/pro/stats", label: "Stats" },
+];
+
 function isAuthRoute(pathname: string): boolean {
   return pathname.startsWith("/myplanning/login") || pathname.startsWith("/myplanning/signup");
 }
@@ -135,6 +142,7 @@ function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; c
                     href={entry.href}
                     prefetch
                     scroll={false}
+                    aria-current={active ? "page" : undefined}
                     title={entry.label}
                     className={clsx(
                       "flex items-center rounded-xl px-2 py-2 text-sm font-medium transition",
@@ -288,14 +296,15 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     if (!isFullscreen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      event.preventDefault();
       const url = new URL(window.location.href);
       url.searchParams.delete("fullscreen");
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
       setIsFullscreen(false);
       window.dispatchEvent(new Event("myplanning:querychange"));
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
@@ -334,16 +343,42 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   if (isFullscreen) {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          title="Quitter le plein écran (Esc)"
-          className="fixed right-3 top-3 z-50 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700"
-        >
-          <FullscreenIcon active />
-          Quitter
-        </button>
-        <main className="min-h-screen w-full overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
+        <div className="pointer-events-none fixed inset-x-0 top-0 z-50 p-2 sm:p-3">
+          <div className="pointer-events-auto mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-md backdrop-blur">
+            <div className="flex flex-wrap items-center gap-1">
+              {PRODUCT_FULLSCREEN_QUICK_LINKS.map((entry) => {
+                const active = isActive(pathname, entry);
+                return (
+                  <Link
+                    key={`fullscreen-${entry.href}`}
+                    href={entry.href}
+                    prefetch
+                    scroll={false}
+                    aria-current={active ? "page" : undefined}
+                    className={clsx(
+                      "rounded-full border px-3 py-1 text-xs font-semibold transition",
+                      active
+                        ? "border-sky-200 bg-sky-50 text-sky-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                    )}
+                  >
+                    {entry.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title="Quitter le plein écran (Esc)"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700"
+            >
+              <FullscreenIcon active />
+              Quitter (Esc)
+            </button>
+          </div>
+        </div>
+        <main className="min-h-screen w-full overflow-y-auto px-2 pb-2 pt-16 sm:px-3 sm:pb-3 sm:pt-20">
           <div className="mx-auto w-full">
             {children}
           </div>

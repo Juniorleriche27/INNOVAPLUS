@@ -446,10 +446,12 @@ export default function MyPlanningClient({
   useEffect(() => {
     if (!isFullscreen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") applyFullscreenParam(false);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      applyFullscreenParam(false);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
   const loadTasks = async () => {
@@ -2648,18 +2650,22 @@ export default function MyPlanningClient({
         </aside>
       ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
-        <div className="border-b border-slate-100 px-2 py-3 text-sm text-slate-600 sm:px-3">
+        <div className="sticky top-0 z-20 border-b border-slate-100 bg-slate-50/95 px-2 py-3 text-sm text-slate-600 backdrop-blur sm:px-3">
           <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href="/"
+                  prefetch
+                  scroll={false}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
                 >
                   ← Site KORYXA
                 </Link>
                 <Link
                   href="/myplanning"
+                  prefetch
+                  scroll={false}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
                 >
                   Accueil MyPlanning

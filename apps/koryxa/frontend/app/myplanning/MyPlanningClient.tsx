@@ -365,7 +365,6 @@ export default function MyPlanningClient({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [search, setSearch] = useState("");
   const { user } = useAuth();
   const plan = useMemo(() => inferUserPlan(user), [user]);
   const initialFeature = useMemo<MyPlanningFeatureId>(
@@ -392,7 +391,7 @@ export default function MyPlanningClient({
   const [addingDraftIndex, setAddingDraftIndex] = useState<number | null>(null);
   const [bulkAdding, setBulkAdding] = useState(false);
   const [addedDrafts, setAddedDrafts] = useState<Set<string>>(new Set());
-  const [manualFullscreen, setManualFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showCoachingGuide, setShowCoachingGuide] = useState(true);
   const [aiSummary, setAiSummary] = useState<{ total: number; counts: Record<Priority, number>; highImpact: number } | null>(null);
@@ -417,34 +416,27 @@ export default function MyPlanningClient({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const sync = () => setSearch(window.location.search || "");
+    const sync = () => {
+      const raw = (new URLSearchParams(window.location.search).get("fullscreen") || "").toLowerCase();
+      setIsFullscreen(raw === "1" || raw === "true" || raw === "yes" || raw === "on");
+    };
     sync();
     window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
+    window.addEventListener("myplanning:querychange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("myplanning:querychange", sync);
+    };
   }, [pathname]);
 
-  const currentParams = useMemo(
-    () => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search),
-    [search]
-  );
-
-  const queryFullscreen = useMemo(() => {
-    const raw = (currentParams.get("fullscreen") || "").toLowerCase();
-    return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
-  }, [currentParams]);
-  const isFullscreen = manualFullscreen || queryFullscreen;
-
   const toggleFullscreen = () => {
-    if (queryFullscreen) {
-      const nextParams = new URLSearchParams(currentParams.toString());
-      nextParams.delete("fullscreen");
-      const nextQs = nextParams.toString();
-      const nextPath = nextQs ? `${pathname}?${nextQs}` : pathname;
-      setSearch(nextQs ? `?${nextQs}` : "");
-      router.replace(nextPath, { scroll: false });
-      return;
-    }
-    setManualFullscreen((value) => !value);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (isFullscreen) url.searchParams.delete("fullscreen");
+    else url.searchParams.set("fullscreen", "1");
+    window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setIsFullscreen(!isFullscreen);
+    window.dispatchEvent(new Event("myplanning:querychange"));
   };
 
   const loadTasks = async () => {

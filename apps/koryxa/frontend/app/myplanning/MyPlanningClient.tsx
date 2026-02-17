@@ -2563,14 +2563,30 @@ export default function MyPlanningClient({
         </aside>
       ) : null}
       {showProductDesktopSidebar ? (
-        <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-slate-200 bg-white/95 p-4 lg:flex">
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-400">MyPlanningAI</p>
-            <p className="mt-1 text-lg font-semibold text-slate-900">App</p>
+        <aside
+          className="hidden h-full shrink-0 flex-col border-r border-slate-200 bg-white/95 p-3 lg:flex"
+          style={{ width: isSidebarCollapsed ? "var(--sidebar-w-collapsed)" : "var(--sidebar-w)" }}
+        >
+          <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2">
+            {!isSidebarCollapsed ? (
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-slate-400">MyPlanningAI</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">App</p>
+              </div>
+            ) : (
+              <p className="w-full text-center text-xs font-semibold text-slate-500">MP</p>
+            )}
+            <button
+              onClick={() => setIsSidebarCollapsed((value) => !value)}
+              className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-sky-200 hover:text-sky-700"
+              title={isSidebarCollapsed ? "Étendre la sidebar" : "Réduire la sidebar"}
+            >
+              {isSidebarCollapsed ? "»" : "«"}
+            </button>
           </div>
-          <nav className="mt-5 space-y-5 text-sm font-semibold">
+          <nav className="mt-4 space-y-5 text-sm font-semibold">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Vues</p>
+              {!isSidebarCollapsed ? <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Vues</p> : null}
               <div className="mt-2 space-y-2">
                 {VIEWS.map((item) => {
                   const locked = !hasPlanAccess(plan, item.minPlan);
@@ -2585,8 +2601,8 @@ export default function MyPlanningClient({
                       title={item.label}
                     >
                       <span>{item.icon}</span>
-                      <span className="flex-1">{item.label}</span>
-                      {locked ? (
+                      {!isSidebarCollapsed ? <span className="flex-1">{item.label}</span> : null}
+                      {locked && !isSidebarCollapsed ? (
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
                           {lockedBadgeLabel(item.minPlan, item.beta)}
                         </span>
@@ -2597,7 +2613,7 @@ export default function MyPlanningClient({
               </div>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Actions</p>
+              {!isSidebarCollapsed ? <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Actions</p> : null}
               <div className="mt-2 space-y-2">
                 {ACTIONS.map((item) => {
                   const locked = !hasPlanAccess(plan, item.minPlan);
@@ -2612,8 +2628,8 @@ export default function MyPlanningClient({
                       title={item.label}
                     >
                       <span>{item.icon}</span>
-                      <span className="flex-1">{item.label}</span>
-                      {locked ? (
+                      {!isSidebarCollapsed ? <span className="flex-1">{item.label}</span> : null}
+                      {locked && !isSidebarCollapsed ? (
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20" : "bg-sky-100 text-sky-700"}`}>
                           {lockedBadgeLabel(item.minPlan, item.beta)}
                         </span>
@@ -2679,16 +2695,18 @@ export default function MyPlanningClient({
           </div>
         </div>
         <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${contentPaddingBottomClass}`}>
-          {banner && (
-            <div
-              className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
-                banner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
-              }`}
-            >
-              {banner.message}
-            </div>
-          )}
-          {renderSection()}
+          <div className="mx-auto w-full max-w-[var(--app-max-w)]">
+            {banner && (
+              <div
+                className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
+                  banner.type === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                {banner.message}
+              </div>
+            )}
+            {renderSection()}
+          </div>
         </div>
       </main>
 

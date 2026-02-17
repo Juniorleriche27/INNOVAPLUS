@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useMemo } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/components/auth/AuthProvider";
 
@@ -238,20 +238,33 @@ function MarketingHeader({
 
 export default function MyPlanningRouteLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, initialLoggedIn } = useAuth();
   const isAuthenticated = initialLoggedIn || Boolean(user?.email);
   const productRoute = isProductRoute(pathname);
   const standaloneWorkspace = isStandaloneWorkspace(pathname);
-  const isFullscreen = searchParams.get("fullscreen") === "1";
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => setSearch(window.location.search || "");
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, [pathname]);
+
+  const currentParams = useMemo(
+    () => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search),
+    [search]
+  );
+  const isFullscreen = currentParams.get("fullscreen") === "1";
 
   const fullscreenHref = useMemo(() => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(currentParams.toString());
     if (isFullscreen) params.delete("fullscreen");
     else params.set("fullscreen", "1");
     const qs = params.toString();
     return qs ? `${pathname}?${qs}` : pathname;
-  }, [isFullscreen, pathname, searchParams]);
+  }, [isFullscreen, pathname, currentParams]);
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";

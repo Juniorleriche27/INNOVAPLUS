@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type BillingMode = "monthly" | "yearly";
 type TierCta = { label: string; href: string; variant?: "primary" | "secondary" };
@@ -98,7 +97,12 @@ const FAQ = [
 
 export default function MyPlanningPricingPage() {
   const [billing, setBilling] = useState<BillingMode>("monthly");
-  const searchParams = useSearchParams();
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSearch(window.location.search || "");
+  }, []);
+  const searchParams = useMemo(() => new URLSearchParams(search.startsWith("?") ? search.slice(1) : search), [search]);
   const upgradeMessage = useMemo(() => {
     const custom = searchParams.get("message");
     if (custom) return custom;

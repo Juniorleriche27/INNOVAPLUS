@@ -161,7 +161,7 @@ function ProductTopbar({
   isFullscreen: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur sm:px-[var(--content-pad)]" style={{ minHeight: "var(--topbar-h)" }}>
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
       <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/" className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
@@ -269,9 +269,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     const url = new URL(window.location.href);
     if (isFullscreen) url.searchParams.delete("fullscreen");
     else url.searchParams.set("fullscreen", "1");
-    window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    setIsFullscreen(!isFullscreen);
-    window.dispatchEvent(new Event("myplanning:querychange"));
+    window.location.assign(`${url.pathname}${url.search}${url.hash}`);
   };
 
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
@@ -310,7 +308,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   if (isFullscreen) {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
-        <main className="min-h-screen w-full overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
+        <main className="min-h-screen w-full overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
           <div className="mx-auto w-full">
             {children}
           </div>
@@ -325,7 +323,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
         <ProductSidebar pathname={pathname} collapsed={isSidebarCollapsed} onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))} />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar pathname={pathname} onToggleFullscreen={toggleFullscreen} isFullscreen={isFullscreen} />
-          <main className="min-h-0 flex-1 overflow-y-auto px-[var(--content-pad-sm)] py-4 sm:px-[var(--content-pad)] sm:py-6">
+          <main className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
             <div className="mx-auto w-full">
               {children}
             </div>

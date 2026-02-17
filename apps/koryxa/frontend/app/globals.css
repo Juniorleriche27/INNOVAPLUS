@@ -8,8 +8,8 @@
   --foreground: #0f172a;
   --app-max-w: 1280px;
   --marketing-max-w: 1240px;
-  --content-pad: 14px;
-  --content-pad-sm: 10px;
+  --content-pad: 0px;
+  --content-pad-sm: 0px;
   --sidebar-w: 280px;
   --sidebar-w-collapsed: 72px;
   --topbar-h: 56px;

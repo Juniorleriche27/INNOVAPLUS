@@ -2644,7 +2644,7 @@ export default function MyPlanningClient({
       ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
-          <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--app-max-w)" }}>
+          <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
@@ -2697,7 +2697,7 @@ export default function MyPlanningClient({
           </div>
         </div>
         <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 ${contentPaddingBottomClass}`}>
-          <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
+          <div className="mx-auto w-full">
             {banner && (
               <div
                 className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${

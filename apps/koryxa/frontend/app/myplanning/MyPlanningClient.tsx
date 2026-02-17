@@ -2682,6 +2682,13 @@ export default function MyPlanningClient({
                 >
                   Accueil MyPlanning
                 </button>
+                <button
+                  type="button"
+                  onClick={() => navigateWithFallback("/myplanning/pricing")}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                >
+                  Tarifs
+                </button>
               </div>
               <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
                 {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}

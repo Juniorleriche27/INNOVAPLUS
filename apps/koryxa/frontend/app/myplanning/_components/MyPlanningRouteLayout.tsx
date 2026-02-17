@@ -53,12 +53,14 @@ const PRODUCT_SIDEBAR: Array<{ title: string; links: NavEntry[] }> = [
     links: [
       { href: "/myplanning/enterprise", label: "Organisation", icon: "🏢", prefix: "/myplanning/enterprise" },
       { href: "/myplanning/enterprise/demo", label: "Démo enterprise", icon: "🧪", prefix: "/myplanning/enterprise/demo" },
+      { href: "/myplanning/pricing", label: "Tarifs", icon: "💳", prefix: "/myplanning/pricing" },
     ],
   },
 ];
 
 const PRODUCT_FULLSCREEN_QUICK_LINKS: NavEntry[] = [
   { href: "/myplanning/app", label: "App" },
+  { href: "/myplanning/pricing", label: "Tarifs" },
   { href: "/myplanning/team", label: "Espaces" },
   { href: "/myplanning/enterprise", label: "Organisation" },
   { href: "/myplanning/app/pro/stats", label: "Stats" },
@@ -184,15 +186,25 @@ function ProductTopbar({
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={onToggleFullscreen}
-          title={isFullscreen ? "Quitter le plein écran (Esc)" : "Activer le plein écran"}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
-        >
-          <FullscreenIcon active={isFullscreen} />
-          {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/myplanning/pricing"
+            prefetch
+            scroll={false}
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+          >
+            Tarifs
+          </Link>
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            title={isFullscreen ? "Quitter le plein écran (Esc)" : "Activer le plein écran"}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+          >
+            <FullscreenIcon active={isFullscreen} />
+            {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+          </button>
+        </div>
       </div>
     </header>
   );

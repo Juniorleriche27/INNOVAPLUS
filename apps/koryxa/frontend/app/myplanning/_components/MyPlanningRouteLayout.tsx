@@ -15,6 +15,9 @@ type NavEntry = {
   badge?: string;
 };
 
+type NavGroup = { title: string; links: NavEntry[] };
+type SidebarTier = "free" | "pro" | "team" | "enterprise";
+
 const MARKETING_LINKS: NavEntry[] = [
   { href: "/myplanning", label: "Accueil" },
   { href: "/myplanning/pricing", label: "Tarifs" },
@@ -23,47 +26,70 @@ const MARKETING_LINKS: NavEntry[] = [
 
 const MARKETING_ROUTES = new Set(["/myplanning", "/myplanning/pricing"]);
 
-const PRODUCT_SIDEBAR: Array<{ title: string; links: NavEntry[] }> = [
+const SIDEBAR_FREE_GROUPS: NavGroup[] = [
   {
-    title: "Vues",
+    title: "Free",
     links: [
       { href: "/myplanning/app", label: "Dashboard quotidien", icon: "📅", prefix: "/myplanning/app" },
-      { href: "/myplanning/app/pro/stats", label: "Stats & graphiques", icon: "📈", prefix: "/myplanning/app/pro/stats", badge: "PRO" },
-      { href: "/myplanning/team", label: "Espaces", icon: "👥", prefix: "/myplanning/team" },
-    ],
-  },
-  {
-    title: "Actions",
-    links: [
       { href: "/myplanning/app", label: "Nouvelle tâche", icon: "➕", prefix: "/myplanning/app" },
-      { href: "/myplanning/team", label: "Membres & rôles", icon: "🧩", prefix: "/myplanning/team" },
-      { href: "/myplanning/app/integrations", label: "Intégrations", icon: "🔌", prefix: "/myplanning/app/integrations" },
-    ],
-  },
-  {
-    title: "Pro",
-    links: [
-      { href: "/myplanning/app/pro/coaching", label: "Coaching IA", icon: "🤖", prefix: "/myplanning/app/pro/coaching", badge: "PRO" },
-      { href: "/myplanning/app/pro/templates", label: "Templates", icon: "📐", prefix: "/myplanning/app/pro/templates", badge: "PRO" },
-      { href: "/myplanning/app/pro/automations", label: "Automatisations", icon: "⚡", prefix: "/myplanning/app/pro/automations", badge: "PRO" },
-    ],
-  },
-  {
-    title: "Team / Enterprise",
-    links: [
-      { href: "/myplanning/enterprise", label: "Organisation", icon: "🏢", prefix: "/myplanning/enterprise" },
-      { href: "/myplanning/enterprise/demo", label: "Démo enterprise", icon: "🧪", prefix: "/myplanning/enterprise/demo" },
       { href: "/myplanning/pricing", label: "Tarifs", icon: "💳", prefix: "/myplanning/pricing" },
     ],
   },
 ];
 
-const PRODUCT_FULLSCREEN_QUICK_LINKS: NavEntry[] = [
+const SIDEBAR_PRO_GROUPS: NavGroup[] = [
+  {
+    title: "Pro",
+    links: [
+      { href: "/myplanning/app/pro/stats", label: "Stats & graphiques", icon: "📈", prefix: "/myplanning/app/pro/stats", badge: "PRO" },
+      { href: "/myplanning/app/pro/coaching", label: "Coaching IA", icon: "🤖", prefix: "/myplanning/app/pro/coaching", badge: "PRO" },
+      { href: "/myplanning/app/pro/templates", label: "Templates", icon: "📐", prefix: "/myplanning/app/pro/templates", badge: "PRO" },
+      { href: "/myplanning/app/pro/automations", label: "Automatisations", icon: "⚡", prefix: "/myplanning/app/pro/automations", badge: "PRO" },
+    ],
+  },
+];
+
+const SIDEBAR_TEAM_GROUPS: NavGroup[] = [
+  {
+    title: "Team / Espaces",
+    links: [
+      { href: "/myplanning/team", label: "Espaces", icon: "👥", prefix: "/myplanning/team" },
+      { href: "/myplanning/team", label: "Membres & rôles", icon: "🧩", prefix: "/myplanning/team" },
+      { href: "/myplanning/app/attendance/scan", label: "Présence", icon: "🕒", prefix: "/myplanning/app/attendance" },
+      { href: "/myplanning/app/integrations", label: "Intégrations", icon: "🔌", prefix: "/myplanning/app/integrations" },
+    ],
+  },
+];
+
+const SIDEBAR_ENTERPRISE_GROUPS: NavGroup[] = [
+  {
+    title: "Enterprise",
+    links: [
+      { href: "/myplanning/enterprise", label: "Organisation", icon: "🏢", prefix: "/myplanning/enterprise" },
+      { href: "/myplanning/enterprise/demo", label: "Démo enterprise", icon: "🧪", prefix: "/myplanning/enterprise/demo" },
+      { href: "/myplanning/pricing", label: "Offres & SLA", icon: "📊", prefix: "/myplanning/pricing" },
+    ],
+  },
+];
+
+const FULLSCREEN_LINKS_FREE: NavEntry[] = [
   { href: "/myplanning/app", label: "App" },
   { href: "/myplanning/pricing", label: "Tarifs" },
-  { href: "/myplanning/team", label: "Espaces" },
-  { href: "/myplanning/enterprise", label: "Organisation" },
+];
+
+const FULLSCREEN_LINKS_PRO: NavEntry[] = [
+  ...FULLSCREEN_LINKS_FREE,
   { href: "/myplanning/app/pro/stats", label: "Stats" },
+];
+
+const FULLSCREEN_LINKS_TEAM: NavEntry[] = [
+  ...FULLSCREEN_LINKS_PRO,
+  { href: "/myplanning/team", label: "Espaces" },
+];
+
+const FULLSCREEN_LINKS_ENTERPRISE: NavEntry[] = [
+  ...FULLSCREEN_LINKS_TEAM,
+  { href: "/myplanning/enterprise", label: "Organisation" },
 ];
 
 function isAuthRoute(pathname: string): boolean {
@@ -82,6 +108,34 @@ function isProductRoute(pathname: string): boolean {
 function isStandaloneWorkspace(pathname: string): boolean {
   // /myplanning/app* already ships with an internal shell component.
   return pathname.startsWith("/myplanning/app");
+}
+
+function detectSidebarTier(pathname: string): SidebarTier {
+  if (pathname.startsWith("/myplanning/enterprise") || pathname.startsWith("/myplanning/orgs")) return "enterprise";
+  if (pathname.startsWith("/myplanning/team")) return "team";
+  if (pathname.startsWith("/myplanning/pro") || pathname.startsWith("/myplanning/app/pro")) return "pro";
+  return "free";
+}
+
+function tierLabel(tier: SidebarTier): string {
+  if (tier === "enterprise") return "Enterprise";
+  if (tier === "team") return "Team";
+  if (tier === "pro") return "Pro";
+  return "Free";
+}
+
+function sidebarGroupsForTier(tier: SidebarTier): NavGroup[] {
+  if (tier === "enterprise") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS, ...SIDEBAR_TEAM_GROUPS, ...SIDEBAR_ENTERPRISE_GROUPS];
+  if (tier === "team") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS, ...SIDEBAR_TEAM_GROUPS];
+  if (tier === "pro") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS];
+  return [...SIDEBAR_FREE_GROUPS];
+}
+
+function fullscreenLinksForTier(tier: SidebarTier): NavEntry[] {
+  if (tier === "enterprise") return FULLSCREEN_LINKS_ENTERPRISE;
+  if (tier === "team") return FULLSCREEN_LINKS_TEAM;
+  if (tier === "pro") return FULLSCREEN_LINKS_PRO;
+  return FULLSCREEN_LINKS_FREE;
 }
 
 function isActive(pathname: string, entry: NavEntry): boolean {
@@ -106,7 +160,19 @@ function FullscreenIcon({ active }: { active: boolean }) {
   return <span aria-hidden className="text-sm leading-none">{active ? "🗗" : "⛶"}</span>;
 }
 
-function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; collapsed: boolean; onToggle: () => void }) {
+function ProductSidebar({
+  pathname,
+  collapsed,
+  onToggle,
+  groups,
+  tier,
+}: {
+  pathname: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  groups: NavGroup[];
+  tier: SidebarTier;
+}) {
   return (
     <aside
       className="hidden h-screen shrink-0 border-r border-slate-200 bg-white/95 p-3 pl-4 lg:flex lg:flex-col"
@@ -116,7 +182,7 @@ function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; c
         {!collapsed ? (
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">MyPlanningAI</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">App Shell</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">App Shell {tierLabel(tier)}</p>
           </div>
         ) : (
           <p className="w-full text-center text-xs font-semibold text-slate-500">MP</p>
@@ -132,7 +198,7 @@ function ProductSidebar({ pathname, collapsed, onToggle }: { pathname: string; c
       </div>
 
       <nav className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1">
-        {PRODUCT_SIDEBAR.map((group) => (
+        {groups.map((group) => (
           <section key={group.title}>
             {!collapsed ? <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">{group.title}</p> : null}
             <div className="mt-2 space-y-1">
@@ -293,6 +359,9 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   }, [sidebarMode]);
 
   const isSidebarCollapsed = sidebarMode === "collapsed";
+  const sidebarTier = detectSidebarTier(pathname);
+  const sidebarGroups = sidebarGroupsForTier(sidebarTier);
+  const fullscreenQuickLinks = fullscreenLinksForTier(sidebarTier);
 
   const toggleFullscreen = () => {
     if (typeof window === "undefined") return;
@@ -358,7 +427,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
         <div className="pointer-events-none fixed inset-x-0 top-0 z-50 p-2 sm:p-3">
           <div className="pointer-events-auto mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-md backdrop-blur">
             <div className="flex flex-wrap items-center gap-1">
-              {PRODUCT_FULLSCREEN_QUICK_LINKS.map((entry) => {
+              {fullscreenQuickLinks.map((entry) => {
                 const active = isActive(pathname, entry);
                 return (
                   <Link
@@ -402,7 +471,13 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
       <div className="flex min-h-screen w-full overflow-x-hidden">
-        <ProductSidebar pathname={pathname} collapsed={isSidebarCollapsed} onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))} />
+        <ProductSidebar
+          pathname={pathname}
+          collapsed={isSidebarCollapsed}
+          onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))}
+          groups={sidebarGroups}
+          tier={sidebarTier}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar pathname={pathname} onToggleFullscreen={toggleFullscreen} isFullscreen={isFullscreen} />
           <main className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">

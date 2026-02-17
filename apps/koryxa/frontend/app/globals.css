@@ -30,15 +30,7 @@ body {
 }
 
 html {
-  /* Dézoom global (10%) : taille de base réduite */
-  font-size: 90%;
-}
-
-@media (max-width: 640px) {
-  html {
-    /* Mobile : remonter légèrement la taille pour la lisibilité */
-    font-size: 96%;
-  }
+  font-size: 100%;
 }
 
 body {

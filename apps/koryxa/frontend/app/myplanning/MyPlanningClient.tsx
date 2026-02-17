@@ -2429,7 +2429,7 @@ export default function MyPlanningClient({
   const containerClasses = isFullscreen
     ? "fixed inset-0 z-50 flex min-h-screen w-full overflow-hidden bg-slate-100"
     : variant === "product"
-      ? "relative left-1/2 -mt-6 -mb-10 flex min-h-screen w-screen -translate-x-1/2 overflow-hidden bg-slate-100"
+      ? "relative left-1/2 flex min-h-screen w-screen -translate-x-1/2 overflow-hidden bg-slate-100"
       : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl";
   const showProductDesktopSidebar = variant === "product" && productDesktopNav === "sidebar" && !isFullscreen;
   const showProductBottomNav = variant === "product" && !isFullscreen;
@@ -2613,7 +2613,21 @@ export default function MyPlanningClient({
       ) : null}
       <main className="flex min-w-0 flex-1 flex-col bg-slate-50">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 text-sm text-slate-600 sm:px-6">
-          <div>
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+              >
+                ← Site KORYXA
+              </Link>
+              <Link
+                href="/myplanning"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+              >
+                Accueil MyPlanning
+              </Link>
+            </div>
             <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
               {MYPLANNING_MENU_ITEMS.find((item) => item.id === activeSection)?.label || "MyPlanningAI"}
             </p>

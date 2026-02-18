@@ -24,7 +24,7 @@ const MARKETING_LINKS: NavEntry[] = [
   { href: "/myplanning/enterprise", label: "Entreprise" },
 ];
 
-const MARKETING_ROUTES = new Set(["/myplanning", "/myplanning/pricing"]);
+const MARKETING_ROUTES = new Set(["/myplanning/pricing"]);
 
 const SIDEBAR_FREE_GROUPS: NavGroup[] = [
   {

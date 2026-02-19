@@ -785,6 +785,24 @@ def _pg_set_rls_actor(cur, actor_id: str) -> None:
     cur.execute("set local request.jwt.claim.sub = %s;", (actor_id,))
 
 
+def _pg_workspace_access_state(cur, workspace_id: str, actor_id: str) -> tuple[bool, bool, bool]:
+    cur.execute(
+        """
+        select
+          app.workspace_exists(%s::uuid) as workspace_exists,
+          app.is_workspace_member(%s::uuid, %s::uuid) as is_member,
+          app.is_workspace_admin(%s::uuid, %s::uuid) as is_admin;
+        """,
+        (workspace_id, workspace_id, actor_id, workspace_id, actor_id),
+    )
+    row = dict(cur.fetchone() or {})
+    return (
+        bool(row.get("workspace_exists")),
+        bool(row.get("is_member")),
+        bool(row.get("is_admin")),
+    )
+
+
 def _coerce_uuid_text(raw: Any) -> str | None:
     if raw is None:
         return None
@@ -1242,10 +1260,10 @@ async def _pg_create_workspace(
             _pg_set_rls_actor(cur, actor_id)
             cur.execute(
                 """
-                insert into app.workspaces(id, name, owner_id, created_at, updated_at)
-                values (%s::uuid, %s, %s::uuid, %s, %s);
+                insert into app.workspaces(id, name, owner_id, created_by, created_at, updated_at)
+                values (%s::uuid, %s, %s::uuid, %s::uuid, %s, %s);
                 """,
-                (workspace_id, payload.name.strip(), actor_id, now, now),
+                (workspace_id, payload.name.strip(), actor_id, actor_id, now, now),
             )
             cur.execute(
                 """
@@ -1297,6 +1315,11 @@ async def _pg_get_workspace(
             cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
             _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
             _pg_set_rls_actor(cur, actor_id)
+            workspace_exists, is_member, _ = _pg_workspace_access_state(cur, workspace_id, actor_id)
+            if not workspace_exists:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            if not is_member:
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             cur.execute(
                 """
                 select
@@ -1323,6 +1346,13 @@ async def _pg_get_workspace(
             )
             row = dict(cur.fetchone() or {})
         conn.commit()
+    except HTTPException:
+        try:
+            if conn is not None:
+                conn.rollback()
+        except Exception:
+            pass
+        raise
     except Exception as exc:
         try:
             if conn is not None:
@@ -1338,7 +1368,7 @@ async def _pg_get_workspace(
             pass
 
     if not row:
-        raise HTTPException(status_code=404, detail="Workspace introuvable")
+        raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
     return WorkspaceResponse(
         id=str(row["id"]),
         name=str(row["name"]),
@@ -1387,6 +1417,11 @@ async def _pg_list_workspace_members(
             cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
             _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
             _pg_set_rls_actor(cur, actor_id)
+            workspace_exists, is_member, _ = _pg_workspace_access_state(cur, workspace_id, actor_id)
+            if not workspace_exists:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            if not is_member:
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             cur.execute(
                 """
                 select w.id::text as workspace_id, w.owner_id::text as owner_id
@@ -1398,7 +1433,7 @@ async def _pg_list_workspace_members(
             )
             workspace = dict(cur.fetchone() or {})
             if not workspace:
-                raise HTTPException(status_code=404, detail="Workspace introuvable")
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             cur.execute(
                 """
                 select user_id::text as user_id, role, created_at as joined_at
@@ -1541,9 +1576,16 @@ async def _pg_add_workspace_member(
             if target_actor_id:
                 _pg_upsert_auth_user(cur, target_actor_id, email)
             _pg_set_rls_actor(cur, actor_id)
+            workspace_exists, is_member, _ = _pg_workspace_access_state(cur, workspace_id, actor_id)
+            if not workspace_exists:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            if not is_member:
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             cur.execute(
                 """
-                select w.owner_id::text as owner_id, wm.role
+                select
+                  w.owner_id::text as owner_id,
+                  wm.role as role
                 from app.workspaces w
                 left join app.workspace_members wm
                   on wm.workspace_id = w.id
@@ -1555,7 +1597,7 @@ async def _pg_add_workspace_member(
             )
             authz_row = dict(cur.fetchone() or {})
             if not authz_row:
-                raise HTTPException(status_code=404, detail="Workspace introuvable")
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             requester_role = "owner" if authz_row.get("owner_id") == actor_id else str(authz_row.get("role") or "")
             if requester_role not in {"owner", "admin"}:
                 raise HTTPException(status_code=403, detail="Permissions insuffisantes")
@@ -1746,6 +1788,11 @@ async def _pg_delete_workspace_member(
             cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
             _pg_upsert_auth_user(cur, actor_id, str(current.get("email") or ""))
             _pg_set_rls_actor(cur, actor_id)
+            workspace_exists, is_member, _ = _pg_workspace_access_state(cur, workspace_id, actor_id)
+            if not workspace_exists:
+                raise HTTPException(status_code=404, detail="Workspace introuvable")
+            if not is_member:
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             cur.execute(
                 """
                 select w.owner_id::text as owner_id, wm.role
@@ -1760,7 +1807,7 @@ async def _pg_delete_workspace_member(
             )
             authz_row = dict(cur.fetchone() or {})
             if not authz_row:
-                raise HTTPException(status_code=404, detail="Workspace introuvable")
+                raise HTTPException(status_code=403, detail="Accès refusé à ce workspace")
             requester_role = "owner" if authz_row.get("owner_id") == actor_id else str(authz_row.get("role") or "")
             if requester_role not in {"owner", "admin"}:
                 raise HTTPException(status_code=403, detail="Permissions insuffisantes")

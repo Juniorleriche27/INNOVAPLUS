@@ -288,7 +288,189 @@ def ensure_myplanning_team_tables() -> None:
     if not POOL:
         return
 
+    db_execute("create extension if not exists pgcrypto;")
     db_execute("grant usage on schema app to authenticated;")
+    db_execute(
+        """
+        create table if not exists app.workspaces (
+          id uuid primary key default gen_random_uuid(),
+          name text not null,
+          owner_id uuid not null references auth.users(id) on delete cascade,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now(),
+          created_by uuid
+        );
+        """
+    )
+    db_execute("alter table app.workspaces add column if not exists id uuid default gen_random_uuid();")
+    db_execute("alter table app.workspaces add column if not exists name text;")
+    db_execute("alter table app.workspaces add column if not exists owner_id uuid;")
+    db_execute("alter table app.workspaces add column if not exists created_at timestamptz not null default now();")
+    db_execute("alter table app.workspaces add column if not exists updated_at timestamptz not null default now();")
+    db_execute("alter table app.workspaces add column if not exists created_by uuid;")
+    db_execute("update app.workspaces set created_by = owner_id where created_by is null;")
+    db_execute("create index if not exists workspaces_owner_id_idx on app.workspaces(owner_id);")
+    db_execute("create index if not exists workspaces_created_by_idx on app.workspaces(created_by);")
+    db_execute(
+        """
+        create or replace function app.set_workspaces_updated_at()
+        returns trigger as $$
+        begin
+          new.updated_at = now();
+          return new;
+        end;
+        $$ language plpgsql;
+        """
+    )
+    db_execute("drop trigger if exists workspaces_set_updated_at on app.workspaces;")
+    db_execute(
+        """
+        create trigger workspaces_set_updated_at
+        before update on app.workspaces
+        for each row
+        execute function app.set_workspaces_updated_at();
+        """
+    )
+
+    db_execute(
+        """
+        create table if not exists app.workspace_members (
+          workspace_id uuid not null references app.workspaces(id) on delete cascade,
+          user_id uuid not null references auth.users(id) on delete cascade,
+          role text not null default 'member',
+          created_at timestamptz not null default now(),
+          status text not null default 'active',
+          id uuid not null default gen_random_uuid(),
+          primary key (workspace_id, user_id)
+        );
+        """
+    )
+    db_execute("alter table app.workspace_members add column if not exists workspace_id uuid;")
+    db_execute("alter table app.workspace_members add column if not exists user_id uuid;")
+    db_execute("alter table app.workspace_members add column if not exists role text not null default 'member';")
+    db_execute("alter table app.workspace_members add column if not exists created_at timestamptz not null default now();")
+    db_execute("alter table app.workspace_members add column if not exists status text not null default 'active';")
+    db_execute("alter table app.workspace_members add column if not exists id uuid default gen_random_uuid();")
+    db_execute("update app.workspace_members set id = gen_random_uuid() where id is null;")
+    db_execute(
+        "create unique index if not exists workspace_members_workspace_user_uidx on app.workspace_members(workspace_id, user_id);"
+    )
+    db_execute("create unique index if not exists workspace_members_id_key on app.workspace_members(id);")
+    db_execute("create index if not exists workspace_members_user_id_idx on app.workspace_members(user_id);")
+    db_execute("create index if not exists workspace_members_workspace_status_idx on app.workspace_members(workspace_id, status);")
+
+    db_execute(
+        """
+        do $$
+        begin
+          if not exists (
+            select 1
+            from pg_constraint
+            where conname = 'workspace_members_role_check'
+          ) then
+            alter table app.workspace_members
+              add constraint workspace_members_role_check
+              check (role in ('owner','admin','member'));
+          end if;
+        end $$;
+        """
+    )
+    db_execute(
+        """
+        do $$
+        begin
+          if not exists (
+            select 1
+            from pg_constraint
+            where conname = 'workspace_members_status_check'
+          ) then
+            alter table app.workspace_members
+              add constraint workspace_members_status_check
+              check (status in ('active','pending'));
+          end if;
+        end $$;
+        """
+    )
+
+    db_execute(
+        """
+        create or replace function app.workspace_exists(ws_id uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.workspaces w
+            where w.id = ws_id
+          );
+        $$;
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.is_workspace_member(ws_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.workspaces w
+            where w.id = ws_id
+              and (
+                w.owner_id = uid
+                or exists (
+                  select 1
+                  from app.workspace_members wm
+                  where wm.workspace_id = ws_id
+                    and wm.user_id = uid
+                    and coalesce(wm.status, 'active') = 'active'
+                )
+              )
+          );
+        $$;
+        """
+    )
+    db_execute(
+        """
+        create or replace function app.is_workspace_admin(ws_id uuid, uid uuid)
+        returns boolean
+        language sql
+        stable
+        security definer
+        set search_path = app, public
+        set row_security = off
+        as $$
+          select exists (
+            select 1
+            from app.workspaces w
+            where w.id = ws_id
+              and (
+                w.owner_id = uid
+                or exists (
+                  select 1
+                  from app.workspace_members wm
+                  where wm.workspace_id = ws_id
+                    and wm.user_id = uid
+                    and coalesce(wm.status, 'active') = 'active'
+                    and coalesce(wm.role, '') in ('owner', 'admin')
+                )
+              )
+          );
+        $$;
+        """
+    )
+    db_execute("grant execute on function app.workspace_exists(uuid) to authenticated;")
+    db_execute("grant execute on function app.is_workspace_member(uuid, uuid) to authenticated;")
+    db_execute("grant execute on function app.is_workspace_admin(uuid, uuid) to authenticated;")
+
     db_execute("alter table app.workspaces add column if not exists workspace_type text not null default 'team';")
     db_execute("create index if not exists workspaces_workspace_type_idx on app.workspaces(workspace_type);")
     db_execute(
@@ -362,15 +544,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspaces
           for select
           to authenticated
-          using (
-            owner_id = auth.uid()
-            or exists (
-              select 1
-              from app.workspace_members m
-              where m.workspace_id = workspaces.id
-                and m.user_id = auth.uid()
-            )
-          );
+          using (app.is_workspace_member(workspaces.id, auth.uid()));
         """
     )
     db_execute(
@@ -388,8 +562,8 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspaces
           for update
           to authenticated
-          using (owner_id = auth.uid())
-          with check (owner_id = auth.uid());
+          using (app.is_workspace_admin(workspaces.id, auth.uid()))
+          with check (app.is_workspace_admin(workspaces.id, auth.uid()));
         """
     )
     db_execute(
@@ -410,7 +584,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_members
           for select
           to authenticated
-          using (true);
+          using (app.is_workspace_member(workspace_members.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -419,7 +593,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_members
           for insert
           to authenticated
-          with check (true);
+          with check (app.is_workspace_admin(workspace_members.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -428,8 +602,8 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_members
           for update
           to authenticated
-          using (true)
-          with check (true);
+          using (app.is_workspace_admin(workspace_members.workspace_id, auth.uid()))
+          with check (app.is_workspace_admin(workspace_members.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -438,7 +612,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_members
           for delete
           to authenticated
-          using (true);
+          using (app.is_workspace_admin(workspace_members.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -447,7 +621,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_invites
           for select
           to authenticated
-          using (true);
+          using (app.is_workspace_member(workspace_invites.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -456,7 +630,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_invites
           for insert
           to authenticated
-          with check (true);
+          with check (app.is_workspace_admin(workspace_invites.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -465,8 +639,8 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_invites
           for update
           to authenticated
-          using (true)
-          with check (true);
+          using (app.is_workspace_admin(workspace_invites.workspace_id, auth.uid()))
+          with check (app.is_workspace_admin(workspace_invites.workspace_id, auth.uid()));
         """
     )
     db_execute(
@@ -475,7 +649,7 @@ def ensure_myplanning_team_tables() -> None:
           on app.workspace_invites
           for delete
           to authenticated
-          using (true);
+          using (app.is_workspace_admin(workspace_invites.workspace_id, auth.uid()));
         """
     )
 

@@ -1158,6 +1158,65 @@ def ensure_myplanning_tasks_tables() -> None:
     )
 
 
+def ensure_myplanning_ml_models_tables() -> None:
+    # Persist ML/stat-model artifacts in Postgres (per-user, RLS protected).
+    # Keep SQL idempotent so startup is safe.
+    if not POOL:
+        return
+
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("grant usage on schema app to authenticated;")
+    db_execute(
+        """
+        create table if not exists app.ml_models (
+          id uuid primary key default gen_random_uuid(),
+          owner_id uuid not null,
+          name text not null,
+          model_version int not null default 1,
+          model_json jsonb not null,
+          metrics jsonb not null default '{}'::jsonb,
+          created_at timestamptz not null default now()
+        );
+        """
+    )
+    db_execute("create index if not exists ml_models_owner_name_created_idx on app.ml_models(owner_id, name, created_at desc);")
+
+    db_execute("grant select, insert, update, delete on app.ml_models to authenticated;")
+    db_execute("alter table app.ml_models enable row level security;")
+
+    db_execute("drop policy if exists ml_models_select_own on app.ml_models;")
+    db_execute("drop policy if exists ml_models_insert_own on app.ml_models;")
+    db_execute("drop policy if exists ml_models_delete_own on app.ml_models;")
+
+    db_execute(
+        """
+        create policy ml_models_select_own
+          on app.ml_models
+          for select
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy ml_models_insert_own
+          on app.ml_models
+          for insert
+          to authenticated
+          with check (owner_id = auth.uid());
+        """
+    )
+    db_execute(
+        """
+        create policy ml_models_delete_own
+          on app.ml_models
+          for delete
+          to authenticated
+          using (owner_id = auth.uid());
+        """
+    )
+
+
 def ensure_myplanning_alerts_tables() -> None:
     # Bootstrap Alerts v1 tables/policies in Postgres app schema.
     # Keep SQL idempotent so startup remains safe.
@@ -2678,6 +2737,10 @@ async def on_startup():
         ensure_myplanning_tasks_tables()
     except Exception:
         logger.exception("Failed to ensure myplanning tasks postgres table/policies")
+    try:
+        ensure_myplanning_ml_models_tables()
+    except Exception:
+        logger.exception("Failed to ensure myplanning ml models postgres table/policies")
     try:
         ensure_myplanning_alerts_tables()
     except Exception:

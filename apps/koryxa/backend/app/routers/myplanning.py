@@ -67,6 +67,10 @@ from app.services.attendance_v1 import (
     render_qr_svg,
     sha256_hex,
 )
+from app.services.stat_model_v1 import (
+    predict_task_cycle_time_minutes_v1,
+    train_task_cycle_time_model_v1,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -2394,6 +2398,8 @@ async def _pg_update_task(
             # Keep first completion timestamp for analytics history.
             if updates.get("status") == "done":
                 set_parts.append("done_at = coalesce(done_at, now())")
+            if updates.get("kanban_state") == "done" and "completed_at" not in updates:
+                set_parts.append("completed_at = coalesce(completed_at, now())")
             if not set_parts:
                 conn.commit()
                 return _serialize_pg_task(existing)
@@ -5819,6 +5825,260 @@ async def migrate_tasks_to_postgres(
         "store": store,
         **stats,
     }
+
+
+class MlTaskCycleTimeTrainIn(BaseModel):
+    workspace_id: str | None = None
+    alpha: float | None = Field(default=None, ge=0.0, le=1000.0)
+    min_samples: int | None = Field(default=None, ge=8, le=500)
+
+
+class MlTaskCycleTimeTrainOut(BaseModel):
+    ok: bool = True
+    model_id: str
+    model_version: int
+    metrics: dict[str, Any]
+
+
+class MlTaskCycleTimePredictIn(BaseModel):
+    task_id: str | None = None
+    title: str | None = None
+    description: str | None = None
+    due_date: str | None = None
+    due_datetime: str | None = None
+    priority_eisenhower: str | None = None
+    high_impact: bool | None = None
+    workspace_id: str | None = None
+
+
+class MlTaskCycleTimePredictOut(BaseModel):
+    ok: bool = True
+    model_version: int
+    predicted_minutes: int
+    predicted_hours: float
+
+
+def _pg_load_latest_ml_model(cur: RealDictCursor, actor_id: str, name: str) -> dict[str, Any] | None:
+    cur.execute(
+        """
+        select
+          id::text as id,
+          model_version::int as model_version,
+          model_json,
+          metrics,
+          created_at
+        from app.ml_models
+        where owner_id = %s::uuid
+          and name = %s
+        order by model_version desc, created_at desc
+        limit 1;
+        """,
+        (actor_id, name),
+    )
+    row = cur.fetchone()
+    return dict(row) if row else None
+
+
+@router.post("/ml/task-cycle-time/train", response_model=MlTaskCycleTimeTrainOut)
+async def ml_train_task_cycle_time(
+    payload: MlTaskCycleTimeTrainIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> MlTaskCycleTimeTrainOut:
+    tasks_store = _myplanning_tasks_store()
+    if tasks_store not in {"postgres", "dual"}:
+        raise HTTPException(status_code=409, detail="tasks store must be postgres/dual to train model")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    workspace_uuid = _as_uuid_or_none(payload.workspace_id, "workspace_id") if payload.workspace_id else None
+
+    alpha = float(payload.alpha) if payload.alpha is not None else 8.0
+    min_samples = int(payload.min_samples) if payload.min_samples is not None else 12
+
+    dsn = _pg_dsn()
+    conn = None
+    model_name = "task_cycle_time_v1"
+    model_id = str(uuid.uuid4())
+    model_version = 1
+    metrics: dict[str, Any] = {}
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "15000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            if workspace_uuid:
+                _pg_assert_workspace_access(cur, workspace_uuid, actor_id)
+
+            cur.execute(
+                """
+                select
+                  id::text as id,
+                  title,
+                  description,
+                  priority_eisenhower,
+                  high_impact,
+                  workspace_id::text as workspace_id,
+                  created_at,
+                  due_date,
+                  due_datetime,
+                  completed_at,
+                  done_at
+                from app.tasks
+                where owner_id = %s::uuid
+                  and (done_at is not null or completed_at is not null)
+                  and (%s::uuid is null or workspace_id = %s::uuid)
+                order by created_at desc;
+                """,
+                (actor_id, workspace_uuid, workspace_uuid),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+
+            result = train_task_cycle_time_model_v1(rows, alpha=alpha, min_samples=min_samples)
+            metrics = dict(result.metrics)
+            model_json = dict(result.model)
+
+            cur.execute(
+                """
+                select coalesce(max(model_version), 0)::int as v
+                from app.ml_models
+                where owner_id = %s::uuid
+                  and name = %s;
+                """,
+                (actor_id, model_name),
+            )
+            model_version = int((cur.fetchone() or {}).get("v") or 0) + 1
+
+            cur.execute(
+                """
+                insert into app.ml_models(id, owner_id, name, model_version, model_json, metrics, created_at)
+                values (%s::uuid, %s::uuid, %s, %s, %s::jsonb, %s::jsonb, now())
+                returning id::text as id;
+                """,
+                (
+                    model_id,
+                    actor_id,
+                    model_name,
+                    model_version,
+                    json.dumps(model_json, ensure_ascii=False),
+                    json.dumps(metrics, ensure_ascii=False),
+                ),
+            )
+            inserted = dict(cur.fetchone() or {})
+            model_id = str(inserted.get("id") or model_id)
+        conn.commit()
+    except ValueError as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"ml train error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    return MlTaskCycleTimeTrainOut(model_id=model_id, model_version=model_version, metrics=metrics)
+
+
+@router.post("/ml/task-cycle-time/predict", response_model=MlTaskCycleTimePredictOut)
+async def ml_predict_task_cycle_time(
+    payload: MlTaskCycleTimePredictIn,
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict = Depends(get_current_user),
+) -> MlTaskCycleTimePredictOut:
+    tasks_store = _myplanning_tasks_store()
+    if tasks_store not in {"postgres", "dual"}:
+        raise HTTPException(status_code=409, detail="tasks store must be postgres/dual to use model")
+
+    bearer_token = _parse_bearer_token(request)
+    actor_id = await _resolve_pg_actor_id(db, current, bearer_token)
+    actor_email = str(current.get("email") or "")
+    dsn = _pg_dsn()
+
+    conn = None
+    model_row: dict[str, Any] | None = None
+    task: dict[str, Any] | None = None
+    try:
+        conn = psycopg2.connect(dsn)
+        conn.autocommit = False
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("set local statement_timeout = %s;", (int(os.environ.get("PG_STATEMENT_TIMEOUT_MS", "5000")),))
+            _pg_upsert_auth_user(cur, actor_id, actor_email)
+            _pg_set_rls_actor(cur, actor_id)
+            model_row = _pg_load_latest_ml_model(cur, actor_id, "task_cycle_time_v1")
+            if not model_row:
+                raise HTTPException(status_code=404, detail="Aucun modèle entraîné. Lance /ml/task-cycle-time/train.")
+
+            if payload.task_id:
+                task_uuid = _as_uuid_or_none(payload.task_id, "task_id")
+                if not task_uuid:
+                    raise HTTPException(status_code=400, detail="task_id must be a UUID")
+                task = await _pg_get_task_for_actor(cur, task_uuid, actor_id)
+                if not task:
+                    raise HTTPException(status_code=404, detail="Tâche introuvable")
+            else:
+                task = {
+                    "title": payload.title or "",
+                    "description": payload.description or "",
+                    "priority_eisenhower": payload.priority_eisenhower,
+                    "high_impact": bool(payload.high_impact) if payload.high_impact is not None else False,
+                    "workspace_id": _as_uuid_or_none(payload.workspace_id, "workspace_id"),
+                    "created_at": datetime.utcnow(),
+                    "due_date": payload.due_date,
+                    "due_datetime": payload.due_datetime,
+                }
+        conn.commit()
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as exc:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"ml predict error: {exc.__class__.__name__}")
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    model_json = dict(model_row.get("model_json") or {})
+    minutes = int(predict_task_cycle_time_minutes_v1(model_json, task or {}))
+    return MlTaskCycleTimePredictOut(
+        model_version=int(model_row.get("model_version") or 1),
+        predicted_minutes=minutes,
+        predicted_hours=round(minutes / 60.0, 2),
+    )
 
 
 @router.post("/ai/suggest-tasks", response_model=AiSuggestTasksResponse)

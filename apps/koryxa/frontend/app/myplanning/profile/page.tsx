@@ -90,13 +90,14 @@ export default function MyPlanningProfilePage() {
           </Link>
           <Link
             href="/account/role"
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Profil KORYXA
+            Compte KORYXA (nouvel onglet)
           </Link>
         </div>
       </section>
     </div>
   );
 }
-

@@ -147,12 +147,12 @@ function isActive(pathname: string, entry: NavEntry): boolean {
   return pathname.startsWith(entry.href);
 }
 
-function breadcrumbTitle(pathname: string): string {
-  if (pathname.startsWith("/myplanning/team")) return "MyPlanning / Espaces";
-  if (pathname.startsWith("/myplanning/orgs")) return "MyPlanning / Organisations";
-  if (pathname.startsWith("/myplanning/enterprise")) return "MyPlanning / Enterprise";
-  if (pathname.startsWith("/myplanning/pro")) return "MyPlanning / Pro";
-  if (pathname.startsWith("/myplanning/app")) return "MyPlanning / App";
+function breadcrumbLabel(pathname: string): string {
+  if (pathname.startsWith("/myplanning/team")) return "Espaces";
+  if (pathname.startsWith("/myplanning/orgs")) return "Organisations";
+  if (pathname.startsWith("/myplanning/enterprise")) return "Entreprise";
+  if (pathname.startsWith("/myplanning/pro")) return "Pro";
+  if (pathname.startsWith("/myplanning/app")) return "App";
   return "MyPlanning";
 }
 
@@ -252,12 +252,28 @@ function ProductTopbar({
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
-      <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--app-max-w)" }}>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/" prefetch className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
-            ← Site KORYXA
+          <Link
+            href="/myplanning"
+            prefetch
+            scroll={false}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+            title="Accueil MyPlanning"
+          >
+            ← Accueil MyPlanning
           </Link>
-          <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
+          <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbLabel(pathname)}</p>
+          <Link
+            href="/"
+            target="_blank"
+            rel="noreferrer"
+            prefetch={false}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+            title="Ouvrir le site KORYXA (nouvel onglet)"
+          >
+            Site KORYXA ↗
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -438,6 +454,15 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
+  useEffect(() => {
+    // Product pages use an internal scroll container (not window scroll).
+    // Reset it on route changes so navigation feels consistent.
+    if (typeof window === "undefined") return;
+    const el = document.querySelector('[data-mp-scroll="1"]') as HTMLElement | null;
+    if (!el) return;
+    el.scrollTo({ top: 0, left: 0 });
+  }, [pathname, isFullscreen]);
+
   const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
   const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
   const profileHref = isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/myplanning/profile";
@@ -520,8 +545,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
             </button>
           </div>
         </div>
-        <main className="min-h-screen w-full overflow-y-auto px-2 pb-2 pt-16 sm:px-3 sm:pb-3 sm:pt-20">
-          <div className="mx-auto w-full">
+        <main data-mp-scroll="1" className="min-h-screen w-full overflow-y-auto px-2 pb-2 pt-16 sm:px-3 sm:pb-3 sm:pt-20">
+          <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
             {children}
           </div>
         </main>
@@ -549,8 +574,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
             userInitial={userInitial}
             displayName={displayName}
           />
-          <main className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
-            <div className="mx-auto w-full">
+          <main data-mp-scroll="1" className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
+            <div className="mx-auto w-full" style={{ maxWidth: "var(--app-max-w)" }}>
               {children}
             </div>
           </main>

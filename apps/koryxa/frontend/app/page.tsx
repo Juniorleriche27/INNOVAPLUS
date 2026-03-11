@@ -206,29 +206,73 @@ export default function HomePage() {
           </section>
 
           <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_64px_rgba(15,23,42,0.18)] sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="grid gap-8 lg:grid-cols-[1.35fr_0.95fr] lg:items-center">
               <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Prochaine etape</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Passer a l'action</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                  Si le produit doit paraitre plus premium, il faut montrer plus de cadre, plus de valeur et moins de vide.
+                  Choisis ton point d'entree et avance avec un cadre plus clair.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-                  Cette direction pose deja une base plus serieuse. On peut maintenant harmoniser les pages School, Entreprise et les ecrans de conversion avec le meme niveau.
+                  Cote apprenant, tu suis un parcours structure avec planning, projets et progression. Cote entreprise,
+                  tu transformes un besoin concret en mission mieux cadree, suivie et restituee.
                 </p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
+                    Parcours guides
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
+                    Missions reelles
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
+                    Livrables plus propres
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/school"
-                  className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50"
-                >
-                  Continuer sur School
-                </Link>
-                <Link
-                  href="/entreprise"
-                  className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-                >
-                  Continuer sur Entreprise
-                </Link>
+
+              <div className="grid gap-4">
+                <div className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Pour apprendre</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">Explorer KORYXA School</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    Ouvrir les parcours, consulter le planning et entrer dans la logique School.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link
+                      href="/school"
+                      className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50"
+                    >
+                      Aller sur School
+                    </Link>
+                    <Link
+                      href="/school/planning"
+                      className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                    >
+                      Voir le planning
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Pour une organisation</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">Activer un besoin entreprise</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    Presenter un besoin data, cadrer la mission et comprendre l'accompagnement KORYXA.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Link
+                      href="/entreprise"
+                      className="inline-flex items-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
+                    >
+                      Aller sur Entreprise
+                    </Link>
+                    <Link
+                      href="/about"
+                      className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                    >
+                      Comprendre KORYXA
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

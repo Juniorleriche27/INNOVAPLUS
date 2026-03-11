@@ -170,18 +170,6 @@ export default function Sidebar({ className, style }: { className?: string; styl
     >
       <div className="flex h-full flex-col overflow-hidden">
         <div className="relative border-b border-slate-200/70 px-3 pb-3 pt-4">
-          {isExpanded && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-gradient-to-br from-slate-950 via-sky-900 to-sky-500 shadow-[0_18px_34px_rgba(2,132,199,0.22)]">
-                <span className="text-white font-semibold text-xs">{IS_V1 ? "K" : "AI"}</span>
-              </div>
-              <div>
-                <h2 className="text-base font-semibold tracking-[-0.03em] text-slate-950">KORYXA</h2>
-                <p className="text-[11px] text-slate-500">{IS_V1 ? "School x Entreprise" : "IA • Opportunites"}</p>
-              </div>
-            </div>
-          )}
-
           <button
             onClick={toggle}
             className={clsx(
@@ -194,8 +182,8 @@ export default function Sidebar({ className, style }: { className?: string; styl
           </button>
 
           {isExpanded && (
-            <div className="mt-4 rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 shadow-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Workspace</p>
+            <div className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 pr-12 shadow-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Navigation</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
                 {IS_V1 ? "Programme, missions et progression dans un seul espace." : "Navigation unifiee pour piloter opportunites et execution."}
               </p>

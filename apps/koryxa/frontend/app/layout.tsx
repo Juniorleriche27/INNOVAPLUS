@@ -40,6 +40,7 @@ export default function RootLayout(props: { children: ReactNode }) {
       <body className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 antialiased">
         <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
         <div className="relative flex min-h-screen flex-col">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,rgba(186,230,253,0.32),transparent_62%)]" aria-hidden />
           <AuthProvider>
             <PWARegister />
             <div className="sticky top-0 z-40">
@@ -55,7 +56,7 @@ export default function RootLayout(props: { children: ReactNode }) {
               <div className="min-w-0 flex min-h-0 flex-col">
                 <main
                   id="content"
-                  className="flex w-full flex-1 flex-col px-4 pb-10 pt-6 sm:px-6 lg:px-8"
+                  className="relative flex w-full flex-1 flex-col px-4 pb-10 pt-6 sm:px-6 lg:px-8"
                 >
                   <div className="flex-1">{children}</div>
                   <Footer />

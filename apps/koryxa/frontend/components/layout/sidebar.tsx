@@ -161,45 +161,49 @@ export default function Sidebar({ className, style }: { className?: string; styl
   return (
     <aside
       className={clsx(
-        // Modern sticky sidebar with glass effect
-        "z-30 h-full shrink-0 border-r border-slate-200/60 bg-white/80 backdrop-blur-xl overflow-visible",
+        "z-30 h-full shrink-0 overflow-visible border-r border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,248,252,0.9))] backdrop-blur-2xl",
         "transition-all duration-300 ease-in-out",
-        // Smooth width transitions
         collapsed ? "w-[72px]" : "w-[280px]",
         className
       )}
       style={style}
     >
       <div className="flex h-full flex-col overflow-hidden">
-        {/* Header */}
-        <div className="relative flex items-center gap-3 p-3 border-b border-slate-200/60">
+        <div className="relative border-b border-slate-200/70 px-3 pb-3 pt-4">
           {isExpanded && (
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-gradient-to-br from-slate-950 via-sky-900 to-sky-500 shadow-[0_18px_34px_rgba(2,132,199,0.22)]">
                 <span className="text-white font-semibold text-xs">{IS_V1 ? "K" : "AI"}</span>
               </div>
               <div>
-                <h2 className="text-base font-semibold text-slate-900">KORYXA</h2>
-                <p className="text-[11px] text-slate-500">{IS_V1 ? "School & Entreprise" : "IA • Opportunités"}</p>
+                <h2 className="text-base font-semibold tracking-[-0.03em] text-slate-950">KORYXA</h2>
+                <p className="text-[11px] text-slate-500">{IS_V1 ? "School x Entreprise" : "IA • Opportunites"}</p>
               </div>
             </div>
           )}
-          
+
           <button
             onClick={toggle}
             className={clsx(
-              "absolute right-2 top-2 z-[80] p-2 rounded-lg transition-colors pointer-events-auto",
-              "bg-white/90 backdrop-blur border border-slate-200/70 shadow-sm",
-              "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
+              "absolute right-2 top-3 z-[80] rounded-full border border-white/80 bg-white/90 p-2 shadow-sm backdrop-blur transition-colors pointer-events-auto",
+              "text-slate-700 hover:bg-white hover:text-slate-900"
             )}
             aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
           >
             {collapsed ? <IconChevronRight className="h-4 w-4" /> : <IconChevronLeft className="h-4 w-4" />}
           </button>
+
+          {isExpanded && (
+            <div className="mt-4 rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 shadow-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Workspace</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
+                {IS_V1 ? "Programme, missions et progression dans un seul espace." : "Navigation unifiee pour piloter opportunites et execution."}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="sidebar-nav flex-1 p-4 space-y-2 overflow-y-auto overscroll-contain">
+        <nav className="sidebar-nav flex-1 space-y-2 overflow-y-auto overscroll-contain p-4">
           {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
@@ -216,20 +220,19 @@ export default function Sidebar({ className, style }: { className?: string; styl
                     }
                   }}
                   className={clsx(
-                    "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-                    "hover:bg-slate-50 hover:shadow-sm",
+                    "group relative flex items-center gap-3 rounded-[22px] px-3 py-3 transition-all duration-200",
+                    "hover:-translate-y-0.5 hover:bg-white/88 hover:shadow-[0_10px_22px_rgba(148,163,184,0.16)]",
                     active
-                      ? "bg-sky-50 text-sky-700 shadow-sm border border-sky-200/60 ring-1 ring-sky-100"
-                  : "text-slate-600 hover:text-slate-900",
-                    // Collapsed state
+                      ? "border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(224,242,254,0.92))] text-sky-700 shadow-[0_14px_28px_rgba(14,165,233,0.14)] ring-1 ring-sky-100/70"
+                      : "text-slate-600 hover:text-slate-900",
                     collapsed && "justify-center px-2"
                   )}
                 >
                   <div className={clsx(
-                    "flex items-center justify-center w-8 h-8 rounded-lg transition-colors",
+                    "flex h-9 w-9 items-center justify-center rounded-2xl transition-colors",
                     active 
                       ? "bg-sky-100 text-sky-600" 
-                      : "bg-slate-100 text-slate-500 group-hover:bg-sky-100 group-hover:text-sky-600"
+                      : "bg-white text-slate-500 shadow-sm group-hover:bg-sky-100 group-hover:text-sky-600"
                   )}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -239,7 +242,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                       <div className="flex items-center justify-between">
                         <span className="text-[13px] font-semibold truncate">{link.label}</span>
                         <div className="flex items-center gap-2">
-                          {active && <div className="w-2 h-2 rounded-full bg-sky-500" />}
+                          {active && <div className="h-2 w-2 rounded-full bg-sky-500" />}
                           {isSchoolLink && (
                             <span className="text-[10px] font-semibold text-slate-500">
                               {schoolOpen ? "−" : "+"}
@@ -260,7 +263,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                 </Link>
 
                 {showSchoolSubs ? (
-                  <div className="ml-10 rounded-xl border border-slate-200/70 bg-white/80 p-2 shadow-sm">
+                  <div className="ml-10 rounded-2xl border border-slate-200/70 bg-white/88 p-2 shadow-sm">
                     <div className="space-y-1">
                       {V1_SCHOOL_TREE.map((sub) => {
                         const subActive = pathname.startsWith(sub.href);
@@ -389,14 +392,13 @@ export default function Sidebar({ className, style }: { className?: string; styl
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200/60">
+        <div className="border-t border-slate-200/70 p-4">
           {isExpanded ? (
             <div className="space-y-3">
               {!IS_V1 && (
-                <div className="rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[11px] font-medium text-slate-700">Système actif</span>
                   </div>
                   <p className="text-[11px] text-slate-600">
@@ -404,7 +406,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
                   </p>
                 </div>
               )}
-              
+
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
                 <span>v2.1.0</span>
                 <span>•</span>
@@ -413,7 +415,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
           )}
         </div>

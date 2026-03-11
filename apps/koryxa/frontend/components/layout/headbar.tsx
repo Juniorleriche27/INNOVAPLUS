@@ -36,10 +36,10 @@ const PRODUCT_LINKS = [
 ];
 
 const NAV_PILL_CLASS =
-  "relative inline-flex min-w-[110px] justify-center px-3 py-2 text-[12px] font-semibold rounded-xl transition-all duration-200 border bg-white/80 shadow-sm hover:-translate-y-0.5 whitespace-nowrap";
+  "relative inline-flex min-w-[116px] justify-center rounded-full border px-4 py-2.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 shadow-sm backdrop-blur whitespace-nowrap";
 
 const CTA_PILL_CLASS =
-  "inline-flex min-w-[128px] justify-center items-center gap-2 px-3 py-2 text-[12px] font-semibold rounded-xl transition-all duration-200 shadow-sm whitespace-nowrap";
+  "inline-flex min-w-[132px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 shadow-sm whitespace-nowrap";
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -86,12 +86,10 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Headbar() {
   const pathname = usePathname();
-  if (pathname.startsWith("/myplanning")) {
-    return null;
-  }
+  const hideHeadbar = pathname.startsWith("/myplanning");
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
-  const isMyPlanning = pathname.startsWith("/myplanning");
+  const isMyPlanning = hideHeadbar;
   const navLinks = useMemo(() => {
     if (isMyPlanning) {
       return [
@@ -185,32 +183,36 @@ export default function Headbar() {
       .catch(() => void 0);
   }, [notifOpen, notifs, showAccount, user]);
 
+  if (hideHeadbar) {
+    return null;
+  }
+
   return (
     <header
       className={clsx(
         "sticky top-0 z-40 transition-all duration-300",
         scrolled 
-          ? "border-b border-slate-200/60 bg-white/90 backdrop-blur-xl shadow-sm shadow-slate-900/5" 
+          ? "border-b border-white/80 bg-[rgba(247,250,252,0.88)] backdrop-blur-2xl shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
           : "bg-transparent"
       )}
     >
-      <div className="w-full px-3 sm:px-4 lg:px-6">
-        <div className="flex items-center justify-between gap-3 sm:gap-4 py-2.5 sm:py-3">
+      <div className="mx-auto w-full max-w-[1680px] px-3 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between gap-3 py-3 sm:gap-4 sm:py-4">
           {/* Left: Brand */}
           <div className="flex items-center gap-3 min-w-0">
             <Link href={isMyPlanning ? "/myplanning" : "/"} className="flex items-center gap-3 group">
               <div className="relative">
-                <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25 group-hover:shadow-xl group-hover:shadow-sky-500/30 transition-all duration-300">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-gradient-to-br from-slate-950 via-sky-900 to-sky-500 shadow-[0_18px_34px_rgba(2,132,199,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_22px_40px_rgba(2,132,199,0.28)]">
                   <span className="text-white font-semibold text-xs">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-400 ring-4 ring-white/80" />
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-base sm:text-lg font-black tracking-wide text-slate-900 group-hover:text-sky-700 transition-colors">
+                <p className="text-base font-black tracking-[-0.04em] text-slate-950 transition-colors group-hover:text-sky-700 sm:text-lg">
                   {isMyPlanning ? "MyPlanningAI" : "KORYXA"}
                 </p>
-                <div className="hidden md:inline-flex items-center gap-2 rounded-xl border border-slate-200/70 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="hidden items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm backdrop-blur md:inline-flex">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span className="whitespace-nowrap">
                     {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Formation & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
                   </span>
@@ -220,7 +222,7 @@ export default function Headbar() {
           </div>
 
           {/* Center: Nav */}
-          <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6 overflow-x-auto whitespace-nowrap">
+          <nav className="ml-6 hidden flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap lg:flex">
             {navLinks.map((link) => {
               const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -230,8 +232,8 @@ export default function Headbar() {
                   className={clsx(
                     NAV_PILL_CLASS,
                     active 
-                      ? "text-sky-700 border-sky-200 bg-sky-50/90 shadow-sky-100/60" 
-                      : "text-slate-600 border-slate-200/70 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
+                      ? "border-sky-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.96))] text-sky-700 shadow-[0_10px_24px_rgba(14,165,233,0.14)]"
+                      : "border-white/80 bg-white/62 text-slate-600 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white/88 hover:text-sky-700"
                   )}
                 >
                   {link.label}
@@ -249,7 +251,7 @@ export default function Headbar() {
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Recherche"
-              className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+              className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/68 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-white hover:text-sky-600"
             >
               <IconSearch className="h-4 w-4" />
               <div className="absolute -bottom-1 -right-1 text-[10px] text-slate-400 font-mono">/</div>
@@ -260,7 +262,7 @@ export default function Headbar() {
               <button
                 onClick={() => setNotifOpen((v) => !v)}
                 aria-label="Notifications"
-                className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+                className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/68 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-white hover:text-sky-600"
               >
                 <IconBell className="h-4 w-4" />
                 {notifCount > 0 && (
@@ -324,7 +326,7 @@ export default function Headbar() {
                   onClick={() => setAccountOpen((v) => !v)}
                   aria-haspopup="menu"
                   aria-expanded={accountOpen}
-                  className="group flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all duration-200"
+                  className="group flex items-center gap-2 rounded-full bg-slate-950 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_28px_rgba(15,23,42,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-900"
                 >
                   <div className="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-xs font-bold">
                     {userInitial}
@@ -378,20 +380,14 @@ export default function Headbar() {
                 <Link
                   href="/login"
                   prefetch={false}
-                  className={clsx(
-                    CTA_PILL_CLASS,
-                    "hidden sm:inline-flex text-slate-700 border border-slate-200/70 bg-white/80 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/60 hover:text-sky-700"
-                  )}
+                    className={clsx(CTA_PILL_CLASS, "hidden sm:inline-flex border border-white/80 bg-white/72 text-slate-700 backdrop-blur hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white hover:text-sky-700")}
                 >
                   Se connecter
                 </Link>
                 <Link
                   href="/signup"
                   prefetch={false}
-                  className={clsx(
-                    CTA_PILL_CLASS,
-                    "text-white bg-sky-600 hover:bg-sky-700 hover:-translate-y-0.5 shadow-sky-200/80"
-                  )}
+                    className={clsx(CTA_PILL_CLASS, "bg-[linear-gradient(135deg,#0f172a,#0284c7_58%,#38bdf8)] text-white shadow-[0_16px_30px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:brightness-105")}
                 >
                   <IconSparkles className="h-4 w-4" />
                   Créer un compte
@@ -467,28 +463,28 @@ export default function Headbar() {
               </button>
               {!IS_V1 && (
                 <Link
-                  href="/products/koryxa-suite"
-                  className="rounded-xl border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-700"
+                  href="/products"
+                  className="rounded-full border border-white/80 bg-white/72 px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur"
                 >
                   Produits
                 </Link>
               )}
               <Link
                 href="/login"
-                className="hidden sm:inline-flex rounded-xl border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-700"
+                className="hidden sm:inline-flex rounded-full border border-white/80 bg-white/72 px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur"
               >
                 Connexion
               </Link>
               <Link
                 href="/signup"
-                className="hidden sm:inline-flex rounded-xl bg-sky-600 px-2.5 py-2 text-[11px] font-semibold text-white shadow-sm"
+                className="hidden sm:inline-flex rounded-full bg-[linear-gradient(135deg,#0f172a,#0284c7_58%,#38bdf8)] px-3 py-2 text-[11px] font-semibold text-white shadow-[0_14px_24px_rgba(2,132,199,0.22)]"
               >
                 Créer
               </Link>
               <button
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Ouvrir le menu"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:border-sky-300 hover:text-sky-600 transition-all duration-200"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/68 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:border-sky-300 hover:bg-white hover:text-sky-600"
               >
                 <IconMenu className="h-5 w-5" />
               </button>

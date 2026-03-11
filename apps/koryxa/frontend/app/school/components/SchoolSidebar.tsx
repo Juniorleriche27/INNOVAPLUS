@@ -51,8 +51,8 @@ export default function SchoolSidebar() {
   const nextModule = selectedModuleIndex >= 0 && selectedModuleIndex < modules.length - 1 ? modules[selectedModuleIndex + 1] : null;
 
   return (
-    <div className="h-full">
-      <div className="flex h-full flex-col rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+    <div className="h-auto lg:h-full">
+      <div className="flex h-full flex-col rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:px-5 sm:py-5">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA School</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Navigation</h2>
 
@@ -206,7 +206,7 @@ export default function SchoolSidebar() {
           </div>
         </div>
 
-        <div className="mt-auto pt-6 text-xs leading-5 text-slate-500">
+        <div className="mt-6 border-t border-slate-200/70 pt-4 text-xs leading-5 text-slate-500 lg:mt-auto lg:pt-6">
           Navigation School optimisee pour changer de parcours, reprendre un module ou avancer sans friction.
         </div>
       </div>

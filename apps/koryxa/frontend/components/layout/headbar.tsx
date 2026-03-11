@@ -222,7 +222,7 @@ export default function Headbar() {
           </div>
 
           {/* Center: Nav */}
-          <nav className="ml-6 hidden flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap lg:flex">
+          <nav className="ml-4 hidden flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap md:flex lg:ml-6">
             {navLinks.map((link) => {
               const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -262,7 +262,7 @@ export default function Headbar() {
               <button
                 onClick={() => setNotifOpen((v) => !v)}
                 aria-label="Notifications"
-                className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/68 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-white hover:text-sky-600"
+                className="group relative hidden h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/68 text-slate-600 shadow-sm backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-white hover:text-sky-600 sm:inline-flex"
               >
                 <IconBell className="h-4 w-4" />
                 {notifCount > 0 && (
@@ -453,7 +453,7 @@ export default function Headbar() {
 
             {/* Mobile menu */}
             {/* Mobile compact actions */}
-            <div className="lg:hidden flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 md:hidden">
               <button
                 onClick={() => setSearchOpen(true)}
                 aria-label="Rechercher"

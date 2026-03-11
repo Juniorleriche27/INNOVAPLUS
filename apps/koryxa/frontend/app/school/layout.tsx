@@ -14,7 +14,7 @@ export default function SchoolLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className={`${styles.shell} h-full min-h-0 w-full overflow-hidden`}>
-      <div className="h-full min-h-0 overflow-hidden px-4 sm:px-6 lg:px-8">
+      <div className="h-full min-h-0 overflow-hidden px-0 sm:px-2 lg:px-4">
         <AthenaShell
           sidebar={<SchoolSidebar />}
         >

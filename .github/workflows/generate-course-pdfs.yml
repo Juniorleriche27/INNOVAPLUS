@@ -19,7 +19,8 @@ concurrency:
 
 jobs:
   generate:
-    runs-on: ubuntu-latest
+    # Playwright 1.41.x resolves Linux deps reliably on jammy; ubuntu-latest now points to noble.
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,4 +92,3 @@ jobs:
           fi
           git commit -m "chore(pdf): generate course PDFs [skip ci]"
           git push
-

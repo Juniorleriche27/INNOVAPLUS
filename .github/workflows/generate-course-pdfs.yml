@@ -19,8 +19,7 @@ concurrency:
 
 jobs:
   generate:
-    # Playwright 1.41.x resolves Linux deps reliably on jammy; ubuntu-latest now points to noble.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4

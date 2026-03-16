@@ -20,10 +20,15 @@ const NAV_LINKS = [
 
 const NAV_LINKS_V1 = [
   { href: "/", label: "Accueil" },
-  { href: "/school", label: "KORYXA School" },
+  { href: "/school", label: "Parcours" },
   { href: "/entreprise", label: "Entreprise" },
-  { href: "/school/planning", label: "Mon planning d’apprentissage" },
+  { href: "/products", label: "Produits" },
   { href: "/about", label: "À propos" },
+];
+
+const PUBLIC_PRODUCT_LINKS = [
+  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et execution" },
+  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'execution" },
 ];
 
 const PRODUCT_LINKS = [
@@ -90,6 +95,7 @@ export default function Headbar() {
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
   const isMyPlanning = hideHeadbar;
+  const productLinks = IS_V1 ? PUBLIC_PRODUCT_LINKS : PRODUCT_LINKS;
   const navLinks = useMemo(() => {
     if (isMyPlanning) {
       return [
@@ -214,7 +220,7 @@ export default function Headbar() {
                 <div className="hidden items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm backdrop-blur md:inline-flex">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span className="whitespace-nowrap">
-                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Formation & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
+                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Parcours & missions reelles" : "Intelligence Artificielle • Transparence • Équité"}
                   </span>
                 </div>
               </div>
@@ -224,7 +230,59 @@ export default function Headbar() {
           {/* Center: Nav */}
           <nav className="ml-4 hidden flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap md:flex lg:ml-6">
             {navLinks.map((link) => {
-              const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+              const isProductsLink = link.href === "/products";
+              const active = isProductsLink
+                ? pathname.startsWith("/products") || productLinks.some((item) => pathname.startsWith(item.href))
+                : link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              if (isProductsLink) {
+                return (
+                  <div key={link.href} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setProductMenuOpen((prev) => !prev)}
+                      className={clsx(
+                        NAV_PILL_CLASS,
+                        active || productMenuOpen
+                          ? "border-sky-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.96))] text-sky-700 shadow-[0_10px_24px_rgba(14,165,233,0.14)]"
+                          : "border-white/80 bg-white/62 text-slate-600 hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white/88 hover:text-sky-700"
+                      )}
+                    >
+                      {link.label}
+                      <IconChevronDown className={clsx("ml-1 h-3 w-3 transition-transform", productMenuOpen && "rotate-180")} />
+                      {(active || productMenuOpen) && (
+                        <div className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-sky-500" />
+                      )}
+                    </button>
+                    {productMenuOpen && (
+                      <div className="absolute left-0 top-full z-50 mt-2 w-[360px] rounded-3xl border border-slate-200/70 bg-white/98 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
+                        <div className="pb-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Produits KORYXA</p>
+                          <p className="text-xs text-slate-500">Les outils visibles de l'ecosysteme KORYXA.</p>
+                        </div>
+                        <div className="grid gap-3">
+                          {productLinks.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setProductMenuOpen(false)}
+                              className="rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-4 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-lg"
+                            >
+                              <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                              <p className="mt-1 text-[11px] leading-snug text-slate-500">{item.hint}</p>
+                              <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700">
+                                Ouvrir
+                                <IconChevronDown className="h-3 w-3 -rotate-90" />
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={link.href}
@@ -429,7 +487,7 @@ export default function Headbar() {
                         <span className="rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold text-sky-700">KORYXA Suite</span>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        {PRODUCT_LINKS.map((item) => (
+                        {productLinks.map((item) => (
                           <Link
                             key={item.href}
                             href={item.href}
@@ -570,14 +628,34 @@ export default function Headbar() {
               })}
             </nav>
 
-            {!IS_V1 && (
-              <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-slate-600">Produits KORYXA</p>
+              {IS_V1 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-slate-600">Produits KORYXA</p>
+                    <span className="rounded-full bg-sky-100 px-2 py-1 text-[11px] font-semibold text-sky-700">Actifs</span>
+                  </div>
+                  <div className="space-y-2">
+                    {productLinks.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setDrawerOpen(false)}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                      >
+                        <span>{item.label}</span>
+                        <IconChevronDown className="h-3 w-3 -rotate-90" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-slate-600">Produits KORYXA</p>
                   <span className="rounded-full bg-sky-100 px-2 py-1 text-[11px] font-semibold text-sky-700">Suite</span>
                 </div>
                 <div className="space-y-2">
-                  {PRODUCT_LINKS.map((item) => (
+                  {productLinks.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
@@ -589,8 +667,8 @@ export default function Headbar() {
                     </Link>
                   ))}
                 </div>
-              </div>
-            )}
+                </div>
+              )}
             
             <div className="space-y-3">
               {IS_V1 ? (
@@ -600,7 +678,7 @@ export default function Headbar() {
                   className="flex items-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 transition-colors"
                 >
                   <IconSparkles className="h-4 w-4" />
-                  Être accompagné
+                  Activer un besoin
                 </Link>
               ) : (
                 <>

@@ -66,14 +66,6 @@ function IconBook(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconCalendar(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v2m8-2v2M4 7h16M6 21h12a2 2 0 002-2V7H4v12a2 2 0 002 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 11h2m4 0h2M8 15h2m4 0h2" />
-    </svg>
-  );
-}
 function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
@@ -97,16 +89,16 @@ const WORKSPACE_LINKS = [
   { href: "/meet", label: "KORYXA Meet", description: "Réseau social KORYXA", icon: IconChat },
   { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
-  // KORYXA School est caché par défaut pour préparer le module en coulisses.
+  // Parcours est caché par défaut pour préparer le module en coulisses.
   ...(ENABLE_SCHOOL
-    ? [{ href: "/school", label: "KORYXA School", description: "Certificats & parcours", icon: IconBook } as const]
+    ? [{ href: "/school", label: "Parcours", description: "Parcours guides & missions", icon: IconBook } as const]
     : []),
 ];
 
 const V1_LINKS = [
-  { href: "/school", label: "KORYXA School", description: "Programme de formation", icon: IconBook },
+  { href: "/school", label: "Parcours", description: "Parcours guides & missions", icon: IconBook },
   { href: "/entreprise", label: "Entreprise", description: "Besoins data & missions", icon: IconBriefcase },
-  { href: "/school/planning", label: "Mon planning d’apprentissage", description: "Planning guidé par parcours", icon: IconCalendar },
+  { href: "/products", label: "Produits", description: "MyPlanningAI & ChatLAYA", icon: IconChip },
 ];
 
 type NavNode = { href: string; label: string; children?: NavNode[] };
@@ -185,7 +177,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
             <div className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 pr-12 shadow-sm">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Navigation</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
-                {IS_V1 ? "Programme, missions et progression dans un seul espace." : "Navigation unifiee pour piloter opportunites et execution."}
+                {IS_V1 ? "Parcours, missions et produits dans un seul espace." : "Navigation unifiee pour piloter opportunites et execution."}
               </p>
             </div>
           )}

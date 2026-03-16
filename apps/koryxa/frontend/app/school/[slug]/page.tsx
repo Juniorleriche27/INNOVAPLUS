@@ -74,7 +74,7 @@ export default function CertificateDetailPage() {
 
   const learnings = [
     "Construire un mindset de croissance dans des contextes difficiles",
-    "Créer 3 habitudes réalistes pour l’apprentissage et l’emploi",
+    "Creer 3 habitudes realistes pour la progression et l'emploi",
     "Utiliser l’écriture quotidienne pour clarifier ses décisions",
     "Organiser une journée avec un système simple (priorités & énergie)",
   ];
@@ -157,7 +157,7 @@ export default function CertificateDetailPage() {
                   href={`/school/${data.slug}/planning`}
                   className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                 >
-                  Mon planning d’apprentissage
+                  Ma progression
                 </Link>
               )}
               {issued && (
@@ -165,7 +165,7 @@ export default function CertificateDetailPage() {
                   Consulter le parcours
                 </Link>
               )}
-              <p className="mt-4 text-xs text-slate-500">Certificat délivré par KORYXA School of Opportunity.</p>
+              <p className="mt-4 text-xs text-slate-500">Parcours pilote par KORYXA.</p>
             </div>
           </div>
         </div>
@@ -256,7 +256,7 @@ export default function CertificateDetailPage() {
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-emerald-600" /> Compléter 100 % des leçons et soumettre la preuve.</li>
               <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-emerald-600" /> Preuve: photo/scan de journal, capture planning, paragraphe de bilan.</li>
-              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-emerald-600" /> Validation par KORYXA School of Opportunity.</li>
+              <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-emerald-600" /> Validation par l'equipe KORYXA.</li>
             </ul>
           </section>
         </div>

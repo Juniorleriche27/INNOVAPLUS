@@ -10,7 +10,7 @@ const MISSION_TYPES = ["analyse", "pipeline", "modele", "dashboard", "autre"] as
 const VALUE_POINTS = [
   "Besoins data transformes en missions plus claires",
   "Execution accompagnee par KORYXA du cadrage au livrable",
-  "Formation reliee a des cas utiles pour l'organisation",
+  "Progression reliee a des cas utiles pour l'organisation",
 ];
 
 const ENTERPRISE_BLOCKS = [
@@ -32,7 +32,7 @@ const GUARANTEES = [
   "Besoin reformule de maniere exploitable",
   "Mission suivie avec un cadre KORYXA",
   "Livrables plus lisibles pour l'organisation",
-  "Experience utile pour les talents en formation",
+  "Experience utile pour des profils en progression",
 ];
 
 export default function EntreprisePage() {
@@ -260,7 +260,7 @@ export default function EntreprisePage() {
                   {status === "sending" ? "Envoi..." : "Envoyer le besoin"}
                 </button>
                 <Link href="/school" className="btn-secondary">
-                  Voir la logique School
+                  Comprendre les parcours
                 </Link>
               </div>
             </form>

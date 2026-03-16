@@ -1,23 +1,23 @@
 import Link from "next/link";
 
 const VALUE_POINTS = [
-  "Parcours professionnalisants relies a des besoins concrets",
-  "Modules, planning guide, projets et validations dans un meme flux",
-  "Progression visible pour apprendre avec plus de cadre",
+  "Parcours relies a des besoins concrets",
+  "Modules, missions et repères clairs dans un meme flux",
+  "Progression visible pour avancer avec plus de cadre",
 ];
 
-const SCHOOL_PILLARS = [
+const PARCOURS_PILLARS = [
   {
     title: "Parcours structures",
     text: "Chaque specialisation avance par modules clairs, avec une logique de progression lisible et exploitable.",
   },
   {
-    title: "Apprentissage guide",
-    text: "Le planning aide a organiser les sessions, le rythme et les priorites au lieu de laisser l'apprenant seul.",
+    title: "Progression guidee",
+    text: "Le cadre aide a organiser le rythme, les priorites et les prochaines etapes au lieu de laisser l'utilisateur seul.",
   },
   {
-    title: "Projets et livrables",
-    text: "Le travail ne s'arrete pas a la theorie: projets, rendus et validations donnent de la matiere reelle.",
+    title: "Missions et livrables",
+    text: "Le travail ne s'arrete pas a la theorie: missions, rendus et validations donnent de la matiere plus concrete.",
   },
 ];
 
@@ -25,7 +25,7 @@ const TRACKS = [
   {
     title: "Fondamentaux",
     href: "/school/parcours/fondamental",
-    summary: "Bases solides en donnees, python, SQL, visualisation et logique analytique.",
+    summary: "Bases solides en donnees, Python, SQL, visualisation et logique analytique.",
   },
   {
     title: "Data Analyst",
@@ -53,29 +53,29 @@ export default function SchoolHome() {
           <div className="space-y-5">
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
-                KORYXA School
+                Parcours
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                parcours, planning, projets
+                progression, missions, execution
               </span>
             </div>
 
             <div className="max-w-3xl space-y-4">
               <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
-                Apprendre la data dans un cadre plus clair, plus concret et plus utile.
+                Progresser sur des cas reels dans un cadre plus clair, plus concret et plus utile.
               </h1>
               <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                KORYXA School relie progression, planning et projets. L'objectif n'est pas seulement de suivre des cours,
-                mais de construire des competences defendables et visibles dans un environnement plus professionnel.
+                KORYXA relie progression, missions et repères d'execution. L'objectif n'est pas d'accumuler du contenu,
+                mais d'avancer sur des situations utiles avec une trajectoire plus lisible.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="/school/planning" className="btn-primary">
-                Ouvrir mon planning
+              <Link href="/school/specialisations" className="btn-primary">
+                Explorer les parcours
               </Link>
-              <Link href="/school/specialisations" className="btn-secondary">
-                Voir les specialisations
+              <Link href="#structure" className="btn-secondary">
+                Comprendre le fonctionnement
               </Link>
             </div>
 
@@ -92,18 +92,18 @@ export default function SchoolHome() {
           </div>
 
           <div className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_22px_54px_rgba(15,23,42,0.2)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Ce que l'espace School apporte</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Ce que l'espace Parcours apporte</p>
             <div className="mt-5 grid gap-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Un parcours plus lisible</p>
+                <p className="text-sm font-semibold">Une progression plus lisible</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   Tu sais ou tu vas, quel module suivre et comment avancer sans te perdre dans l'interface.
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold">Un rythme plus soutenable</p>
+                <p className="text-sm font-semibold">Un cadre plus soutenable</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Le planning transforme la formation en sequence de travail plus geree, pas en accumulation de contenu.
+                  Les parcours transforment l'intention en execution plus structuree, pas en accumulation de contenus.
                 </p>
               </div>
             </div>
@@ -111,19 +111,19 @@ export default function SchoolHome() {
         </div>
       </section>
 
-      <section className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-8">
+      <section id="structure" className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Architecture School</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Comment progresser dans KORYXA School</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Structure des parcours</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Comment avancer avec KORYXA</h2>
           </div>
           <p className="max-w-xl text-sm leading-7 text-slate-600">
-            L'interface doit te permettre de choisir un parcours, suivre un module et passer plus vite de l'apprentissage a l'action.
+            L'interface doit permettre de choisir un parcours, suivre un module et passer plus vite de la progression a l'action.
           </p>
         </div>
 
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {SCHOOL_PILLARS.map((item, index) => (
+          {PARCOURS_PILLARS.map((item, index) => (
             <article
               key={item.title}
               className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] p-6"
@@ -153,9 +153,6 @@ export default function SchoolHome() {
               <Link href={track.href} className="btn-primary">
                 Ouvrir le parcours
               </Link>
-              <Link href="/school/planning" className="btn-secondary">
-                Planifier mon rythme
-              </Link>
             </div>
           </article>
         ))}
@@ -166,11 +163,11 @@ export default function SchoolHome() {
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Passer a l'action</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-              Entre dans School avec un parcours, puis garde le cap avec le planning.
+              Entre par un parcours, puis avance avec un cadre plus clair.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-              Si tu veux que la plateforme serve vraiment l'apprentissage, il faut que chaque entree soit claire:
-              choisir, organiser, produire et valider.
+              Si tu veux que la plateforme serve vraiment la progression, chaque entree doit rester claire: choisir,
+              avancer, produire et valider.
             </p>
           </div>
           <div className="grid gap-4">
@@ -181,8 +178,8 @@ export default function SchoolHome() {
                 <Link href="/school/specialisations" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
                   Voir les specialisations
                 </Link>
-                <Link href="/school/planning" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
-                  Ouvrir le planning
+                <Link href="/products" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+                  Voir les produits
                 </Link>
               </div>
             </div>

@@ -53,7 +53,7 @@ export default function SchoolSidebar() {
   return (
     <div className="h-auto lg:h-full">
       <div className="flex h-full flex-col rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:px-5 sm:py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA School</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Parcours</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Navigation</h2>
 
         <div className="mt-5 rounded-[24px] border border-sky-100 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(224,242,254,0.66))] p-4">
@@ -77,7 +77,7 @@ export default function SchoolSidebar() {
         <div className="mt-6 space-y-6">
           <div>
             <label className="text-sm font-semibold text-slate-900">Parcours</label>
-            <p className="mt-1 text-xs leading-5 text-slate-500">Change de specialisation sans quitter la navigation School.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">Change de specialisation sans quitter la navigation Parcours.</p>
             <select
               className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
               value={trackId}
@@ -113,7 +113,7 @@ export default function SchoolSidebar() {
                 href="/school/planning"
                 className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
               >
-                Mon planning d’apprentissage
+                Ma progression
                 <span className="text-slate-400">→</span>
               </Link>
               <Link
@@ -207,7 +207,7 @@ export default function SchoolSidebar() {
         </div>
 
         <div className="mt-6 border-t border-slate-200/70 pt-4 text-xs leading-5 text-slate-500 lg:mt-auto lg:pt-6">
-          Navigation School optimisee pour changer de parcours, reprendre un module ou avancer sans friction.
+          Navigation Parcours optimisee pour changer de parcours, reprendre un module ou avancer sans friction.
         </div>
       </div>
     </div>

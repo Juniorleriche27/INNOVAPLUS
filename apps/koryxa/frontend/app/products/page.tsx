@@ -1,65 +1,83 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { productList } from "./data";
+
+const PRODUCTS = [
+  {
+    name: "MyPlanningAI",
+    href: "/myplanning",
+    eyebrow: "Pilotage",
+    summary:
+      "MyPlanningAI aide a organiser les taches, suivre la progression, piloter les priorites et structurer l'execution, en individuel comme en equipe.",
+    bullets: ["Progression visible", "Priorites plus claires", "Execution mieux structuree"],
+    cta: "Ouvrir MyPlanningAI",
+  },
+  {
+    name: "ChatLAYA",
+    href: "/chatlaya",
+    eyebrow: "Copilote",
+    summary:
+      "ChatLAYA sert de copilote conversationnel pour clarifier une demande, accelerer la production et soutenir l'execution dans un cadre plus lisible.",
+    bullets: ["Clarification rapide", "Support conversationnel", "Execution assistee"],
+    cta: "Ouvrir ChatLAYA",
+  },
+];
 
 export default function ProductsLanding() {
   return (
-    <div className="min-h-screen bg-[#f5f6fb] px-4 py-10 sm:px-8 lg:px-16">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-8 rounded-[32px] border border-slate-200 bg-white/95 p-8 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Portefeuille</p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-900">Solutions KORYXA</h1>
-          <p className="mt-3 text-base text-slate-600 leading-relaxed">
-            Explorez nos verticales IA prêtes à l'emploi : santé, éducation, marketing, bibliothèque numérique…
-            Chaque produit peut être déployé rapidement dans votre organisation.
-          </p>
-        </header>
+    <main className="px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8">
+          <div className="max-w-3xl space-y-4">
+            <div className="flex flex-wrap gap-3">
+              <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
+                Produits KORYXA
+              </span>
+              <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+                Outils de structuration et d'execution
+              </span>
+            </div>
+            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
+              Les outils visibles de l'ecosysteme KORYXA.
+            </h1>
+            <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              KORYXA ne se limite pas a une page marketing. L'ecosysteme inclut deja des outils concrets pour piloter
+              l'action, suivre la progression et mieux structurer l'execution.
+            </p>
+          </div>
+        </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          {productList.map((product) => (
+          {PRODUCTS.map((product) => (
             <article
-              key={product.slug}
-              className="flex flex-col rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              key={product.name}
+              className="rounded-[30px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-8"
             >
-              <div className="relative h-48 w-full overflow-hidden rounded-t-3xl">
-                <Image src={product.heroImage} alt={product.name} fill sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" />
-              </div>
-              <div className="flex flex-1 flex-col gap-4 p-6">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400">{product.tagline}</p>
-                  <h2 className="mt-1 text-xl font-semibold text-slate-900">{product.name}</h2>
-                  <p className="mt-2 text-sm text-slate-600">{product.summary}</p>
-                </div>
-                <ul className="list-disc space-y-1 pl-4 text-sm text-slate-600">
-                  {product.highlights.slice(0, 3).map((highlight) => (
-                    <li key={highlight}>{highlight}</li>
-                  ))}
-                </ul>
-                <div className="mt-auto flex flex-wrap gap-3">
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="rounded-full bg-sky-600 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm shadow-sky-500/20 transition hover:bg-sky-700"
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{product.eyebrow}</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{product.name}</h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">{product.summary}</p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {product.bullets.map((bullet) => (
+                  <span
+                    key={bullet}
+                    className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
                   >
-                    Voir le produit
-                  </Link>
-                  {product.secondaryCta && (
-                    <a
-                      href={product.secondaryCta.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-slate-200 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:border-slate-300"
-                    >
-                      Docs
-                    </a>
-                  )}
-                </div>
+                    {bullet}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href={product.href} className="btn-primary">
+                  {product.cta}
+                </Link>
+                <Link href="/about" className="btn-secondary">
+                  Comprendre KORYXA
+                </Link>
               </div>
             </article>
           ))}
         </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -34,7 +34,7 @@ const CATEGORY_TABS = [
   { key: "all", label: "Fil d'actualité" },
   { key: "service", label: "Services" },
   { key: "product", label: "Produits physiques" },
-  { key: "formation", label: "Formations" },
+  { key: "formation", label: "Parcours" },
   { key: "talent", label: "Talents & experts" },
   { key: "mission", label: "Projets collaboratifs" },
   { key: "agri", label: "Agriculture & agro" },
@@ -45,7 +45,7 @@ const CATEGORY_TABS = [
 const TYPE_OPTIONS = [
   { value: "service", label: "Services" },
   { value: "product", label: "Produits physiques" },
-  { value: "formation", label: "Formations" },
+  { value: "formation", label: "Parcours" },
   { value: "mission", label: "Projets collaboratifs" },
   { value: "talent", label: "Talents & experts" },
   { value: "agri", label: "Agriculture & agro" },
@@ -373,13 +373,13 @@ export default function MarketplacePage() {
     if (!suggestionKeywords) return generic;
     const ideas: string[] = [];
     if (suggestionKeywords.includes("agri")) {
-      ideas.push("Ex: Pack irrigation solaire + formation express pour maraîchers.");
+      ideas.push("Ex: Pack irrigation solaire + parcours guide express pour maraîchers.");
     }
     if (suggestionKeywords.includes("mobile") || suggestionKeywords.includes("money")) {
       ideas.push("Ex: Kit mobile money pour boutiques de quartier (Orange/Sénéclé).");
     }
     if (suggestionKeywords.includes("formation")) {
-      ideas.push("Ex: Bootcamp 5 jours - marketing digital pour associations de jeunes.");
+      ideas.push("Ex: Parcours guide 5 jours - marketing digital pour associations de jeunes.");
     }
     return ideas.length ? ideas.concat(generic.slice(0, 1)) : generic;
   }, [suggestionKeywords]);

@@ -30,13 +30,13 @@ export default function SchoolPlanningHubPage() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">KORYXA School</p>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-900">Mon planning d’apprentissage</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Parcours</p>
+        <h1 className="mt-3 text-2xl font-semibold text-slate-900">Ma progression</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-700">
-          Génère un planning guidé à partir d’un parcours : modules → leçons → tâches datées. Les tâches créées sont taggées <code className="rounded bg-slate-100 px-1">context_type=learning</code>.
+          Genere une progression guidee a partir d'un parcours : modules → lecons → taches datees. Les taches creees sont taggees <code className="rounded bg-slate-100 px-1">context_type=learning</code>.
         </p>
         {!loading && !user ? (
-          <p className="mt-3 text-sm text-slate-600">Connecte-toi pour créer ton planning.</p>
+          <p className="mt-3 text-sm text-slate-600">Connecte-toi pour creer ta progression.</p>
         ) : null}
       </section>
 
@@ -55,7 +55,7 @@ export default function SchoolPlanningHubPage() {
                   href={`/school/${cert.slug}/planning`}
                   className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
                 >
-                  Ouvrir le planning
+                  Ouvrir la progression
                 </Link>
               </div>
             </div>

@@ -85,7 +85,7 @@ export default function ProductDetailPage({ params }: Props) {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Prêt à démarrer ?</h2>
           <p className="mt-3 text-sm text-slate-600">
-            Nous vous accompagnons sur l’intégration technique, la personnalisation des prompts, la formation des équipes
+            Nous vous accompagnons sur l’intégration technique, la personnalisation des prompts, la mise en action des equipes
             locales et les scénarios pilotes. Réservez un créneau avec l’équipe produit pour accélérer votre déploiement.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">

@@ -6,43 +6,71 @@ export const dynamic = "force-dynamic";
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 
 const V1_SIGNAL_ITEMS = [
-  "Parcours structures autour de missions concretes",
-  "Accompagnement operationnel pour entreprises",
-  "Livrables cadres, utiles et suivis dans le temps",
+  "Parcours guides autour de besoins reels",
+  "Missions concretes et progression structuree",
+  "Pilotage plus clair et resultats utiles",
 ];
 
 const V1_FLOW = [
   {
-    title: "1. Cadrer le besoin",
-    text: "L'entreprise formule un enjeu clair: reporting, automatisation, modeles, analyse ou structuration data.",
+    title: "1. Clarifier le besoin",
+    text: "Le besoin est reformule pour devenir exploitable, priorise et actionnable dans un cadre plus net.",
   },
   {
-    title: "2. Former sur du reel",
-    text: "Les apprenants montent en competence sur des cas utiles, pas sur des exercices de demonstration.",
+    title: "2. Structurer le parcours et la mission",
+    text: "KORYXA relie progression, taches, priorites et execution autour d'un cas reel, pas d'un parcours flou.",
   },
   {
-    title: "3. Livrer proprement",
-    text: "KORYXA cadre la methode, valide les livrables et organise la restitution pour l'organisation.",
+    title: "3. Produire un resultat utile",
+    text: "Le travail avance avec plus de visibilite jusqu'a un livrable propre, defendable et reutilisable.",
   },
 ];
 
 const V1_ENTRY_POINTS = [
   {
     href: "/school",
-    label: "KORYXA School",
-    eyebrow: "Pour les apprenants",
-    description: "Parcours data professionnalisants, projets, planning guide et missions reelles.",
-    bullets: ["Parcours progressifs", "Planning d'apprentissage", "Projets encadres"],
-    cta: "Explorer l'ecole",
+    label: "Parcours",
+    eyebrow: "Progression guidee",
+    description: "Des parcours concus pour avancer sur des cas reels avec des objectifs clairs, des missions concretes et un cadre plus lisible.",
+    bullets: ["Progression structuree", "Missions concretes", "Pilotage operationnel"],
+    cta: "Explorer les parcours",
+    secondary: { href: "/about", label: "Comprendre le fonctionnement" },
   },
   {
     href: "/entreprise",
     label: "Entreprise",
-    eyebrow: "Pour les organisations",
-    description: "Des besoins reels transformes en missions structurees, suivies et restituees proprement.",
-    bullets: ["Besoins qualifies", "Execution accompagnee", "Restitution exploitable"],
-    cta: "Activer un besoin",
+    eyebrow: "Execution accompagnee",
+    description: "KORYXA aide les organisations a cadrer un besoin, le transformer en mission exploitable, suivre l'execution et recuperer des livrables utiles.",
+    bullets: ["Besoin qualifie", "Mission structuree", "Restitution exploitable"],
+    cta: "Activer un besoin entreprise",
+    secondary: { href: "/about", label: "Comprendre l'approche" },
   },
+];
+
+const V1_PRODUCTS = [
+  {
+    href: "/myplanning",
+    label: "MyPlanningAI",
+    eyebrow: "Pilotage",
+    description:
+      "MyPlanningAI aide a organiser les taches, suivre la progression, piloter les priorites et structurer l'execution, en individuel comme en equipe.",
+    cta: "Decouvrir MyPlanningAI",
+  },
+  {
+    href: "/chatlaya",
+    label: "ChatLAYA",
+    eyebrow: "Copilote",
+    description:
+      "ChatLAYA sert de copilote conversationnel pour clarifier une demande, accelerer la production et soutenir l'execution dans un cadre plus lisible.",
+    cta: "Decouvrir ChatLAYA",
+  },
+];
+
+const V1_DIFFERENTIATORS = [
+  "Des cas reels, pas des demonstrations vides.",
+  "Une progression guidee, pas une navigation floue.",
+  "Une execution encadree, pas un simple contenu a consulter.",
+  "Des resultats utiles et defendables pour avancer.",
 ];
 
 export default function HomePage() {
@@ -59,34 +87,28 @@ export default function HomePage() {
                   <span className="inline-flex items-center rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-sky-700">
                     KORYXA
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                    School x Entreprise x missions reelles
+                  <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+                    Parcours x missions x besoins reels
                   </span>
                 </div>
 
                 <div className="max-w-3xl space-y-4">
                   <h1 className="max-w-3xl text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-6xl">
-                    La formation data qui produit deja de la valeur pour les entreprises.
+                    KORYXA transforme des besoins reels en parcours guides, missions concretes et resultats utiles.
                   </h1>
                   <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                    KORYXA relie apprentissage, accompagnement et execution. Les organisations confient un besoin reel,
-                    les apprenants montent en competence dessus, et KORYXA structure le cadre pour sortir un resultat
-                    propre, utile et defendable.
+                    La plateforme relie structuration, progression, execution et pilotage dans un cadre plus clair.
+                    Les organisations cadrent un besoin, les utilisateurs avancent sur du reel, et KORYXA accompagne
+                    jusqu'au livrable utile.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
                   <Link href="/school" className="btn-primary">
-                    Decouvrir KORYXA School
+                    Explorer les parcours
                   </Link>
                   <Link href="/entreprise" className="btn-secondary">
-                    Je suis une entreprise
-                  </Link>
-                  <Link
-                    href="/school/planning"
-                    className="inline-flex items-center rounded-full border border-slate-300/80 bg-white/75 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-white"
-                  >
-                    Voir le planning guide
+                    Activer un besoin entreprise
                   </Link>
                 </div>
 
@@ -107,15 +129,16 @@ export default function HomePage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Pourquoi c'est different</p>
                   <div className="mt-5 grid gap-4">
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <p className="text-sm font-semibold">Des cas reels, pas des demos</p>
+                      <p className="text-sm font-semibold">Des cas reels, pas des demonstrations vides</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
-                        Les parcours s'appuient sur des besoins utiles au terrain: donnees, structuration, reporting et automatisation.
+                        Chaque parcours ou mission part d'un besoin utile au terrain: structuration, reporting,
+                        automatisation, analyse ou pilotage.
                       </p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-sm font-semibold">Une execution encadree</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
-                        KORYXA pose le cadre, clarifie les attentes et suit les livrables pour garder un niveau professionnel.
+                        KORYXA clarifie les attentes, suit l'avancement et aide a maintenir un niveau de resultat plus professionnel.
                       </p>
                     </div>
                   </div>
@@ -123,16 +146,16 @@ export default function HomePage() {
 
                 <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">School</p>
-                    <p className="mt-3 text-2xl font-semibold text-slate-950">Apprendre en construisant</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Parcours</p>
+                    <p className="mt-3 text-2xl font-semibold text-slate-950">Progression structuree sur du reel</p>
                   </div>
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Entreprise</p>
                     <p className="mt-3 text-2xl font-semibold text-slate-950">Transformer un besoin en mission claire</p>
                   </div>
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">KORYXA</p>
-                    <p className="mt-3 text-2xl font-semibold text-slate-950">Cadrer, suivre, valider</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Produits</p>
+                    <p className="mt-3 text-2xl font-semibold text-slate-950">Piloter l'action avec les bons outils</p>
                   </div>
                 </div>
               </div>
@@ -143,10 +166,10 @@ export default function HomePage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Mode operatoire</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Comment KORYXA opere</h2>
+                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Comment KORYXA fonctionne</h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-600">
-                Un dispositif simple a comprendre, mais plus solide qu'une vitrine classique: besoin cadre, parcours structure, livrables utiles.
+                KORYXA part d'un besoin reel, structure un parcours ou une mission, suit l'execution et aboutit a une restitution utile.
               </p>
             </div>
 
@@ -191,85 +214,96 @@ export default function HomePage() {
                   <Link href={item.href} className="btn-primary">
                     {item.cta}
                   </Link>
-                  {item.href === "/school" ? (
-                    <Link href="/school/planning" className="btn-secondary">
-                      Ouvrir mon planning
-                    </Link>
-                  ) : (
-                    <Link href="/about" className="btn-secondary">
-                      Comprendre KORYXA
-                    </Link>
-                  )}
+                  <Link href={item.secondary.href} className="btn-secondary">
+                    {item.secondary.label}
+                  </Link>
                 </div>
               </article>
             ))}
           </section>
 
+          <section className="rounded-[34px] border border-slate-200/80 bg-white/92 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Produits KORYXA</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Les outils de l'ecosysteme</h2>
+              </div>
+              <p className="max-w-xl text-sm leading-7 text-slate-600">
+                L'ecosysteme KORYXA inclut aussi des outils operationnels pour structurer l'action, suivre la progression et piloter l'execution.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-4 lg:grid-cols-2">
+              {V1_PRODUCTS.map((product) => (
+                <article
+                  key={product.label}
+                  className="rounded-[30px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] p-6 shadow-sm"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{product.eyebrow}</p>
+                  <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{product.label}</h3>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{product.description}</p>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link href={product.href} className="btn-primary">
+                      {product.cta}
+                    </Link>
+                    <Link href="/products" className="btn-secondary">
+                      Voir les produits
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
           <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_64px_rgba(15,23,42,0.18)] sm:p-8">
             <div className="grid gap-8 lg:grid-cols-[1.35fr_0.95fr] lg:items-center">
               <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Passer a l'action</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Differenciation</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                  Choisis ton point d'entree et avance avec un cadre plus clair.
+                  Une plateforme plus claire pour relier progression, execution et besoins reels.
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-                  Cote apprenant, tu suis un parcours structure avec planning, projets et progression. Cote entreprise,
-                  tu transformes un besoin concret en mission mieux cadree, suivie et restituee.
+                  KORYXA ne vend pas une logique scolaire. La plateforme structure un cadre d'action utile, lisible et defendable pour les organisations comme pour les utilisateurs.
                 </p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
-                    Parcours guides
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
-                    Missions reelles
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-semibold text-sky-100">
-                    Livrables plus propres
-                  </span>
-                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {V1_DIFFERENTIATORS.map((item) => (
+                  <div key={item} className="rounded-[24px] border border-white/12 bg-white/8 p-4 text-sm font-medium leading-6 text-slate-100">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[34px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr] lg:items-center">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Passer a l'action</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl text-slate-950">
+                  Choisis ton point d'entree.
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
+                  Que tu veuilles structurer une progression, cadrer un besoin ou decouvrir les outils de l'ecosysteme,
+                  KORYXA t'aide a passer plus vite a l'action.
+                </p>
               </div>
 
               <div className="grid gap-4">
-                <div className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Pour apprendre</p>
-                  <p className="mt-3 text-2xl font-semibold text-white">Explorer KORYXA School</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    Ouvrir les parcours, consulter le planning et entrer dans la logique School.
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Link
-                      href="/school"
-                      className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50"
-                    >
-                      Aller sur School
+                <div className="rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-5">
+                  <div className="flex flex-wrap gap-3">
+                    <Link href="/school" className="btn-primary">
+                      Explorer les parcours
+                    </Link>
+                    <Link href="/entreprise" className="btn-secondary">
+                      Activer un besoin entreprise
                     </Link>
                     <Link
-                      href="/school/planning"
-                      className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                      href="/products"
+                      className="inline-flex items-center rounded-full border border-slate-300/80 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                     >
-                      Voir le planning
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Pour une organisation</p>
-                  <p className="mt-3 text-2xl font-semibold text-white">Activer un besoin entreprise</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
-                    Presenter un besoin data, cadrer la mission et comprendre l'accompagnement KORYXA.
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <Link
-                      href="/entreprise"
-                      className="inline-flex items-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400"
-                    >
-                      Aller sur Entreprise
-                    </Link>
-                    <Link
-                      href="/about"
-                      className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-                    >
-                      Comprendre KORYXA
+                      Decouvrir les produits KORYXA
                     </Link>
                   </div>
                 </div>

@@ -45,12 +45,12 @@ export default function ResourcesPage() {
         <section className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_22px_54px_rgba(15,23,42,0.2)] sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-0.03em]">Ou continuer ?</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-            Si tu veux comprendre la logique du produit avant la doc complete, les pages School, Entreprise et A propos
+            Si tu veux comprendre la logique du produit avant la doc complete, les pages Parcours, Entreprise et A propos
             sont les meilleures entrees.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/school" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
-              Aller sur School
+              Aller sur Parcours
             </Link>
             <Link href="/entreprise" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
               Aller sur Entreprise

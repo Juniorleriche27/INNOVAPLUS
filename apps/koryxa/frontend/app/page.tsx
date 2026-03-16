@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { IS_V1_SIMPLE } from "@/lib/env";
 
-export const dynamic = "force-dynamic";
-
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 
 const V1_SIGNAL_ITEMS = [

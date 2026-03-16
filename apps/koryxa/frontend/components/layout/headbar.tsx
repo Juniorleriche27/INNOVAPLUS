@@ -228,7 +228,7 @@ export default function Headbar() {
           </div>
 
           {/* Center: Nav */}
-          <nav className="ml-4 hidden flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap md:flex lg:ml-6">
+          <nav className="ml-4 hidden flex-1 items-center gap-2 whitespace-nowrap md:flex md:overflow-x-auto md:overflow-y-visible lg:ml-6 lg:overflow-visible">
             {navLinks.map((link) => {
               const isProductsLink = link.href === "/products";
               const active = isProductsLink

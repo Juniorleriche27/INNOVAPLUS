@@ -6,6 +6,12 @@ from typing import List, Literal
 from pydantic import BaseModel, Field
 
 
+EnterpriseNeedStatus = Literal["draft", "submitted", "qualified", "published", "in_progress", "done", "archived"]
+EnterpriseMissionStatus = Literal["draft", "structured", "ready", "in_progress", "done", "archived"]
+EnterpriseOpportunityStatus = Literal["published", "closed", "archived"]
+EnterpriseOpportunityType = Literal["mission", "stage", "collaboration", "project", "accompagnement"]
+
+
 class EnterpriseNeedCreatePayload(BaseModel):
     organisation: str = Field(..., min_length=2, max_length=160)
     country: str = Field(..., min_length=2, max_length=120)
@@ -32,7 +38,7 @@ class EnterpriseNeedResponse(BaseModel):
     need_type: str
     urgency: str
     treatment_mode: str
-    status: str
+    status: EnterpriseNeedStatus
     qualification_score: int
     clarity_level: str
     structured_summary: str
@@ -46,7 +52,7 @@ class EnterpriseMissionResponse(BaseModel):
     summary: str
     deliverable: str
     execution_mode: str
-    status: str
+    status: EnterpriseMissionStatus
     steps: List[str]
     created_at: datetime
 
@@ -55,9 +61,10 @@ class EnterpriseOpportunityResponse(BaseModel):
     id: str
     need_id: str
     mission_id: str
+    type: EnterpriseOpportunityType
     title: str
     summary: str
-    status: str
+    status: EnterpriseOpportunityStatus
     highlights: List[str]
     published_at: datetime | None = None
 

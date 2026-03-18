@@ -41,8 +41,8 @@ const V1_ENTRY_POINTS = [
     eyebrow: "Exécution suivie",
     description: "KORYXA aide les organisations à cadrer un besoin, le transformer en mission structurée, suivre l'exécution et récupérer des livrables utiles.",
     bullets: ["Besoin cadré", "Mission structurée", "Livrables utiles"],
-    cta: "Déposer un besoin entreprise",
-    secondary: { href: "/entreprise#fonctionnement", label: "Comprendre l'approche" },
+    cta: "Décrire un besoin entreprise",
+    secondary: { href: "/entreprise#comment-ca-marche", label: "Comprendre l'approche" },
   },
 ];
 
@@ -105,7 +105,7 @@ export default function HomePage() {
                   <Link href="/trajectoire" className="btn-primary w-full justify-center sm:w-auto">
                     Explorer les trajectoires
                   </Link>
-                  <Link href="/entreprise#deposer" className="btn-secondary w-full justify-center sm:w-auto">
+                  <Link href="/entreprise/demarrer" className="btn-secondary w-full justify-center sm:w-auto">
                     Déposer un besoin entreprise
                   </Link>
                 </div>
@@ -295,7 +295,7 @@ export default function HomePage() {
                       Commencer ma trajectoire
                     </Link>
                     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                      <Link href="/entreprise#deposer" className="btn-secondary w-full justify-center sm:w-auto">
+                      <Link href="/entreprise/demarrer" className="btn-secondary w-full justify-center sm:w-auto">
                         Déposer un besoin entreprise
                       </Link>
                       <Link

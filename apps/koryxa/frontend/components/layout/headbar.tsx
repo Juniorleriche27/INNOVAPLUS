@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
 import { IS_V1_SIMPLE } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -32,12 +32,8 @@ const PUBLIC_PRODUCT_LINKS = [
 ];
 
 const PRODUCT_LINKS = [
-  { href: "/studio", label: "CHATLAYA Studio", hint: "Rédaction, missions contenu, académie IA" },
-  { href: "/products/koryxa-sante", label: "KORYXA Santé", hint: "Plateforme IA santé & bien-être" },
-  { href: "/products/plusbook", label: "PlusBooks", hint: "Bibliothèque numérique & édition" },
-  { href: "/myplanning", label: "MyPlanningAI", hint: "Planification temps & IA (beta)" },
-  { href: "/marketplace", label: "Marketplace social", hint: "Publier talents, services, produits" },
-  { href: "/chatlaya", label: "CHATLAYA", hint: "Copilote IA et support communautaire" },
+  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et exécution" },
+  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'exécution" },
 ];
 
 const NAV_PILL_CLASS =
@@ -45,6 +41,63 @@ const NAV_PILL_CLASS =
 
 const CTA_PILL_CLASS =
   "inline-flex min-w-[132px] items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[12px] font-semibold tracking-[-0.01em] transition-all duration-200 shadow-sm whitespace-nowrap";
+
+const PUBLIC_SEARCH_ACTIONS = [
+  {
+    href: "/",
+    label: "Accueil",
+    hint: "Vue d'ensemble KORYXA",
+    keywords: ["home", "accueil", "koryxa"],
+  },
+  {
+    href: "/trajectoire",
+    label: "Trajectoire",
+    hint: "Orientation, diagnostic et progression",
+    keywords: ["trajectoire", "diagnostic", "progression", "matching"],
+  },
+  {
+    href: "/trajectoire#demarrer",
+    label: "Commencer ma trajectoire",
+    hint: "Lancer l'onboarding et le diagnostic",
+    keywords: ["commencer", "onboarding", "demarrer", "diagnostic"],
+  },
+  {
+    href: "/entreprise",
+    label: "Entreprise",
+    hint: "Besoin, mission et opportunité",
+    keywords: ["entreprise", "need", "mission", "opportunite"],
+  },
+  {
+    href: "/entreprise#deposer",
+    label: "Déposer un besoin entreprise",
+    hint: "Formulaire de dépôt fonctionnel",
+    keywords: ["deposer", "besoin", "brief", "entreprise"],
+  },
+  {
+    href: "/products",
+    label: "Produits",
+    hint: "Les outils actifs de l'écosystème",
+    keywords: ["produits", "tools", "outils"],
+  },
+  {
+    href: "/myplanning",
+    label: "MyPlanningAI",
+    hint: "Pilotage de progression et exécution",
+    keywords: ["myplanning", "pilotage", "planning"],
+  },
+  {
+    href: "/chatlaya",
+    label: "ChatLAYA",
+    hint: "Copilote conversationnel",
+    keywords: ["chatlaya", "chat", "copilote"],
+  },
+  {
+    href: "/about",
+    label: "À propos",
+    hint: "Mission et principes KORYXA",
+    keywords: ["about", "apropos", "mission", "principes"],
+  },
+];
 
 function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -91,6 +144,7 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
 
 export default function Headbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const hideHeadbar = pathname.startsWith("/myplanning");
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
@@ -123,6 +177,7 @@ export default function Headbar() {
   const [notifCount, setNotifCount] = useState<number>(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: Record<string, unknown> | null; created_at: string; read_at?: string }>>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -155,6 +210,29 @@ export default function Headbar() {
   useEffect(() => {
     setProductMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!searchOpen) {
+      setSearchQuery("");
+    }
+  }, [searchOpen]);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      return PUBLIC_SEARCH_ACTIONS.slice(0, 6);
+    }
+    return PUBLIC_SEARCH_ACTIONS.filter((item) => {
+      const haystack = [item.label, item.hint, ...item.keywords].join(" ").toLowerCase();
+      return haystack.includes(q);
+    }).slice(0, 6);
+  }, [searchQuery]);
+
+  function openSearchResult(href: string) {
+    setSearchOpen(false);
+    setSearchQuery("");
+    router.push(href);
+  }
 
   // Try to fetch notifications count if backend exposes it
   useEffect(() => {
@@ -579,21 +657,57 @@ export default function Headbar() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="rounded-2xl border border-slate-200/60 bg-white/95 backdrop-blur-xl p-6 shadow-2xl">
-              <div className="flex items-center gap-3">
-                <IconSearch className="h-5 w-5 text-slate-400" />
-                <input
-                  autoFocus
-                  type="search"
-                  placeholder={IS_V1 ? "Rechercher" : "Rechercher des opportunités, compétences, pays..."}
-                  className="h-11 w-full rounded-xl border-none text-sm text-slate-700 outline-none placeholder:text-slate-400 bg-transparent"
-                />
-                <button 
-                  onClick={() => setSearchOpen(false)} 
-                  aria-label="Fermer" 
-                  className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
-                >
-                  <IconClose className="h-5 w-5 text-slate-400" />
-                </button>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (searchResults[0]) {
+                    openSearchResult(searchResults[0].href);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <IconSearch className="h-5 w-5 text-slate-400" />
+                  <input
+                    autoFocus
+                    type="search"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={IS_V1 ? "Rechercher une page, un produit ou une action" : "Rechercher des opportunités, compétences, pays..."}
+                    className="h-11 w-full rounded-xl border-none text-sm text-slate-700 outline-none placeholder:text-slate-400 bg-transparent"
+                  />
+                  <button
+                    onClick={() => setSearchOpen(false)}
+                    aria-label="Fermer"
+                    type="button"
+                    className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+                  >
+                    <IconClose className="h-5 w-5 text-slate-400" />
+                  </button>
+                </div>
+              </form>
+              <div className="mt-4 grid gap-2">
+                {searchResults.length ? (
+                  searchResults.map((item) => (
+                    <button
+                      key={item.href}
+                      type="button"
+                      onClick={() => openSearchResult(item.href)}
+                      className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left transition hover:border-sky-200 hover:bg-white"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{item.hint}</p>
+                      </div>
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-700">
+                        Ouvrir
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                    Aucun résultat pour cette recherche.
+                  </div>
+                )}
               </div>
             </div>
           </div>

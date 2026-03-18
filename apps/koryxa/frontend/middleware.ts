@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 
 const PROTECTED_PATHS = [
   "/analytics",
-  "/chatlaya",
 ];
 
 function isProtectedPath(pathname: string) {
@@ -98,7 +97,6 @@ const V1_HIDDEN_PREFIXES = [
   "/meet",
   "/missions",
   "/marketplace",
-  "/chatlaya",
   "/studio",
   "/equity",
   "/analytics",
@@ -131,6 +129,7 @@ const V1_PUBLIC_PATHS = [
   "/entreprise",
   "/about",
   "/products",
+  "/chatlaya",
   "/resources",
   "/privacy",
   "/terms",

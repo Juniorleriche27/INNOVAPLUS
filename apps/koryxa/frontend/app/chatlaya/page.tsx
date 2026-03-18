@@ -204,6 +204,7 @@ export default function ChatlayaPage() {
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
 
   // ---- Refs ----
   const ensuredConversation = useRef(false);
@@ -215,23 +216,7 @@ export default function ChatlayaPage() {
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
 
-  const forceLoginRedirect = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const redirect = encodeURIComponent(next && next !== "/" ? next : "/chatlaya");
-    window.location.href = `/login?redirect=${redirect}`;
-  }, []);
-
-  const isAuthFailure = useCallback(
-    (status: number) => {
-      if (status === 401 || status === 403 || status === 419) {
-        forceLoginRedirect();
-        return true;
-      }
-      return false;
-    },
-    [forceLoginRedirect]
-  );
+  const isAuthFailure = useCallback((_status: number) => false, []);
 
   const ensureSeedConversation = useCallback(async () => {
     if (ensuredConversation.current) return;
@@ -245,6 +230,10 @@ export default function ChatlayaPage() {
         if (isAuthFailure(res.status)) return;
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.detail || "Impossible de creer la conversation initiale");
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.mode === "guest" || data?.mode === "user") {
+        setAccessMode(data.mode);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inattendue");
@@ -697,6 +686,11 @@ export default function ChatlayaPage() {
             </p>
           </div>
           <div className="flex flex-none items-center gap-2">
+            {accessMode ? (
+              <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:inline-flex">
+                {accessMode === "guest" ? "Mode invité" : "Mode connecté"}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => setHistoryDrawerOpen(true)}

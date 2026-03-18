@@ -56,6 +56,9 @@ from app.routers import studio_missions as studio_missions_router
 from app.routers.skills import router as skills_router
 from app.routers.module6 import router as module6_router
 from app.routers.youtube import router as youtube_router
+from app.routers.trajectoire import router as trajectoire_router
+from app.routers.public_enterprise import router as public_enterprise_router
+from app.routers.public_products import router as public_products_router
 from app.core.ai import detect_embed_dim
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.mongo import get_db
@@ -3152,8 +3155,12 @@ if MYPLANNING_ONLY:
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
+    minimal.include_router(trajectoire_router)
+    minimal.include_router(public_enterprise_router)
+    minimal.include_router(public_products_router)
+    minimal.include_router(chatlaya_router)
     app.include_router(minimal)
-    logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning only")
+    logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning/public product routers")
 else:
     # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
     app.include_router(innova_router)
@@ -3181,6 +3188,9 @@ else:
     innova_api.include_router(missions_router)
     innova_api.include_router(studio_router)
     innova_api.include_router(myplanning_router)
+    innova_api.include_router(trajectoire_router)
+    innova_api.include_router(public_enterprise_router)
+    innova_api.include_router(public_products_router)
     innova_api.include_router(skills_router)
     innova_api.include_router(studio_missions_router.router)
     innova_api.include_router(school_router.router)

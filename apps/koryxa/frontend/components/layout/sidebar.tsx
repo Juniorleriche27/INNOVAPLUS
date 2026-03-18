@@ -96,7 +96,7 @@ const WORKSPACE_LINKS = [
 ];
 
 const V1_LINKS = [
-  { href: "/school", label: "Parcours", description: "Progression guidée et missions concrètes", icon: IconBook },
+  { href: "/trajectoire", label: "Trajectoire", description: "Diagnostic, progression pilotée et validation", icon: IconBook },
   { href: "/entreprise", label: "Entreprise", description: "Besoin cadré et mission structurée", icon: IconBriefcase },
   { href: "/products", label: "Produits", description: "Outils de pilotage et d’exécution", icon: IconChip },
 ];
@@ -177,7 +177,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
             <div className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 pr-12 shadow-sm">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Navigation</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
-                {IS_V1 ? "Parcours, besoins et outils dans un cadre plus clair." : "Navigation unifiee pour piloter opportunites et execution."}
+                {IS_V1 ? "Trajectoire, besoins et outils dans un cadre plus clair." : "Navigation unifiee pour piloter opportunites et execution."}
               </p>
             </div>
           )}
@@ -187,7 +187,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
           {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
-            const isSchoolLink = IS_V1 && link.href === "/school";
+            const isSchoolLink = !IS_V1 && link.href === "/school";
             const showSchoolSubs = isSchoolLink && isExpanded && schoolOpen;
             
             return (

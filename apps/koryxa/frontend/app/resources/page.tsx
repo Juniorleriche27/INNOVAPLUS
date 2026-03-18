@@ -3,15 +3,15 @@ import Link from "next/link";
 const RESOURCE_BLOCKS = [
   {
     title: "Guides d'utilisation",
-    text: "Comprendre les parcours, les outils et les logiques d'usage du produit.",
+    text: "Comprendre les trajectoires, les outils et les logiques d'usage du produit.",
   },
   {
     title: "Bonnes pratiques",
-    text: "Retrouver les principes de cadrage, d'execution et de restitution utilises par KORYXA.",
+    text: "Retrouver les principes de cadrage, d'exécution et de restitution utilisés par KORYXA.",
   },
   {
     title: "Documentation produit",
-    text: "Structurer a terme les references frontend, backend, integrations et architecture.",
+    text: "Structurer à terme les références frontend, backend, intégrations et architecture.",
   },
 ];
 
@@ -25,8 +25,8 @@ export default function ResourcesPage() {
             Une base de ressources pour rendre KORYXA plus lisible et plus actionnable.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-            Cette section a vocation a reunir les guides d'usage, les bonnes pratiques et la documentation produit
-            necessaires pour garder la plateforme claire dans la duree.
+            Cette section a vocation à réunir les guides d'usage, les bonnes pratiques et la documentation produit
+            nécessaires pour garder la plateforme claire dans la durée.
           </p>
         </section>
 
@@ -43,20 +43,20 @@ export default function ResourcesPage() {
         </section>
 
         <section className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_22px_54px_rgba(15,23,42,0.2)] sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em]">Ou continuer ?</h2>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em]">Où continuer ?</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-            Si tu veux comprendre la logique du produit avant la doc complete, les pages Parcours, Entreprise et A propos
-            sont les meilleures entrees.
+            Si tu veux comprendre la logique du produit avant la doc complète, les pages Trajectoire, Entreprise et À propos
+            sont les meilleures entrées.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/school" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
-              Aller sur Parcours
+            <Link href="/trajectoire" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
+              Aller sur Trajectoire
             </Link>
             <Link href="/entreprise" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
               Aller sur Entreprise
             </Link>
             <Link href="/about" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
-              Aller sur A propos
+              Aller sur À propos
             </Link>
           </div>
         </section>

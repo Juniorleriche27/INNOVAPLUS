@@ -8,8 +8,8 @@ const PRODUCTS = [
     href: "/myplanning",
     eyebrow: "Pilotage",
     summary:
-      "MyPlanningAI aide a organiser les taches, suivre la progression, piloter les priorites et structurer l'execution, en individuel comme en equipe.",
-    bullets: ["Progression visible", "Priorites plus claires", "Execution mieux structuree"],
+      "MyPlanningAI aide à organiser les tâches, suivre la progression, piloter les priorités et structurer l'exécution, en individuel comme en équipe.",
+    bullets: ["Progression visible", "Priorités plus claires", "Exécution mieux structurée"],
     cta: "Ouvrir MyPlanningAI",
   },
   {
@@ -17,8 +17,8 @@ const PRODUCTS = [
     href: "/chatlaya",
     eyebrow: "Copilote",
     summary:
-      "ChatLAYA sert de copilote conversationnel pour clarifier une demande, accelerer la production et soutenir l'execution dans un cadre plus lisible.",
-    bullets: ["Clarification rapide", "Support conversationnel", "Execution assistee"],
+      "ChatLAYA sert de copilote conversationnel pour clarifier une demande, accélérer la production et soutenir l'exécution dans un cadre plus lisible.",
+    bullets: ["Clarification rapide", "Support conversationnel", "Exécution assistée"],
     cta: "Ouvrir ChatLAYA",
   },
 ];
@@ -34,15 +34,15 @@ export default function ProductsLanding() {
                 Produits KORYXA
               </span>
               <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                Outils de structuration et d'execution
+                Outils de structuration et d'exécution
               </span>
             </div>
             <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
-              Les outils visibles de l'ecosysteme KORYXA.
+              Les outils visibles de l'écosystème KORYXA.
             </h1>
             <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-              KORYXA ne se limite pas a une page marketing. L'ecosysteme inclut deja des outils concrets pour piloter
-              l'action, suivre la progression et mieux structurer l'execution.
+              KORYXA ne se limite pas à une page marketing. L'écosystème inclut déjà des outils concrets pour piloter
+              l'action, suivre la progression et mieux structurer l'exécution.
             </p>
           </div>
         </section>

@@ -100,8 +100,6 @@ const V1_HIDDEN_PREFIXES = [
   "/marketplace",
   "/chatlaya",
   "/studio",
-  "/products",
-  "/resources",
   "/equity",
   "/analytics",
   "/projects",
@@ -125,9 +123,15 @@ const V1_SCHOOL_ALLOWED = [
 ];
 
 const V1_PUBLIC_PATHS = [
+  "/",
   "/login",
   "/signup",
+  "/school",
+  "/trajectoire",
+  "/entreprise",
   "/about",
+  "/products",
+  "/resources",
   "/privacy",
   "/terms",
   "/bientot",

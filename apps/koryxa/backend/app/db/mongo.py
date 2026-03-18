@@ -102,6 +102,12 @@ async def connect_to_mongo() -> None:
             # Public MVP product flows
             await _db["trajectory_flows"].create_index([("guest_id", 1), ("updated_at", -1)])
             await _db["trajectory_flows"].create_index([("user_id", 1), ("updated_at", -1)])
+            await _db["trajectory_task_bindings"].create_index(
+                [("flow_id", 1), ("user_id", 1), ("koryxa_task_key", 1)],
+                unique=True,
+            )
+            await _db["trajectory_task_bindings"].create_index([("user_id", 1), ("context_id", 1), ("updated_at", -1)])
+            await _db["trajectory_task_bindings"].create_index([("myplanning_task_id", 1)], sparse=True)
             await _db["enterprise_needs"].create_index([("guest_id", 1), ("created_at", -1)])
             await _db["enterprise_needs"].create_index([("user_id", 1), ("created_at", -1)])
             await _db["enterprise_needs"].create_index([("status", 1), ("created_at", -1)])

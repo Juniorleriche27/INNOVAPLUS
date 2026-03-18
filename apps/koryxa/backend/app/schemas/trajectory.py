@@ -156,6 +156,65 @@ class TrajectoryVerifiedProfile(BaseModel):
     included_fields: List[str] = Field(default_factory=list)
 
 
+class TrajectoryCockpitTaskQuery(BaseModel):
+    context_type: Literal["professional"]
+    context_id: str
+
+
+class TrajectoryCockpitTaskBinding(BaseModel):
+    myplanning_task_id: str | None = None
+    stage_key: str
+    task_key: str
+    title: str
+    description: str
+    proof_required: bool = False
+    expected_proof_types: List[ProofType] = Field(default_factory=list)
+    proof_count: int = 0
+    validated_proof_count: int = 0
+    next_action: str | None = None
+    feature_gate: str | None = None
+
+
+class TrajectoryCockpitStage(BaseModel):
+    key: str
+    title: str
+    objective: str
+    status: TaskStatus
+    tasks: List[TrajectoryCockpitTaskBinding] = Field(default_factory=list)
+
+
+class TrajectoryCockpitBindingSummary(BaseModel):
+    binding_count: int = 0
+    proof_required_count: int = 0
+
+
+class TrajectoryCockpitActivationResponse(BaseModel):
+    status: Literal["ready", "auth_required"]
+    flow_id: str
+    context_id: str
+    task_query: TrajectoryCockpitTaskQuery
+    redirect_url: str
+    binding_count: int = 0
+    created_task_count: int = 0
+
+
+class TrajectoryCockpitContextResponse(BaseModel):
+    flow_id: str
+    context_id: str
+    task_query: TrajectoryCockpitTaskQuery
+    profile_summary: str
+    recommended_trajectory: TrajectoryRecommendation
+    recommended_partners: List[TrajectoryPartnerRecommendation] = Field(default_factory=list)
+    next_actions: List[str] = Field(default_factory=list)
+    benefits: List[str] = Field(default_factory=list)
+    readiness: TrajectoryReadiness
+    verified_profile: TrajectoryVerifiedProfile | None = None
+    opportunity_targets: List[TrajectoryOpportunityTarget] = Field(default_factory=list)
+    latest_proofs: List[TrajectoryProofItem] = Field(default_factory=list)
+    execution_stages: List[TrajectoryCockpitStage] = Field(default_factory=list)
+    binding_summary: TrajectoryCockpitBindingSummary
+
+
 class TrajectoryDiagnostic(BaseModel):
     profile_summary: str
     recommended_trajectory: TrajectoryRecommendation

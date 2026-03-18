@@ -107,6 +107,7 @@ function isProductRoute(pathname: string): boolean {
 
 function isStandaloneWorkspace(pathname: string): boolean {
   // /myplanning/app* already ships with an internal shell component.
+  if (pathname.startsWith("/myplanning/app/koryxa")) return false;
   return pathname.startsWith("/myplanning/app");
 }
 
@@ -148,6 +149,7 @@ function isActive(pathname: string, entry: NavEntry): boolean {
 }
 
 function breadcrumbTitle(pathname: string): string {
+  if (pathname.startsWith("/myplanning/app/koryxa")) return "MyPlanning / Cockpit KORYXA";
   if (pathname.startsWith("/myplanning/team")) return "MyPlanning / Espaces";
   if (pathname.startsWith("/myplanning/orgs")) return "MyPlanning / Organisations";
   if (pathname.startsWith("/myplanning/enterprise")) return "MyPlanning / Enterprise";

@@ -20,6 +20,7 @@ from app.schemas.chatlaya import (
     ConversationResponse,
     MessagesResponse,
 )
+from app.services.chatlaya_context import build_chatlaya_product_context
 from app.services.chatlaya_service import generate_chat_reply
 from app.utils.ids import to_object_id
 
@@ -254,7 +255,12 @@ async def post_message(
         for doc in history_docs
     ]
 
-    reply, rag_sources = await generate_chat_reply(payload.message, chat_history)
+    try:
+        product_context = await build_chatlaya_product_context(db, current, guest_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ChatLAYA product context build failed: %s", exc)
+        product_context = ""
+    reply, rag_sources = await generate_chat_reply(payload.message, chat_history, product_context=product_context)
     assistant_doc: dict[str, Any] = {
         "conversation_id": conv_oid,
         "role": "assistant",

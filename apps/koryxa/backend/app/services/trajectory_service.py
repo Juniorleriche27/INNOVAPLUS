@@ -735,6 +735,84 @@ def recompute_trajectory_state(flow: dict[str, Any]) -> dict[str, Any]:
     return flow
 
 
+def trajectory_context_id(flow_id: str) -> str:
+    return f"koryxa-flow:{flow_id}"
+
+
+def trajectory_result_next_actions(flow: dict[str, Any], limit: int = 3) -> list[str]:
+    progress_plan = flow.get("progress_plan") or {}
+    diagnostic = flow.get("diagnostic") or {}
+    items = [str(item) for item in progress_plan.get("next_actions") or []]
+    if not items:
+        items = [str(item) for item in diagnostic.get("next_steps") or []]
+    return _clean_list(items, limit=limit)
+
+
+def trajectory_result_benefits(flow: dict[str, Any], limit: int = 3) -> list[str]:
+    diagnostic = flow.get("diagnostic") or {}
+    opportunity_targets = list(flow.get("opportunity_targets") or [])
+    verified_profile = flow.get("verified_profile") or {}
+    items: list[str] = []
+
+    mission_focus = str((diagnostic.get("recommended_trajectory") or {}).get("mission_focus") or "").strip()
+    if mission_focus:
+        items.append(mission_focus)
+
+    for item in opportunity_targets[:3]:
+        label = str(item.get("label") or "").strip()
+        if label:
+            items.append(label)
+
+    profile_status = str(verified_profile.get("profile_status") or "").strip()
+    if profile_status in {"eligible", "verified"}:
+        items.append("Débloquer un profil vérifié KORYXA plus crédible pour les opportunités.")
+    else:
+        items.append("Construire un profil KORYXA prêt pour les validations et les opportunités.")
+
+    return _clean_list(items, limit=limit)
+
+
+def build_trajectory_execution_stages(
+    flow: dict[str, Any],
+    binding_map: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    progress_plan = flow.get("progress_plan") or {}
+    normalized_stages: list[dict[str, Any]] = []
+    bindings = binding_map or {}
+
+    for stage in progress_plan.get("stages") or []:
+        tasks: list[dict[str, Any]] = []
+        for task in stage.get("tasks") or []:
+            binding = bindings.get(str(task.get("key") or "")) or {}
+            tasks.append(
+                {
+                    "myplanning_task_id": str(binding.get("myplanning_task_id") or "") or None,
+                    "stage_key": str(stage.get("key") or ""),
+                    "task_key": str(task.get("key") or ""),
+                    "title": str(task.get("title") or ""),
+                    "description": str(task.get("description") or ""),
+                    "proof_required": bool(task.get("proof_required", False)),
+                    "expected_proof_types": list(task.get("expected_proof_types") or []),
+                    "proof_count": int(task.get("proof_count") or 0),
+                    "validated_proof_count": int(task.get("validated_proof_count") or 0),
+                    "next_action": str(task.get("next_action") or "") or None,
+                    "feature_gate": str(task.get("feature_gate") or "") or None,
+                }
+            )
+
+        normalized_stages.append(
+            {
+                "key": str(stage.get("key") or ""),
+                "title": str(stage.get("title") or ""),
+                "objective": str(stage.get("objective") or ""),
+                "status": str(stage.get("status") or "todo"),
+                "tasks": tasks,
+            }
+        )
+
+    return normalized_stages
+
+
 async def build_trajectory_experience(
     onboarding: dict[str, Any],
     partner_catalog: list[dict[str, Any]] | None = None,

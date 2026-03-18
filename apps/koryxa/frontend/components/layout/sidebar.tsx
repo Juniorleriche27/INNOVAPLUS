@@ -115,6 +115,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
   const pathname = usePathname();
   const hideForSchool = pathname.startsWith("/school");
   const hideForMyPlanning = pathname.startsWith("/myplanning");
+  const hideForDiagnosticFlow = pathname.startsWith("/trajectoire/demarrer");
   const [collapsed, setCollapsed] = useState(false);
   const [schoolOpen, setSchoolOpen] = useState(false);
 
@@ -145,7 +146,7 @@ export default function Sidebar({ className, style }: { className?: string; styl
 
   const isExpanded = !collapsed;
 
-  if (hideForSchool || hideForMyPlanning) {
+  if (hideForSchool || hideForMyPlanning || hideForDiagnosticFlow) {
     return null;
   }
 

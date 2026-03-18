@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths:
       - "apps/koryxa/frontend/content/**"
-      - "apps/koryxa/frontend/app/school/**"
+      - "apps/koryxa/frontend/app/trajectoire/**"
       - "apps/koryxa/frontend/scripts/generate-pdf*.mjs"
       - "apps/koryxa/frontend/course-pdf-manifest.json"
 
@@ -24,24 +24,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect PDF generator
+        id: pdf
+        working-directory: apps/koryxa/frontend
+        run: |
+          if [ -f course-pdf-manifest.json ] \
+            && [ -f scripts/generate-pdfs.mjs ] \
+            && grep -q '"gen:pdf"' package.json; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "reason=PDF generator configured" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "reason=No PDF generator or manifest is configured in the current frontend" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node
+        if: steps.pdf.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install deps
+        if: steps.pdf.outputs.enabled == 'true'
         working-directory: apps/koryxa/frontend
         run: npm ci
 
       - name: Install Playwright Chromium (with deps)
+        if: steps.pdf.outputs.enabled == 'true'
         working-directory: apps/koryxa/frontend
         run: npx playwright install --with-deps chromium
 
       - name: Build frontend
+        if: steps.pdf.outputs.enabled == 'true'
         working-directory: apps/koryxa/frontend
         run: npm run build
 
       - name: Start frontend (background)
+        if: steps.pdf.outputs.enabled == 'true'
         working-directory: apps/koryxa/frontend
         env:
           PORT: "3010"
@@ -52,6 +71,7 @@ jobs:
           echo $! > /tmp/koryxa_frontend_3010.pid
 
       - name: Wait for server
+        if: steps.pdf.outputs.enabled == 'true'
         run: |
           for i in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:3010/ >/dev/null 2>&1; then
@@ -65,6 +85,7 @@ jobs:
           exit 1
 
       - name: Generate PDFs
+        if: steps.pdf.outputs.enabled == 'true'
         working-directory: apps/koryxa/frontend
         env:
           PDF_BASE_URL: "http://127.0.0.1:3010"
@@ -72,14 +93,19 @@ jobs:
           PDF_MANIFEST: "course-pdf-manifest.json"
         run: npm run gen:pdf
 
+      - name: Skip PDF generation
+        if: steps.pdf.outputs.enabled != 'true'
+        run: echo "${{ steps.pdf.outputs.reason }}"
+
       - name: Stop frontend
-        if: always()
+        if: always() && steps.pdf.outputs.enabled == 'true'
         run: |
           if [ -f /tmp/koryxa_frontend_3010.pid ]; then
             kill "$(cat /tmp/koryxa_frontend_3010.pid)" || true
           fi
 
       - name: Commit PDFs (if changed)
+        if: steps.pdf.outputs.enabled == 'true'
         run: |
           set -e
           git config user.name "github-actions[bot]"

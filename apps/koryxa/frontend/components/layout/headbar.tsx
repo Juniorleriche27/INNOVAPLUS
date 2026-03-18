@@ -56,8 +56,8 @@ const PUBLIC_SEARCH_ACTIONS = [
     keywords: ["trajectoire", "diagnostic", "progression", "matching"],
   },
   {
-    href: "/trajectoire#demarrer",
-    label: "Commencer ma trajectoire",
+    href: "/trajectoire/demarrer",
+    label: "Commencer mon diagnostic",
     hint: "Lancer l'onboarding et le diagnostic",
     keywords: ["commencer", "onboarding", "demarrer", "diagnostic"],
   },

@@ -33,7 +33,7 @@ const V1_ENTRY_POINTS = [
       "Des trajectoires guidées pour aider chaque personne à identifier la bonne direction, les bons partenaires de montée en compétence, les bonnes étapes de progression et le bon moment pour passer à l’action.",
     bullets: ["Onboarding intelligent", "Matching de trajectoire", "Ressources partenaires", "Score et validation"],
     cta: "Explorer les trajectoires",
-    secondary: { href: "/trajectoire#logique", label: "Comprendre le fonctionnement" },
+    secondary: { href: "/trajectoire#comment-ca-marche", label: "Comprendre le fonctionnement" },
   },
   {
     href: "/entreprise",
@@ -291,7 +291,7 @@ export default function HomePage() {
               <div className="grid gap-4">
                 <div className="rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-5">
                   <div className="flex flex-col gap-3">
-                    <Link href="/trajectoire#demarrer" className="btn-primary w-full justify-center sm:w-fit">
+                    <Link href="/trajectoire/demarrer" className="btn-primary w-full justify-center sm:w-fit">
                       Commencer ma trajectoire
                     </Link>
                     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">

@@ -161,16 +161,36 @@ export default function Headbar() {
     if (!showAccount) return;
     const userId = user?.id ?? "demo-user";
     let active = true;
-    apiNotifications
-      .list(userId, true)
-      .then((items) => {
-        if (!active) return;
-        setNotifs(items);
-        setNotifCount(items.length);
-      })
-      .catch(() => void 0);
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    const run = () => {
+      apiNotifications
+        .list(userId, true)
+        .then((items) => {
+          if (!active) return;
+          setNotifs(items);
+          setNotifCount(items.length);
+        })
+        .catch(() => void 0);
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      idleId = (window as Window & { requestIdleCallback: (cb: IdleRequestCallback) => number }).requestIdleCallback(() => run());
+    } else if (typeof window !== "undefined") {
+      timeoutId = window.setTimeout(run, 250);
+    } else {
+      run();
+    }
+
     return () => {
       active = false;
+      if (typeof window !== "undefined" && idleId !== null && "cancelIdleCallback" in window) {
+        (window as Window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, [showAccount, user]);
 

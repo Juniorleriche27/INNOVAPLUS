@@ -29,9 +29,8 @@ function normalizeInnovaBase(authBase: string): string {
 
 export const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
 
-export const CHATLAYA_API_BASE = normalize(
-  process.env.NEXT_PUBLIC_CHATLAYA_URL,
-  AUTH_API_BASE,
+export const CHATLAYA_API_BASE = normalizeInnovaBase(
+  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL, INNOVA_API_BASE),
 );
 
 export const SITE_BASE_URL = normalize(

@@ -126,3 +126,26 @@ jobs:
             "sudo journalctl -u '${SERVICE_NAME}' -n 200 --no-pager || true"
           echo "::endgroup::"
           exit 1
+
+      - name: Validate public product routes
+        run: |
+          set -euo pipefail
+          OPENAPI_URL="https://innovaplus.africa/innova/api/openapi.json"
+          spec=$(curl -fsS --max-time 20 "${OPENAPI_URL}")
+          required_paths=(
+            "/chatlaya/session"
+            "/trajectoire/onboarding"
+            "/products/public"
+            "/enterprise/needs"
+            "/enterprise/opportunities/public"
+          )
+          missing=0
+          for path in "${required_paths[@]}"; do
+            if ! printf '%s' "${spec}" | jq -e --arg path "${path}" '.paths[$path]' >/dev/null; then
+              echo "::error::Missing public route in deployed OpenAPI: ${path}"
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            exit 1
+          fi

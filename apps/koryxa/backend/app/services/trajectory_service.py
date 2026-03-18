@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
+from app.services.partner_registry import recommend_partners_from_catalog
 from app.services.ai_json import generate_structured_json
 
 
@@ -464,7 +465,7 @@ def _base_score(onboarding: dict[str, Any]) -> int:
     )
 
 
-def _fallback_package(onboarding: dict[str, Any]) -> dict[str, Any]:
+def _fallback_package(onboarding: dict[str, Any], partner_catalog: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     objective = (onboarding.get("objective") or "").strip()
     domain_interest = (onboarding.get("domain_interest") or "").strip()
     target_outcome = (onboarding.get("target_outcome") or "").strip()
@@ -473,6 +474,12 @@ def _fallback_package(onboarding: dict[str, Any]) -> dict[str, Any]:
     name = (onboarding.get("name") or "").strip()
     target_goal = target_outcome or "première opportunité crédible"
     greeting = f"{name}, " if name else ""
+
+    recommended_partners = (
+        recommend_partners_from_catalog(partner_catalog, onboarding, limit=3)
+        if partner_catalog
+        else _fallback_partner_recommendations(onboarding)
+    )
 
     return {
         "diagnostic": {
@@ -491,7 +498,7 @@ def _fallback_package(onboarding: dict[str, Any]) -> dict[str, Any]:
                 "mission_focus": "Cas réels, preuves de progression et préparation à une mission utile.",
             },
             "recommended_resources": _fallback_resource_types(domain_interest, list(onboarding.get("preferences") or [])),
-            "recommended_partners": _fallback_partner_recommendations(onboarding),
+            "recommended_partners": recommended_partners,
             "next_steps": _clean_list(
                 [
                     f"Clarifier le premier livrable lié à {objective or 'votre objectif'}",
@@ -728,8 +735,11 @@ def recompute_trajectory_state(flow: dict[str, Any]) -> dict[str, Any]:
     return flow
 
 
-async def build_trajectory_experience(onboarding: dict[str, Any]) -> dict[str, Any]:
-    fallback = _fallback_package(onboarding)
+async def build_trajectory_experience(
+    onboarding: dict[str, Any],
+    partner_catalog: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    fallback = _fallback_package(onboarding, partner_catalog)
     constraints = ", ".join(onboarding.get("constraints") or []) or "aucune contrainte précisée"
     preferences = ", ".join(onboarding.get("preferences") or []) or "aucune préférence précisée"
     prompt = f"""

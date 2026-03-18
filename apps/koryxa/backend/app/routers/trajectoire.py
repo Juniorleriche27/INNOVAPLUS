@@ -9,12 +9,14 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.public_access import ensure_guest_id, get_guest_id
 from app.db.mongo import get_db
 from app.deps.auth import get_current_user_optional
+from app.schemas.partner_public import PublicPartnerListResponse
 from app.schemas.trajectory import (
     TrajectoryFlowResponse,
     TrajectoryOnboardingPayload,
     TrajectoryProofCreatePayload,
     TrajectoryProgressUpdatePayload,
 )
+from app.services.partner_registry import list_public_partners
 from app.services.trajectory_service import (
     build_trajectory_experience,
     create_proof_submission,
@@ -103,7 +105,8 @@ async def create_trajectory_diagnostic(
     if not flow:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
 
-    experience = await build_trajectory_experience(flow.get("onboarding") or {})
+    partner_catalog = await list_public_partners(db)
+    experience = await build_trajectory_experience(flow.get("onboarding") or {}, partner_catalog=partner_catalog)
     now = datetime.now(timezone.utc)
     update_doc = {
         "diagnostic": experience["diagnostic"],
@@ -117,6 +120,13 @@ async def create_trajectory_diagnostic(
     await db["trajectory_flows"].update_one({"_id": flow["_id"]}, {"$set": update_doc})
     flow.update(update_doc)
     return _serialize_flow(flow)
+
+
+@router.get("/partners/public", response_model=PublicPartnerListResponse)
+async def list_trajectory_partners(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    return {"items": await list_public_partners(db)}
 
 
 @router.get("/flows/{flow_id}", response_model=TrajectoryFlowResponse)

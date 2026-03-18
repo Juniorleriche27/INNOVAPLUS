@@ -1,4 +1,5 @@
 import TrajectoryFlowClient from "./TrajectoryFlowClient";
+import TrajectoryPartnersPanel from "./TrajectoryPartnersPanel";
 
 const TRAJECTORY_SIGNAL_ITEMS = [
   "Onboarding intelligent",
@@ -55,21 +56,6 @@ const KORYXA_VALUE = [
   {
     title: "Relier cela à des opportunités",
     text: "Le but n'est pas seulement d'apprendre, mais d'arriver au bon niveau pour agir, contribuer et être visible.",
-  },
-];
-
-const PARTNER_BLOCKS = [
-  {
-    title: "Organismes partenaires",
-    text: "Présence qualifiée avec domaine, niveaux couverts, format, langue, prix, zone géographique et modalités.",
-  },
-  {
-    title: "Plateformes partenaires",
-    text: "Ressources externes recommandables via matching, avec visibilité qualifiée et redirection possible si pertinent.",
-  },
-  {
-    title: "Coachs indépendants",
-    text: "Expertise, disponibilité, format d'accompagnement, prix et type de profil cible peuvent être intégrés dans l'écosystème.",
   },
 ];
 
@@ -249,14 +235,7 @@ export default function TrajectoirePage() {
               Les organismes, plateformes et coachs peuvent être présents dans l'écosystème. Mais KORYXA reste le
               moteur de diagnostic, de matching, de suivi, de score et de validation.
             </p>
-            <div className="mt-6 grid gap-3">
-              {PARTNER_BLOCKS.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
-                </div>
-              ))}
-            </div>
+            <TrajectoryPartnersPanel />
           </article>
 
           <article className="rounded-[30px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)] sm:p-7">

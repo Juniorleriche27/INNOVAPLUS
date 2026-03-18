@@ -109,6 +109,8 @@ async def connect_to_mongo() -> None:
             await _db["enterprise_opportunities"].create_index([("need_id", 1)], unique=True)
             await _db["enterprise_opportunities"].create_index([("status", 1), ("published_at", -1)])
             await _db["public_products"].create_index([("slug", 1)], unique=True)
+            await _db["trajectory_partners"].create_index([("slug", 1)], unique=True)
+            await _db["trajectory_partners"].create_index([("status", 1), ("visible", 1), ("type", 1)])
 
             # Try to create Atlas Vector Search index if supported
             try:

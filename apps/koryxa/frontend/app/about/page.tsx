@@ -2,12 +2,12 @@ import Link from "next/link";
 
 const MISSION_PILLARS = [
   {
-    title: "Relier progression et execution",
-    text: "KORYXA transforme des besoins reels en missions exploitables et en parcours guides plus utiles a suivre.",
+    title: "Relier trajectoire et exécution",
+    text: "KORYXA transforme des besoins réels en missions exploitables et en trajectoires guidées plus utiles à suivre.",
   },
   {
     title: "Rendre l'IA plus utile",
-    text: "L'IA sert ici a cadrer, accelerer et standardiser le travail, pas a produire un discours marketing vide.",
+    text: "L'IA sert ici à cadrer, accélérer et standardiser le travail, pas à produire un discours marketing vide.",
   },
   {
     title: "Organiser un impact concret",
@@ -16,13 +16,13 @@ const MISSION_PILLARS = [
 ];
 
 const DIFFERENTIATORS = [
-  "On avance sur des cas utiles, pas seulement sur des demonstrations fictives.",
-  "Les organisations cadrent un besoin reel avec un cadre KORYXA.",
-  "Les livrables et les preuves de travail comptent plus que la simple presence.",
-  "L'IA est utilisee comme outil de clarification, de production et de qualite.",
+  "On avance sur des cas utiles, pas seulement sur des démonstrations fictives.",
+  "Les organisations cadrent un besoin réel avec un cadre KORYXA.",
+  "Les livrables et les preuves de travail comptent plus que la simple présence.",
+  "L'IA est utilisée comme outil de clarification, de production et de qualité.",
 ];
 
-const PRINCIPLES = ["Utilite", "Structuration", "Execution", "Impact reel"];
+const PRINCIPLES = ["Utilité", "Structuration", "Exécution", "Impact réel"];
 
 export default function AboutPage() {
   return (
@@ -34,7 +34,7 @@ export default function AboutPage() {
             <div className="space-y-5">
               <div className="flex flex-wrap gap-3">
                 <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
-                  A propos
+                  À propos
                 </span>
                 <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
                   mission, principes, cadre
@@ -43,20 +43,20 @@ export default function AboutPage() {
 
               <div className="max-w-3xl space-y-4">
                 <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
-                  KORYXA organise la rencontre entre besoins reels, progression structuree et execution mieux cadree.
+                  KORYXA organise la rencontre entre besoins réels, trajectoires pilotées et exécution mieux cadrée.
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                  La plateforme est construite autour d'une idee simple: convertir un probleme concret en mission faisable,
-                  structurer la progression, accompagner l'execution et produire des resultats utiles.
+                  La plateforme est construite autour d'une idée simple : convertir un problème concret en mission
+                  faisable, structurer la trajectoire, accompagner l'exécution et produire des résultats utiles.
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link href="/school" className="btn-primary">
-                  Explorer les parcours
+                <Link href="/trajectoire" className="btn-primary">
+                  Explorer les trajectoires
                 </Link>
                 <Link href="/entreprise" className="btn-secondary">
-                  Voir le cote Entreprise
+                  Voir le côté Entreprise
                 </Link>
               </div>
             </div>
@@ -68,10 +68,10 @@ export default function AboutPage() {
                   Ce n'est pas un simple site d'offres ou une promesse vague autour de l'IA.
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200">
-                  Ce n'est pas une logique scolaire deconnectee du terrain ou une accumulation de contenu.
+                  Ce n'est pas une logique scolaire déconnectée du terrain ou une accumulation de contenu.
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200">
-                  Ce n'est pas de l'IA magique sans methode, sans donnees et sans validation.
+                  Ce n'est pas de l'IA magique sans méthode, sans données et sans validation.
                 </div>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Ce que KORYXA veut rendre possible</h2>
             </div>
             <p className="max-w-xl text-sm leading-7 text-slate-600">
-              Une plateforme utile doit aider les organisations a avancer et permettre aux utilisateurs de progresser sur du vrai travail.
+              Une plateforme utile doit aider les organisations à avancer et permettre aux utilisateurs de progresser sur du vrai travail.
             </p>
           </div>
 
@@ -109,8 +109,8 @@ export default function AboutPage() {
 
         <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <article className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Ce qui rend KORYXA different</p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Une logique plus structuree que la simple presence en ligne.</h3>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Ce qui rend KORYXA différent</p>
+            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Une logique plus structurée que la simple présence en ligne.</h3>
             <ul className="mt-6 grid gap-3 text-sm leading-7 text-slate-700">
               {DIFFERENTIATORS.map((item) => (
                 <li key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
@@ -135,7 +135,7 @@ export default function AboutPage() {
             </div>
             <p className="mt-6 text-sm leading-7 text-slate-600">
               Si ces principes disparaissent du design ou du produit, KORYXA devient juste une vitrine. Le but est de garder
-              une plateforme lisible, defendable et exploitable.
+              une plateforme lisible, défendable et exploitable.
             </p>
           </article>
         </section>
@@ -143,20 +143,20 @@ export default function AboutPage() {
         <section className="rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)] sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr] lg:items-center">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Prochaine etape</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Prochaine étape</p>
               <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                Comprendre KORYXA, puis entrer soit par Parcours, soit par Entreprise.
+                Comprendre KORYXA, puis entrer soit par Trajectoire, soit par Entreprise.
               </h2>
               <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-                Le site doit rester simple a lire: mission, cadre, puis action. C'est cette logique qui guide le repositionnement public.
+                Le site doit rester simple à lire : mission, cadre, puis action. C'est cette logique qui guide le repositionnement public.
               </p>
             </div>
             <div className="grid gap-4">
               <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Choisir une entree</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Choisir une entrée</p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/school" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
-                    Explorer les parcours
+                  <Link href="/trajectoire" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
+                    Explorer les trajectoires
                   </Link>
                   <Link href="/entreprise" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
                     Aller sur Entreprise

@@ -23,7 +23,7 @@ const ENTERPRISE_OFFER = [
   },
   {
     title: "Orientation vers les bonnes ressources",
-    text: "Le besoin peut être relié à des parcours, des profils, des outils et à un cadre d'exécution. MyPlanningAI et ChatLAYA peuvent soutenir le pilotage et la clarification.",
+    text: "Le besoin peut être relié à des trajectoires, des profils, des outils et à un cadre d'exécution. MyPlanningAI et ChatLAYA peuvent soutenir le pilotage et la clarification.",
   },
   {
     title: "Suivi et restitution",
@@ -285,11 +285,11 @@ export default function EntreprisePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Orientation</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Le besoin peut ensuite être orienté vers le bon cadre</h2>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Une fois qualifié, le besoin peut être relié à un parcours, à des profils, à un outil de pilotage ou à
+              Une fois qualifié, le besoin peut être relié à une trajectoire, à des profils, à un outil de pilotage ou à
               une exécution plus accompagnée selon la nature du travail.
             </p>
             <div className="mt-6 grid gap-3">
-              {["Parcours guidés", "Profils adaptés", "MyPlanningAI pour le pilotage", "ChatLAYA pour la clarification"].map((item) => (
+              {["Trajectoires guidées", "Profils adaptés", "MyPlanningAI pour le pilotage", "ChatLAYA pour la clarification"].map((item) => (
                 <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
                   {item}
                 </div>

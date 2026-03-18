@@ -4,34 +4,35 @@ import { IS_V1_SIMPLE } from "@/lib/env";
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 
 const V1_SIGNAL_ITEMS = [
-  "Parcours guidés autour de besoins réels",
-  "Missions concrètes et progression structurée",
-  "Pilotage plus clair et résultats utiles",
+  "Trajectoires guidées autour de besoins réels",
+  "Missions concrètes et progression pilotée",
+  "Validation plus claire et opportunités utiles",
 ];
 
 const V1_FLOW = [
   {
     title: "1. Clarifier le besoin",
-    text: "Le besoin est reformulé pour devenir exploitable, priorisé et actionnable dans un cadre plus net.",
+    text: "Un besoin réel, un profil ou un objectif concret sert de point de départ au diagnostic.",
   },
   {
-    title: "2. Structurer le parcours et la mission",
-    text: "KORYXA relie progression, tâches, priorités et exécution autour d'un cas réel, pas d'un parcours flou.",
+    title: "2. Identifier la bonne trajectoire et la mission adaptée",
+    text: "KORYXA combine onboarding, diagnostic et matching pour recommander la bonne trajectoire, les bonnes ressources et les bonnes missions.",
   },
   {
-    title: "3. Produire un résultat utile",
-    text: "Le travail avance avec plus de visibilité jusqu'à un livrable propre, défendable et réutilisable.",
+    title: "3. Valider la progression et ouvrir des opportunités",
+    text: "La progression est suivie, scorée et validée pour déboucher sur une mission, un stage ou une collaboration plus pertinente.",
   },
 ];
 
 const V1_ENTRY_POINTS = [
   {
-    href: "/school",
-    label: "Parcours",
-    eyebrow: "Progression guidée",
-    description: "Des parcours conçus pour progresser sur des cas réels, avec des objectifs clairs, des missions concrètes et un pilotage plus lisible.",
-    bullets: ["Objectifs clairs", "Missions concrètes", "Pilotage opérationnel"],
-    cta: "Explorer les parcours",
+    href: "/trajectoire",
+    label: "Trajectoire",
+    eyebrow: "Orientation pilotée",
+    description:
+      "Des trajectoires guidées pour aider chaque personne à identifier la bonne direction, les bons partenaires de montée en compétence, les bonnes étapes de progression et le bon moment pour passer à l’action.",
+    bullets: ["Onboarding intelligent", "Matching de trajectoire", "Ressources partenaires", "Score et validation"],
+    cta: "Explorer les trajectoires",
     secondary: { href: "/about", label: "Comprendre le fonctionnement" },
   },
   {
@@ -40,7 +41,7 @@ const V1_ENTRY_POINTS = [
     eyebrow: "Exécution suivie",
     description: "KORYXA aide les organisations à cadrer un besoin, le transformer en mission structurée, suivre l'exécution et récupérer des livrables utiles.",
     bullets: ["Besoin cadré", "Mission structurée", "Livrables utiles"],
-    cta: "Déposer un besoin",
+    cta: "Déposer un besoin entreprise",
     secondary: { href: "/about", label: "Comprendre l'approche" },
   },
 ];
@@ -66,7 +67,7 @@ const V1_PRODUCTS = [
 
 const V1_DIFFERENTIATORS = [
   "Des cas réels, pas des démonstrations vides.",
-  "Une progression guidée, pas une navigation floue.",
+  "Une trajectoire guidée, pas une navigation floue.",
   "Une exécution encadrée, pas un simple contenu à consulter.",
   "Des résultats utiles et défendables pour avancer.",
 ];
@@ -86,27 +87,26 @@ export default function HomePage() {
                     KORYXA
                   </span>
                   <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                    Parcours x missions x besoins réels
+                    Trajectoire • progression • opportunités
                   </span>
                 </div>
 
                 <div className="max-w-3xl space-y-4">
                   <h1 className="max-w-3xl text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-6xl">
-                    KORYXA transforme des besoins réels en parcours guidés, missions concrètes et résultats utiles.
+                    KORYXA transforme des besoins réels en trajectoires guidées, missions concrètes et opportunités utiles.
                   </h1>
                   <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                    La plateforme relie structuration, progression, exécution et pilotage dans un cadre plus clair.
-                    Les organisations cadrent un besoin, les utilisateurs avancent sur du réel, et KORYXA accompagne
-                    jusqu'au livrable utile.
+                    La plateforme combine diagnostic, matching, progression pilotée, exécution et validation pour
+                    orienter chaque personne vers la bonne trajectoire, et chaque organisation vers des résultats utiles.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Link href="/school" className="btn-primary">
-                    Explorer les parcours
+                  <Link href="/trajectoire" className="btn-primary">
+                    Explorer les trajectoires
                   </Link>
                   <Link href="/entreprise#deposer" className="btn-secondary">
-                    Déposer un besoin
+                    Déposer un besoin entreprise
                   </Link>
                 </div>
 
@@ -129,7 +129,7 @@ export default function HomePage() {
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                       <p className="text-sm font-semibold">Des cas réels, pas des démonstrations vides</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
-                        Chaque parcours ou mission part d'un besoin utile au terrain : structuration, reporting,
+                        Chaque trajectoire ou mission part d'un besoin utile au terrain : structuration, reporting,
                         automatisation, analyse ou pilotage.
                       </p>
                     </div>
@@ -144,8 +144,8 @@ export default function HomePage() {
 
                 <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Parcours</p>
-                    <p className="mt-3 text-2xl font-semibold text-slate-950">Progression guidée sur des cas réels</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Trajectoire</p>
+                    <p className="mt-3 text-2xl font-semibold text-slate-950">Diagnostic, progression pilotée et validation</p>
                   </div>
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Entreprise</p>
@@ -167,7 +167,7 @@ export default function HomePage() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Comment KORYXA fonctionne</h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-600">
-                KORYXA part d'un besoin réel, structure un parcours ou une mission, suit l'exécution et aboutit à une restitution utile.
+                KORYXA part d'un besoin réel, identifie la bonne trajectoire, structure la mission, suit l'exécution et aboutit à une restitution utile.
               </p>
             </div>
 
@@ -291,11 +291,11 @@ export default function HomePage() {
               <div className="grid gap-4">
                 <div className="rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-5">
                   <div className="flex flex-wrap gap-3">
-                    <Link href="/entreprise#deposer" className="btn-primary">
-                      Déposer un besoin
+                    <Link href="/trajectoire#demarrer" className="btn-primary">
+                      Commencer ma trajectoire
                     </Link>
-                    <Link href="/school" className="btn-secondary">
-                      Explorer les parcours
+                    <Link href="/entreprise#deposer" className="btn-secondary">
+                      Déposer un besoin entreprise
                     </Link>
                     <Link
                       href="/products"

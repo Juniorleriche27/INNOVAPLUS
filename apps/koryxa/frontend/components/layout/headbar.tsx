@@ -20,15 +20,15 @@ const NAV_LINKS = [
 
 const NAV_LINKS_V1 = [
   { href: "/", label: "Accueil" },
-  { href: "/school", label: "Parcours" },
+  { href: "/trajectoire", label: "Trajectoire" },
   { href: "/entreprise", label: "Entreprise" },
   { href: "/products", label: "Produits" },
   { href: "/about", label: "À propos" },
 ];
 
 const PUBLIC_PRODUCT_LINKS = [
-  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et execution" },
-  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'execution" },
+  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et exécution" },
+  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'exécution" },
 ];
 
 const PRODUCT_LINKS = [
@@ -240,7 +240,7 @@ export default function Headbar() {
                 <div className="hidden items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm backdrop-blur md:inline-flex">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span className="whitespace-nowrap">
-                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Parcours & missions reelles" : "Intelligence Artificielle • Transparence • Équité"}
+                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Trajectoires & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
                   </span>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function Headbar() {
                       <div className="absolute left-0 top-full z-50 mt-2 w-[360px] rounded-3xl border border-slate-200/70 bg-white/98 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
                         <div className="pb-3">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-500">Produits KORYXA</p>
-                          <p className="text-xs text-slate-500">Les outils visibles de l'ecosysteme KORYXA.</p>
+                          <p className="text-xs text-slate-500">Les outils visibles de l'écosystème KORYXA.</p>
                         </div>
                         <div className="grid gap-3">
                           {productLinks.map((item) => (

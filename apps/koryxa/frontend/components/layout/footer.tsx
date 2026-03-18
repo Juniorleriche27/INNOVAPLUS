@@ -25,7 +25,7 @@ export default function Footer() {
               {isMyPlanning
                 ? "Organisation universelle. Priorites, execution, impact."
                 : IS_V1_SIMPLE
-                ? "Parcours, missions et besoins reels, pour des resultats utiles."
+                ? "Trajectoires, missions et besoins réels, pour des résultats utiles."
                 : "KORYXA — Moteur IA d’opportunités. Transparence · Équité · Impact."}
             </p>
           </div>

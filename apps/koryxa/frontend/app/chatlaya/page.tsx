@@ -20,6 +20,24 @@ type Conversation = {
 };
 
 const API_BASE = CHATLAYA_API_BASE;
+const STARTER_PROMPTS = [
+  {
+    label: "Comprendre ma trajectoire",
+    prompt: "Aide-moi à comprendre ma trajectoire KORYXA, mon score actuel et mes prochaines étapes prioritaires.",
+  },
+  {
+    label: "Cadrer un besoin entreprise",
+    prompt: "Aide-moi à cadrer un besoin entreprise en distinguant objectif, contexte, livrable, urgence et mode de traitement.",
+  },
+  {
+    label: "Choisir le bon produit",
+    prompt: "Explique-moi la différence entre ChatLAYA et MyPlanningAI et dans quel cas utiliser chacun.",
+  },
+  {
+    label: "Voir mes opportunités cibles",
+    prompt: "Dis-moi quelles opportunités cibles je peux viser selon ma progression, mon niveau de préparation et mes preuves.",
+  },
+] as const;
 const SECTION_ICON_MAP: Record<string, string> = {
   "1) Resume bref": "💡",
   "2) Reponse detaillee": "📘",
@@ -416,6 +434,12 @@ export default function ChatlayaPage() {
     }
   }
 
+  function handleStarterPrompt(prompt: string) {
+    setError(null);
+    setInput(prompt);
+    composerRef.current?.focus();
+  }
+
   async function sendMessage() {
     if (!selectedConversationId || streaming) return;
     const prompt = input.trim();
@@ -741,10 +765,10 @@ export default function ChatlayaPage() {
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="w-full max-w-lg rounded-3xl border border-dashed border-slate-300 bg-white/80 px-8 py-10 shadow-sm">
-                <h3 className="text-base font-semibold text-slate-900">Pret a discuter ?</h3>
+                <h3 className="text-base font-semibold text-slate-900">Besoin d'un repere clair ?</h3>
                 <p className="mt-2 text-sm text-slate-500">
-                  Posez une question precise ou decrivez un besoin. Chatlaya vous repondra en francais avec des
-                  suggestions concretes.
+                  ChatLAYA peut vous aider à comprendre votre trajectoire, cadrer un besoin entreprise, choisir le bon
+                  produit KORYXA ou identifier les prochaines étapes les plus utiles.
                 </p>
                 <button
                   type="button"
@@ -753,6 +777,18 @@ export default function ChatlayaPage() {
                 >
                   Commencer
                 </button>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {STARTER_PROMPTS.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => handleStarterPrompt(item.prompt)}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -794,6 +830,18 @@ export default function ChatlayaPage() {
           )}
         </div>
         <form onSubmit={onSubmit} className="border-t border-slate-100 bg-[#f7f7f8] px-4 py-4 sm:px-6 lg:px-10">
+          <div className="mx-auto mb-3 flex w-full max-w-4xl flex-wrap gap-2">
+            {STARTER_PROMPTS.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => handleStarterPrompt(item.prompt)}
+                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
           <div className="mx-auto flex w-full max-w-4xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
             <textarea
               ref={composerRef}

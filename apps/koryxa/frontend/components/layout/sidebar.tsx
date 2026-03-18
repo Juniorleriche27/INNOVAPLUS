@@ -89,9 +89,8 @@ const WORKSPACE_LINKS = [
   { href: "/meet", label: "KORYXA Meet", description: "Réseau social KORYXA", icon: IconChat },
   { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
   { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
-  // Parcours est caché par défaut pour préparer le module en coulisses.
   ...(ENABLE_SCHOOL
-    ? [{ href: "/school", label: "Parcours", description: "Parcours guides & missions", icon: IconBook } as const]
+    ? [{ href: "/school", label: "Trajectoire", description: "Trajectoires guidées & missions", icon: IconBook } as const]
     : []),
 ];
 
@@ -104,12 +103,12 @@ const V1_LINKS = [
 type NavNode = { href: string; label: string; children?: NavNode[] };
 
 const V1_SCHOOL_TREE: NavNode[] = [
-  { href: "/school/parcours/fondamental", label: "Parcours fondamentaux" },
+  { href: "/school/parcours/fondamental", label: "Trajectoires fondamentales" },
   {
     href: "/school/specialisations",
-    label: "Specialisations",
+    label: "Spécialisations",
   },
-  { href: "/school/validations", label: "Projets & validations" },
+  { href: "/school/validations", label: "Validations" },
 ];
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -247,121 +246,19 @@ export default function Sidebar({ className, style }: { className?: string; styl
                     <div className="space-y-1">
                       {V1_SCHOOL_TREE.map((sub) => {
                         const subActive = pathname.startsWith(sub.href);
-                        const hasChildren = Boolean(sub.children?.length);
                         return (
-                          <div key={sub.href} className="space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <Link
-                                href={sub.href}
-                                className={clsx(
-                                  "flex-1 rounded-lg px-3 py-2 text-[12px] font-semibold transition",
-                                  subActive
-                                    ? "bg-sky-50 text-sky-700"
-                                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                )}
-                              >
-                                {sub.label}
-                              </Link>
-                            {hasChildren ? (
-                              <button
-                                type="button"
-                                onClick={() => setSpecialOpen((prev) => !prev)}
-                                className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
-                              >
-                                  {specialOpen ? "−" : "+"}
-                                </button>
-                              ) : null}
-                            </div>
-                            {hasChildren && specialOpen ? (
-                              <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
-                                {sub.children?.map((child) => {
-                                  const childActive = pathname.startsWith(child.href);
-                                  const hasGrand = Boolean(child.children?.length);
-                                  return (
-                                    <div key={child.href} className="space-y-1">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <Link
-                                          href={child.href}
-                                          className={clsx(
-                                            "flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition",
-                                            childActive
-                                              ? "bg-sky-50 text-sky-700"
-                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                          )}
-                                        >
-                                          {child.label}
-                                        </Link>
-                                        {hasGrand ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => setAnalystOpen((prev) => !prev)}
-                                            className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
-                                          >
-                                            {analystOpen ? "−" : "+"}
-                                          </button>
-                                        ) : null}
-                                      </div>
-                                      {hasGrand && analystOpen ? (
-                                        <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
-                                          {child.children?.map((module) => {
-                                            const moduleActive = pathname.startsWith(module.href);
-                                            const moduleHasChildren = Boolean(module.children?.length);
-                                            return (
-                                              <div key={module.href} className="space-y-1">
-                                                <div className="flex items-center justify-between gap-2">
-                                                  <Link
-                                                    href={module.href}
-                                                    className={clsx(
-                                                      "flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition",
-                                                      moduleActive
-                                                        ? "bg-sky-50 text-sky-700"
-                                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                                    )}
-                                                  >
-                                                    {module.label}
-                                                  </Link>
-                                                  {moduleHasChildren ? (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => setModule1Open((prev) => !prev)}
-                                                      className="rounded-lg px-2 text-[11px] font-semibold text-slate-500 hover:text-slate-900"
-                                                    >
-                                                      {module1Open ? "−" : "+"}
-                                                    </button>
-                                                  ) : null}
-                                                </div>
-                                                {moduleHasChildren && module1Open ? (
-                                                  <div className="ml-3 space-y-1 border-l border-slate-200 pl-3">
-                                                    {module.children?.map((theme) => {
-                                                      const themeActive = pathname.startsWith(theme.href);
-                                                      return (
-                                                        <Link
-                                                          key={theme.href}
-                                                          href={theme.href}
-                                                          className={clsx(
-                                                            "block rounded-lg px-2 py-1 text-[11px] font-semibold transition",
-                                                            themeActive
-                                                              ? "bg-sky-50 text-sky-700"
-                                                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                                          )}
-                                                        >
-                                                          {theme.label}
-                                                        </Link>
-                                                      );
-                                                    })}
-                                                  </div>
-                                                ) : null}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ) : null}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : null}
-                          </div>
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={clsx(
+                              "block rounded-lg px-3 py-2 text-[12px] font-semibold transition",
+                              subActive
+                                ? "bg-sky-50 text-sky-700"
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            )}
+                          >
+                            {sub.label}
+                          </Link>
                         );
                       })}
                     </div>

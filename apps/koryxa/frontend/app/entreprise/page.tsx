@@ -2,8 +2,8 @@
 
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { AUTH_API_BASE } from "@/lib/env";
+import { useEffect, useState } from "react";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 const NEED_SIGNAL_ITEMS = [
   "Besoin qualifié dès le départ",
@@ -60,29 +60,6 @@ const TREATMENT_MODES = [
   },
 ];
 
-const OPPORTUNITIES = [
-  {
-    title: "Mission data",
-    text: "Structuration et analyse de données terrain pour une organisation en croissance.",
-  },
-  {
-    title: "Stage en analyse",
-    text: "Besoin encadré pour support d'analyse, suivi de données et restitution claire.",
-  },
-  {
-    title: "Projet d'automatisation",
-    text: "Processus à clarifier puis à automatiser avec un livrable attendu et un cadre précis.",
-  },
-  {
-    title: "Support reporting",
-    text: "Besoin de tableau de bord et de suivi opérationnel pour une équipe métier.",
-  },
-  {
-    title: "Collaboration opérationnelle",
-    text: "Mission courte ou ponctuelle avec périmètre défini, pilotage et restitution attendue.",
-  },
-];
-
 const PROCESS_STEPS = [
   {
     title: "Déposer un besoin",
@@ -128,6 +105,68 @@ const TREATMENT_OPTIONS = [
 export default function EntreprisePage() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<{
+    need: {
+      id: string;
+      title: string;
+      status: string;
+      qualification_score: number;
+      structured_summary: string;
+      treatment_mode: string;
+    };
+    mission: {
+      id: string;
+      title: string;
+      summary: string;
+      status: string;
+      steps: string[];
+    };
+    opportunity: {
+      id: string;
+      title: string;
+      summary: string;
+      status: string;
+      highlights: string[];
+    } | null;
+  } | null>(null);
+  const [publicOpportunities, setPublicOpportunities] = useState<
+    Array<{
+      id: string;
+      title: string;
+      summary: string;
+      status: string;
+      highlights: string[];
+    }>
+  >([]);
+  const [loadingOpportunities, setLoadingOpportunities] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${INNOVA_API_BASE}/enterprise/opportunities/public`, {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error("Impossible de charger les opportunités publiques.");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!active) return;
+        setPublicOpportunities(Array.isArray(data?.items) ? data.items : []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPublicOpportunities([]);
+      })
+      .finally(() => {
+        if (active) setLoadingOpportunities(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,32 +176,40 @@ export default function EntreprisePage() {
       organisation: String(data.get("organisation") || "").trim(),
       country: String(data.get("country") || "").trim(),
       domain: String(data.get("domain") || "").trim(),
+      title: String(data.get("title") || "").trim(),
       description: String(data.get("description") || "").trim(),
-      mission_type: String(data.get("mission_type") || "").trim(),
+      need_type: String(data.get("need_type") || "").trim(),
       contact: String(data.get("contact") || "").trim(),
       context: String(data.get("context") || "").trim(),
-      deliverable: String(data.get("deliverable") || "").trim(),
+      expected_deliverable: String(data.get("expected_deliverable") || "").trim(),
       urgency: String(data.get("urgency") || "").trim(),
       treatment_mode: String(data.get("treatment_mode") || "").trim(),
-      source: "entreprise_v2",
     };
 
     setStatus("sending");
     setMessage(null);
+    setSubmitted(null);
 
     try {
-      const res = await fetch(`${AUTH_API_BASE}/plusbook/api/contact`, {
+      const res = await fetch(`${INNOVA_API_BASE}/enterprise/needs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error(await res.text());
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "Envoi impossible.");
       }
 
+      const result = await res.json();
+      setSubmitted(result);
+      if (result?.opportunity) {
+        setPublicOpportunities((current) => [result.opportunity, ...current.filter((item) => item.id !== result.opportunity.id)]);
+      }
       setStatus("sent");
-      setMessage("Merci, votre besoin a bien été transmis.");
+      setMessage("Merci, votre besoin a bien été structuré.");
       form.reset();
     } catch (err) {
       console.error("Entreprise form error", err);
@@ -334,16 +381,42 @@ export default function EntreprisePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {OPPORTUNITIES.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] p-5"
-              >
-                <p className="text-lg font-semibold text-slate-950">{item.title}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-              </article>
-            ))}
+          <div className="mt-8">
+            {loadingOpportunities ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="h-40 animate-pulse rounded-[26px] bg-slate-100" />
+                ))}
+              </div>
+            ) : publicOpportunities.length ? (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {publicOpportunities.map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                      <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {item.highlights.map((highlight) => (
+                        <span key={highlight} className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
+                          {highlight}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[26px] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-sm leading-7 text-slate-600">
+                Aucune opportunité publique pour le moment. Déposez un besoin en mode <span className="font-semibold">Publié</span> pour alimenter cette liste avec un besoin déjà structuré.
+              </div>
+            )}
           </div>
         </section>
 
@@ -429,6 +502,14 @@ export default function EntreprisePage() {
                   />
                 </label>
                 <label className="text-sm text-slate-700">
+                  Titre du besoin
+                  <input
+                    name="title"
+                    required
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="text-sm text-slate-700">
                   Secteur / domaine
                   <input
                     name="domain"
@@ -439,7 +520,7 @@ export default function EntreprisePage() {
                 <label className="text-sm text-slate-700">
                   Type de besoin
                   <select
-                    name="mission_type"
+                    name="need_type"
                     required
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                   >
@@ -496,7 +577,7 @@ export default function EntreprisePage() {
               <label className="text-sm text-slate-700">
                 Livrable attendu
                 <input
-                  name="deliverable"
+                  name="expected_deliverable"
                   required
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                 />
@@ -523,6 +604,56 @@ export default function EntreprisePage() {
 
               {message ? (
                 <p className={`text-sm font-medium ${status === "sent" ? "text-emerald-600" : "text-red-600"}`}>{message}</p>
+              ) : null}
+
+              {submitted ? (
+                <div className="grid gap-3 rounded-[24px] border border-slate-200 bg-white p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Besoin</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">{submitted.need.title}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{submitted.need.structured_summary}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                        Statut : {submitted.need.status}
+                      </span>
+                      <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                        Qualification : {submitted.need.qualification_score}/100
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Mission</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">{submitted.mission.title}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{submitted.mission.summary}</p>
+                    <ul className="mt-3 list-disc pl-5 text-sm leading-6 text-slate-600">
+                      {submitted.mission.steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Opportunité publique</p>
+                    {submitted.opportunity ? (
+                      <>
+                        <p className="mt-2 text-lg font-semibold text-slate-950">{submitted.opportunity.title}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">{submitted.opportunity.summary}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {submitted.opportunity.highlights.map((highlight) => (
+                            <span key={highlight} className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                              {highlight}
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        Ce besoin n’est pas publié publiquement. Il reste traité en mode <span className="font-semibold">{submitted.need.treatment_mode}</span>.
+                      </p>
+                    )}
+                  </div>
+                </div>
               ) : null}
 
               <div className="flex flex-wrap gap-3">

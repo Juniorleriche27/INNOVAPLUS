@@ -33,7 +33,7 @@ const V1_ENTRY_POINTS = [
       "Des trajectoires guidées pour aider chaque personne à identifier la bonne direction, les bons partenaires de montée en compétence, les bonnes étapes de progression et le bon moment pour passer à l’action.",
     bullets: ["Onboarding intelligent", "Matching de trajectoire", "Ressources partenaires", "Score et validation"],
     cta: "Explorer les trajectoires",
-    secondary: { href: "/about", label: "Comprendre le fonctionnement" },
+    secondary: { href: "/trajectoire#logique", label: "Comprendre le fonctionnement" },
   },
   {
     href: "/entreprise",
@@ -42,7 +42,7 @@ const V1_ENTRY_POINTS = [
     description: "KORYXA aide les organisations à cadrer un besoin, le transformer en mission structurée, suivre l'exécution et récupérer des livrables utiles.",
     bullets: ["Besoin cadré", "Mission structurée", "Livrables utiles"],
     cta: "Déposer un besoin entreprise",
-    secondary: { href: "/about", label: "Comprendre l'approche" },
+    secondary: { href: "/entreprise#fonctionnement", label: "Comprendre l'approche" },
   },
 ];
 

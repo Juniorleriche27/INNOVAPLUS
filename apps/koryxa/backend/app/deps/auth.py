@@ -11,17 +11,17 @@ from app.core.config import settings
 from app.db.mongo import get_db
 
 
-async def get_current_user(
+async def get_current_user_optional(
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_db),
-) -> dict:
+) -> dict | None:
     raw_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if not raw_token:
         authz = (request.headers.get("authorization") or "").strip()
         if authz.lower().startswith("bearer "):
             raw_token = authz[7:].strip()
     if not raw_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        return None
 
     token_hash = hash_token(raw_token)
     now = datetime.now(timezone.utc)
@@ -33,13 +33,14 @@ async def get_current_user(
         }
     )
     if not session:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expirée ou invalide")
+        return None
 
-    user = await db["users"].find_one({"_id": ObjectId(session["user_id"]) if not isinstance(session["user_id"], ObjectId) else session["user_id"]})
+    user = await db["users"].find_one(
+        {"_id": ObjectId(session["user_id"]) if not isinstance(session["user_id"], ObjectId) else session["user_id"]}
+    )
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur introuvable")
+        return None
 
-    # Best effort update last_seen_at (ignore failures)
     try:
         await db["sessions"].update_one(
             {"_id": session["_id"]},
@@ -49,4 +50,14 @@ async def get_current_user(
         pass
 
     request.state.session = session
+    return user
+
+
+async def get_current_user(
+    request: Request,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    user = await get_current_user_optional(request, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     return user

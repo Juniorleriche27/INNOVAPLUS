@@ -95,7 +95,20 @@ async def connect_to_mongo() -> None:
             await _db["login_otps"].create_index("email")
             await _db["login_otps"].create_index("expires_at", expireAfterSeconds=0)
             await _db["conversations"].create_index([("user_id", 1), ("updated_at", -1)])
+            await _db["conversations"].create_index([("guest_id", 1), ("updated_at", -1)])
             await _db["messages"].create_index([("conversation_id", 1), ("created_at", 1)])
+            await _db["messages"].create_index([("guest_id", 1), ("created_at", 1)])
+
+            # Public MVP product flows
+            await _db["trajectory_flows"].create_index([("guest_id", 1), ("updated_at", -1)])
+            await _db["trajectory_flows"].create_index([("user_id", 1), ("updated_at", -1)])
+            await _db["enterprise_needs"].create_index([("guest_id", 1), ("created_at", -1)])
+            await _db["enterprise_needs"].create_index([("user_id", 1), ("created_at", -1)])
+            await _db["enterprise_needs"].create_index([("status", 1), ("created_at", -1)])
+            await _db["enterprise_missions"].create_index([("need_id", 1)], unique=True)
+            await _db["enterprise_opportunities"].create_index([("need_id", 1)], unique=True)
+            await _db["enterprise_opportunities"].create_index([("status", 1), ("published_at", -1)])
+            await _db["public_products"].create_index([("slug", 1)], unique=True)
 
             # Try to create Atlas Vector Search index if supported
             try:

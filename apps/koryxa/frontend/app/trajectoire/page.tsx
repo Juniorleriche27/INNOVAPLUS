@@ -1,4 +1,4 @@
-import Link from "next/link";
+import TrajectoryFlowClient from "./TrajectoryFlowClient";
 
 const TRAJECTORY_SIGNAL_ITEMS = [
   "Onboarding intelligent",
@@ -60,7 +60,7 @@ const KORYXA_VALUE = [
 
 const PARTNER_BLOCKS = [
   {
-    title: "Organismes de formation",
+    title: "Organismes partenaires",
     text: "Présence qualifiée avec domaine, niveaux couverts, format, langue, prix, zone géographique et modalités.",
   },
   {
@@ -223,8 +223,8 @@ export default function TrajectoirePage() {
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Ce que KORYXA apporte vraiment</h2>
             </div>
             <p className="max-w-xl text-sm leading-7 text-slate-600">
-              KORYXA n'est pas une plateforme de formation. C'est une plateforme de trajectoire qui aide à savoir quoi
-              apprendre, où progresser, comment prouver sa montée en compétence et quand passer à l'action.
+              KORYXA n'est pas un catalogue de contenus. C'est une plateforme de trajectoire qui aide à savoir quoi
+              renforcer, où progresser, comment prouver sa montée en compétence et quand passer à l'action.
             </p>
           </div>
 
@@ -306,30 +306,18 @@ export default function TrajectoirePage() {
           id="demarrer"
           className="rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)] sm:p-8"
         >
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr] lg:items-center">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Passer à l'action</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                Commencez votre trajectoire avec un diagnostic plus clair, puis avancez avec les bons repères.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-                La logique KORYXA reste simple : diagnostiquer, recommander, suivre, valider puis ouvrir vers des
-                opportunités plus crédibles.
-              </p>
-            </div>
-            <div className="grid gap-4">
-              <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Démarrer</p>
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <Link href="/bientot" className="inline-flex w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50 sm:w-auto">
-                    Commencer ma trajectoire
-                  </Link>
-                  <a href="#logique" className="inline-flex w-full items-center justify-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15 sm:w-auto">
-                    Voir comment KORYXA fonctionne
-                  </a>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Passer à l'action</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+              Commencez votre trajectoire avec un diagnostic plus clair, puis avancez avec les bons repères.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
+              La logique KORYXA reste simple : diagnostiquer, recommander, suivre, valider puis ouvrir vers des
+              opportunités plus crédibles.
+            </p>
+          </div>
+          <div className="mt-8">
+            <TrajectoryFlowClient />
           </div>
         </section>
       </div>

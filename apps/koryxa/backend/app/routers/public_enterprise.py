@@ -63,6 +63,7 @@ def _serialize_opportunity(doc: dict[str, Any] | None) -> dict[str, Any] | None:
         "id": str(doc["_id"]),
         "need_id": str(doc["need_id"]),
         "mission_id": str(doc["mission_id"]),
+        "type": doc["type"],
         "title": doc["title"],
         "summary": doc["summary"],
         "status": doc["status"],
@@ -127,6 +128,7 @@ async def create_enterprise_need(
         opportunity_doc = {
             "need_id": need_doc["_id"],
             "mission_id": mission_doc["_id"],
+            "type": structured["opportunity"]["type"],
             "title": structured["opportunity"]["title"],
             "summary": structured["opportunity"]["summary"],
             "status": statuses["opportunity_status"],

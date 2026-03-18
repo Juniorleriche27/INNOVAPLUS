@@ -111,6 +111,7 @@ export default function EntreprisePage() {
       title: string;
       status: string;
       qualification_score: number;
+      clarity_level: string;
       structured_summary: string;
       treatment_mode: string;
     };
@@ -119,10 +120,12 @@ export default function EntreprisePage() {
       title: string;
       summary: string;
       status: string;
+      execution_mode: string;
       steps: string[];
     };
     opportunity: {
       id: string;
+      type: "mission" | "stage" | "collaboration" | "project" | "accompagnement";
       title: string;
       summary: string;
       status: string;
@@ -132,6 +135,7 @@ export default function EntreprisePage() {
   const [publicOpportunities, setPublicOpportunities] = useState<
     Array<{
       id: string;
+      type: "mission" | "stage" | "collaboration" | "project" | "accompagnement";
       title: string;
       summary: string;
       status: string;
@@ -396,10 +400,18 @@ export default function EntreprisePage() {
                     className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] p-5"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-lg font-semibold text-slate-950">{item.title}</p>
-                      <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">
-                        {item.status}
-                      </span>
+                      <div>
+                        <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{item.type}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700">
+                          {item.type}
+                        </span>
+                        <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">
+                          {item.status}
+                        </span>
+                      </div>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-slate-600">{item.summary}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -616,6 +628,9 @@ export default function EntreprisePage() {
                       <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
                         Statut : {submitted.need.status}
                       </span>
+                      <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                        Clarté : {submitted.need.clarity_level}
+                      </span>
                       <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
                         Qualification : {submitted.need.qualification_score}/100
                       </span>
@@ -626,6 +641,14 @@ export default function EntreprisePage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Mission</p>
                     <p className="mt-2 text-lg font-semibold text-slate-950">{submitted.mission.title}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">{submitted.mission.summary}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                        Statut : {submitted.mission.status}
+                      </span>
+                      <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                        Mode : {submitted.mission.execution_mode}
+                      </span>
+                    </div>
                     <ul className="mt-3 list-disc pl-5 text-sm leading-6 text-slate-600">
                       {submitted.mission.steps.map((step) => (
                         <li key={step}>{step}</li>
@@ -639,6 +662,14 @@ export default function EntreprisePage() {
                       <>
                         <p className="mt-2 text-lg font-semibold text-slate-950">{submitted.opportunity.title}</p>
                         <p className="mt-2 text-sm leading-7 text-slate-600">{submitted.opportunity.summary}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                            Type : {submitted.opportunity.type}
+                          </span>
+                          <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                            Statut : {submitted.opportunity.status}
+                          </span>
+                        </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {submitted.opportunity.highlights.map((highlight) => (
                             <span key={highlight} className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">

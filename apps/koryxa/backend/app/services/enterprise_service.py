@@ -5,6 +5,19 @@ from typing import Any
 from app.services.ai_json import generate_structured_json
 
 
+def _derive_opportunity_type(need_type: str) -> str:
+    normalized = (need_type or "").strip().lower()
+    if normalized == "stage":
+        return "stage"
+    if normalized == "collaboration":
+        return "collaboration"
+    if normalized in {"recherche", "coordination", "automatisation"}:
+        return "project"
+    if normalized == "support":
+        return "accompagnement"
+    return "mission"
+
+
 def _treatment_need_status(treatment_mode: str) -> str:
     if treatment_mode == "publie":
         return "published"
@@ -21,6 +34,7 @@ def _treatment_mission_status(treatment_mode: str) -> str:
 
 def _fallback_structure(payload: dict[str, Any]) -> dict[str, Any]:
     treatment_mode = payload["treatment_mode"]
+    opportunity_type = _derive_opportunity_type(payload["need_type"])
     qualification_score = 78 if treatment_mode == "accompagne" else 72 if treatment_mode == "publie" else 68
     clarity_level = "strong" if treatment_mode == "accompagne" else "qualified"
     need_summary = (
@@ -46,10 +60,11 @@ def _fallback_structure(payload: dict[str, Any]) -> dict[str, Any]:
             ],
         },
         "opportunity": {
+            "type": opportunity_type,
             "title": opportunity_title,
             "summary": f"Opportunité publiée issue d'un besoin déjà cadré pour {payload['organisation']}.",
             "highlights": [
-                payload["need_type"],
+                opportunity_type,
                 payload["expected_deliverable"],
                 payload["urgency"],
             ],
@@ -79,6 +94,11 @@ def _coerce_structure(generated: dict[str, Any], fallback: dict[str, Any]) -> di
             "steps": [str(step).strip() for step in steps if str(step).strip()] or fallback["mission"]["steps"],
         },
         "opportunity": {
+            "type": (
+                str(opportunity.get("type") or "").strip().lower()
+                if str(opportunity.get("type") or "").strip().lower() in {"mission", "stage", "collaboration", "project", "accompagnement"}
+                else fallback["opportunity"]["type"]
+            ),
             "title": str(opportunity.get("title") or "").strip() or fallback["opportunity"]["title"],
             "summary": str(opportunity.get("summary") or "").strip() or fallback["opportunity"]["summary"],
             "highlights": [str(item).strip() for item in highlights if str(item).strip()] or fallback["opportunity"]["highlights"],
@@ -117,6 +137,7 @@ JSON attendu:
     "steps": ["string", "string", "string"]
   }},
   "opportunity": {{
+    "type": "mission|stage|collaboration|project|accompagnement",
     "title": "string",
     "summary": "string",
     "highlights": ["string", "string", "string"]

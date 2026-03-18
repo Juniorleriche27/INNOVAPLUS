@@ -142,16 +142,16 @@ export default function TrajectoirePage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <a href="#demarrer" className="btn-primary">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <a href="#demarrer" className="btn-primary w-full justify-center sm:w-auto">
                   Commencer mon diagnostic
                 </a>
-                <a href="#logique" className="btn-secondary">
+                <a href="#logique" className="btn-secondary w-full justify-center sm:w-auto">
                   Comprendre la logique de trajectoire
                 </a>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {TRAJECTORY_SIGNAL_ITEMS.map((item) => (
                   <div
                     key={item}
@@ -198,7 +198,7 @@ export default function TrajectoirePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {TRAJECTORY_STEPS.map((item, index) => (
               <article
                 key={item.title}
@@ -289,7 +289,7 @@ export default function TrajectoirePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {OUTCOMES.map((item) => (
               <article
                 key={item.title}
@@ -320,11 +320,11 @@ export default function TrajectoirePage() {
             <div className="grid gap-4">
               <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Démarrer</p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/bientot" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link href="/bientot" className="inline-flex w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50 sm:w-auto">
                     Commencer ma trajectoire
                   </Link>
-                  <a href="#logique" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+                  <a href="#logique" className="inline-flex w-full items-center justify-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15 sm:w-auto">
                     Voir comment KORYXA fonctionne
                   </a>
                 </div>

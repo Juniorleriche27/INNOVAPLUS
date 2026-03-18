@@ -198,16 +198,16 @@ export default function EntreprisePage() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <a href="#deposer" className="btn-primary">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <a href="#deposer" className="btn-primary w-full justify-center sm:w-auto">
                   Déposer un besoin
                 </a>
-                <a href="#fonctionnement" className="btn-secondary">
+                <a href="#fonctionnement" className="btn-secondary w-full justify-center sm:w-auto">
                   Comprendre le fonctionnement
                 </a>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
                 {NEED_SIGNAL_ITEMS.map((item) => (
                   <div
                     key={item}
@@ -362,7 +362,7 @@ export default function EntreprisePage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {PROCESS_STEPS.map((item, index) => (
               <article key={item.title} className="rounded-[24px] border border-white/10 bg-white/5 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">0{index + 1}</p>

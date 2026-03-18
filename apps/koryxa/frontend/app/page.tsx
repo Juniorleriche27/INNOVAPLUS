@@ -101,11 +101,11 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/trajectoire" className="btn-primary">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link href="/trajectoire" className="btn-primary w-full justify-center sm:w-auto">
                     Explorer les trajectoires
                   </Link>
-                  <Link href="/entreprise#deposer" className="btn-secondary">
+                  <Link href="/entreprise#deposer" className="btn-secondary w-full justify-center sm:w-auto">
                     Déposer un besoin entreprise
                   </Link>
                 </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
                   <div className="rounded-[24px] border border-slate-200/80 bg-white/88 p-5 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Trajectoire</p>
                     <p className="mt-3 text-2xl font-semibold text-slate-950">Diagnostic, progression pilotée et validation</p>
@@ -208,11 +208,11 @@ export default function HomePage() {
                     </span>
                   ))}
                 </div>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href={item.href} className="btn-primary">
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link href={item.href} className="btn-primary w-full justify-center sm:w-auto">
                     {item.cta}
                   </Link>
-                  <Link href={item.secondary.href} className="btn-secondary">
+                  <Link href={item.secondary.href} className="btn-secondary w-full justify-center sm:w-auto">
                     {item.secondary.label}
                   </Link>
                 </div>
@@ -240,11 +240,11 @@ export default function HomePage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{product.eyebrow}</p>
                   <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{product.label}</h3>
                   <p className="mt-4 text-sm leading-7 text-slate-600">{product.description}</p>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link href={product.href} className="btn-primary">
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <Link href={product.href} className="btn-primary w-full justify-center sm:w-auto">
                       {product.cta}
                     </Link>
-                    <Link href="/products" className="btn-secondary">
+                    <Link href="/products" className="btn-secondary w-full justify-center sm:w-auto">
                       Voir les produits
                     </Link>
                   </div>
@@ -290,19 +290,21 @@ export default function HomePage() {
 
               <div className="grid gap-4">
                 <div className="rounded-[28px] border border-slate-200/80 bg-slate-50/90 p-5">
-                  <div className="flex flex-wrap gap-3">
-                    <Link href="/trajectoire#demarrer" className="btn-primary">
+                  <div className="flex flex-col gap-3">
+                    <Link href="/trajectoire#demarrer" className="btn-primary w-full justify-center sm:w-fit">
                       Commencer ma trajectoire
                     </Link>
-                    <Link href="/entreprise#deposer" className="btn-secondary">
-                      Déposer un besoin entreprise
-                    </Link>
-                    <Link
-                      href="/products"
-                      className="inline-flex items-center rounded-full border border-slate-300/80 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                    >
-                      Découvrir les produits KORYXA
-                    </Link>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                      <Link href="/entreprise#deposer" className="btn-secondary w-full justify-center sm:w-auto">
+                        Déposer un besoin entreprise
+                      </Link>
+                      <Link
+                        href="/products"
+                        className="inline-flex w-full items-center justify-center rounded-full border border-slate-300/80 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 sm:w-auto"
+                      >
+                        Découvrir les produits KORYXA
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

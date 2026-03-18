@@ -3197,6 +3197,7 @@ else:
     innova_api.include_router(module6_router)
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
+    innova_api.include_router(chatlaya_router)
     app.include_router(innova_api)
     innova_rag = APIRouter(prefix="/innova")
     innova_rag.include_router(rag_router)

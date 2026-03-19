@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 type ConnectedNavLink = {
   href: string;
@@ -68,15 +69,16 @@ function IconClose(props: React.SVGProps<SVGSVGElement>) {
 
 export default function ConnectedHeader() {
   const pathname = usePathname();
-  const { user, initialLoggedIn } = useAuth();
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const isAuthenticated = Boolean(user?.email);
   const displayName = useMemo(() => {
     const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
     return fullName || user?.email || "Plateforme connectée";
   }, [user]);
   const userInitial = displayName.charAt(0).toUpperCase();
+  const logoutRedirect = `/myplanning/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-[0_18px_48px_rgba(2,6,23,0.34)]">
@@ -115,7 +117,7 @@ export default function ConnectedHeader() {
 
         <div className="hidden items-center gap-2 lg:flex">
           <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200">
-            Connecté
+            {isAuthenticated ? "Connecté" : "Accès protégé"}
           </span>
           <Link
             href={isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/chatlaya"}
@@ -126,6 +128,12 @@ export default function ConnectedHeader() {
             </span>
             <span>{isAuthenticated ? "Profil" : "Se connecter"}</span>
           </Link>
+          {isAuthenticated ? (
+            <LogoutButton
+              redirectTo={logoutRedirect}
+              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-rose-400/60 hover:text-rose-100"
+            />
+          ) : null}
         </div>
 
         <button
@@ -160,6 +168,12 @@ export default function ConnectedHeader() {
                 </Link>
               );
             })}
+            {isAuthenticated ? (
+              <LogoutButton
+                redirectTo={logoutRedirect}
+                className="mt-2 inline-flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
+              />
+            ) : null}
           </div>
         </div>
       ) : null}

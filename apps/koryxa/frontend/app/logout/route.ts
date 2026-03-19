@@ -15,8 +15,7 @@ function getCookieDomain(siteBase: string): string | null {
   }
 }
 
-function clearCookieHeader() {
-  const domain = getCookieDomain(SITE_BASE_URL);
+function buildClearCookieHeader(domain?: string | null) {
   const secure = SITE_BASE_URL.startsWith("https://");
   const parts = [
     `${SESSION_COOKIE}=`,
@@ -28,6 +27,19 @@ function clearCookieHeader() {
   if (domain) parts.push(`Domain=${domain}`);
   if (secure) parts.push("Secure");
   return parts.join("; ");
+}
+
+function clearCookieHeaders() {
+  const domain = getCookieDomain(SITE_BASE_URL);
+  const headers = [buildClearCookieHeader(undefined)];
+  if (domain) headers.push(buildClearCookieHeader(domain));
+  return headers;
+}
+
+function safeRedirectTarget(value: string | null): string {
+  if (!value) return "/login";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/login";
+  return value;
 }
 
 export const runtime = "nodejs";
@@ -44,11 +56,11 @@ export async function GET(request: Request) {
     // Ignore logout failures; we'll still clear the cookie below.
   }
 
-  const url = new URL("/login", request.url);
+  const sourceUrl = new URL(request.url);
+  const url = new URL(safeRedirectTarget(sourceUrl.searchParams.get("redirect")), request.url);
   const response = NextResponse.redirect(url);
-  response.headers.append(
-    "Set-Cookie",
-    clearCookieHeader()
-  );
+  for (const header of clearCookieHeaders()) {
+    response.headers.append("Set-Cookie", header);
+  }
   return response;
 }

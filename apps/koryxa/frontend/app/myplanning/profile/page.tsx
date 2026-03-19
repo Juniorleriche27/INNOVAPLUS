@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { inferUserPlan } from "@/config/planFeatures";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export default function MyPlanningProfilePage() {
   const { user, loading } = useAuth();
@@ -94,9 +95,12 @@ export default function MyPlanningProfilePage() {
           >
             Profil KORYXA
           </Link>
+          <LogoutButton
+            redirectTo="/myplanning/login"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600"
+          />
         </div>
       </section>
     </div>
   );
 }
-

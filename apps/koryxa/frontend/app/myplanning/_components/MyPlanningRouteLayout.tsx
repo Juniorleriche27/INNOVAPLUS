@@ -24,50 +24,41 @@ const MARKETING_LINKS: NavEntry[] = [
   { href: "/myplanning/enterprise", label: "Entreprise" },
 ];
 
-const MARKETING_ROUTES = new Set(["/myplanning/pricing"]);
+const CONNECTED_PRIMARY_GROUP: NavGroup = {
+  title: "Navigation",
+  links: [
+    { href: "/myplanning/app", label: "Accueil", icon: "🏠" },
+    { href: "/myplanning/app/koryxa", label: "Trajectoire", icon: "🧭" },
+    { href: "/myplanning/app/koryxa-enterprise", label: "Entreprise", icon: "🏢" },
+    { href: "/chatlaya", label: "ChatLAYA", icon: "💬" },
+    { href: "/myplanning/opportunities", label: "Opportunités", icon: "🎯" },
+    { href: "/myplanning/profile", label: "Profil", icon: "👤" },
+    { href: "/myplanning/settings", label: "Paramètres", icon: "⚙️" },
+  ],
+};
 
-const SIDEBAR_FREE_GROUPS: NavGroup[] = [
+const SIDEBAR_MYPLANNING_GROUPS: NavGroup[] = [
   {
-    title: "Free",
+    title: "MyPlanningAI",
     links: [
-      { href: "/myplanning/app", label: "Dashboard quotidien", icon: "📅", prefix: "/myplanning/app" },
-      { href: "/myplanning/app", label: "Nouvelle tâche", icon: "➕", prefix: "/myplanning/app" },
-      { href: "/myplanning/pricing", label: "Tarifs", icon: "💳", prefix: "/myplanning/pricing" },
-    ],
-  },
-];
-
-const SIDEBAR_PRO_GROUPS: NavGroup[] = [
-  {
-    title: "Pro",
-    links: [
+      { href: "/myplanning/app", label: "Vue d’exécution", icon: "📅", prefix: "/myplanning/app" },
       { href: "/myplanning/app/pro/stats", label: "Stats & graphiques", icon: "📈", prefix: "/myplanning/app/pro/stats", badge: "PRO" },
       { href: "/myplanning/app/pro/coaching", label: "Coaching IA", icon: "🤖", prefix: "/myplanning/app/pro/coaching", badge: "PRO" },
       { href: "/myplanning/app/pro/templates", label: "Templates", icon: "📐", prefix: "/myplanning/app/pro/templates", badge: "PRO" },
       { href: "/myplanning/app/pro/automations", label: "Automatisations", icon: "⚡", prefix: "/myplanning/app/pro/automations", badge: "PRO" },
+      { href: "/myplanning/app/integrations", label: "Intégrations", icon: "🔌", prefix: "/myplanning/app/integrations" },
+      { href: "/myplanning/pricing", label: "Tarifs", icon: "💳", prefix: "/myplanning/pricing" },
     ],
   },
-];
-
-const SIDEBAR_TEAM_GROUPS: NavGroup[] = [
   {
-    title: "Team / Espaces",
+    title: "Équipe & organisation",
     links: [
       { href: "/myplanning/team", label: "Espaces", icon: "👥", prefix: "/myplanning/team" },
       { href: "/myplanning/team", label: "Membres & rôles", icon: "🧩", prefix: "/myplanning/team" },
       { href: "/myplanning/app/attendance/scan", label: "Présence", icon: "🕒", prefix: "/myplanning/app/attendance" },
-      { href: "/myplanning/app/integrations", label: "Intégrations", icon: "🔌", prefix: "/myplanning/app/integrations" },
-    ],
-  },
-];
-
-const SIDEBAR_ENTERPRISE_GROUPS: NavGroup[] = [
-  {
-    title: "Enterprise",
-    links: [
       { href: "/myplanning/enterprise", label: "Organisation", icon: "🏢", prefix: "/myplanning/enterprise" },
       { href: "/myplanning/enterprise/demo", label: "Démo enterprise", icon: "🧪", prefix: "/myplanning/enterprise/demo" },
-      { href: "/myplanning/pricing", label: "Offres & SLA", icon: "📊", prefix: "/myplanning/pricing" },
+      { href: "/myplanning/enterprise", label: "Workspaces entreprise", icon: "📊", prefix: "/myplanning/orgs" },
     ],
   },
 ];
@@ -97,12 +88,23 @@ function isAuthRoute(pathname: string): boolean {
 }
 
 function isMarketingRoute(pathname: string): boolean {
-  return MARKETING_ROUTES.has(pathname) || isAuthRoute(pathname);
+  if (!pathname.startsWith("/myplanning")) return false;
+  if (isAuthRoute(pathname)) return true;
+  return !isProductRoute(pathname);
 }
 
 function isProductRoute(pathname: string): boolean {
   if (!pathname.startsWith("/myplanning")) return false;
-  return !isMarketingRoute(pathname);
+  return (
+    pathname.startsWith("/myplanning/app") ||
+    pathname.startsWith("/myplanning/team") ||
+    pathname.startsWith("/myplanning/orgs") ||
+    pathname.startsWith("/myplanning/profile") ||
+    pathname.startsWith("/myplanning/opportunities") ||
+    pathname.startsWith("/myplanning/settings") ||
+    pathname.startsWith("/myplanning/enterprise/dashboard") ||
+    pathname.startsWith("/myplanning/enterprise/onboarding")
+  );
 }
 
 function isStandaloneWorkspace(pathname: string): boolean {
@@ -119,18 +121,11 @@ function detectSidebarTier(pathname: string): SidebarTier {
   return "free";
 }
 
-function tierLabel(tier: SidebarTier): string {
-  if (tier === "enterprise") return "Enterprise";
-  if (tier === "team") return "Team";
-  if (tier === "pro") return "Pro";
-  return "Free";
-}
-
 function sidebarGroupsForTier(tier: SidebarTier): NavGroup[] {
-  if (tier === "enterprise") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS, ...SIDEBAR_TEAM_GROUPS, ...SIDEBAR_ENTERPRISE_GROUPS];
-  if (tier === "team") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS, ...SIDEBAR_TEAM_GROUPS];
-  if (tier === "pro") return [...SIDEBAR_FREE_GROUPS, ...SIDEBAR_PRO_GROUPS];
-  return [...SIDEBAR_FREE_GROUPS];
+  if (tier === "enterprise") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
+  if (tier === "team") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
+  if (tier === "pro") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
+  return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
 }
 
 function fullscreenLinksForTier(tier: SidebarTier): NavEntry[] {
@@ -141,6 +136,24 @@ function fullscreenLinksForTier(tier: SidebarTier): NavEntry[] {
 }
 
 function isActive(pathname: string, entry: NavEntry): boolean {
+  if (entry.href === "/myplanning/app") {
+    return pathname === "/myplanning/app" || pathname.startsWith("/myplanning/app/pro") || pathname.startsWith("/myplanning/team");
+  }
+  if (entry.href === "/myplanning/app/koryxa") {
+    return pathname.startsWith("/myplanning/app/koryxa") && !pathname.startsWith("/myplanning/app/koryxa-enterprise");
+  }
+  if (entry.href === "/myplanning/app/koryxa-enterprise") {
+    return pathname.startsWith("/myplanning/app/koryxa-enterprise");
+  }
+  if (entry.href === "/myplanning/opportunities") {
+    return pathname.startsWith("/myplanning/opportunities");
+  }
+  if (entry.href === "/myplanning/profile") {
+    return pathname.startsWith("/myplanning/profile");
+  }
+  if (entry.href === "/myplanning/settings") {
+    return pathname.startsWith("/myplanning/settings");
+  }
   if (entry.href === "/myplanning/enterprise") {
     return pathname.startsWith("/myplanning/enterprise") || pathname.startsWith("/myplanning/orgs");
   }
@@ -150,13 +163,16 @@ function isActive(pathname: string, entry: NavEntry): boolean {
 }
 
 function breadcrumbTitle(pathname: string): string {
-  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "MyPlanning / Cockpit KORYXA Entreprise";
-  if (pathname.startsWith("/myplanning/app/koryxa")) return "MyPlanning / Cockpit KORYXA";
-  if (pathname.startsWith("/myplanning/team")) return "MyPlanning / Espaces";
-  if (pathname.startsWith("/myplanning/orgs")) return "MyPlanning / Organisations";
-  if (pathname.startsWith("/myplanning/enterprise")) return "MyPlanning / Enterprise";
-  if (pathname.startsWith("/myplanning/pro")) return "MyPlanning / Pro";
-  if (pathname.startsWith("/myplanning/app")) return "MyPlanning / App";
+  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "Plateforme / Entreprise";
+  if (pathname.startsWith("/myplanning/app/koryxa")) return "Plateforme / Trajectoire";
+  if (pathname.startsWith("/myplanning/opportunities")) return "Plateforme / Opportunités";
+  if (pathname.startsWith("/myplanning/profile")) return "Plateforme / Profil";
+  if (pathname.startsWith("/myplanning/settings")) return "Plateforme / Paramètres";
+  if (pathname.startsWith("/myplanning/team")) return "Plateforme / Espaces";
+  if (pathname.startsWith("/myplanning/orgs")) return "Plateforme / Organisations";
+  if (pathname.startsWith("/myplanning/enterprise")) return "Plateforme / Entreprise";
+  if (pathname.startsWith("/myplanning/pro")) return "Plateforme / MyPlanningAI";
+  if (pathname.startsWith("/myplanning/app")) return "Plateforme / Accueil";
   return "MyPlanning";
 }
 
@@ -169,13 +185,11 @@ function ProductSidebar({
   collapsed,
   onToggle,
   groups,
-  tier,
 }: {
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
   groups: NavGroup[];
-  tier: SidebarTier;
 }) {
   return (
     <aside
@@ -185,11 +199,11 @@ function ProductSidebar({
       <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
         {!collapsed ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">MyPlanningAI</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">App Shell {tierLabel(tier)}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Plateforme</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">KORYXA × MyPlanningAI</p>
           </div>
         ) : (
-          <p className="w-full text-center text-xs font-semibold text-slate-500">MP</p>
+          <p className="w-full text-center text-xs font-semibold text-slate-500">KY</p>
         )}
         <button
           onClick={onToggle}
@@ -261,6 +275,9 @@ function ProductTopbar({
           <Link href="/" prefetch className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
             ← Site KORYXA
           </Link>
+          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+            Plateforme connectée
+          </span>
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
         </div>
 
@@ -283,7 +300,7 @@ function ProductTopbar({
             scroll={false}
             className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
           >
-            Tarifs
+            Gérer mon plan
           </Link>
           <button
             type="button"
@@ -302,7 +319,6 @@ function ProductTopbar({
 
 function MarketingHeader({
   ctaHref,
-  ctaLabel,
   pathname,
   isAuthenticated,
   profileHref,
@@ -310,7 +326,6 @@ function MarketingHeader({
   displayName,
 }: {
   ctaHref: string;
-  ctaLabel: string;
   pathname: string;
   isAuthenticated: boolean;
   profileHref: string;
@@ -353,21 +368,39 @@ function MarketingHeader({
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href={profileHref}
-            prefetch
-            scroll={false}
-            title={isAuthenticated ? (displayName || "Mon profil") : "Se connecter"}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
-          >
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
-              {userInitial}
-            </span>
-            <span className="hidden sm:inline">{isAuthenticated ? "Mon profil" : "Connexion"}</span>
-          </Link>
-          <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-            {ctaLabel}
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link
+                href={profileHref}
+                prefetch
+                scroll={false}
+                title={displayName || "Mon profil"}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
+                  {userInitial}
+                </span>
+                <span className="hidden sm:inline">Mon profil</span>
+              </Link>
+              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[148px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                Ouvrir la plateforme
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href={profileHref}
+                prefetch
+                scroll={false}
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+              >
+                Se connecter
+              </Link>
+              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                S’inscrire
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -442,8 +475,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
-  const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/login?redirect=/myplanning/app";
-  const ctaLabel = isAuthenticated ? "Ouvrir l'app" : "Commencer";
+  const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/signup";
   const profileHref = isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/myplanning/profile";
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.email || "";
   const userInitial = displayName ? displayName.charAt(0).toUpperCase() : "M";
@@ -453,7 +485,6 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
       <div className="min-h-screen w-full bg-slate-50">
         <MarketingHeader
           ctaHref={ctaHref}
-          ctaLabel={ctaLabel}
           pathname={pathname}
           isAuthenticated={isAuthenticated}
           profileHref={profileHref}
@@ -541,7 +572,6 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
           collapsed={isSidebarCollapsed}
           onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))}
           groups={sidebarGroups}
-          tier={sidebarTier}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar
@@ -562,12 +592,13 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
       </div>
 
       <nav className="fixed bottom-4 left-1/2 z-40 w-[min(640px,calc(100vw-20px))] -translate-x-1/2 lg:hidden">
-        <div className="grid grid-cols-4 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur">
+        <div className="grid grid-cols-5 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur">
           {[
-            { href: "/myplanning/app", label: "App" },
-            { href: "/myplanning/team", label: "Espaces" },
-            { href: "/myplanning/enterprise", label: "Org" },
-            { href: "/myplanning/app/pro/stats", label: "Stats" },
+            { href: "/myplanning/app", label: "Accueil" },
+            { href: "/myplanning/app/koryxa", label: "Traj." },
+            { href: "/myplanning/app/koryxa-enterprise", label: "Entr." },
+            { href: "/chatlaya", label: "Chat" },
+            { href: "/myplanning/profile", label: "Profil" },
           ].map((item) => (
             <Link
               key={item.href}

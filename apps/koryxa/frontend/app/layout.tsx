@@ -3,11 +3,9 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import Headbar from "@/components/layout/headbar";
-import Sidebar from "@/components/layout/sidebar";
-import Footer from "@/components/layout/footer";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import PWARegister from "@/components/util/PWARegister";
+import RouteShell from "@/components/layout/RouteShell";
 
 export const metadata: Metadata = {
   title: "KORYXA",
@@ -38,33 +36,11 @@ export default function RootLayout(props: { children: ReactNode }) {
         <meta charSet="utf-8" />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 antialiased">
-        <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
-        <div className="relative flex min-h-screen flex-col">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,rgba(186,230,253,0.32),transparent_62%)]" aria-hidden />
-          <AuthProvider>
-            <PWARegister />
-            <div className="sticky top-0 z-40">
-              <Headbar />
-            </div>
-            <div
-              className="grid flex-1 gap-0"
-              style={{ gridTemplateColumns: "auto minmax(0,1fr)" }}
-            >
-              <div className="hidden h-full sm:block">
-                <Sidebar />
-              </div>
-              <div className="min-w-0 flex min-h-0 flex-col">
-                <main
-                  id="content"
-                  className="relative flex w-full flex-1 flex-col px-4 pb-10 pt-6 sm:px-6 lg:px-8"
-                >
-                  <div className="flex-1">{children}</div>
-                  <Footer />
-                </main>
-              </div>
-            </div>
-          </AuthProvider>
-        </div>
+        <a href="#page-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
+        <AuthProvider>
+          <PWARegister />
+          <RouteShell>{children}</RouteShell>
+        </AuthProvider>
       </body>
     </html>
   );

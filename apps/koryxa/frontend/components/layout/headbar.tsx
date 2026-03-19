@@ -68,9 +68,9 @@ const PUBLIC_SEARCH_ACTIONS = [
     keywords: ["entreprise", "need", "mission", "opportunite"],
   },
   {
-    href: "/entreprise#deposer",
-    label: "Déposer un besoin entreprise",
-    hint: "Formulaire de dépôt fonctionnel",
+    href: "/entreprise/demarrer",
+    label: "Décrire un besoin entreprise",
+    hint: "Lancer la qualification du besoin",
     keywords: ["deposer", "besoin", "brief", "entreprise"],
   },
   {

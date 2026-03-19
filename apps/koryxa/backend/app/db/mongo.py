@@ -114,6 +114,12 @@ async def connect_to_mongo() -> None:
             await _db["enterprise_missions"].create_index([("need_id", 1)], unique=True)
             await _db["enterprise_opportunities"].create_index([("need_id", 1)], unique=True)
             await _db["enterprise_opportunities"].create_index([("status", 1), ("published_at", -1)])
+            await _db["enterprise_task_bindings"].create_index(
+                [("need_id", 1), ("user_id", 1), ("step_key", 1)],
+                unique=True,
+            )
+            await _db["enterprise_task_bindings"].create_index([("user_id", 1), ("context_id", 1), ("updated_at", -1)])
+            await _db["enterprise_task_bindings"].create_index([("myplanning_task_id", 1)], sparse=True)
             await _db["public_products"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("status", 1), ("visible", 1), ("type", 1)])

@@ -5,15 +5,28 @@ from typing import Any
 from app.services.ai_json import generate_structured_json
 
 
+def _normalized(value: str | None) -> str:
+    return " ".join((value or "").strip().split())
+
+
+def _recommended_treatment_mode(preference: str) -> str:
+    normalized = _normalized(preference).lower()
+    if "priv" in normalized:
+        return "prive"
+    if "publ" in normalized or "opportunit" in normalized:
+        return "publie"
+    return "accompagne"
+
+
 def _derive_opportunity_type(need_type: str) -> str:
-    normalized = (need_type or "").strip().lower()
-    if normalized == "stage":
+    normalized = _normalized(need_type).lower()
+    if "stage" in normalized:
         return "stage"
-    if normalized == "collaboration":
+    if "collaboration" in normalized:
         return "collaboration"
-    if normalized in {"recherche", "coordination", "automatisation"}:
+    if "automatisation" in normalized or "projet" in normalized:
         return "project"
-    if normalized == "support":
+    if "appui" in normalized:
         return "accompagnement"
     return "mission"
 
@@ -32,41 +45,58 @@ def _treatment_mission_status(treatment_mode: str) -> str:
     return "structured"
 
 
+def _derived_title(payload: dict[str, Any]) -> str:
+    primary_goal = _normalized(payload["primary_goal"])
+    expected_result = _normalized(payload["expected_result"])
+    return f"{primary_goal} • {expected_result}"
+
+
+def _fallback_next_action(recommended_mode: str) -> str:
+    if recommended_mode == "publie":
+        return "Relire la mission structurée avant publication et ouvrir le cockpit entreprise."
+    if recommended_mode == "prive":
+        return "Valider le besoin structuré puis ouvrir le cockpit pour organiser l'exécution."
+    return "Passer par un cadrage accompagné puis ouvrir le cockpit d'exécution."
+
+
 def _fallback_structure(payload: dict[str, Any]) -> dict[str, Any]:
-    treatment_mode = payload["treatment_mode"]
+    recommended_mode = _recommended_treatment_mode(payload["treatment_preference"])
     opportunity_type = _derive_opportunity_type(payload["need_type"])
-    qualification_score = 78 if treatment_mode == "accompagne" else 72 if treatment_mode == "publie" else 68
-    clarity_level = "strong" if treatment_mode == "accompagne" else "qualified"
+    qualification_score = 82 if recommended_mode == "accompagne" else 76 if recommended_mode == "publie" else 70
+    clarity_level = "strong" if recommended_mode == "accompagne" else "qualified"
+    title = _derived_title(payload)
     need_summary = (
-        f"Besoin {payload['need_type']} pour {payload['organisation']} : {payload['title']}. "
-        f"Le contexte principal est {payload['context'].strip().rstrip('.')}. "
-        f"Le livrable attendu est {payload['expected_deliverable'].strip().rstrip('.')}"
+        f"L'objectif principal est {_normalized(payload['primary_goal']).lower()}. "
+        f"Le besoin ressemble à {_normalized(payload['need_type']).lower()} avec un résultat attendu centré sur "
+        f"{_normalized(payload['expected_result']).lower()}. "
+        f"Le cadre actuel correspond à {_normalized(payload['team_context']).lower()}."
     )
-    mission_title = payload["title"].strip()
-    opportunity_title = mission_title
     return {
+        "title": title,
         "need_summary": need_summary,
         "qualification_score": qualification_score,
         "clarity_level": clarity_level,
+        "recommended_treatment_mode": recommended_mode,
+        "next_recommended_action": _fallback_next_action(recommended_mode),
         "mission": {
-            "title": mission_title,
-            "summary": f"Mission structurée autour de {payload['need_type']} avec un résultat attendu clair pour {payload['organisation']}.",
-            "deliverable": payload["expected_deliverable"],
-            "execution_mode": treatment_mode,
+            "title": f"Mission : {title}",
+            "summary": "Mission structurée à partir d'un objectif business clarifié et d'un besoin opérationnel qualifié.",
+            "deliverable": _normalized(payload["expected_result"]),
+            "execution_mode": recommended_mode,
             "steps": [
-                "Clarifier le périmètre exact",
+                "Clarifier le périmètre et les critères de réussite",
                 "Lancer le lot de travail prioritaire",
-                "Restituer un livrable exploitable",
+                "Restituer un livrable exploitable et relire la suite",
             ],
         },
         "opportunity": {
             "type": opportunity_type,
-            "title": opportunity_title,
-            "summary": f"Opportunité publiée issue d'un besoin déjà cadré pour {payload['organisation']}.",
+            "title": title,
+            "summary": "Opportunité publiée à partir d'un besoin déjà structuré et lisible.",
             "highlights": [
-                opportunity_type,
-                payload["expected_deliverable"],
-                payload["urgency"],
+                _normalized(payload["need_type"]),
+                _normalized(payload["expected_result"]),
+                _normalized(payload["urgency"]),
             ],
         },
     }
@@ -82,26 +112,37 @@ def _coerce_structure(generated: dict[str, Any], fallback: dict[str, Any]) -> di
     if not isinstance(qualification_score, int):
         qualification_score = fallback["qualification_score"]
 
+    recommended_mode = _normalized(str(generated.get("recommended_treatment_mode") or ""))
+    if recommended_mode not in {"prive", "publie", "accompagne"}:
+        recommended_mode = fallback["recommended_treatment_mode"]
+
     return {
-        "need_summary": str(generated.get("need_summary") or "").strip() or fallback["need_summary"],
+        "title": _normalized(str(generated.get("title") or "")) or fallback["title"],
+        "need_summary": _normalized(str(generated.get("need_summary") or "")) or fallback["need_summary"],
         "qualification_score": max(0, min(100, qualification_score)),
-        "clarity_level": str(generated.get("clarity_level") or "").strip() or fallback["clarity_level"],
+        "clarity_level": _normalized(str(generated.get("clarity_level") or "")) or fallback["clarity_level"],
+        "recommended_treatment_mode": recommended_mode,
+        "next_recommended_action": _normalized(str(generated.get("next_recommended_action") or "")) or fallback["next_recommended_action"],
         "mission": {
-            "title": str(mission.get("title") or "").strip() or fallback["mission"]["title"],
-            "summary": str(mission.get("summary") or "").strip() or fallback["mission"]["summary"],
-            "deliverable": str(mission.get("deliverable") or "").strip() or fallback["mission"]["deliverable"],
-            "execution_mode": str(mission.get("execution_mode") or "").strip() or fallback["mission"]["execution_mode"],
-            "steps": [str(step).strip() for step in steps if str(step).strip()] or fallback["mission"]["steps"],
+            "title": _normalized(str(mission.get("title") or "")) or fallback["mission"]["title"],
+            "summary": _normalized(str(mission.get("summary") or "")) or fallback["mission"]["summary"],
+            "deliverable": _normalized(str(mission.get("deliverable") or "")) or fallback["mission"]["deliverable"],
+            "execution_mode": (
+                _normalized(str(mission.get("execution_mode") or ""))
+                if _normalized(str(mission.get("execution_mode") or "")) in {"prive", "publie", "accompagne"}
+                else fallback["mission"]["execution_mode"]
+            ),
+            "steps": [_normalized(str(step)) for step in steps if _normalized(str(step))] or fallback["mission"]["steps"],
         },
         "opportunity": {
             "type": (
-                str(opportunity.get("type") or "").strip().lower()
-                if str(opportunity.get("type") or "").strip().lower() in {"mission", "stage", "collaboration", "project", "accompagnement"}
+                _normalized(str(opportunity.get("type") or "")).lower()
+                if _normalized(str(opportunity.get("type") or "")).lower() in {"mission", "stage", "collaboration", "project", "accompagnement"}
                 else fallback["opportunity"]["type"]
             ),
-            "title": str(opportunity.get("title") or "").strip() or fallback["opportunity"]["title"],
-            "summary": str(opportunity.get("summary") or "").strip() or fallback["opportunity"]["summary"],
-            "highlights": [str(item).strip() for item in highlights if str(item).strip()] or fallback["opportunity"]["highlights"],
+            "title": _normalized(str(opportunity.get("title") or "")) or fallback["opportunity"]["title"],
+            "summary": _normalized(str(opportunity.get("summary") or "")) or fallback["opportunity"]["summary"],
+            "highlights": [_normalized(str(item)) for item in highlights if _normalized(str(item))] or fallback["opportunity"]["highlights"],
         },
     }
 
@@ -109,26 +150,27 @@ def _coerce_structure(generated: dict[str, Any], fallback: dict[str, Any]) -> di
 async def structure_enterprise_need(payload: dict[str, Any]) -> dict[str, Any]:
     fallback = _fallback_structure(payload)
     prompt = f"""
-Tu aides KORYXA Entreprise a transformer un besoin en mission structurée.
+Tu aides KORYXA Entreprise a transformer un objectif business en besoin clair et mission exploitable.
 Retourne uniquement un JSON objet.
 
-Besoin brut:
-- organisation: {payload["organisation"]}
-- pays: {payload["country"]}
-- domaine: {payload["domain"]}
-- titre: {payload["title"]}
+Profil entreprise:
+- objectif principal: {payload["primary_goal"]}
 - type de besoin: {payload["need_type"]}
+- resultat attendu: {payload["expected_result"]}
 - urgence: {payload["urgency"]}
-- mode de traitement: {payload["treatment_mode"]}
-- contexte: {payload["context"]}
-- description: {payload["description"]}
-- livrable attendu: {payload["expected_deliverable"]}
+- preference de traitement: {payload["treatment_preference"]}
+- contexte d'equipe: {payload["team_context"]}
+- accompagnement souhaite: {payload["support_preference"]}
+- brief libre: {payload.get("short_brief") or "non precise"}
 
 JSON attendu:
 {{
+  "title": "string",
   "need_summary": "string",
   "qualification_score": 0,
   "clarity_level": "initial|qualified|strong",
+  "recommended_treatment_mode": "prive|publie|accompagne",
+  "next_recommended_action": "string",
   "mission": {{
     "title": "string",
     "summary": "string",
@@ -145,9 +187,10 @@ JSON attendu:
 }}
 
 Exigences:
+- partir d'un objectif business ou operationnel, pas d'un besoin RH par defaut
 - besoin distinct de la mission
-- mission exploitable et plus claire que le brief initial
-- opportunite seulement si le besoin peut etre publie
+- mission plus claire et exploitable que le brief initial
+- publication seulement si pertinente
 - pas de texte hors JSON
 """.strip()
     generated = await generate_structured_json(prompt)
@@ -156,9 +199,9 @@ Exigences:
     return _coerce_structure(generated, fallback)
 
 
-def derive_statuses(payload: dict[str, Any]) -> dict[str, str]:
+def derive_statuses(recommended_treatment_mode: str) -> dict[str, str]:
     return {
-        "need_status": _treatment_need_status(payload["treatment_mode"]),
-        "mission_status": _treatment_mission_status(payload["treatment_mode"]),
-        "opportunity_status": "published" if payload["treatment_mode"] == "publie" else "draft",
+        "need_status": _treatment_need_status(recommended_treatment_mode),
+        "mission_status": _treatment_mission_status(recommended_treatment_mode),
+        "opportunity_status": "published" if recommended_treatment_mode == "publie" else "draft",
     }

@@ -112,6 +112,7 @@ function isStandaloneWorkspace(pathname: string): boolean {
 }
 
 function detectSidebarTier(pathname: string): SidebarTier {
+  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "enterprise";
   if (pathname.startsWith("/myplanning/enterprise") || pathname.startsWith("/myplanning/orgs")) return "enterprise";
   if (pathname.startsWith("/myplanning/team")) return "team";
   if (pathname.startsWith("/myplanning/pro") || pathname.startsWith("/myplanning/app/pro")) return "pro";
@@ -149,6 +150,7 @@ function isActive(pathname: string, entry: NavEntry): boolean {
 }
 
 function breadcrumbTitle(pathname: string): string {
+  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "MyPlanning / Cockpit KORYXA Entreprise";
   if (pathname.startsWith("/myplanning/app/koryxa")) return "MyPlanning / Cockpit KORYXA";
   if (pathname.startsWith("/myplanning/team")) return "MyPlanning / Espaces";
   if (pathname.startsWith("/myplanning/orgs")) return "MyPlanning / Organisations";

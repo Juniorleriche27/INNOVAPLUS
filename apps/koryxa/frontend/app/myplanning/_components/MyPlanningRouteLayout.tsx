@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 type NavEntry = {
   href: string;
@@ -271,27 +272,28 @@ function ProductTopbar({
 }) {
   const logoutRedirect = pathname.startsWith("/myplanning/") ? "/myplanning/login" : "/login";
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/92 sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
       <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/" prefetch className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+          <Link href="/" prefetch className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100">
             ← Site KORYXA
           </Link>
-          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">
+          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100">
             Plateforme connectée
           </span>
-          <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">{breadcrumbTitle(pathname)}</p>
+          <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{breadcrumbTitle(pathname)}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <ThemeToggle showLabel={false} />
           <Link
             href={profileHref}
             prefetch
             scroll={false}
             title={isAuthenticated ? (displayName || "Mon profil") : "Se connecter"}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
           >
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[11px] font-bold text-sky-700 dark:bg-sky-500/15 dark:text-sky-100">
               {userInitial}
             </span>
             <span>{isAuthenticated ? "Mon profil" : "Connexion"}</span>
@@ -300,21 +302,21 @@ function ProductTopbar({
             href="/myplanning/pricing"
             prefetch
             scroll={false}
-            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
           >
             Gérer mon plan
           </Link>
           {isAuthenticated ? (
             <LogoutButton
               redirectTo={logoutRedirect}
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600"
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
             />
           ) : null}
           <button
             type="button"
             onClick={onToggleFullscreen}
             title={isFullscreen ? "Quitter le plein écran (Esc)" : "Activer le plein écran"}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
           >
             <FullscreenIcon active={isFullscreen} />
             {isFullscreen ? "Quitter le plein écran" : "Plein écran"}
@@ -341,15 +343,15 @@ function MarketingHeader({
   displayName: string;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur sm:px-[var(--content-pad)] lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-[var(--content-pad-sm)] py-3 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/92 sm:px-[var(--content-pad)] lg:px-8">
       <div className="mx-auto flex w-full items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
         <Link href="/myplanning" className="flex min-w-0 items-center gap-3">
           <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
             <span className="text-xs font-semibold text-white">MP</span>
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-black tracking-wide text-slate-900">MyPlanningAI</p>
-            <p className="hidden truncate text-[11px] text-slate-500 md:block">Organisation universelle • Powered by KORYXA</p>
+            <p className="truncate text-base font-black tracking-wide text-slate-900 dark:text-white">MyPlanningAI</p>
+            <p className="hidden truncate text-[11px] text-slate-500 dark:text-slate-400 md:block">Organisation universelle • Powered by KORYXA</p>
           </div>
         </Link>
 
@@ -365,8 +367,8 @@ function MarketingHeader({
                 className={clsx(
                   "inline-flex min-w-[110px] justify-center rounded-xl border px-3 py-2 text-[12px] font-semibold shadow-sm transition",
                   active
-                    ? "border-sky-200 bg-sky-50 text-sky-700"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50/70 hover:text-sky-700"
+                    ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50/70 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-sky-400/60 dark:hover:bg-slate-900 dark:hover:text-sky-100"
                 )}
               >
                 {link.label}
@@ -376,6 +378,7 @@ function MarketingHeader({
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {isAuthenticated ? (
             <>
               <Link
@@ -383,18 +386,18 @@ function MarketingHeader({
                 prefetch
                 scroll={false}
                 title={displayName || "Mon profil"}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
               >
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700 dark:bg-sky-500/15 dark:text-sky-100">
                   {userInitial}
                 </span>
                 <span className="hidden sm:inline">Mon profil</span>
               </Link>
               <LogoutButton
                 redirectTo={pathname}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
               />
-              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[148px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[148px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">
                 Ouvrir la plateforme
               </Link>
             </>
@@ -404,11 +407,11 @@ function MarketingHeader({
                 href={profileHref}
                 prefetch
                 scroll={false}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
               >
                 Se connecter
               </Link>
-              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+              <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">
                 S’inscrire
               </Link>
             </>
@@ -494,7 +497,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   if (!productRoute) {
     return (
-      <div className="min-h-screen w-full bg-slate-50">
+      <div className="min-h-screen w-full bg-slate-50 transition-colors dark:bg-slate-950">
         <MarketingHeader
           ctaHref={ctaHref}
           pathname={pathname}
@@ -508,14 +511,14 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
             {children}
           </div>
         </main>
-        <footer className="border-t border-slate-200 bg-white px-[var(--content-pad-sm)] py-4 text-xs text-slate-500 sm:px-[var(--content-pad)] lg:px-8">
+        <footer className="border-t border-slate-200 bg-white px-[var(--content-pad-sm)] py-4 text-xs text-slate-500 transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 sm:px-[var(--content-pad)] lg:px-8">
           <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
             <p>MyPlanningAI • Produit SaaS de pilotage quotidien.</p>
             <div className="flex items-center gap-3">
-              <Link href="/privacy" className="hover:text-sky-700">
+              <Link href="/privacy" className="hover:text-sky-700 dark:hover:text-sky-300">
                 Confidentialité
               </Link>
-              <Link href="/terms" className="hover:text-sky-700">
+              <Link href="/terms" className="hover:text-sky-700 dark:hover:text-sky-300">
                 Mentions légales
               </Link>
             </div>
@@ -526,14 +529,14 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   }
 
   if (standaloneWorkspace) {
-    return <div className="min-h-screen w-full bg-slate-100">{children}</div>;
+    return <div className="min-h-screen w-full bg-slate-100 transition-colors dark:bg-slate-950">{children}</div>;
   }
 
   if (isFullscreen) {
     return (
-      <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
+      <div className="min-h-screen w-full overflow-x-hidden bg-slate-100 transition-colors dark:bg-slate-950">
         <div className="pointer-events-none fixed inset-x-0 top-0 z-50 p-2 sm:p-3">
-          <div className="pointer-events-auto mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-md backdrop-blur">
+          <div className="pointer-events-auto mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-md backdrop-blur dark:border-slate-800 dark:bg-slate-950/92">
             <div className="flex flex-wrap items-center gap-1">
               {fullscreenQuickLinks.map((entry) => {
                 const active = isActive(pathname, entry);
@@ -547,8 +550,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
                     className={clsx(
                       "rounded-full border px-3 py-1 text-xs font-semibold transition",
                       active
-                        ? "border-sky-200 bg-sky-50 text-sky-700"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                        ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
                     )}
                   >
                     {entry.label}
@@ -560,7 +563,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
               type="button"
               onClick={toggleFullscreen}
               title="Quitter le plein écran (Esc)"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
             >
               <FullscreenIcon active />
               Quitter (Esc)
@@ -577,7 +580,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-slate-100">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-100 transition-colors dark:bg-slate-950">
       <div className="flex min-h-screen w-full overflow-x-hidden">
         <ProductSidebar
           pathname={pathname}
@@ -604,7 +607,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
       </div>
 
       <nav className="fixed bottom-4 left-1/2 z-40 w-[min(640px,calc(100vw-20px))] -translate-x-1/2 lg:hidden">
-        <div className="grid grid-cols-5 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur">
+        <div className="grid grid-cols-5 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/92">
           {[
             { href: "/myplanning/app", label: "Accueil" },
             { href: "/myplanning/app/koryxa", label: "Traj." },
@@ -619,7 +622,9 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
               scroll={false}
               className={clsx(
                 "rounded-xl px-2 py-2 text-center text-xs font-semibold",
-                pathname.startsWith(item.href) ? "bg-sky-600 text-white" : "text-slate-700 hover:bg-slate-100"
+                pathname.startsWith(item.href)
+                  ? "bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950"
+                  : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
               )}
             >
               {item.label}

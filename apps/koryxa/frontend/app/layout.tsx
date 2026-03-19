@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ThemeProvider, themeInitScript } from "@/components/theme/ThemeProvider";
 import PWARegister from "@/components/util/PWARegister";
 import RouteShell from "@/components/layout/RouteShell";
 
@@ -34,13 +35,16 @@ export default function RootLayout(props: { children: ReactNode }) {
     <html lang="fr">
       <head>
         <meta charSet="utf-8" />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 antialiased">
+      <body className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 antialiased transition-colors duration-300">
         <a href="#page-content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-16 z-50 rounded bg-sky-600 px-3 py-2 text-white">Aller au contenu</a>
-        <AuthProvider>
-          <PWARegister />
-          <RouteShell>{children}</RouteShell>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <PWARegister />
+            <RouteShell>{children}</RouteShell>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

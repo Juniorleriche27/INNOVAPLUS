@@ -35,21 +35,15 @@ export default function KoryxaConnectedHomePage() {
     <main className="grid gap-4">
       <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,rgba(14,116,144,0.10),rgba(255,255,255,0.98))] p-6 shadow-sm">
         <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
-              Accueil connecté KORYXA
-            </span>
-            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-              propulsé par MyPlanningAI
-            </span>
-          </div>
+          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
+            Accueil connecté KORYXA
+          </span>
           <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
             Choisissez la bonne zone de travail KORYXA.
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            Cet accueil connecté évite de vous jeter dans le dashboard MyPlanning brut. Ici, vous choisissez
-            directement entre votre trajectoire, votre espace entreprise et ChatLAYA, avec une navigation pensée pour
-            KORYXA.
+            Ici, vous entrez d’abord dans l’univers de travail KORYXA. Choisissez directement entre votre trajectoire,
+            votre espace entreprise et ChatLAYA, sans être jeté dans un dashboard générique qui n’a pas le bon contexte.
           </p>
         </div>
       </section>
@@ -102,12 +96,12 @@ export default function KoryxaConnectedHomePage() {
               trajectoire, entreprise, opportunités et validations.
             </p>
             <p>
-              <span className="font-semibold text-slate-950">MyPlanningAI</span> reste le moteur d’exécution :
-              tâches, planification, suivi et vues de travail.
+              Le moteur d’exécution existe en arrière-plan pour les tâches, la planification et le suivi, mais
+              l’entrée visible reste KORYXA.
             </p>
             <p>
-              Vous n’êtes donc plus renvoyé par défaut vers le dashboard générique MyPlanning lorsque vous entrez dans
-              la plateforme depuis le site public KORYXA.
+              Vous n’êtes donc plus renvoyé par défaut vers un dashboard MyPlanning brut lorsque vous entrez dans la
+              plateforme depuis le site public KORYXA.
             </p>
           </div>
         </article>

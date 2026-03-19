@@ -10,6 +10,10 @@ from app.core.ai import FALLBACK_REPLY, generate_answer
 from app.core.config import settings
 from app.core.rag_client import retrieve_rag_results
 logger = logging.getLogger(__name__)
+CHATLAYA_TIMEOUT_REPLY = (
+    "ChatLAYA met trop de temps à répondre pour le moment. Réessayez dans un instant "
+    "ou reformulez votre demande plus brièvement si besoin."
+)
 
 GREETING_PHRASES = {
     "bonjour",
@@ -287,19 +291,26 @@ async def generate_chat_reply(
         product_context=product_context,
         kind=message_kind,
     )
+    generation_timeout_s = max(12, min(int(settings.LLM_TIMEOUT or 30), 40))
     try:
-        response_text = await asyncio.to_thread(
-            generate_answer,
-            prompt,
-            settings.CHAT_PROVIDER,
-            settings.CHAT_MODEL,
-            settings.LLM_TIMEOUT,
-            None,
-            None,
-            None,
-            None,
-            None,
+        response_text = await asyncio.wait_for(
+            asyncio.to_thread(
+                generate_answer,
+                prompt,
+                settings.CHAT_PROVIDER,
+                settings.CHAT_MODEL,
+                settings.LLM_TIMEOUT,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ),
+            timeout=generation_timeout_s,
         )
+    except asyncio.TimeoutError:
+        logger.warning("ChatLAYA generation timed out after %ss", generation_timeout_s)
+        return CHATLAYA_TIMEOUT_REPLY, []
     except Exception as exc:  # noqa: BLE001
         logger.warning("ChatLAYA generation failed: %s", exc)
         return FALLBACK_REPLY, []

@@ -103,7 +103,7 @@ export default function PublicHeader() {
             className={clsx(
               "inline-flex min-w-[148px] items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white transition",
               isAuthenticated
-                ? "bg-slate-950 hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400"
+                ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] shadow-[0_18px_40px_rgba(2,132,199,0.22)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.28)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]"
                 : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
             )}
           >
@@ -165,7 +165,7 @@ export default function PublicHeader() {
                 className={clsx(
                   "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold text-white",
                   isAuthenticated
-                    ? "bg-slate-950 dark:bg-sky-500 dark:text-slate-950"
+                    ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] shadow-[0_16px_36px_rgba(2,132,199,0.22)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white"
                     : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] shadow-[0_16px_36px_rgba(2,132,199,0.24)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950",
                   isAuthenticated ? "sm:col-span-2" : "",
                 )}

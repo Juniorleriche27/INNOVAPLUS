@@ -170,7 +170,7 @@ export default function KoryxaCockpitClient() {
   const searchParams = useSearchParams();
   const flowId = (searchParams.get("flow_id") || "").trim();
   const contextIdFromUrl = (searchParams.get("context_id") || "").trim();
-  const { user, loading: authLoading, initialLoggedIn } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [context, setContext] = useState<CockpitContext | null>(null);
   const [tasks, setTasks] = useState<MyPlanningTask[]>([]);
@@ -180,7 +180,7 @@ export default function KoryxaCockpitClient() {
   const [proofBusyKey, setProofBusyKey] = useState<string | null>(null);
   const [proofDrafts, setProofDrafts] = useState<Record<string, ProofDraft>>({});
 
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const isAuthenticated = Boolean(user?.email);
   const loginHref = `/myplanning/login?redirect=${encodeURIComponent(
     `/myplanning/app/koryxa?flow_id=${encodeURIComponent(flowId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`,
   )}`;

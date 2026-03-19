@@ -9,13 +9,6 @@ function isProtectedPath(pathname: string) {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-function getLoginPath(pathname: string): "/login" | "/myplanning/login" {
-  if (pathname === "/myplanning/app" || pathname.startsWith("/myplanning/app/")) {
-    return "/myplanning/login";
-  }
-  return "/login";
-}
-
 const SESSION_COOKIE = "innova_session";
 const SITE_BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://innovaplus.africa").replace(/\/+$/, "");
 const LEGACY_API_HOST = "https://api.innovaplus.africa";
@@ -57,8 +50,7 @@ function getCookieDomain(siteBase: string): string | null {
   }
 }
 
-function clearSessionCookieHeader(): string {
-  const domain = getCookieDomain(SITE_BASE_URL);
+function buildClearSessionCookieHeader(domain?: string | null): string {
   const secure = SITE_BASE_URL.startsWith("https://");
   const parts = [
     `${SESSION_COOKIE}=`,
@@ -70,6 +62,39 @@ function clearSessionCookieHeader(): string {
   if (domain) parts.push(`Domain=${domain}`);
   if (secure) parts.push("Secure");
   return parts.join("; ");
+}
+
+function appendSessionClearHeaders(response: NextResponse) {
+  response.headers.append("Set-Cookie", buildClearSessionCookieHeader(undefined));
+  const domain = getCookieDomain(SITE_BASE_URL);
+  if (domain) {
+    response.headers.append("Set-Cookie", buildClearSessionCookieHeader(domain));
+  }
+}
+
+const CONNECTED_AUTH_REQUIRED_PREFIXES = [
+  "/chatlaya",
+  "/myplanning/app",
+  "/myplanning/profile",
+  "/myplanning/settings",
+  "/myplanning/opportunities",
+  "/myplanning/team",
+  "/myplanning/orgs",
+  "/myplanning/enterprise/dashboard",
+  "/myplanning/enterprise/onboarding",
+  "/account",
+  "/onboarding",
+];
+
+function requiresConnectedAuth(pathname: string) {
+  return CONNECTED_AUTH_REQUIRED_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function getLoginPath(pathname: string): "/login" | "/myplanning/login" {
+  if (requiresConnectedAuth(pathname)) {
+    return "/myplanning/login";
+  }
+  return "/login";
 }
 
 async function hasValidSession(request: NextRequest): Promise<boolean> {
@@ -137,10 +162,6 @@ const V1_PUBLIC_PATHS = [
   "/myplanning",
 ];
 
-const V1_AUTH_REQUIRED_PREFIXES = [
-  "/myplanning/app",
-];
-
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
@@ -157,7 +178,7 @@ export async function middleware(request: NextRequest) {
 
   if (V1_SIMPLE) {
     const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-    const forceAuth = V1_AUTH_REQUIRED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    const forceAuth = requiresConnectedAuth(pathname);
     const allowAnonymous = isPublic && !forceAuth;
 
     if (!hasSession && !allowAnonymous) {
@@ -179,7 +200,7 @@ export async function middleware(request: NextRequest) {
           pathname + (searchParams.toString() ? `?${searchParams}` : "")
         );
         const res = NextResponse.redirect(loginUrl);
-        res.headers.append("Set-Cookie", clearSessionCookieHeader());
+        appendSessionClearHeaders(res);
         return res;
       }
     }
@@ -235,7 +256,31 @@ export async function middleware(request: NextRequest) {
         pathname + (searchParams.toString() ? `?${searchParams}` : "")
       );
       const res = NextResponse.redirect(loginUrl);
-      res.headers.append("Set-Cookie", clearSessionCookieHeader());
+      appendSessionClearHeaders(res);
+      return res;
+    }
+  }
+
+  if (requiresConnectedAuth(pathname) && !hasSession) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = getLoginPath(pathname);
+    loginUrl.searchParams.set(
+      "redirect",
+      pathname + (searchParams.toString() ? `?${searchParams}` : "")
+    );
+    return NextResponse.redirect(loginUrl);
+  }
+  if (requiresConnectedAuth(pathname) && hasSession) {
+    const ok = await ensureSessionValid();
+    if (!ok) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = getLoginPath(pathname);
+      loginUrl.searchParams.set(
+        "redirect",
+        pathname + (searchParams.toString() ? `?${searchParams}` : "")
+      );
+      const res = NextResponse.redirect(loginUrl);
+      appendSessionClearHeaders(res);
       return res;
     }
   }
@@ -261,7 +306,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
     const res = NextResponse.next();
-    res.headers.append("Set-Cookie", clearSessionCookieHeader());
+    appendSessionClearHeaders(res);
     return res;
   }
 

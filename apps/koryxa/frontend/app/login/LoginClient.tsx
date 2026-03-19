@@ -34,7 +34,7 @@ export default function LoginClient({
     requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
       ? requestedRedirect
       : defaultRedirect;
-  const { refresh, user, initialLoggedIn } = useAuth();
+  const { refresh, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -54,10 +54,10 @@ export default function LoginClient({
 
   // If already logged in, redirect client-side (avoids server-side fetch failure).
   useEffect(() => {
-    if (user || initialLoggedIn) {
+    if (user?.email) {
       router.replace(redirect);
     }
-  }, [user, initialLoggedIn, redirect, router]);
+  }, [user, redirect, router]);
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,7 +115,7 @@ export default function LoginClient({
               : "Code invalide.";
         throw new Error(msg);
       }
-      void refresh();
+      await refresh();
       if (isPreviewDomain) {
         window.location.href = `${SITE_BASE_URL}${redirect}`;
         return;

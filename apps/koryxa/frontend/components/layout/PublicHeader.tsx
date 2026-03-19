@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 type PublicNavLink = {
   href: string;
@@ -42,10 +43,10 @@ function IconClose(props: React.SVGProps<SVGSVGElement>) {
 
 export default function PublicHeader() {
   const pathname = usePathname();
-  const { user, initialLoggedIn } = useAuth();
+  const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const isAuthenticated = Boolean(user?.email);
   const platformHref = isAuthenticated ? "/myplanning/app" : "/signup";
   const accountHref = isAuthenticated ? "/myplanning/profile" : "/login";
 
@@ -89,6 +90,12 @@ export default function PublicHeader() {
           >
             {isAuthenticated ? "Mon profil" : "Se connecter"}
           </Link>
+          {isAuthenticated ? (
+            <LogoutButton
+              redirectTo={pathname}
+              className="inline-flex min-w-[124px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-rose-200 hover:text-rose-600"
+            />
+          ) : null}
           <Link
             href={platformHref}
             className="inline-flex min-w-[148px] items-center justify-center rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
@@ -138,10 +145,19 @@ export default function PublicHeader() {
               >
                 {isAuthenticated ? "Mon profil" : "Se connecter"}
               </Link>
+              {isAuthenticated ? (
+                <LogoutButton
+                  redirectTo={pathname}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"
+                />
+              ) : null}
               <Link
                 href={platformHref}
                 onClick={() => setMobileOpen(false)}
-                className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+                className={clsx(
+                  "inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white",
+                  isAuthenticated ? "sm:col-span-2" : "",
+                )}
               >
                 {isAuthenticated ? "Ouvrir la plateforme" : "S’inscrire"}
               </Link>

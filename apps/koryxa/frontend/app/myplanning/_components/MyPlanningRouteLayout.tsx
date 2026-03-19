@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/components/auth/AuthProvider";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 type NavEntry = {
   href: string;
@@ -268,6 +269,7 @@ function ProductTopbar({
   userInitial: string;
   displayName: string;
 }) {
+  const logoutRedirect = pathname.startsWith("/myplanning/") ? "/myplanning/login" : "/login";
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
       <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
@@ -302,6 +304,12 @@ function ProductTopbar({
           >
             Gérer mon plan
           </Link>
+          {isAuthenticated ? (
+            <LogoutButton
+              redirectTo={logoutRedirect}
+              className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600"
+            />
+          ) : null}
           <button
             type="button"
             onClick={onToggleFullscreen}
@@ -382,6 +390,10 @@ function MarketingHeader({
                 </span>
                 <span className="hidden sm:inline">Mon profil</span>
               </Link>
+              <LogoutButton
+                redirectTo={pathname}
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600"
+              />
               <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[148px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
                 Ouvrir la plateforme
               </Link>
@@ -409,8 +421,8 @@ function MarketingHeader({
 
 export default function MyPlanningRouteLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { user, initialLoggedIn } = useAuth();
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user?.email);
   const productRoute = isProductRoute(pathname);
   const standaloneWorkspace = isStandaloneWorkspace(pathname);
 

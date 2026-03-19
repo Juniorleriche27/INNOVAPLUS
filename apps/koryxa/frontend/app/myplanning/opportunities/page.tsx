@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function MyPlanningOpportunitiesPage() {
-  const { user, loading, initialLoggedIn } = useAuth();
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const { user, loading } = useAuth();
+  const isAuthenticated = Boolean(user?.email);
 
   if (loading) {
     return (

@@ -25,8 +25,8 @@ const MODULES = [
 ];
 
 export default function MyPlanningLandingPage() {
-  const { user, initialLoggedIn } = useAuth();
-  const isAuthenticated = initialLoggedIn || Boolean(user?.email);
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user?.email);
 
   return (
     <div className="space-y-8">

@@ -152,6 +152,7 @@ const V1_PUBLIC_PATHS = [
   "/",
   "/login",
   "/signup",
+  "/logout",
   "/school",
   "/trajectoire",
   "/entreprise",
@@ -167,6 +168,9 @@ const V1_PUBLIC_PATHS = [
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  if (pathname === "/logout" || pathname.startsWith("/logout/")) {
+    return NextResponse.next();
+  }
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE));
   let sessionChecked = false;
   let sessionValid = false;

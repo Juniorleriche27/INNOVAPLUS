@@ -1,8 +1,9 @@
 "use client";
 
 import clsx from "clsx";
-import { MouseEvent } from "react";
+import { MouseEvent, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { INNOVA_API_BASE } from "@/lib/env";
 
 type LogoutButtonProps = {
   redirectTo?: string;
@@ -22,20 +23,43 @@ export default function LogoutButton({
   className,
 }: LogoutButtonProps) {
   const { clear } = useAuth();
+  const [pending, setPending] = useState(false);
 
-  function onClick(event: MouseEvent<HTMLAnchorElement>) {
+  async function onClick(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    clear();
     const redirect = normalizeRedirect(redirectTo);
-    const target = `/logout?redirect=${encodeURIComponent(redirect)}`;
-    window.location.assign(target);
+    if (pending) return;
+    setPending(true);
+    let apiLogoutOk = false;
+
+    try {
+      const response = await fetch(`${INNOVA_API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+      apiLogoutOk = response.ok;
+    } catch {
+      apiLogoutOk = false;
+    } finally {
+      clear();
+    }
+
+    if (apiLogoutOk) {
+      window.location.replace(redirect);
+      return;
+    }
+
+    const fallbackTarget = `/logout?redirect=${encodeURIComponent(redirect)}`;
+    window.location.replace(fallbackTarget);
   }
 
   return (
     <a
       href={`/logout?redirect=${encodeURIComponent(normalizeRedirect(redirectTo))}`}
       onClick={onClick}
-      className={clsx(className)}
+      aria-disabled={pending}
+      className={clsx(className, pending ? "pointer-events-none opacity-70" : "")}
     >
       {label}
     </a>

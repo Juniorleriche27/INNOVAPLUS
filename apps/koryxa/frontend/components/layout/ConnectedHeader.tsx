@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 
 type ConnectedNavLink = {
   href: string;
@@ -116,6 +117,7 @@ export default function ConnectedHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <ThemeToggle variant="dark" showLabel={false} />
           <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200">
             {isAuthenticated ? "Connecté" : "Accès protégé"}
           </span>
@@ -150,6 +152,7 @@ export default function ConnectedHeader() {
       {mobileOpen ? (
         <div className="border-t border-slate-800 bg-slate-950 px-4 py-4 xl:hidden">
           <div className="mx-auto flex w-full max-w-[var(--app-max-w)] flex-col gap-2">
+            <ThemeToggle variant="dark" className="justify-center" />
             {CONNECTED_NAV_LINKS.map((link) => {
               const active = link.match(pathname);
               return (

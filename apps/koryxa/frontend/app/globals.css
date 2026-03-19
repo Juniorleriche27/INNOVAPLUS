@@ -18,6 +18,7 @@
 html.dark {
   --background: #020617;
   --foreground: #e2e8f0;
+  color-scheme: dark;
 }
 
 * {
@@ -39,6 +40,14 @@ body {
   color: var(--foreground);
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark body {
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 38%),
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 28%),
+    linear-gradient(180deg, #020617 0%, #06101f 44%, #0b1323 100%);
 }
 
 
@@ -50,6 +59,10 @@ a {
 ::selection {
   background: rgba(15, 23, 42, 0.15);
   color: inherit;
+}
+
+html.dark ::selection {
+  background: rgba(56, 189, 248, 0.28);
 }
 
 /* Sidebar scrollbars (discrets) */

@@ -125,8 +125,12 @@ export default function KoryxaEnterpriseCockpitClient() {
   const [taskBusyId, setTaskBusyId] = useState<string | null>(null);
 
   const isAuthenticated = Boolean(user?.email);
+  const connectedHomeHref = "/myplanning/app/koryxa-home";
+  const cockpitHref = needId
+    ? `/myplanning/app/koryxa-enterprise?need_id=${encodeURIComponent(needId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`
+    : connectedHomeHref;
   const loginHref = `/myplanning/login?redirect=${encodeURIComponent(
-    `/myplanning/app/koryxa-enterprise?need_id=${encodeURIComponent(needId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`,
+    cockpitHref,
   )}`;
 
   const taskMap = useMemo(() => new Map(tasks.map((task) => [task.id, task] as const)), [tasks]);
@@ -183,8 +187,10 @@ export default function KoryxaEnterpriseCockpitClient() {
 
   useEffect(() => {
     if (!needId) {
+      setContext(null);
+      setTasks([]);
       setLoading(false);
-      setError("need_id manquant. Le cockpit entreprise doit être ouvert avec un contexte explicite.");
+      setError(null);
       return;
     }
     if (authLoading) return;
@@ -228,8 +234,26 @@ export default function KoryxaEnterpriseCockpitClient() {
 
   if (!needId) {
     return (
-      <section className="rounded-[32px] border border-rose-200 bg-white p-6">
-        <p className="text-sm font-medium text-rose-600">need_id manquant. Ce cockpit doit être ouvert depuis un résultat Entreprise.</p>
+      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+        <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
+          Entreprise connectée
+        </span>
+        <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Aucun besoin entreprise actif pour le moment</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+          Le cockpit entreprise prend le relais lorsqu’un besoin a déjà été qualifié. Commencez un dépôt guidé ou
+          revenez à l’accueil connecté KORYXA pour choisir votre prochain flux de travail.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/entreprise/demarrer" className="btn-primary w-full justify-center sm:w-auto">
+            Déposer un besoin
+          </Link>
+          <Link href={connectedHomeHref} className="btn-secondary w-full justify-center sm:w-auto">
+            Revenir à l’accueil KORYXA
+          </Link>
+          <Link href="/chatlaya" className="btn-secondary w-full justify-center sm:w-auto">
+            Clarifier avec ChatLAYA
+          </Link>
+        </div>
       </section>
     );
   }

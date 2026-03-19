@@ -29,7 +29,7 @@ const MARKETING_LINKS: NavEntry[] = [
 const CONNECTED_PRIMARY_GROUP: NavGroup = {
   title: "Navigation",
   links: [
-    { href: "/myplanning/app", label: "Accueil", icon: "🏠" },
+    { href: "/myplanning/app/koryxa-home", label: "Accueil", icon: "🏠" },
     { href: "/myplanning/app/koryxa", label: "Trajectoire", icon: "🧭" },
     { href: "/myplanning/app/koryxa-enterprise", label: "Entreprise", icon: "🏢" },
     { href: "/chatlaya", label: "ChatLAYA", icon: "💬" },
@@ -138,14 +138,17 @@ function fullscreenLinksForTier(tier: SidebarTier): NavEntry[] {
 }
 
 function isActive(pathname: string, entry: NavEntry): boolean {
+  if (entry.href === "/myplanning/app/koryxa-home") {
+    return pathname.startsWith("/myplanning/app/koryxa-home");
+  }
   if (entry.href === "/myplanning/app") {
     return pathname === "/myplanning/app" || pathname.startsWith("/myplanning/app/pro") || pathname.startsWith("/myplanning/team");
   }
   if (entry.href === "/myplanning/app/koryxa") {
-    return pathname.startsWith("/myplanning/app/koryxa") && !pathname.startsWith("/myplanning/app/koryxa-enterprise");
+    return pathname === "/myplanning/app/koryxa" || pathname.startsWith("/myplanning/app/koryxa/");
   }
   if (entry.href === "/myplanning/app/koryxa-enterprise") {
-    return pathname.startsWith("/myplanning/app/koryxa-enterprise");
+    return pathname === "/myplanning/app/koryxa-enterprise" || pathname.startsWith("/myplanning/app/koryxa-enterprise/");
   }
   if (entry.href === "/myplanning/opportunities") {
     return pathname.startsWith("/myplanning/opportunities");
@@ -165,6 +168,7 @@ function isActive(pathname: string, entry: NavEntry): boolean {
 }
 
 function breadcrumbTitle(pathname: string): string {
+  if (pathname.startsWith("/myplanning/app/koryxa-home")) return "Plateforme / Accueil KORYXA";
   if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "Plateforme / Entreprise";
   if (pathname.startsWith("/myplanning/app/koryxa")) return "Plateforme / Trajectoire";
   if (pathname.startsWith("/myplanning/opportunities")) return "Plateforme / Opportunités";
@@ -609,7 +613,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
       <nav className="fixed bottom-4 left-1/2 z-40 w-[min(640px,calc(100vw-20px))] -translate-x-1/2 lg:hidden">
         <div className="grid grid-cols-5 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-xl shadow-slate-900/10 backdrop-blur dark:border-slate-800 dark:bg-slate-950/92">
           {[
-            { href: "/myplanning/app", label: "Accueil" },
+            { href: "/myplanning/app/koryxa-home", label: "Accueil" },
             { href: "/myplanning/app/koryxa", label: "Traj." },
             { href: "/myplanning/app/koryxa-enterprise", label: "Entr." },
             { href: "/chatlaya", label: "Chat" },
@@ -622,7 +626,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
               scroll={false}
               className={clsx(
                 "rounded-xl px-2 py-2 text-center text-xs font-semibold",
-                pathname.startsWith(item.href)
+                isActive(pathname, item)
                   ? "bg-sky-600 text-white dark:bg-sky-500 dark:text-slate-950"
                   : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
               )}

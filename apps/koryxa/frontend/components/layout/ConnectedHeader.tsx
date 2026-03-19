@@ -16,19 +16,19 @@ type ConnectedNavLink = {
 
 const CONNECTED_NAV_LINKS: ConnectedNavLink[] = [
   {
-    href: "/myplanning/app",
+    href: "/myplanning/app/koryxa-home",
     label: "Accueil",
-    match: (pathname) => pathname === "/myplanning/app" || pathname.startsWith("/myplanning/app/pro") || pathname.startsWith("/myplanning/team"),
+    match: (pathname) => pathname.startsWith("/myplanning/app/koryxa-home"),
   },
   {
     href: "/myplanning/app/koryxa",
     label: "Trajectoire",
-    match: (pathname) => pathname.startsWith("/myplanning/app/koryxa") && !pathname.startsWith("/myplanning/app/koryxa-enterprise"),
+    match: (pathname) => pathname === "/myplanning/app/koryxa" || pathname.startsWith("/myplanning/app/koryxa/"),
   },
   {
     href: "/myplanning/app/koryxa-enterprise",
     label: "Entreprise",
-    match: (pathname) => pathname.startsWith("/myplanning/app/koryxa-enterprise"),
+    match: (pathname) => pathname === "/myplanning/app/koryxa-enterprise" || pathname.startsWith("/myplanning/app/koryxa-enterprise/"),
   },
   {
     href: "/chatlaya",
@@ -51,6 +51,8 @@ const CONNECTED_NAV_LINKS: ConnectedNavLink[] = [
     match: (pathname) => pathname.startsWith("/myplanning/settings"),
   },
 ];
+
+const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
 
 function IconMenu(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -79,13 +81,13 @@ export default function ConnectedHeader() {
     return fullName || user?.email || "Plateforme connectée";
   }, [user]);
   const userInitial = displayName.charAt(0).toUpperCase();
-  const logoutRedirect = `/myplanning/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`;
+  const logoutRedirect = `/login?redirect=${encodeURIComponent(pathname || KORYXA_CONNECTED_HOME)}`;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-[0_18px_48px_rgba(2,6,23,0.34)]">
       <div className="mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/myplanning/app" className="flex min-w-0 items-center gap-3">
+          <Link href={KORYXA_CONNECTED_HOME} className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a,#0ea5e9)]">
               <span className="text-sm font-black tracking-[0.18em] text-white">K</span>
             </div>
@@ -122,7 +124,7 @@ export default function ConnectedHeader() {
             {isAuthenticated ? "Connecté" : "Accès protégé"}
           </span>
           <Link
-            href={isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/chatlaya"}
+            href={isAuthenticated ? "/myplanning/profile" : `/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`}
             className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-sky-400/60 hover:text-sky-100"
           >
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-100">

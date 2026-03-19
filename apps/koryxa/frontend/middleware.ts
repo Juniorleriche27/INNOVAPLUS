@@ -91,6 +91,9 @@ function requiresConnectedAuth(pathname: string) {
 }
 
 function getLoginPath(pathname: string): "/login" | "/myplanning/login" {
+  if (pathname === "/chatlaya" || pathname.startsWith("/chatlaya/")) {
+    return "/login";
+  }
   if (requiresConnectedAuth(pathname)) {
     return "/myplanning/login";
   }
@@ -300,7 +303,7 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith("/myplanning/")) {
         redirectUrl.pathname = "/myplanning/app";
       } else {
-        redirectUrl.pathname = "/";
+        redirectUrl.pathname = "/myplanning/app/koryxa-home";
       }
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);

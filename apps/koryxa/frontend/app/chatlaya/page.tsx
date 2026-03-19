@@ -20,6 +20,7 @@ type Conversation = {
 };
 
 const API_BASE = CHATLAYA_API_BASE;
+const STREAM_TIMEOUT_MS = 45_000;
 const STARTER_PROMPTS = [
   {
     label: "Comprendre ma trajectoire",
@@ -93,6 +94,19 @@ function parseStructuredSections(content: string): StructuredSection[] {
   }
   if (currentTitle) commit();
   return sections;
+}
+
+function normalizeStreamError(text: string, status?: number, contentType?: string | null): string {
+  const raw = text.trim();
+  const lower = raw.toLowerCase();
+  const htmlLike = (contentType || "").includes("text/html") || lower.includes("<html") || lower.includes("<title>");
+  if (status === 504 || lower.includes("gateway time-out") || lower.includes("gateway timeout")) {
+    return "ChatLAYA met trop de temps à répondre. Réessaie dans un instant.";
+  }
+  if (status === 502 || status === 503 || htmlLike) {
+    return "Le service ChatLAYA est temporairement indisponible. Réessaie dans un instant.";
+  }
+  return raw || "Échec de la réponse";
 }
 
 function IconCopy(props: React.SVGProps<SVGSVGElement>) {
@@ -488,6 +502,14 @@ export default function ChatlayaPage() {
   async function streamAssistant(id: string, prompt: string) {
     const controller = new AbortController();
     streamAbortRef.current = controller;
+    let timedOut = false;
+    const timeoutId =
+      typeof window !== "undefined"
+        ? window.setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+          }, STREAM_TIMEOUT_MS)
+        : null;
 
     const res = await fetch(`${API_BASE}/chatlaya/message`, {
       method: "POST",
@@ -497,10 +519,13 @@ export default function ChatlayaPage() {
       signal: controller.signal,
     });
 
-    if (!res.ok || !res.body) {
+    const contentType = res.headers.get("content-type");
+    const isEventStream = (contentType || "").includes("text/event-stream");
+
+    if (!res.ok || !res.body || !isEventStream) {
       if (!res.ok && isAuthFailure(res.status)) throw new Error("Authentification requise");
       const text = await res.text().catch(() => "");
-      throw new Error(text || "Echec de la reponse");
+      throw new Error(normalizeStreamError(text, res.status, contentType));
     }
 
     const reader = res.body.getReader();
@@ -543,11 +568,17 @@ export default function ChatlayaPage() {
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         setMessages((prev) => prev.filter((m) => !m.pending));
+        if (timedOut) {
+          throw new Error("ChatLAYA met trop de temps à répondre. Réessaie dans un instant.");
+        }
         return;
       }
       if (err instanceof Error) throw err;
       throw new Error("Erreur de streaming");
     } finally {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
       if (streamAbortRef.current === controller) streamAbortRef.current = null;
     }
   }

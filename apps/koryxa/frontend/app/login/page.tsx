@@ -4,6 +4,8 @@ export const revalidate = 0;
 
 import LoginClient from "./LoginClient";
 
+const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
+
 type SearchParams = Record<string, string | string[] | undefined>;
 type SearchParamsInput = SearchParams | Promise<SearchParams>;
 
@@ -23,5 +25,5 @@ async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchPar
 export default async function LoginPage({ searchParams }: { searchParams?: SearchParamsInput }) {
   const params = await resolveSearchParams(searchParams);
   const requestedRedirect = one(params?.redirect);
-  return <LoginClient requestedRedirect={requestedRedirect} />;
+  return <LoginClient defaultRedirect={KORYXA_CONNECTED_HOME} requestedRedirect={requestedRedirect} />;
 }

@@ -21,6 +21,8 @@ const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { href: "/myplanning/pricing", label: "Tarifs" },
 ];
 
+const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
+
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -48,8 +50,10 @@ export default function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isAuthenticated = Boolean(user?.email);
-  const platformHref = isAuthenticated ? "/myplanning/app" : "/signup";
-  const accountHref = isAuthenticated ? "/myplanning/profile" : "/login";
+  const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
+  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
+  const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : signupHref;
+  const accountHref = isAuthenticated ? "/myplanning/profile" : loginHref;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl transition-colors dark:border-slate-800 dark:bg-slate-950/88">

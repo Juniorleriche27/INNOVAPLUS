@@ -181,8 +181,12 @@ export default function KoryxaCockpitClient() {
   const [proofDrafts, setProofDrafts] = useState<Record<string, ProofDraft>>({});
 
   const isAuthenticated = Boolean(user?.email);
+  const connectedHomeHref = "/myplanning/app/koryxa-home";
+  const cockpitHref = flowId
+    ? `/myplanning/app/koryxa?flow_id=${encodeURIComponent(flowId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`
+    : connectedHomeHref;
   const loginHref = `/myplanning/login?redirect=${encodeURIComponent(
-    `/myplanning/app/koryxa?flow_id=${encodeURIComponent(flowId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`,
+    cockpitHref,
   )}`;
 
   const taskMap = useMemo(() => {
@@ -242,8 +246,10 @@ export default function KoryxaCockpitClient() {
 
   useEffect(() => {
     if (!flowId) {
+      setContext(null);
+      setTasks([]);
       setLoading(false);
-      setError("flow_id manquant. Le cockpit KORYXA doit être ouvert avec un contexte explicite.");
+      setError(null);
       return;
     }
     if (authLoading) return;
@@ -317,10 +323,25 @@ export default function KoryxaCockpitClient() {
   if (!flowId) {
     return (
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-slate-950">Contexte manquant</p>
-        <p className="mt-3 text-sm leading-7 text-slate-600">
-          Le cockpit KORYXA doit être ouvert avec un `flow_id` explicite pour charger la bonne trajectoire.
+        <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
+          Trajectoire connectée
+        </span>
+        <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Aucune trajectoire active pour le moment</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+          Le cockpit KORYXA trajectoire se remplit lorsqu’un diagnostic a déjà produit un flow. Commencez un diagnostic
+          ou revenez à l’accueil connecté pour choisir votre zone d’action.
         </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/trajectoire/demarrer" className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700">
+            Commencer mon diagnostic
+          </Link>
+          <Link href={connectedHomeHref} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+            Revenir à l’accueil KORYXA
+          </Link>
+          <Link href="/chatlaya" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+            Ouvrir ChatLAYA
+          </Link>
+        </div>
       </section>
     );
   }

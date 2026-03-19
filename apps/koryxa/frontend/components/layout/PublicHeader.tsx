@@ -49,7 +49,12 @@ export default function PublicHeader() {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAuthenticated = Boolean(user?.email);
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname.startsWith("/reset") ||
+    pathname.startsWith("/account/recover");
+  const isAuthenticated = Boolean(user?.email) && !isAuthPage;
   const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
   const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
   const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : signupHref;

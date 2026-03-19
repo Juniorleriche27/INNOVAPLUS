@@ -123,7 +123,23 @@ function detectSidebarTier(pathname: string): SidebarTier {
   return "free";
 }
 
-function sidebarGroupsForTier(tier: SidebarTier): NavGroup[] {
+function isKoryxaFocusedRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/myplanning/app/koryxa-home") ||
+    pathname === "/myplanning/app/koryxa" ||
+    pathname.startsWith("/myplanning/app/koryxa/") ||
+    pathname === "/myplanning/app/koryxa-enterprise" ||
+    pathname.startsWith("/myplanning/app/koryxa-enterprise/") ||
+    pathname.startsWith("/myplanning/opportunities") ||
+    pathname.startsWith("/myplanning/profile") ||
+    pathname.startsWith("/myplanning/settings")
+  );
+}
+
+function sidebarGroupsForTier(pathname: string, tier: SidebarTier): NavGroup[] {
+  if (isKoryxaFocusedRoute(pathname)) {
+    return [CONNECTED_PRIMARY_GROUP];
+  }
   if (tier === "enterprise") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
   if (tier === "team") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
   if (tier === "pro") return [CONNECTED_PRIMARY_GROUP, ...SIDEBAR_MYPLANNING_GROUPS];
@@ -191,11 +207,13 @@ function ProductSidebar({
   collapsed,
   onToggle,
   groups,
+  focusMode,
 }: {
   pathname: string;
   collapsed: boolean;
   onToggle: () => void;
   groups: NavGroup[];
+  focusMode: boolean;
 }) {
   return (
     <aside
@@ -205,8 +223,12 @@ function ProductSidebar({
       <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
         {!collapsed ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Plateforme</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">KORYXA × MyPlanningAI</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+              {focusMode ? "KORYXA" : "Plateforme"}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {focusMode ? "Espace connecté KORYXA" : "KORYXA × MyPlanningAI"}
+            </p>
           </div>
         ) : (
           <p className="w-full text-center text-xs font-semibold text-slate-500">KY</p>
@@ -265,6 +287,7 @@ function ProductTopbar({
   profileHref,
   userInitial,
   displayName,
+  focusMode,
 }: {
   pathname: string;
   onToggleFullscreen: () => void;
@@ -273,6 +296,7 @@ function ProductTopbar({
   profileHref: string;
   userInitial: string;
   displayName: string;
+  focusMode: boolean;
 }) {
   const logoutRedirect = pathname.startsWith("/myplanning/") ? "/myplanning/login" : "/login";
   return (
@@ -283,7 +307,7 @@ function ProductTopbar({
             ← Site KORYXA
           </Link>
           <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100">
-            Plateforme connectée
+            {focusMode ? "KORYXA connecté" : "Plateforme connectée"}
           </span>
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{breadcrumbTitle(pathname)}</p>
         </div>
@@ -302,14 +326,16 @@ function ProductTopbar({
             </span>
             <span>{isAuthenticated ? "Mon profil" : "Connexion"}</span>
           </Link>
-          <Link
-            href="/myplanning/pricing"
-            prefetch
-            scroll={false}
-            className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
-          >
-            Gérer mon plan
-          </Link>
+          {!focusMode ? (
+            <Link
+              href="/myplanning/pricing"
+              prefetch
+              scroll={false}
+              className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
+            >
+              Gérer mon plan
+            </Link>
+          ) : null}
           {isAuthenticated ? (
             <LogoutButton
               redirectTo={logoutRedirect}
@@ -466,7 +492,8 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
 
   const isSidebarCollapsed = sidebarMode === "collapsed";
   const sidebarTier = detectSidebarTier(pathname);
-  const sidebarGroups = sidebarGroupsForTier(sidebarTier);
+  const focusMode = isKoryxaFocusedRoute(pathname);
+  const sidebarGroups = sidebarGroupsForTier(pathname, sidebarTier);
   const fullscreenQuickLinks = fullscreenLinksForTier(sidebarTier);
 
   const toggleFullscreen = () => {
@@ -591,6 +618,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
           collapsed={isSidebarCollapsed}
           onToggle={() => setSidebarMode((prev) => (prev === "expanded" ? "collapsed" : "expanded"))}
           groups={sidebarGroups}
+          focusMode={focusMode}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <ProductTopbar
@@ -601,6 +629,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
             profileHref={profileHref}
             userInitial={userInitial}
             displayName={displayName}
+            focusMode={focusMode}
           />
           <main className="min-h-0 flex-1 overflow-y-auto px-2 py-2 sm:px-3 sm:py-3">
             <div className="mx-auto w-full">

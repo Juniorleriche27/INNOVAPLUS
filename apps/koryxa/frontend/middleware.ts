@@ -152,6 +152,7 @@ const V1_PUBLIC_PATHS = [
   "/entreprise",
   "/about",
   "/products",
+  "/contact",
   "/chatlaya",
   "/resources",
   "/privacy",

@@ -90,7 +90,7 @@ export default function ProductDetailPage({ params }: Props) {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
-              href="/contact?subject=demo-product"
+              href={`/contact?product=${encodeURIComponent(product.slug)}`}
               className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-indigo-700"
             >
               Parler à l’équipe

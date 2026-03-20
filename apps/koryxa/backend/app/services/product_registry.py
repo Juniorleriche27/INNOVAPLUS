@@ -10,20 +10,20 @@ PUBLIC_PRODUCTS: list[dict[str, Any]] = [
     {
         "slug": "myplanning",
         "name": "MyPlanningAI",
-        "href": "/myplanning",
+        "href": "/products/myplanning",
         "eyebrow": "Pilotage",
         "summary": "MyPlanningAI aide à organiser les tâches, suivre la progression, piloter les priorités et structurer l'exécution, en individuel comme en équipe.",
         "bullets": ["Progression visible", "Priorités plus claires", "Exécution mieux structurée"],
-        "cta": "Ouvrir MyPlanningAI",
+        "cta": "Voir MyPlanningAI",
     },
     {
         "slug": "chatlaya",
         "name": "ChatLAYA",
-        "href": "/chatlaya",
+        "href": "/products/chatlaya",
         "eyebrow": "Copilote",
         "summary": "ChatLAYA sert de copilote conversationnel pour clarifier une demande, accélérer la production et soutenir l'exécution dans un cadre plus lisible.",
         "bullets": ["Clarification rapide", "Support conversationnel", "Exécution assistée"],
-        "cta": "Ouvrir ChatLAYA",
+        "cta": "Voir ChatLAYA",
     },
 ]
 

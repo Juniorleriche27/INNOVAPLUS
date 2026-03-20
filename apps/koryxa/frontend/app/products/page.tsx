@@ -83,21 +83,25 @@ export default function ProductsLanding() {
             products.map((product) => (
               <article
                 key={product.slug}
-                className="rounded-[30px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-8"
+                className="rounded-[30px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_24px_52px_rgba(14,165,233,0.12)] sm:p-8"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{product.eyebrow}</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{product.name}</h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600">{product.summary}</p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {product.bullets.map((bullet) => (
-                    <span
-                      key={bullet}
-                      className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
-                    >
-                      {bullet}
-                    </span>
-                  ))}
-                </div>
+                <Link href={product.href} className="group block rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">{product.eyebrow}</p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 transition group-hover:text-sky-700">
+                    {product.name}
+                  </h2>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">{product.summary}</p>
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {product.bullets.map((bullet) => (
+                      <span
+                        key={bullet}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                      >
+                        {bullet}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link href={product.href} className="btn-primary">
                     {product.cta}

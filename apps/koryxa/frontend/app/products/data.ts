@@ -44,6 +44,33 @@ export const productCatalog: Record<string, ProductInfo> = {
       "Entrepreneurs solos voulant ritualiser leurs semaines",
     ],
   },
+  "chatlaya": {
+    slug: "chatlaya",
+    name: "ChatLAYA",
+    tagline: "Copilote conversationnel pour cadrer, produire et faire avancer l'exécution.",
+    summary:
+      "ChatLAYA aide à clarifier une demande, structurer une réponse utile, générer des pistes d'action et accompagner l'exécution dans un cadre conversationnel plus lisible.",
+    heroImage:
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=60",
+    highlights: [
+      "Clarification rapide d'un besoin, d'une trajectoire ou d'un cas d'usage métier",
+      "Réponses structurées avec résumé, plan d'action, KPIs et points de vigilance",
+      "Accès conversationnel simple pour accompagner orientation, cadrage et exécution",
+      "Intégré à l'écosystème KORYXA pour relier produit, progression et opportunités",
+    ],
+    stats: [
+      { label: "Mode d'interaction", value: "Conversation guidée" },
+      { label: "Usage cible", value: "Clarifier et produire" },
+      { label: "Accès", value: "Web" },
+    ],
+    primaryCta: { label: "Ouvrir ChatLAYA", href: "/chatlaya" },
+    contact: "chatlaya@koryxa.africa",
+    useCases: [
+      "Clarifier un besoin avant de lancer Trajectoire ou Entreprise",
+      "Produire une première réponse structurée sur un sujet métier",
+      "Aider une équipe à transformer une idée floue en plan d'action exploitable",
+    ],
+  },
   "koryxa-sante": {
     slug: "koryxa-sante",
     name: "KORYXA Santé & Bien-être",

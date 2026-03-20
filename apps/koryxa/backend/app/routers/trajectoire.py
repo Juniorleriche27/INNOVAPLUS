@@ -106,6 +106,16 @@ async def _resolve_flow(
                 flow["user_id"] = current["_id"]
                 flow["updated_at"] = now
                 return flow
+        flow = await db["trajectory_flows"].find_one({"_id": flow_oid, "user_id": None})
+        if flow:
+            now = datetime.now(timezone.utc)
+            await db["trajectory_flows"].update_one(
+                {"_id": flow_oid, "user_id": None},
+                {"$set": {"user_id": current["_id"], "updated_at": now}},
+            )
+            flow["user_id"] = current["_id"]
+            flow["updated_at"] = now
+            return flow
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
 
     resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id

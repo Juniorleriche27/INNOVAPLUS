@@ -42,7 +42,7 @@ export default function ThemeToggle({
       aria-label={label}
       title={label}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition",
+        "inline-flex items-center justify-center gap-1 rounded-full border px-2 py-2 text-sm font-semibold transition",
         variant === "dark"
           ? "border-slate-700 bg-slate-900 text-slate-100 hover:border-sky-400/60 hover:text-sky-100"
           : "border-slate-200 bg-white/92 text-slate-700 shadow-sm shadow-slate-900/5 hover:border-sky-200 hover:bg-sky-50/80 hover:text-sky-700",
@@ -51,15 +51,29 @@ export default function ThemeToggle({
     >
       <span
         className={clsx(
-          "inline-flex h-6 w-6 items-center justify-center rounded-full",
-          variant === "dark"
-            ? "bg-slate-800 text-sky-200"
-            : "bg-sky-100 text-sky-700",
+          "inline-flex h-8 w-8 items-center justify-center rounded-full transition",
+          !isDark
+            ? variant === "dark"
+              ? "bg-slate-800 text-amber-200"
+              : "bg-amber-100 text-amber-600"
+            : "text-slate-400",
         )}
       >
-        {isDark ? <IconSun className="h-3.5 w-3.5" /> : <IconMoon className="h-3.5 w-3.5" />}
+        <IconSun className="h-4 w-4" />
       </span>
-      {showLabel ? <span className="hidden sm:inline">{label}</span> : null}
+      <span
+        className={clsx(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full transition",
+          isDark
+            ? variant === "dark"
+              ? "bg-slate-800 text-sky-200"
+              : "bg-sky-100 text-sky-700"
+            : "text-slate-400",
+        )}
+      >
+        <IconMoon className="h-4 w-4" />
+      </span>
+      {showLabel ? <span className="hidden sm:inline whitespace-nowrap">{label}</span> : null}
     </button>
   );
 }

@@ -21,6 +21,7 @@ const PUBLIC_NAV_LINKS: PublicNavLink[] = [
 ];
 
 const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
+const KORYXA_PUBLIC_HOME = "/";
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
@@ -54,8 +55,8 @@ export default function PublicHeader() {
     pathname.startsWith("/reset") ||
     pathname.startsWith("/account/recover");
   const isAuthenticated = Boolean(user?.email) && !isAuthPage;
-  const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
-  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
+  const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
+  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
   const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : signupHref;
   const accountHref = isAuthenticated ? "/myplanning/profile" : loginHref;
 

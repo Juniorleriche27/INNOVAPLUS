@@ -3,7 +3,7 @@ import SignupClient from "./SignupClient";
 type SearchParams = Record<string, string | string[] | undefined>;
 type SearchParamsInput = SearchParams | Promise<SearchParams>;
 
-const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
+const KORYXA_PUBLIC_HOME = "/";
 
 function one(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -24,7 +24,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Sear
   const successRedirect =
     requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
       ? requestedRedirect
-      : KORYXA_CONNECTED_HOME;
+      : KORYXA_PUBLIC_HOME;
   const loginHref = `/login?redirect=${encodeURIComponent(successRedirect)}`;
 
   return <SignupClient successRedirect={successRedirect} loginHref={loginHref} />;

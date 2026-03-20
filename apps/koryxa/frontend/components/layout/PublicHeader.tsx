@@ -58,7 +58,6 @@ export default function PublicHeader() {
   const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
   const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
   const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : signupHref;
-  const accountHref = isAuthenticated ? "/myplanning/profile" : loginHref;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/92 backdrop-blur-xl transition-colors dark:border-slate-800 dark:bg-slate-950/88">
@@ -81,7 +80,7 @@ export default function PublicHeader() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  "whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition",
                   active
                     ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
                     : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white",
@@ -94,23 +93,25 @@ export default function PublicHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <ThemeToggle />
-          <Link
-            href={accountHref}
-            className="inline-flex min-w-[124px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
-          >
-            {isAuthenticated ? "Mon profil" : "Se connecter"}
-          </Link>
+          <ThemeToggle showLabel={false} />
+          {!isAuthenticated ? (
+            <Link
+              href={loginHref}
+              className="inline-flex whitespace-nowrap items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
+            >
+              Se connecter
+            </Link>
+          ) : null}
           {isAuthenticated ? (
             <LogoutButton
               redirectTo={pathname}
-              className="inline-flex min-w-[124px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
+              className="inline-flex whitespace-nowrap items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
             />
           ) : null}
           <Link
             href={platformHref}
             className={clsx(
-              "inline-flex min-w-[148px] items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white transition",
+              "inline-flex whitespace-nowrap items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white transition",
               isAuthenticated
                 ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] shadow-[0_18px_40px_rgba(2,132,199,0.22)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.28)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]"
                 : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
@@ -154,14 +155,16 @@ export default function PublicHeader() {
             })}
 
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <ThemeToggle className="justify-center sm:col-span-2" />
-              <Link
-                href={accountHref}
-                onClick={() => setMobileOpen(false)}
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                {isAuthenticated ? "Mon profil" : "Se connecter"}
-              </Link>
+              <ThemeToggle showLabel={false} className="justify-center sm:col-span-2" />
+              {!isAuthenticated ? (
+                <Link
+                  href={loginHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                >
+                  Se connecter
+                </Link>
+              ) : null}
               {isAuthenticated ? (
                 <LogoutButton
                   redirectTo={pathname}

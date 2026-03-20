@@ -135,6 +135,24 @@ async def _resolve_need(
                 need["user_id"] = current["_id"]
                 need["updated_at"] = now
                 return need
+        need = await db["enterprise_needs"].find_one({"_id": need_oid, "user_id": None})
+        if need:
+            now = datetime.now(timezone.utc)
+            await db["enterprise_needs"].update_one(
+                {"_id": need_oid, "user_id": None},
+                {"$set": {"user_id": current["_id"], "updated_at": now}},
+            )
+            await db["enterprise_missions"].update_one(
+                {"need_id": need_oid, "user_id": None},
+                {"$set": {"user_id": current["_id"], "updated_at": now}},
+            )
+            await db["enterprise_opportunities"].update_one(
+                {"need_id": need_oid},
+                {"$set": {"updated_at": now, "user_id": current["_id"]}},
+            )
+            need["user_id"] = current["_id"]
+            need["updated_at"] = now
+            return need
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Besoin introuvable")
 
     resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id

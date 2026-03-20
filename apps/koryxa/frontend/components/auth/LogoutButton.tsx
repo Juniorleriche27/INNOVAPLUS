@@ -30,24 +30,17 @@ export default function LogoutButton({
     const redirect = normalizeRedirect(redirectTo);
     if (pending) return;
     setPending(true);
-    let apiLogoutOk = false;
 
     try {
-      const response = await fetch(`${INNOVA_API_BASE}/auth/logout`, {
+      await fetch(`${INNOVA_API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
         cache: "no-store",
       });
-      apiLogoutOk = response.ok;
     } catch {
-      apiLogoutOk = false;
+      // Ignore here: the frontend logout route will still clear site cookies.
     } finally {
       clear();
-    }
-
-    if (apiLogoutOk) {
-      window.location.replace(redirect);
-      return;
     }
 
     const fallbackTarget = `/logout?redirect=${encodeURIComponent(redirect)}`;

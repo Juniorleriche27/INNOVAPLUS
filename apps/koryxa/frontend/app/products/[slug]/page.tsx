@@ -2,14 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { productCatalog } from "../data";
+import { productCatalog, productList } from "../data";
 
 type Props = {
-  params: { slug: string };
+  params: { slug: string } | Promise<{ slug: string }>;
 };
 
+async function resolveParams(input: Props["params"]): Promise<{ slug: string }> {
+  if (typeof (input as Promise<{ slug: string }>).then === "function") {
+    return await (input as Promise<{ slug: string }>);
+  }
+  return input as { slug: string };
+}
+
+function getProductBySlug(slug: string) {
+  return productCatalog[decodeURIComponent(slug || "").trim().toLowerCase()];
+}
+
+export function generateStaticParams() {
+  return productList.map((product) => ({ slug: product.slug }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = productCatalog[params.slug];
+  const resolvedParams = await resolveParams(params);
+  const product = getProductBySlug(resolvedParams.slug);
   if (!product) {
     return {
       title: "Produit | KORYXA",
@@ -34,8 +50,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ProductDetailPage({ params }: Props) {
-  const product = productCatalog[params.slug];
+export default async function ProductDetailPage({ params }: Props) {
+  const resolvedParams = await resolveParams(params);
+  const product = getProductBySlug(resolvedParams.slug);
   if (!product) return notFound();
 
   return (

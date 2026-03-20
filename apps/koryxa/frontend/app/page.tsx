@@ -48,20 +48,20 @@ const V1_ENTRY_POINTS = [
 
 const V1_PRODUCTS = [
   {
-    href: "/myplanning",
+    href: "/products/myplanning",
     label: "MyPlanningAI",
     eyebrow: "Pilotage",
     description:
       "MyPlanningAI aide à piloter l'action, organiser les priorités et suivre la progression en individuel comme en équipe.",
-    cta: "Découvrir MyPlanningAI",
+    cta: "Voir MyPlanningAI",
   },
   {
-    href: "/chatlaya",
+    href: "/products/chatlaya",
     label: "ChatLAYA",
     eyebrow: "Copilote",
     description:
       "ChatLAYA sert de copilote conversationnel pour clarifier une demande et soutenir l'exécution avec plus de fluidité.",
-    cta: "Découvrir ChatLAYA",
+    cta: "Voir ChatLAYA",
   },
 ];
 

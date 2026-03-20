@@ -18,7 +18,6 @@ const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { href: "/products", label: "Produits" },
   { href: "/entreprise", label: "Entreprise" },
   { href: "/about", label: "À propos" },
-  { href: "/myplanning/pricing", label: "Tarifs" },
 ];
 
 const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";

@@ -1,5 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { IS_V1_SIMPLE } from "@/lib/env";
+
+export const metadata: Metadata = {
+  title: "Accueil | KORYXA",
+  description:
+    "KORYXA transforme des besoins réels en trajectoires guidées, missions concrètes et opportunités utiles.",
+  openGraph: {
+    title: "Accueil | KORYXA",
+    description:
+      "KORYXA transforme des besoins réels en trajectoires guidées, missions concrètes et opportunités utiles.",
+    url: "/",
+  },
+  twitter: {
+    title: "Accueil | KORYXA",
+    description:
+      "KORYXA transforme des besoins réels en trajectoires guidées, missions concrètes et opportunités utiles.",
+  },
+};
 
 const SECTION_TITLE = "text-3xl font-semibold text-slate-900";
 

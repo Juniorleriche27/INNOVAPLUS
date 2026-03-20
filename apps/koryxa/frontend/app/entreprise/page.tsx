@@ -1,4 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Entreprise | KORYXA",
+  description:
+    "Transformez un objectif métier en besoin structuré, mission claire et exécution pilotée avec KORYXA.",
+  openGraph: {
+    title: "Entreprise | KORYXA",
+    description:
+      "Transformez un objectif métier en besoin structuré, mission claire et exécution pilotée avec KORYXA.",
+    url: "/entreprise",
+  },
+  twitter: {
+    title: "Entreprise | KORYXA",
+    description:
+      "Transformez un objectif métier en besoin structuré, mission claire et exécution pilotée avec KORYXA.",
+  },
+};
 
 const BENEFITS = [
   {

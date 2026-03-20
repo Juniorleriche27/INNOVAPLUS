@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { productCatalog } from "@/app/products/data";
 
@@ -10,6 +11,23 @@ function one(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
   return value;
 }
+
+export const metadata: Metadata = {
+  title: "Contact | KORYXA",
+  description:
+    "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
+  openGraph: {
+    title: "Contact | KORYXA",
+    description:
+      "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
+    url: "/contact",
+  },
+  twitter: {
+    title: "Contact | KORYXA",
+    description:
+      "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
+  },
+};
 
 async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchParams | undefined> {
   if (!input) return undefined;

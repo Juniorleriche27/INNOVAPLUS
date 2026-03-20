@@ -17,7 +17,7 @@ export default function Footer() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
         <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-xs font-semibold uppercase tracking-wide text-white">
-            {isMyPlanning ? "MA" : "IN"}
+            {isMyPlanning ? "MA" : "K"}
           </span>
           <div className="leading-tight">
             <p className="font-semibold text-slate-800 dark:text-slate-100">{isMyPlanning ? "MyPlanningAI" : "KORYXA"}</p>

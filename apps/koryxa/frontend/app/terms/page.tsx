@@ -1,6 +1,22 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Mentions légales | KORYXA",
+  description:
+    "Consultez le cadre légal KORYXA, les conditions d'utilisation générales et les informations d'édition et d'hébergement.",
+  openGraph: {
+    title: "Mentions légales | KORYXA",
+    description:
+      "Consultez le cadre légal KORYXA, les conditions d'utilisation générales et les informations d'édition et d'hébergement.",
+    url: "/terms",
+  },
+  twitter: {
+    title: "Mentions légales | KORYXA",
+    description:
+      "Consultez le cadre légal KORYXA, les conditions d'utilisation générales et les informations d'édition et d'hébergement.",
+  },
+};
 
 const LEGAL_SECTIONS = [
   "Conditions d'utilisation generales",

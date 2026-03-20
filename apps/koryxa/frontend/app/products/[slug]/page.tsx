@@ -1,5 +1,4 @@
-"use client";
-
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -8,6 +7,32 @@ import { productCatalog } from "../data";
 type Props = {
   params: { slug: string };
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const product = productCatalog[params.slug];
+  if (!product) {
+    return {
+      title: "Produit | KORYXA",
+      description: "Découvrez les produits de l'écosystème KORYXA.",
+    };
+  }
+
+  return {
+    title: `${product.name} | KORYXA`,
+    description: product.summary,
+    openGraph: {
+      title: `${product.name} | KORYXA`,
+      description: product.summary,
+      url: `/products/${product.slug}`,
+      images: [{ url: product.heroImage, alt: product.name }],
+    },
+    twitter: {
+      title: `${product.name} | KORYXA`,
+      description: product.summary,
+      images: [product.heroImage],
+    },
+  };
+}
 
 export default function ProductDetailPage({ params }: Props) {
   const product = productCatalog[params.slug];

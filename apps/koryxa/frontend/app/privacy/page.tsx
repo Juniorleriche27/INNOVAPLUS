@@ -1,4 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Confidentialité | KORYXA",
+  description:
+    "Consultez les principes de confidentialité KORYXA sur la collecte, l'usage et la protection des données.",
+  openGraph: {
+    title: "Confidentialité | KORYXA",
+    description:
+      "Consultez les principes de confidentialité KORYXA sur la collecte, l'usage et la protection des données.",
+    url: "/privacy",
+  },
+  twitter: {
+    title: "Confidentialité | KORYXA",
+    description:
+      "Consultez les principes de confidentialité KORYXA sur la collecte, l'usage et la protection des données.",
+  },
+};
 
 const PRIVACY_POINTS = [
   "KORYXA collecte uniquement les donnees utiles au fonctionnement du produit et a son amelioration.",

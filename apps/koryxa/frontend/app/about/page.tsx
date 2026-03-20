@@ -1,4 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "À propos | KORYXA",
+  description:
+    "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
+  openGraph: {
+    title: "À propos | KORYXA",
+    description:
+      "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
+    url: "/about",
+  },
+  twitter: {
+    title: "À propos | KORYXA",
+    description:
+      "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
+  },
+};
 
 const MISSION_PILLARS = [
   {

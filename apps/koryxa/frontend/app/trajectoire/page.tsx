@@ -1,4 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Trajectoire | KORYXA",
+  description:
+    "Clarifiez votre point de départ, recevez une trajectoire recommandée et pilotez votre progression avec KORYXA.",
+  openGraph: {
+    title: "Trajectoire | KORYXA",
+    description:
+      "Clarifiez votre point de départ, recevez une trajectoire recommandée et pilotez votre progression avec KORYXA.",
+    url: "/trajectoire",
+  },
+  twitter: {
+    title: "Trajectoire | KORYXA",
+    description:
+      "Clarifiez votre point de départ, recevez une trajectoire recommandée et pilotez votre progression avec KORYXA.",
+  },
+};
 
 const BENEFITS = [
   {

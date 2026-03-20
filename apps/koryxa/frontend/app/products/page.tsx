@@ -1,5 +1,23 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { INNOVA_API_BASE } from "@/lib/env";
+
+export const metadata: Metadata = {
+  title: "Produits | KORYXA",
+  description:
+    "Découvrez les produits visibles de l'écosystème KORYXA pour structurer l'action, suivre la progression et mieux exécuter.",
+  openGraph: {
+    title: "Produits | KORYXA",
+    description:
+      "Découvrez les produits visibles de l'écosystème KORYXA pour structurer l'action, suivre la progression et mieux exécuter.",
+    url: "/products",
+  },
+  twitter: {
+    title: "Produits | KORYXA",
+    description:
+      "Découvrez les produits visibles de l'écosystème KORYXA pour structurer l'action, suivre la progression et mieux exécuter.",
+  },
+};
 
 type PublicProduct = {
   slug: string;

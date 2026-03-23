@@ -241,13 +241,13 @@ export default function HomePage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Architecture de valeur</p>
           <div className="mt-5 grid gap-3 text-sm leading-7 text-slate-300">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              Besoin entreprise -> cadrage KORYXA -> cas d'usage structuré.
+              Besoin entreprise vers cadrage KORYXA puis cas d'usage structure.
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              Diagnostic talent -> orientation IA -> matching avec formateur partenaire.
+              Diagnostic talent vers orientation IA puis matching avec formateur partenaire.
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              Progression -> preuves -> validation -> profil vérifié -> mission / opportunité.
+              Progression vers preuves, validation, profil verifie puis mission ou opportunite.
             </div>
           </div>
         </article>

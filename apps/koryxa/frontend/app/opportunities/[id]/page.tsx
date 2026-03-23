@@ -1,2 +1,5 @@
-export { dynamic } from "../../projects/[id]/page";
-export { default } from "../../projects/[id]/page";
+import ProjectDetailPage from "../../projects/[id]/page";
+
+export const dynamic = "force-dynamic";
+
+export default ProjectDetailPage;

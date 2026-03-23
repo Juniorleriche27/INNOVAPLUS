@@ -126,11 +126,11 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="max-w-[54rem] space-y-5">
-              <h1 className="kx-display max-w-[10.6ch] text-[3.5rem] font-semibold leading-[0.94] text-slate-950 sm:text-[4.35rem] lg:text-[5.8rem]">
+            <div className="max-w-[50rem] space-y-5">
+              <h1 className="kx-display max-w-[10.8ch] text-[3.05rem] font-semibold leading-[0.95] text-slate-950 sm:text-[3.8rem] lg:text-[4.95rem]">
                 La plateforme premium pour structurer les besoins IA et faire grandir les capacités IA.
               </h1>
-              <p className="max-w-[41rem] text-[1.06rem] leading-8 text-slate-600 sm:text-[1.18rem]">
+              <p className="max-w-[39rem] text-[1rem] leading-8 text-slate-600 sm:text-[1.08rem]">
                 KORYXA relie les besoins IA/data des entreprises, la montée en compétence vers les métiers IA,
                 l'activation de formateurs partenaires, la validation des profils et l'accès à des missions ou
                 opportunités réelles.

@@ -129,7 +129,7 @@ export default function KoryxaEnterpriseCockpitClient() {
   const cockpitHref = needId
     ? `/myplanning/app/koryxa-enterprise?need_id=${encodeURIComponent(needId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`
     : connectedHomeHref;
-  const loginHref = `/myplanning/login?redirect=${encodeURIComponent(
+  const loginHref = `/login?redirect=${encodeURIComponent(
     cockpitHref,
   )}`;
 
@@ -173,7 +173,7 @@ export default function KoryxaEnterpriseCockpitClient() {
       });
       if (!tasksRes.ok) {
         const data = await tasksRes.json().catch(() => ({}));
-        throw new Error(data?.detail || "Chargement des tâches MyPlanning impossible.");
+        throw new Error(data?.detail || "Chargement des tâches d’exécution impossible.");
       }
       const tasksData: TaskListResponse = await tasksRes.json();
       setContext(contextData);
@@ -264,8 +264,8 @@ export default function KoryxaEnterpriseCockpitClient() {
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Cockpit entreprise</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Connectez-vous pour ouvrir le cockpit entreprise</h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-          Le cockpit détaillé vit dans MyPlanningAI. La connexion sert à rattacher le besoin, créer les tâches
-          d’exécution et suivre la progression dans un cadre sécurisé.
+          La connexion sert à rattacher le besoin, charger les tâches d’exécution et suivre la progression dans un
+          cadre sécurisé.
         </p>
         <div className="mt-6">
           <Link href={loginHref} className="btn-primary w-full justify-center sm:w-auto">
@@ -362,11 +362,12 @@ export default function KoryxaEnterpriseCockpitClient() {
       <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Exécution MyPlanning</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Exécution pilotée</p>
             <h2 className="mt-2 text-2xl font-semibold text-slate-950">Les tâches vivent ici, dans le cockpit</h2>
           </div>
           <p className="max-w-xl text-sm leading-7 text-slate-600">
-            MyPlanningAI reste la source de vérité pour l’exécution. KORYXA garde la logique métier du besoin, de la mission et de la publication éventuelle.
+            Le moteur d’exécution reste la source des tâches. KORYXA garde la logique métier du besoin, de la mission
+            et de la publication éventuelle.
           </p>
         </div>
 
@@ -414,7 +415,7 @@ export default function KoryxaEnterpriseCockpitClient() {
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-                      Tâche MyPlanning en cours de préparation.
+                      Tâche d’exécution en cours de préparation.
                     </div>
                   )}
                 </div>

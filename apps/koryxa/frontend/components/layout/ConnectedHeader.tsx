@@ -36,9 +36,14 @@ const CONNECTED_NAV_LINKS: ConnectedNavLink[] = [
     match: (pathname) => pathname.startsWith("/chatlaya"),
   },
   {
-    href: "/myplanning/opportunities",
+    href: "/community",
+    label: "Réseau IA",
+    match: (pathname) => pathname.startsWith("/community"),
+  },
+  {
+    href: "/opportunities",
     label: "Opportunités",
-    match: (pathname) => pathname.startsWith("/myplanning/opportunities"),
+    match: (pathname) => pathname.startsWith("/opportunities") || pathname.startsWith("/myplanning/opportunities"),
   },
   {
     href: "/myplanning/profile",
@@ -93,7 +98,7 @@ export default function ConnectedHeader() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-base font-black tracking-wide">KORYXA</p>
-              <p className="hidden truncate text-[11px] text-slate-300 md:block">Plateforme connectée • KORYXA × MyPlanningAI</p>
+              <p className="hidden truncate text-[11px] text-slate-300 md:block">Plateforme connectée • Univers KORYXA</p>
             </div>
           </Link>
         </div>

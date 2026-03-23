@@ -48,8 +48,8 @@ export default async function ContactPage({ searchParams }: { searchParams?: Sea
   const mailtoHref = `mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(subject)}`;
 
   return (
-    <main className="px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <main className="grid gap-6 px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <section className="rounded-[36px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8 lg:p-10">
           <div className="max-w-3xl space-y-5">
             <div className="flex flex-wrap gap-3">
@@ -68,12 +68,12 @@ export default async function ContactPage({ searchParams }: { searchParams?: Sea
             <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
               {product
                 ? `${product.name} a déjà une fiche produit. Si vous voulez une démo, un échange commercial ou un cadrage plus précis, utilisez le contact direct ci-dessous.`
-                : "Si vous voulez une démo, un échange commercial ou un cadrage produit, utilisez le contact direct ci-dessous."}
+                : "Si vous voulez une démo, un échange commercial, un cadrage produit ou une mise en route KORYXA, utilisez le point d’entrée ci-dessous."}
             </p>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
           <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Contact direct</p>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">{contactEmail}</h2>
@@ -104,6 +104,40 @@ export default async function ContactPage({ searchParams }: { searchParams?: Sea
               </div>
             </div>
           </article>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "Entrée Entreprise",
+              text: "Vous avez un besoin IA/data à cadrer, structurer ou transformer en pilote exécutable.",
+              href: "/entreprise/demarrer",
+              label: "Décrire un besoin",
+            },
+            {
+              title: "Entrée Trajectoire",
+              text: "Vous cherchez une orientation vers un métier IA, un diagnostic et un cadre de progression.",
+              href: "/trajectoire/demarrer",
+              label: "Commencer un diagnostic",
+            },
+            {
+              title: "Écosystème Produits",
+              text: "Vous savez déjà que votre point d’entrée est un produit ou un module de l’écosystème.",
+              href: "/products",
+              label: "Voir les produits",
+            },
+          ].map((entry) => (
+            <article
+              key={entry.title}
+              className="rounded-[28px] border border-slate-200/80 bg-white/94 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{entry.title}</p>
+              <p className="mt-4 text-sm leading-7 text-slate-600">{entry.text}</p>
+              <Link href={entry.href} className="mt-5 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800">
+                {entry.label}
+              </Link>
+            </article>
+          ))}
         </section>
       </div>
     </main>

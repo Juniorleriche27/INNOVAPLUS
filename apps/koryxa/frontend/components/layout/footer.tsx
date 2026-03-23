@@ -32,6 +32,12 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+          <Link href="/community" className="transition hover:text-sky-600 dark:hover:text-sky-300">
+            Réseau IA
+          </Link>
+          <Link href="/formateurs" className="transition hover:text-sky-600 dark:hover:text-sky-300">
+            Formateurs
+          </Link>
           <Link href="/about" className="transition hover:text-sky-600 dark:hover:text-sky-300">
             À propos
           </Link>

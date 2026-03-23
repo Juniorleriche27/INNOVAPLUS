@@ -13,12 +13,30 @@
   --sidebar-w: 280px;
   --sidebar-w-collapsed: 72px;
   --topbar-h: 56px;
+  --kx-shell-bg:
+    radial-gradient(circle at top left, rgba(125, 211, 252, 0.2), transparent 30%),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 24%),
+    linear-gradient(180deg, #f7fbff 0%, #eef4fb 42%, #f5f7fb 100%);
+  --kx-shell-grid: rgba(148, 163, 184, 0.16);
+  --kx-panel: rgba(255, 255, 255, 0.82);
+  --kx-panel-strong: rgba(255, 255, 255, 0.94);
+  --kx-border: rgba(148, 163, 184, 0.26);
+  --kx-shadow: 0 24px 64px rgba(15, 23, 42, 0.08);
 }
 
 html.dark {
   --background: #020617;
   --foreground: #e2e8f0;
   color-scheme: dark;
+  --kx-shell-bg:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 26%),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), transparent 20%),
+    linear-gradient(180deg, #020617 0%, #07111f 42%, #0b1323 100%);
+  --kx-shell-grid: rgba(30, 41, 59, 0.5);
+  --kx-panel: rgba(9, 19, 38, 0.8);
+  --kx-panel-strong: rgba(9, 19, 38, 0.92);
+  --kx-border: rgba(71, 85, 105, 0.46);
+  --kx-shadow: 0 24px 64px rgba(2, 6, 23, 0.34);
 }
 
 * {
@@ -36,7 +54,7 @@ html {
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, rgba(148, 163, 184, 0.15), transparent 60%), var(--background);
+  background: var(--kx-shell-bg);
   color: var(--foreground);
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -44,10 +62,7 @@ body {
 }
 
 html.dark body {
-  background:
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.14), transparent 38%),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 28%),
-    linear-gradient(180deg, #020617 0%, #06101f 44%, #0b1323 100%);
+  background: var(--kx-shell-bg);
 }
 
 
@@ -101,4 +116,25 @@ main#content {
 
 main#content > footer {
   display: none !important;
+}
+
+.kx-grid-backdrop {
+  background-image:
+    linear-gradient(to right, transparent, transparent calc(100% - 1px), var(--kx-shell-grid) calc(100% - 1px)),
+    linear-gradient(to bottom, transparent, transparent calc(100% - 1px), var(--kx-shell-grid) calc(100% - 1px));
+  background-size: 120px 120px;
+}
+
+.kx-panel {
+  border: 1px solid var(--kx-border);
+  background: var(--kx-panel);
+  box-shadow: var(--kx-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.kx-panel-strong {
+  border: 1px solid var(--kx-border);
+  background: var(--kx-panel-strong);
+  box-shadow: var(--kx-shadow);
+  backdrop-filter: blur(20px);
 }

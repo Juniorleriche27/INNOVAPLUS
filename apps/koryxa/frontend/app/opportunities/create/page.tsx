@@ -1,7 +1,1 @@
-// Redirect /opportunities/create -> /projects/new
-import { redirect } from "next/navigation";
-
-export default function CreateOpportunityAlias() {
-  redirect("/projects/new");
-}
-
+export { default } from "../../projects/new/page";

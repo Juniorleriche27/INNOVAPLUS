@@ -1,15 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { missionsApi, MissionDetail } from "@/lib/api-client/missions";
 import { useAuth } from "@/components/auth/AuthProvider";
 
-type Props = { params: { missionId: string } };
+type Props = { params: Promise<{ missionId: string }> | { missionId: string } };
 type JournalEvent = { ts: string; payload?: Record<string, unknown> };
 
+function formatDate(value?: string) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("fr-FR");
+}
+
 export default function MissionTrackPage({ params }: Props) {
-  const { missionId } = params;
   const { user, loading } = useAuth();
+  const [missionId, setMissionId] = useState<string>("");
   const [mission, setMission] = useState<MissionDetail | null>(null);
   const [journal, setJournal] = useState<JournalEvent[]>([]);
   const [waveLoading, setWaveLoading] = useState(false);
@@ -20,7 +28,12 @@ export default function MissionTrackPage({ params }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
+  useEffect(() => {
+    void Promise.resolve(params).then((resolved) => setMissionId(resolved.missionId));
+  }, [params]);
+
   const refresh = useCallback(async () => {
+    if (!missionId) return;
     try {
       const data = await missionsApi.detail(missionId);
       setMission(data);
@@ -35,10 +48,33 @@ export default function MissionTrackPage({ params }: Props) {
     void refresh();
   }, [refresh]);
 
+  const acceptedOffers = useMemo(
+    () => (mission?.offers ?? []).filter((offer) => offer.status === "accepted").length,
+    [mission],
+  );
+
+  const topMatch = useMemo(() => {
+    const offers = [...(mission?.offers ?? [])].sort((a, b) => (b.scores?.match ?? 0) - (a.scores?.match ?? 0));
+    return offers[0] ?? null;
+  }, [mission]);
+
   if (!loading && !user) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <p className="text-lg text-slate-600">Connecte-toi pour consulter cette mission.</p>
+      <main className="mx-auto max-w-3xl px-4 py-16">
+        <section className="rounded-[34px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Suivi mission</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
+            Connectez-vous pour suivre cette mission KORYXA
+          </h1>
+          <p className="mt-4 text-sm leading-7 text-slate-600">
+            Le cockpit de mission relie matching, jalons, messages, preuves d’exécution et export opérationnel.
+          </p>
+          <div className="mt-6">
+            <Link href={`/login?redirect=${encodeURIComponent(`/missions/track/${missionId || ""}`)}`} className="btn-primary">
+              Se connecter
+            </Link>
+          </div>
+        </section>
       </main>
     );
   }
@@ -46,8 +82,8 @@ export default function MissionTrackPage({ params }: Props) {
   if (!mission) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <p className="text-sm text-slate-500">Chargement…</p>
-        {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
+        <p className="text-sm text-slate-500">Chargement du cockpit mission…</p>
+        {error ? <p className="mt-4 text-sm text-rose-600">{error}</p> : null}
       </main>
     );
   }
@@ -81,8 +117,8 @@ export default function MissionTrackPage({ params }: Props) {
     await refresh();
   }
 
-  async function markMilestone(id: string, status: "todo" | "in_progress" | "delivered" | "validated") {
-    await missionsApi.updateMilestone(missionId, id, { status });
+  async function markMilestone(id: string, nextStatus: "todo" | "in_progress" | "delivered" | "validated") {
+    await missionsApi.updateMilestone(missionId, id, { status: nextStatus });
     await refresh();
   }
 
@@ -110,76 +146,92 @@ export default function MissionTrackPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-8 flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Bloc 2 à 5 — Suivi de la mission</p>
-        <h1 className="text-3xl font-semibold text-slate-900">{mission.title}</h1>
-        <p className="text-sm text-slate-500">Statut : <span className="font-semibold text-slate-900">{mission.status}</span></p>
-        {status && <p className="text-sm text-emerald-600">{status}</p>}
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
-        <section className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <header className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Résumé IA</p>
-              <p className="mt-1 text-sm text-slate-600">{mission.ai?.summary}</p>
+    <main className="grid gap-6 px-4 py-8 sm:px-6 lg:px-10">
+      <section className="mx-auto w-full max-w-7xl overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(237,247,255,0.98))] p-6 shadow-[0_24px_72px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[1.18fr_0.82fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Cockpit mission KORYXA</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">{mission.title}</h1>
+            <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              {mission.ai?.summary ||
+                "La mission sert à relier besoin structuré, matching, messages, jalons et preuves d’exécution dans un cockpit unique."}
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <button
+                onClick={dispatchWave}
+                disabled={waveLoading}
+                className="btn-primary disabled:opacity-50"
+              >
+                {waveLoading ? "Envoi de vague…" : "Envoyer une vague"}
+              </button>
+              <Link href="/opportunities" className="btn-secondary">
+                Revenir au pipeline
+              </Link>
             </div>
-            <button
-              onClick={dispatchWave}
-              disabled={waveLoading}
-              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {waveLoading ? "Envoi…" : "Envoyer Vague"}
-            </button>
-          </header>
+            {status ? <p className="text-sm font-medium text-emerald-600">{status}</p> : null}
+            {error ? <p className="text-sm font-medium text-rose-600">{error}</p> : null}
+          </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { label: "Statut mission", value: mission.status, detail: "État opérationnel actuel" },
+              { label: "Offres reçues", value: String((mission.offers ?? []).length), detail: `${acceptedOffers} acceptée(s)` },
+              {
+                label: "Top match",
+                value: topMatch ? `${(topMatch.scores?.match ?? 0).toFixed(2)}` : "—",
+                detail: topMatch ? `Wave ${topMatch.wave}` : "Aucun profil encore classé",
+              },
+              { label: "Journal vagues", value: String(journal.length), detail: "Historique des activations" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{item.label}</p>
+                <p className="mt-3 text-2xl font-semibold text-slate-950">{item.value}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="space-y-6 rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-8">
           <div className="flex flex-wrap gap-2">
             {(mission.ai?.keywords ?? []).map((tag) => (
-              <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{tag}</span>
+              <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                {tag}
+              </span>
             ))}
+            {mission.deliverables ? (
+              <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">Livrables cadrés</span>
+            ) : null}
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">Journal</p>
-            <div className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-100">
-              {journal.length === 0 ? (
-                <p className="p-4 text-sm text-slate-500">Aucune vague envoyée.</p>
-              ) : (
-                journal.map((event) => (
-                  <div key={event.ts as string} className="flex items-center justify-between px-4 py-3 text-sm text-slate-600">
-                    <span>
-                      Vague envoyée —{" "}
-                      {typeof event.payload?.count === "number" ? event.payload.count : 0} profils
-                    </span>
-                    <span className="text-xs text-slate-400">{new Date(event.ts).toLocaleString()}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Matching & offres</p>
-                <p className="text-sm text-slate-600">Classement par score, statut et vague envoyée.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Matching & offres</p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  Classement par score, statut et vague envoyée. Cette surface doit permettre une décision rapide.
+                </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                {(mission.offers ?? []).length} prestataires
+                {(mission.offers ?? []).length} profil(s)
               </span>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
               {(mission.offers ?? [])
                 .sort((a, b) => (b.scores?.match ?? 0) - (a.scores?.match ?? 0))
                 .map((offer) => (
-                  <div key={offer.offer_id} className="rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+                  <div
+                    key={offer.offer_id}
+                    className="rounded-[26px] border border-slate-200 bg-slate-50/70 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">Wave {offer.wave}</p>
-                        <p className="text-xs text-slate-500">Score match : {(offer.scores?.match ?? 0).toFixed(2)}</p>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{offer.message || "Proposition reçue"}</p>
+                        <p className="mt-1 text-xs text-slate-500">Score match : {(offer.scores?.match ?? 0).toFixed(2)}</p>
+                        <p className="mt-2 text-xs leading-6 text-slate-600">{offer.message || "Proposition reçue"}</p>
                       </div>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -193,79 +245,107 @@ export default function MissionTrackPage({ params }: Props) {
                         {offer.status}
                       </span>
                     </div>
-                    {offer.status === "accepted" && mission.status !== "confirmed" && (
+
+                    {offer.status === "accepted" && mission.status !== "confirmed" ? (
                       <button
                         onClick={() => confirm(offer.offer_id)}
-                        className="mt-3 w-full rounded-2xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
+                        className="mt-4 w-full rounded-2xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
                       >
                         Confirmer ce prestataire
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 ))}
-              {(mission.offers ?? []).length === 0 && (
-                <div className="col-span-full rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
-                  Aucune offre pour l’instant. Envoie une vague pour lancer le matching.
+
+              {(mission.offers ?? []).length === 0 ? (
+                <div className="col-span-full rounded-[24px] border border-dashed border-slate-300 p-5 text-sm leading-7 text-slate-500">
+                  Aucune offre pour l’instant. Déclenche une vague pour lancer le matching.
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase text-slate-500">Chat de mission</p>
-            <div className="mt-3 h-64 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Chat de mission</p>
+            <div className="mt-3 h-72 overflow-y-auto rounded-[26px] border border-slate-200 bg-slate-50/80 p-4">
               {(mission.messages ?? []).length === 0 ? (
                 <p className="text-sm text-slate-500">Aucune conversation pour le moment.</p>
               ) : (
                 (mission.messages ?? []).map((msg) => (
-                  <div key={msg.id} className="mb-4">
-                    <p className="text-xs font-semibold text-slate-500">{msg.role} · {new Date(msg.created_at).toLocaleString()}</p>
-                    <p className="text-sm text-slate-800">{msg.text}</p>
+                  <div key={msg.id} className="mb-4 rounded-2xl border border-white/70 bg-white px-4 py-3 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      {msg.role} • {formatDate(msg.created_at)}
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-800">{msg.text}</p>
                   </div>
                 ))
               )}
             </div>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-3 flex gap-2">
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Envoyer une note"
-                className="flex-1 rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+                placeholder="Envoyer une note de coordination"
+                className="flex-1 rounded-2xl border border-slate-200 px-3 py-3 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
               />
-              <button onClick={sendMessage} className="rounded-2xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white">Envoyer</button>
+              <button onClick={sendMessage} className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+                Envoyer
+              </button>
             </div>
           </div>
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Journal des vagues</p>
+            <div className="mt-4 space-y-3">
+              {journal.length === 0 ? (
+                <p className="rounded-[24px] border border-dashed border-slate-300 px-4 py-4 text-sm text-slate-500">
+                  Aucune vague envoyée.
+                </p>
+              ) : (
+                journal.map((event) => (
+                  <div key={event.ts} className="rounded-[24px] border border-slate-200 bg-slate-50/70 px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Vague envoyée • {typeof event.payload?.count === "number" ? event.payload.count : 0} profil(s)
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">{formatDate(event.ts)}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Jalons</p>
-                <p className="text-sm text-slate-600">Suivi “À faire / En cours / Livré”.</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Jalons</p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">Suivi du delivery et validation des étapes.</p>
               </div>
-              <button onClick={createMilestone} className="rounded-2xl border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700">
+              <button onClick={createMilestone} className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200">
                 Ajouter
               </button>
             </div>
-            <div className="mt-4 flex flex-col gap-3">
+
+            <div className="mt-4 grid gap-3">
               <input
                 value={milestoneTitle}
                 onChange={(e) => setMilestoneTitle(e.target.value)}
                 placeholder="Titre du jalon"
-                className="rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-2xl border border-slate-200 px-3 py-3 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
               />
               <input
                 value={milestoneDue}
                 onChange={(e) => setMilestoneDue(e.target.value)}
                 placeholder="Échéance"
-                className="rounded-2xl border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-2xl border border-slate-200 px-3 py-3 text-sm focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-100"
               />
             </div>
+
             <div className="mt-5 space-y-3">
               {(mission.milestones ?? []).map((ms) => (
-                <div key={ms.id} className="rounded-2xl border border-slate-100 p-4">
-                  <div className="flex items-center justify-between text-sm">
+                <div key={ms.id} className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between gap-3 text-sm">
                     <div>
                       <p className="font-semibold text-slate-900">{ms.title}</p>
                       <p className="text-xs text-slate-500">{ms.due_date || "Échéance libre"}</p>
@@ -286,14 +366,16 @@ export default function MissionTrackPage({ params }: Props) {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase text-slate-500">Exports & preuves</p>
-            <p className="mt-2 text-sm text-slate-600">Télécharge un export anonymisé ou récupère le journal des vagues pour la documentation.</p>
-            <div className="mt-4 flex flex-col gap-3">
+          <div className="rounded-[34px] border border-slate-200 bg-slate-950 p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">Exports & documentation</p>
+            <p className="mt-3 text-sm leading-7 text-slate-300">
+              Télécharge un export de mission ou le journal des vagues pour documenter le delivery, les décisions et les preuves utiles.
+            </p>
+            <div className="mt-5 flex flex-col gap-3">
               <button
                 onClick={exportJson}
                 disabled={exporting}
-                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200 disabled:opacity-50"
+                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-50 disabled:opacity-50"
               >
                 {exporting ? "Préparation…" : "Exporter la mission (JSON)"}
               </button>
@@ -310,7 +392,7 @@ export default function MissionTrackPage({ params }: Props) {
                   document.body.removeChild(a);
                   URL.revokeObjectURL(url);
                 }}
-                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-200"
+                className="rounded-2xl border border-white/14 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/15"
               >
                 Télécharger le journal des vagues
               </button>

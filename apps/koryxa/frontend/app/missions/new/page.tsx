@@ -98,11 +98,31 @@ export default function NewMissionPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-8 flex flex-col gap-2">
-        <p className="text-sm font-semibold uppercase tracking-wide text-sky-500">Bloc 2 — Poster un besoin</p>
-        <h1 className="text-3xl font-semibold text-slate-900">Nouveau besoin</h1>
-        <p className="text-sm text-slate-600">Décris ta mission, vérifie le résumé IA à droite et poste en moins d’une minute.</p>
-      </div>
+      <section className="mb-8 overflow-hidden rounded-[34px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(237,247,255,0.98))] p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Mission KORYXA</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+              Structurer un besoin prêt à être activé.
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              Décris la mission, vérifie le résumé IA, puis transforme le besoin en une surface exploitable dans
+              le pipeline KORYXA.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            {[
+              "Un bon besoin doit déjà clarifier résultat, budget, délai et livrables.",
+              "Le résumé IA sert à rendre la mission plus lisible avant publication.",
+              "Une opportunité liée peut ensuite être créée pour la circulation dans l’écosystème.",
+            ].map((item) => (
+              <div key={item} className="rounded-[24px] border border-slate-200/80 bg-white/88 px-4 py-4 text-sm leading-7 text-slate-700 shadow-sm">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-lg shadow-slate-200/60 backdrop-blur">
@@ -332,9 +352,9 @@ export default function NewMissionPage() {
           <div className="mt-10 rounded-2xl border border-white/60 bg-white/70 p-4 text-sm text-slate-700 shadow-inner">
             <p className="font-semibold text-slate-900">Après publication</p>
             <ul className="mt-2 list-disc pl-4">
-              <li>Statut initial : <span className="font-semibold">Nouveau</span></li>
-              <li>Tu seras redirigé vers <Link href="/missions/track" className="text-sky-600 underline">Suivi de la mission</Link>.</li>
-              <li>La vague 1 peut être déclenchée dès que le profil est prêt.</li>
+              <li>Statut initial : <span className="font-semibold">Mission structurée</span></li>
+              <li>Tu seras redirigé vers le cockpit de suivi de mission.</li>
+              <li>La première vague peut être déclenchée dès que le besoin est assez clair.</li>
             </ul>
           </div>
         </aside>

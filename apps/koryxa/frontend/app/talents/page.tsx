@@ -1,5 +1,12 @@
 import type { PublicProfile } from "@/lib/api";
+import type { Metadata } from "next";
 import { INNOVA_API_BASE } from "@/lib/env";
+
+export const metadata: Metadata = {
+  title: "Talents | KORYXA",
+  description:
+    "Explorez les profils talents, disponibilités, compétences et signaux de validation dans l'écosystème KORYXA.",
+};
 
 async function TalentsData() {
   const res = await fetch(`${INNOVA_API_BASE}/profiles/public`, { cache: "no-store" });
@@ -49,18 +56,35 @@ async function TalentsData() {
 
 export default function TalentsPage() {
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-[#f7f7f8] px-4 py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <section className="rounded-[32px] border border-slate-200/70 bg-white p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Talents</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">Profils & disponibilités</h1>
-          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Base de profils connectée au moteur IA. Filtrez par pays, expertise et disponibilité pour répondre aux missions.
-          </p>
-        </section>
+    <main className="grid gap-8">
+      <section className="rounded-[36px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(242,248,255,0.98))] px-6 py-8 shadow-[0_24px_72px_rgba(15,23,42,0.08)] sm:px-8">
+        <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Talents vérifiables</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-5xl">
+              Profils, disponibilité et signaux de qualité dans l'écosystème KORYXA.
+            </h1>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+              Les talents KORYXA ne sont pas de simples profils déclaratifs. La logique produit vise à relier
+              trajectoire, preuves, validation, disponibilité et activation sur opportunités ou missions.
+            </p>
+          </div>
+          <div className="grid gap-3">
+            <div className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Ce que l'entreprise voit</p>
+              <p className="mt-3 text-lg font-semibold text-slate-950">Disponibilité, compétences, langue, pays, signaux de sérieux.</p>
+            </div>
+            <div className="rounded-[28px] border border-slate-200/80 bg-slate-950 p-5 text-white shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-200">Ce que KORYXA pilote</p>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                Validation, trajectoire, progression, orientation et adéquation aux besoins entreprise.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <TalentsData />
-      </div>
+      <TalentsData />
     </main>
   );
 }

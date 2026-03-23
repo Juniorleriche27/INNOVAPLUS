@@ -74,7 +74,9 @@ function appendSessionClearHeaders(response: NextResponse) {
 
 const CONNECTED_AUTH_REQUIRED_PREFIXES = [
   "/chatlaya",
+  "/community/messages",
   "/myplanning/app",
+  "/myplanning/formateurs",
   "/myplanning/profile",
   "/myplanning/settings",
   "/myplanning/opportunities",
@@ -150,6 +152,9 @@ const V1_PUBLIC_PATHS = [
   "/school",
   "/trajectoire",
   "/entreprise",
+  "/community",
+  "/formateurs",
+  "/talents",
   "/about",
   "/products",
   "/contact",

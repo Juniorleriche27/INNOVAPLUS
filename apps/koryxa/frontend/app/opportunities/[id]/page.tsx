@@ -1,7 +1,5 @@
-// Redirect /opportunities/[id] -> /projects/[id]
-import { redirect } from "next/navigation";
+import ProjectDetailPage from "../../projects/[id]/page";
 
-export default function OpportunityDetailsAlias({ params }: { params: { id: string } }) {
-  redirect(`/projects/${params.id}`);
-}
+export const dynamic = "force-dynamic";
 
+export default ProjectDetailPage;

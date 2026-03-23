@@ -78,27 +78,64 @@ export default function OpportunitiesPage() {
   const filtered = useMemo(() => items, [items]);
 
   return (
-    <div className="w-full px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-3xl border border-slate-200/70 bg-white/95 p-6 shadow-lg shadow-slate-900/5 sm:p-8">
-        <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Opportunités</p>
-            <h1 className="text-3xl font-semibold text-slate-900">Pipeline des opportunités</h1>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Suivez vos besoins publiés, les offres et leurs statuts. Créez une opportunité, associez une mission ou filtrez par pays/statut.
+    <main className="grid gap-6 px-4 py-8 sm:px-6 lg:px-10">
+      <section className="mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(237,247,255,0.98))] p-6 shadow-[0_24px_72px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[1.18fr_0.82fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Opportunités</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+              Le hub KORYXA pour suivre missions, besoins et signaux d’activation.
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              Cette surface relie besoin publié, source, produit concerné, pays, compétences attendues et potentiel de
+              mission. Elle doit servir autant à l’équipe KORYXA qu’aux profils déjà prêts à être activés.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
-            <Link href="/missions/new" className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700">
-              Poster un besoin
-            </Link>
-            <Link href="/projects/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300 hover:bg-slate-50">
-              Créer une offre
-            </Link>
+          <div className="grid gap-3">
+            {[
+              "Les opportunités doivent relier progression, validation et besoin réel.",
+              "Une mission ou un produit peut devenir une source d’opportunité structurée.",
+              "Le filtrage par pays, statut, source et produit doit rester rapide et lisible.",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-[24px] border border-slate-200/80 bg-white/88 px-4 py-4 text-sm leading-7 text-slate-700 shadow-sm"
+              >
+                {item}
+              </div>
+            ))}
           </div>
         </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/missions/new" className="btn-primary">
+            Poster un besoin
+          </Link>
+          <Link href="/projects/new" className="btn-secondary">
+            Déposer une capacité
+          </Link>
+        </div>
+      </section>
 
-        <div className="rounded-2xl border border-slate-200/70 bg-slate-50/70 p-4 sm:p-5 shadow-inner shadow-slate-100/60">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 rounded-[34px] border border-slate-200/70 bg-white/95 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-8">
+        <section className="grid gap-4 md:grid-cols-3">
+          <article className="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Pipeline visible</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950">{filtered.length}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Opportunités actuellement chargées et exploitables dans le hub.</p>
+          </article>
+          <article className="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Total back-office</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950">{total}</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Volume total remonté par l’API opportunités KORYXA.</p>
+          </article>
+          <article className="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Sources reliées</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950">Mission • Produit • Manuel</p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">Le hub doit garder la trace de l’origine de chaque opportunité.</p>
+          </article>
+        </section>
+
+        <div className="rounded-[28px] border border-slate-200/70 bg-slate-50/70 p-4 sm:p-5 shadow-inner shadow-slate-100/60">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <input
               placeholder="Rechercher un titre"
@@ -149,20 +186,20 @@ export default function OpportunitiesPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">Chargement…</div>
+          <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">Chargement…</div>
         ) : error ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{error}</div>
+          <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+          <div className="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
             Aucune opportunité pour ces filtres. Publiez un besoin ou importez une offre pour démarrer.
           </div>
         ) : (
           <div className="grid gap-3">
             {filtered.map((opp) => (
-              <div key={opp.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div key={opp.id} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-[0_18px_36px_rgba(14,165,233,0.10)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-base font-semibold text-slate-900">{opp.title}</p>
+                    <p className="text-lg font-semibold tracking-[-0.02em] text-slate-900">{opp.title}</p>
                     <p className="text-xs text-slate-500">Créée le {formatDate(opp.created_at)}</p>
                     {opp.problem && <p className="text-sm text-slate-600 line-clamp-2">{opp.problem}</p>}
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
@@ -189,12 +226,18 @@ export default function OpportunitiesPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 text-sm sm:items-end">
+                    <div className="flex flex-col gap-2 text-sm sm:items-end">
+                    <Link href={`/opportunities/${opp.id}`} className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 font-semibold text-white hover:bg-sky-700">
+                      Voir le détail
+                    </Link>
+                    <Link href="/myplanning/profile" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+                      Profils activables
+                    </Link>
                     <Link href="/missions/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
                       Associer une mission
                     </Link>
                     <Link href="/projects/new" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
-                      Ajouter une offre
+                      Déposer une capacité
                     </Link>
                   </div>
                 </div>
@@ -203,6 +246,6 @@ export default function OpportunitiesPage() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -185,7 +185,7 @@ export default function KoryxaCockpitClient() {
   const cockpitHref = flowId
     ? `/myplanning/app/koryxa?flow_id=${encodeURIComponent(flowId)}${contextIdFromUrl ? `&context_id=${encodeURIComponent(contextIdFromUrl)}` : ""}`
     : connectedHomeHref;
-  const loginHref = `/myplanning/login?redirect=${encodeURIComponent(
+  const loginHref = `/login?redirect=${encodeURIComponent(
     cockpitHref,
   )}`;
 
@@ -232,7 +232,7 @@ export default function KoryxaCockpitClient() {
       });
       if (!tasksRes.ok) {
         const data = await tasksRes.json().catch(() => ({}));
-        throw new Error(data?.detail || "Chargement des tâches MyPlanning impossible.");
+        throw new Error(data?.detail || "Chargement des tâches d’exécution impossible.");
       }
       const tasksData: TaskListResponse = await tasksRes.json();
       setContext(contextData);
@@ -368,7 +368,7 @@ export default function KoryxaCockpitClient() {
           </span>
         </div>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-          La trajectoire KORYXA est bien identifiée, mais le cockpit MyPlanningAI a besoin d’une session pour charger les
+          La trajectoire KORYXA est bien identifiée, mais une session connectée est nécessaire pour charger les
           vraies tâches d’exécution associées à ce flow.
         </p>
         <div className="mt-6">
@@ -390,7 +390,7 @@ export default function KoryxaCockpitClient() {
                 Cockpit KORYXA
               </span>
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                propulsé par MyPlanningAI
+                moteur d’exécution actif
               </span>
             </div>
             <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
@@ -398,7 +398,7 @@ export default function KoryxaCockpitClient() {
             </h1>
             <p className="mt-4 text-sm leading-7 text-slate-600">
               {context?.profile_summary ||
-                "Ce cockpit utilise MyPlanning comme moteur d’exécution et KORYXA comme source de vérité métier pour la validation, la readiness, les opportunités et le profil vérifié."}
+                "Ce cockpit relie moteur d’exécution, validation métier, readiness, opportunités et profil vérifié dans un même univers KORYXA."}
             </p>
           </div>
 
@@ -453,8 +453,8 @@ export default function KoryxaCockpitClient() {
       ) : null}
 
       <section className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-7 text-amber-900">
-        <span className="font-semibold">Règle source de vérité :</span> MyPlanning pilote l’exécution des tâches.
-        KORYXA reste la source de vérité pour la validation métier, la readiness, les opportunités et le profil
+        <span className="font-semibold">Règle source de vérité :</span> le moteur d’exécution pilote les tâches.
+        KORYXA reste la couche visible pour la validation métier, la readiness, les opportunités et le profil
         vérifié. Une tâche marquée terminée ici n’accorde donc pas automatiquement une validation KORYXA.
       </section>
 
@@ -491,7 +491,7 @@ export default function KoryxaCockpitClient() {
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Tâches MyPlanning</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Tâches d’exécution</p>
                   <p className="mt-3 text-2xl font-semibold text-slate-950">{executionSummary.total}</p>
                   <p className="mt-2 text-sm text-slate-600">Source de vérité exécution</p>
                 </div>
@@ -535,7 +535,7 @@ export default function KoryxaCockpitClient() {
 
           <section className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
             <article className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Exécution dans MyPlanning</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Exécution pilotée</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Étapes métier et tâches pilotées</h2>
               <div className="mt-5 space-y-4">
                 {context.execution_stages.map((stage) => (
@@ -561,7 +561,7 @@ export default function KoryxaCockpitClient() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <p className="text-sm font-semibold text-slate-950">{binding.title}</p>
                                   <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${executionTone(taskState)}`}>
-                                    MyPlanning : {taskState}
+                                    Exécution : {taskState}
                                   </span>
                                   {binding.proof_required ? (
                                     <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
@@ -620,7 +620,7 @@ export default function KoryxaCockpitClient() {
                                       disabled={taskBusyId === binding.myplanning_task_id}
                                       className="inline-flex rounded-full bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
                                     >
-                                      Terminer dans MyPlanning
+                                      Terminer la tâche
                                     </button>
                                   </>
                                 ) : (

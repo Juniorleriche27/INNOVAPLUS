@@ -1,7 +1,7 @@
-// src/app/projects/new/page.tsx
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type CreateProjectPayload = {
@@ -16,7 +16,7 @@ type CreateProjectPayload = {
 };
 
 const inputClass =
-  "mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-sky-400 focus:ring-2 focus:ring-sky-100 outline-none transition";
+  "mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100";
 const labelClass = "text-sm font-semibold text-slate-700";
 
 export default function NewProjectPage() {
@@ -35,20 +35,15 @@ export default function NewProjectPage() {
         name: String(form.get("name") ?? "").trim(),
         slug: String(form.get("slug") ?? "").trim(),
         title: (String(form.get("title") ?? "").trim() || null) as string | null,
-        description: (String(form.get("description") ?? "").trim() ||
-          null) as string | null,
-        repo_url: (String(form.get("repo_url") ?? "").trim() ||
-          null) as string | null,
-        live_url: (String(form.get("live_url") ?? "").trim() ||
-          null) as string | null,
-        logo_url: (String(form.get("logo_url") ?? "").trim() ||
-          null) as string | null,
-        status: (String(form.get("status") ?? "").trim() ||
-          null) as string | null,
+        description: (String(form.get("description") ?? "").trim() || null) as string | null,
+        repo_url: (String(form.get("repo_url") ?? "").trim() || null) as string | null,
+        live_url: (String(form.get("live_url") ?? "").trim() || null) as string | null,
+        logo_url: (String(form.get("logo_url") ?? "").trim() || null) as string | null,
+        status: (String(form.get("status") ?? "").trim() || null) as string | null,
       };
 
       if (!payload.name || !payload.slug) {
-        setError("Veuillez fournir au minimum 'name' et 'slug'.");
+        setError("Veuillez fournir au minimum un nom interne et un identifiant.");
         setLoading(false);
         return;
       }
@@ -67,10 +62,7 @@ export default function NewProjectPage() {
       }
 
       await res.json();
-
-      // Redirection après création : vers la liste ou un détail si dispo
       router.push("/projects");
-      // Optionnel : refresh de la route
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -81,113 +73,138 @@ export default function NewProjectPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-[#f7f7f8] px-4 py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <section className="rounded-3xl border border-slate-200/60 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-300">Portefeuille</p>
-          <h1 className="mt-3 text-3xl font-bold">Déposer une opportunité côté prestataire</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-200">
-            Renseignez les informations clés de votre offre (produit, disponibilité, liens). L’équipe KORYXA
-            peut ensuite la publier dans le pipeline des besoins et en assurer le suivi auprès des
-            demandeurs.
-          </p>
-        </section>
-
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
-            {error}
+    <main className="grid gap-6 px-4 py-8 sm:px-6 lg:px-10">
+      <section className="mx-auto w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(237,247,255,0.98))] p-6 shadow-[0_24px_72px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="grid gap-5 lg:grid-cols-[1.18fr_0.82fr] lg:items-start">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Capacité / offre KORYXA</p>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
+              Déposer une capacité structurée dans l’écosystème KORYXA.
+            </h1>
+            <p className="max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
+              Cette surface sert à rendre visible une offre, une capacité d’exécution, un actif ou une ressource
+              que KORYXA pourra ensuite relier à une opportunité, une mission ou une activation plus large.
+            </p>
           </div>
-        )}
+          <div className="grid gap-3">
+            {[
+              "Le dépôt doit rester structuré, lisible et réutilisable dans le pipeline.",
+              "Une offre utile n’est pas juste un lien: elle décrit clairement capacité, valeur et contexte d’usage.",
+              "KORYXA peut ensuite la faire circuler côté entreprise, mission ou opportunité.",
+            ].map((item) => (
+              <div key={item} className="rounded-[24px] border border-slate-200/80 bg-white/90 px-4 py-4 text-sm leading-7 text-slate-700 shadow-sm">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        <form
-          onSubmit={onSubmit}
-          className="grid gap-6 rounded-[32px] border border-slate-200/60 bg-white p-6 shadow-sm md:grid-cols-[2fr,1fr]"
-        >
-          <div className="space-y-6">
+      {error ? (
+        <div className="mx-auto w-full max-w-6xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+          {error}
+        </div>
+      ) : null}
+
+      <form
+        onSubmit={onSubmit}
+        className="mx-auto grid w-full max-w-6xl gap-6 rounded-[34px] border border-slate-200 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] md:grid-cols-[1.14fr_0.86fr] sm:p-8"
+      >
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="name" className={labelClass}>
-                Nom *
+                Nom interne *
               </label>
-              <input id="name" name="name" type="text" required className={inputClass} placeholder="ex: Innova Frontend" />
+              <input id="name" name="name" type="text" required className={inputClass} placeholder="Ex: Capacité data pilotage" />
             </div>
             <div>
               <label htmlFor="slug" className={labelClass}>
-                Slug *
+                Identifiant *
               </label>
-              <input
-                id="slug"
-                name="slug"
-                type="text"
-                required
-                className={inputClass}
-                placeholder="ex: innova-frontend"
-              />
-            </div>
-            <div>
-              <label htmlFor="title" className={labelClass}>
-                Titre (optionnel)
-              </label>
-              <input id="title" name="title" type="text" className={inputClass} placeholder="Tagline ou pitch court" />
-            </div>
-            <div>
-              <label htmlFor="description" className={labelClass}>
-                Description (optionnel)
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={5}
-                className={`${inputClass} resize-none`}
-                placeholder="Décrivez la proposition de valeur, l'impact local, les ressources demandées..."
-              />
+              <input id="slug" name="slug" type="text" required className={inputClass} placeholder="Ex: capacite-data-pilotage" />
             </div>
           </div>
 
-          <div className="space-y-6 rounded-3xl border border-slate-200/70 bg-slate-50/70 p-5">
-            <h2 className="text-lg font-semibold text-slate-900">Détails techniques</h2>
-            <div>
-              <label htmlFor="repo_url" className={labelClass}>
-                Repo URL
-              </label>
-              <input id="repo_url" name="repo_url" type="url" className={inputClass} placeholder="https://github.com/..." />
-            </div>
-            <div>
-              <label htmlFor="live_url" className={labelClass}>
-                Live URL
-              </label>
-              <input id="live_url" name="live_url" type="url" className={inputClass} placeholder="https://..." />
-            </div>
-            <div>
-              <label htmlFor="logo_url" className={labelClass}>
-                Logo URL
-              </label>
-              <input id="logo_url" name="logo_url" type="url" className={inputClass} placeholder="https://..." />
-            </div>
-            <div>
-              <label htmlFor="status" className={labelClass}>
-                Statut
-              </label>
-              <select id="status" name="status" className={inputClass} defaultValue="draft">
-                <option value="draft">draft</option>
-                <option value="published">published</option>
-                <option value="archived">archived</option>
-              </select>
-            </div>
+          <div>
+            <label htmlFor="title" className={labelClass}>
+              Titre public
+            </label>
+            <input id="title" name="title" type="text" className={inputClass} placeholder="Ex: Dashboarding et lecture décisionnelle" />
+          </div>
 
+          <div>
+            <label htmlFor="description" className={labelClass}>
+              Description structurée
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={7}
+              className={`${inputClass} resize-none`}
+              placeholder="Décrivez la valeur de cette capacité, les cas d’usage, le contexte idéal, les résultats attendus et ce que KORYXA doit pouvoir activer autour."
+            />
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 text-sm leading-7 text-slate-600">
+            Une bonne capacité déposée doit pouvoir être comprise par trois publics à la fois: l’équipe KORYXA,
+            l’entreprise qui cherche une réponse utile et le réseau de talents / partenaires qui peut venir renforcer l’exécution.
+          </div>
+        </div>
+
+        <div className="space-y-6 rounded-[30px] border border-slate-200/70 bg-slate-50/70 p-5">
+          <h2 className="text-lg font-semibold text-slate-900">Références & état</h2>
+
+          <div>
+            <label htmlFor="repo_url" className={labelClass}>
+              Référence interne / repo
+            </label>
+            <input id="repo_url" name="repo_url" type="url" className={inputClass} placeholder="https://github.com/..." />
+          </div>
+
+          <div>
+            <label htmlFor="live_url" className={labelClass}>
+              Démo / ressource live
+            </label>
+            <input id="live_url" name="live_url" type="url" className={inputClass} placeholder="https://..." />
+          </div>
+
+          <div>
+            <label htmlFor="logo_url" className={labelClass}>
+              Visuel / logo
+            </label>
+            <input id="logo_url" name="logo_url" type="url" className={inputClass} placeholder="https://..." />
+          </div>
+
+          <div>
+            <label htmlFor="status" className={labelClass}>
+              État
+            </label>
+            <select id="status" name="status" className={inputClass} defaultValue="draft">
+              <option value="draft">Brouillon</option>
+              <option value="published">Publuable</option>
+              <option value="archived">Archivé</option>
+            </select>
+          </div>
+
+          <div className="rounded-[24px] border border-white/70 bg-white/80 p-4 text-sm leading-7 text-slate-600 shadow-sm">
+            Après dépôt, cette capacité pourra être utilisée dans le pipeline d’opportunités ou reliée à une mission.
+          </div>
+
+          <div className="flex flex-col gap-3">
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-2xl bg-slate-900 py-3 text-sm font-semibold text-white shadow-slate-900/30 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Création..." : "Créer le projet"}
+              {loading ? "Création…" : "Enregistrer la capacité"}
             </button>
-            <p className="text-xs text-slate-500">
-              En soumettant, vous confirmez que les informations partagées sont prêtes à être présentées aux
-              demandeurs et partenaires KORYXA.
-            </p>
+            <Link href="/projects" className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700">
+              Retour au pipeline
+            </Link>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </main>
   );
 }

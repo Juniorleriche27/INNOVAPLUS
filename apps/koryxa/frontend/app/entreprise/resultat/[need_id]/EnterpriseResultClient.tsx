@@ -27,6 +27,12 @@ function modeLabel(mode: "prive" | "publie" | "accompagne"): string {
   return "Accompagnement recommandé";
 }
 
+function modeDescription(mode: "prive" | "publie" | "accompagne"): string {
+  if (mode === "publie") return "Le besoin peut être rendu visible dans le pipeline si l’exposition apporte plus de capacité.";
+  if (mode === "prive") return "Le besoin reste traité dans un cadre privé et plus direct avec KORYXA.";
+  return "Le besoin demande un accompagnement plus encadré, avec structuration et supervision plus fortes.";
+}
+
 export default function EnterpriseResultClient({ needId }: Props) {
   const [submission, setSubmission] = useState<EnterpriseSubmissionResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,8 +76,8 @@ export default function EnterpriseResultClient({ needId }: Props) {
 
   const nextActions = useMemo(() => {
     if (!submission) return [];
-    const items = [submission.need.next_recommended_action, ...(submission.mission.steps || []).slice(0, 2)].filter(Boolean);
-    return items.slice(0, 3);
+    const items = [submission.need.next_recommended_action, ...(submission.mission.steps || []).slice(0, 3)].filter(Boolean);
+    return items.slice(0, 4);
   }, [submission]);
 
   async function handleOpenCockpit() {
@@ -97,9 +103,9 @@ export default function EnterpriseResultClient({ needId }: Props) {
   if (loading) {
     return (
       <main className="px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-5xl gap-6">
+        <div className="mx-auto grid max-w-6xl gap-6">
           <div className="h-40 animate-pulse rounded-[32px] bg-white" />
-          <div className="h-64 animate-pulse rounded-[32px] bg-white" />
+          <div className="h-80 animate-pulse rounded-[32px] bg-white" />
         </div>
       </main>
     );
@@ -128,7 +134,7 @@ export default function EnterpriseResultClient({ needId }: Props) {
 
   return (
     <main className="px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
@@ -152,9 +158,30 @@ export default function EnterpriseResultClient({ needId }: Props) {
             <div className="rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Mode recommandé</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{modeLabel(submission.need.recommended_treatment_mode)}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{submission.need.next_recommended_action}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                {modeDescription(submission.need.recommended_treatment_mode)}
+              </p>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Qualification", value: `${submission.need.qualification_score}/100`, detail: "Niveau de structuration du besoin" },
+            { label: "Clarté", value: submission.need.clarity_level, detail: "Capacité à être traité rapidement" },
+            { label: "Mission", value: submission.mission.execution_mode, detail: submission.mission.status },
+            {
+              label: "Opportunité",
+              value: submission.opportunity ? "Créée" : "Pas encore exposée",
+              detail: submission.opportunity ? submission.opportunity.type : "Exposition optionnelle selon mode",
+            },
+          ].map((item) => (
+            <article key={item.label} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{item.label}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{item.value}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">{item.detail}</p>
+            </article>
+          ))}
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -188,15 +215,95 @@ export default function EnterpriseResultClient({ needId }: Props) {
           </article>
         </section>
 
-        <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">3 prochaines actions</p>
-          <div className="mt-5 grid gap-3">
-            {nextActions.map((action, index) => (
-              <div key={action} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Action {index + 1}</p>
-                <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{action}</p>
+        <section className="grid gap-4 lg:grid-cols-2">
+          <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">3 prochaines actions</p>
+            <div className="mt-5 grid gap-3">
+              {nextActions.map((action, index) => (
+                <div key={action} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Action {index + 1}</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{action}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Traitement & exposition</p>
+            <div className="mt-5 grid gap-3">
+              {[
+                "Le besoin doit être cadré avant toute logique d’affectation ou de recrutement.",
+                "Une mission claire permet ensuite d’activer capacité, supervision et livrables.",
+                "L’opportunité peut être exposée si cela augmente la qualité ou la vitesse d’exécution.",
+              ].map((item) => (
+                <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-[1.04fr_0.96fr]">
+          <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Étapes de mission</p>
+            <div className="mt-5 grid gap-3">
+              {submission.mission.steps.map((step, index) => (
+                <div key={step} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Étape {index + 1}</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{step}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Opportunité & capacité</p>
+            <div className="mt-5 grid gap-3">
+              {submission.opportunity ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                  <p className="text-sm font-semibold text-white">{submission.opportunity.title}</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-300">{submission.opportunity.summary}</p>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
+                    {submission.opportunity.highlights.join(" • ")}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-7 text-slate-300">
+                  Ce besoin peut rester traité sans exposition publique si le mode recommandé est plus privé ou plus encadré.
+                </div>
+              )}
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-7 text-slate-300">
+                Des formateurs partenaires et des talents certifiés pourront ensuite être activés si cela améliore l’exécution.
               </div>
-            ))}
+            </div>
+          </article>
+        </section>
+
+        <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Passage à l'action</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+                La suite se joue dans le cockpit entreprise KORYXA.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Vous y retrouverez le besoin structuré, les étapes d’exécution, les livrables, la supervision et
+                les éventuelles activations côté opportunités ou capacités humaines.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link href="/community" className="btn-secondary">
+                Réseau IA
+              </Link>
+              <Link href="/formateurs" className="btn-secondary">
+                Formateurs
+              </Link>
+              <Link href="/opportunities" className="btn-secondary">
+                Opportunités
+              </Link>
+            </div>
           </div>
 
           {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}

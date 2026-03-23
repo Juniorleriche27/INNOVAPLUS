@@ -4,187 +4,86 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "À propos | KORYXA",
   description:
-    "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
-  openGraph: {
-    title: "À propos | KORYXA",
-    description:
-      "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
-    url: "/about",
-  },
-  twitter: {
-    title: "À propos | KORYXA",
-    description:
-      "Découvrez la mission, les principes et le cadre produit de KORYXA autour des besoins réels, trajectoires et exécution.",
-  },
+    "Découvrez la mission, les principes et l'architecture produit de KORYXA entre besoins IA, trajectoires IA et exécution réelle.",
 };
 
-const MISSION_PILLARS = [
+const PILLARS = [
   {
-    title: "Relier trajectoire et exécution",
-    text: "KORYXA transforme des besoins réels en missions exploitables et en trajectoires guidées plus utiles à suivre.",
+    title: "Orchestrer plutôt qu'empiler",
+    text: "KORYXA relie des besoins, des capacités humaines, des produits, des validations et des opportunités au lieu d'empiler des modules isolés.",
   },
   {
-    title: "Rendre l'IA plus utile",
-    text: "L'IA sert ici à cadrer, accélérer et standardiser le travail, pas à produire un discours marketing vide.",
+    title: "Rendre l'IA achetable",
+    text: "Le langage produit doit rester ancré dans l'analyse, l'automatisation, la structuration et les livrables utiles.",
   },
   {
-    title: "Organiser un impact concret",
-    text: "Chaque mission doit aider une organisation, faire progresser un utilisateur et renforcer un cadre plus clair.",
+    title: "Rendre la progression défendable",
+    text: "Les trajectoires doivent produire des preuves, des validations et des profils vérifiés qui ont une valeur réelle.",
   },
 ];
 
-const DIFFERENTIATORS = [
-  "On avance sur des cas utiles, pas seulement sur des démonstrations fictives.",
-  "Les organisations cadrent un besoin réel avec un cadre KORYXA.",
-  "Les livrables et les preuves de travail comptent plus que la simple présence.",
-  "L'IA est utilisée comme outil de clarification, de production et de qualité.",
+const NOT_THIS = [
+  "Pas une promesse vague autour de l'IA.",
+  "Pas une école générique déconnectée du terrain.",
+  "Pas un cabinet RH ou une marketplace de coachs sans gouvernance.",
+  "Pas un simple dashboard rebadgé.",
 ];
-
-const PRINCIPLES = ["Utilité", "Structuration", "Exécution", "Impact réel"];
 
 export default function AboutPage() {
   return (
-    <main className="px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <section className="relative overflow-hidden rounded-[36px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8 lg:p-10">
-          <div className="absolute inset-y-0 right-0 w-[34%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.16),transparent_62%)]" aria-hidden />
-          <div className="relative grid gap-8 lg:grid-cols-[1.3fr_0.9fr] lg:items-center">
-            <div className="space-y-5">
-              <div className="flex flex-wrap gap-3">
-                <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
-                  À propos
-                </span>
-                <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                  mission, principes, cadre
-                </span>
-              </div>
-
-              <div className="max-w-3xl space-y-4">
-                <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
-                  KORYXA organise la rencontre entre besoins réels, trajectoires pilotées et exécution mieux cadrée.
-                </h1>
-                <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                  La plateforme est construite autour d'une idée simple : convertir un problème concret en mission
-                  faisable, structurer la trajectoire, accompagner l'exécution et produire des résultats utiles.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Link href="/trajectoire" className="btn-primary">
-                  Explorer les trajectoires
-                </Link>
-                <Link href="/entreprise" className="btn-secondary">
-                  Voir le côté Entreprise
-                </Link>
-              </div>
+    <main className="grid gap-8">
+      <section className="relative overflow-hidden rounded-[38px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,247,255,0.98))] px-6 py-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] sm:px-8 lg:px-10">
+        <div className="absolute inset-y-0 right-0 w-[34%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_60%)]" aria-hidden />
+        <div className="relative grid gap-8 lg:grid-cols-[1.22fr_0.78fr] lg:items-start">
+          <div className="space-y-5">
+            <div className="flex flex-wrap gap-3">
+              <span className="inline-flex rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
+                À propos
+              </span>
+              <span className="inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+                mission • cadre • architecture
+              </span>
             </div>
-
-            <div className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_22px_54px_rgba(15,23,42,0.2)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Ce que KORYXA n'est pas</p>
-              <div className="mt-5 grid gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200">
-                  Ce n'est pas un simple site d'offres ou une promesse vague autour de l'IA.
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200">
-                  Ce n'est pas une logique scolaire déconnectée du terrain ou une accumulation de contenu.
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-6 text-slate-200">
-                  Ce n'est pas de l'IA magique sans méthode, sans données et sans validation.
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Mission</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Ce que KORYXA veut rendre possible</h2>
-            </div>
-            <p className="max-w-xl text-sm leading-7 text-slate-600">
-              Une plateforme utile doit aider les organisations à avancer et permettre aux utilisateurs de progresser sur du vrai travail.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {MISSION_PILLARS.map((item, index) => (
-              <article
-                key={item.title}
-                className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] p-6"
-              >
-                <div className="absolute right-5 top-5 text-5xl font-semibold tracking-[-0.08em] text-slate-200">
-                  0{index + 1}
-                </div>
-                <div className="relative max-w-xs">
-                  <p className="text-lg font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Ce qui rend KORYXA différent</p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Une logique plus structurée que la simple présence en ligne.</h3>
-            <ul className="mt-6 grid gap-3 text-sm leading-7 text-slate-700">
-              {DIFFERENTIATORS.map((item) => (
-                <li key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </article>
-
-          <article className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Principes</p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Les points qui doivent rester visibles dans le produit.</h3>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {PRINCIPLES.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-            <p className="mt-6 text-sm leading-7 text-slate-600">
-              Si ces principes disparaissent du design ou du produit, KORYXA devient juste une vitrine. Le but est de garder
-              une plateforme lisible, défendable et exploitable.
-            </p>
-          </article>
-        </section>
-
-        <section className="rounded-[32px] border border-slate-200/80 bg-[linear-gradient(135deg,#0f172a,#0b2742)] p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)] sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.95fr] lg:items-center">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Prochaine étape</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-                Comprendre KORYXA, puis entrer soit par Trajectoire, soit par Entreprise.
-              </h2>
-              <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-                Le site doit rester simple à lire : mission, cadre, puis action. C'est cette logique qui guide le repositionnement public.
+            <div className="space-y-4">
+              <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-slate-950 sm:text-5xl lg:text-6xl">
+                KORYXA organise la rencontre entre besoins IA, trajectoires IA et exécution réelle.
+              </h1>
+              <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+                Le projet n'a pas vocation à être un simple site vitrine. KORYXA doit devenir une plateforme capable
+                de cadrer un besoin, d'orienter une progression, de valider un niveau et d'activer une exécution crédible.
               </p>
             </div>
-            <div className="grid gap-4">
-              <div className="rounded-[26px] border border-white/12 bg-white/8 p-5">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-200">Choisir une entrée</p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Link href="/trajectoire" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
-                    Explorer les trajectoires
-                  </Link>
-                  <Link href="/entreprise" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
-                    Aller sur Entreprise
-                  </Link>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/entreprise" className="btn-primary">
+                Voir l'offre entreprise
+              </Link>
+              <Link href="/trajectoire" className="btn-secondary">
+                Voir Trajectoire
+              </Link>
             </div>
           </div>
-        </section>
-      </div>
+
+          <div className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">KORYXA n'est pas</p>
+            <div className="mt-5 grid gap-3">
+              {NOT_THIS.map((item) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-7 text-slate-200">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-3">
+        {PILLARS.map((pillar) => (
+          <article key={pillar.title} className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">{pillar.title}</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">{pillar.text}</p>
+          </article>
+        ))}
+      </section>
     </main>
   );
 }

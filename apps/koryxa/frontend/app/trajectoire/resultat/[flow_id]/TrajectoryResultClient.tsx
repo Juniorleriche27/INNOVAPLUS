@@ -32,6 +32,13 @@ function profileTone(status: "not_ready" | "eligible" | "verified"): string {
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
+function validationLabel(level?: string | null): string {
+  if (level === "advanced") return "Validation avancée";
+  if (level === "validated") return "Validation atteinte";
+  if (level === "building") return "Validation en construction";
+  return "Validation initiale";
+}
+
 export default function TrajectoryResultClient({ flowId }: Props) {
   const [flow, setFlow] = useState<TrajectoryFlowResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,9 +82,14 @@ export default function TrajectoryResultClient({ flowId }: Props) {
 
   const nextActions = useMemo(() => {
     const actions = flow?.progress_plan?.next_actions?.length ? flow.progress_plan.next_actions : flow?.diagnostic?.next_steps ?? [];
-    const normalized = actions.filter(Boolean).slice(0, 3);
+    const normalized = actions.filter(Boolean).slice(0, 4);
     if (normalized.length > 0) return normalized;
-    return ["Clarifier votre premier livrable utile", "Choisir votre mode d'accompagnement", "Ouvrir votre cockpit de progression"];
+    return [
+      "Clarifier votre premier livrable utile",
+      "Choisir votre mode d'accompagnement",
+      "Ouvrir votre cockpit de progression",
+      "Préparer vos premières preuves",
+    ];
   }, [flow]);
 
   const recommendations = useMemo(() => {
@@ -97,15 +109,16 @@ export default function TrajectoryResultClient({ flowId }: Props) {
       items.push({
         eyebrow: partner.type,
         title: partner.label,
-        description: partner.reason,
+        description: `${partner.reason} • score ${Math.round(partner.match_score * 100)}%`,
       });
     }
-    if (items.length > 0) return items.slice(0, 2);
+    if (items.length > 0) return items.slice(0, 3);
     return [
       {
         eyebrow: "Recommandation",
         title: "Commencer par une ressource guidée",
-        description: "Le diagnostic servira ensuite à affiner les partenaires et ressources les plus pertinents.",
+        description:
+          "Le diagnostic servira ensuite à affiner les partenaires, les preuves et les ressources les plus pertinentes.",
       },
     ];
   }, [flow]);
@@ -120,7 +133,7 @@ export default function TrajectoryResultClient({ flowId }: Props) {
             : flow.verified_profile.profile_status === "eligible"
               ? "Profil KORYXA éligible"
               : "Profil KORYXA en construction",
-        detail: `Readiness ${flow.verified_profile.readiness_score}/100 • ${flow.verified_profile.validation_level}`,
+        detail: `Readiness ${flow.verified_profile.readiness_score}/100 • ${validationLabel(flow.verified_profile.validation_level)}`,
         tone: profileTone(flow.verified_profile.profile_status),
       });
     }
@@ -131,11 +144,12 @@ export default function TrajectoryResultClient({ flowId }: Props) {
         tone: opportunityTone(opportunity.visibility_status),
       });
     }
-    if (items.length > 0) return items.slice(0, 3);
+    if (items.length > 0) return items.slice(0, 4);
     return [
       {
         label: "Première opportunité à construire",
-        detail: "Le cockpit servira à transformer cette trajectoire en progression, validation et débouchés plus crédibles.",
+        detail:
+          "Le cockpit servira à transformer cette trajectoire en progression, validation et débouchés plus crédibles.",
         tone: "border-slate-200 bg-slate-50 text-slate-700",
       },
     ];
@@ -164,9 +178,9 @@ export default function TrajectoryResultClient({ flowId }: Props) {
   if (loading) {
     return (
       <main className="px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-5xl gap-6">
+        <div className="mx-auto grid max-w-6xl gap-6">
           <div className="h-40 animate-pulse rounded-[32px] bg-white" />
-          <div className="h-64 animate-pulse rounded-[32px] bg-white" />
+          <div className="h-80 animate-pulse rounded-[32px] bg-white" />
         </div>
       </main>
     );
@@ -193,9 +207,12 @@ export default function TrajectoryResultClient({ flowId }: Props) {
     );
   }
 
+  const readiness = flow.diagnostic.readiness;
+  const verifiedProfile = flow.verified_profile;
+
   return (
     <main className="px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
@@ -203,14 +220,17 @@ export default function TrajectoryResultClient({ flowId }: Props) {
             </span>
             <span
               className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${readinessTone(
-                flow.diagnostic.readiness.readiness_score,
+                readiness.readiness_score,
               )}`}
             >
-              Readiness {flow.diagnostic.readiness.readiness_score}/100
+              Readiness {readiness.readiness_score}/100
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+              {validationLabel(readiness.validation_level)}
             </span>
           </div>
 
-          <div className="mt-5 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+          <div className="mt-5 grid gap-6 lg:grid-cols-[1.18fr_0.82fr] lg:items-start">
             <div>
               <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                 Votre trajectoire recommandée est prête.
@@ -224,8 +244,26 @@ export default function TrajectoryResultClient({ flowId }: Props) {
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Trajectoire recommandée</p>
               <p className="mt-3 text-2xl font-semibold text-slate-950">{flow.diagnostic.recommended_trajectory.title}</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">{flow.diagnostic.recommended_trajectory.rationale}</p>
+              <p className="mt-4 rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3 text-sm leading-6 text-sky-800">
+                Focus mission: {flow.diagnostic.recommended_trajectory.mission_focus}
+              </p>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Score initial", value: `${readiness.initial_score}/100`, detail: "Point de départ actuel" },
+            { label: "Progression", value: `${flow.progress_plan?.progress_score ?? readiness.progress_score}/100`, detail: "Niveau déjà consolidé" },
+            { label: "Readiness final", value: `${readiness.readiness_score}/100`, detail: readiness.label },
+            { label: "Validation", value: validationLabel(readiness.validation_level), detail: readiness.validation_status },
+          ].map((item) => (
+            <article key={item.label} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{item.label}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{item.value}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-600">{item.detail}</p>
+            </article>
+          ))}
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -270,9 +308,7 @@ export default function TrajectoryResultClient({ flowId }: Props) {
             <div className="mt-5 grid gap-3">
               {nextActions.map((action, index) => (
                 <div key={action} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Action {index + 1}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Action {index + 1}</p>
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">{action}</p>
                 </div>
               ))}
@@ -280,7 +316,7 @@ export default function TrajectoryResultClient({ flowId }: Props) {
           </article>
 
           <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">1 ou 2 recommandations utiles</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Matching & ressources</p>
             <div className="mt-5 grid gap-3">
               {recommendations.map((item) => (
                 <div key={`${item.eyebrow}-${item.title}`} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
@@ -293,16 +329,88 @@ export default function TrajectoryResultClient({ flowId }: Props) {
           </article>
         </section>
 
+        <section className="grid gap-4 lg:grid-cols-[1.04fr_0.96fr]">
+          <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Profil vérifié & preuves</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Statut</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {verifiedProfile
+                    ? verifiedProfile.profile_status === "verified"
+                      ? "Profil vérifié"
+                      : verifiedProfile.profile_status === "eligible"
+                        ? "Profil éligible"
+                        : "Profil en construction"
+                    : "Profil à créer"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Preuves validées</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {verifiedProfile ? `${verifiedProfile.validated_proof_count} / ${verifiedProfile.minimum_validated_proofs}` : "À construire"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Seuil readiness</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {verifiedProfile ? `${verifiedProfile.minimum_readiness_score}/100 minimum` : "À définir"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Headline partageable</p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {verifiedProfile?.shareable_headline || "Votre headline se construira avec la progression."}
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Boucle d’activation</p>
+            <div className="mt-5 grid gap-3">
+              {[
+                "Diagnostic et orientation validée",
+                "Matching avec ressource ou formateur partenaire",
+                "Preuves et validations dans le cockpit",
+                "Profil vérifié puis activation sur opportunité utile",
+              ].map((item, index) => (
+                <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">Étape {index + 1}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">{item}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+        </section>
+
         <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-8">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Passage à l'action</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-              Le détail de la progression vit dans votre cockpit KORYXA.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              Vous y retrouverez les tâches MyPlanning, les preuves à ajouter, les validations métier, les opportunités
-              débloquées et votre profil KORYXA dans un cadre unique.
-            </p>
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Passage à l'action</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+                Le détail de la progression vit dans votre cockpit KORYXA.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Vous y retrouverez les tâches d’exécution, les preuves à ajouter, les validations métier, les
+                opportunités débloquées et votre profil KORYXA dans un cadre unique.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link href="/myplanning/profile" className="btn-secondary">
+                Voir mon profil
+              </Link>
+              <Link href="/community" className="btn-secondary">
+                Réseau IA
+              </Link>
+              <Link href="/formateurs" className="btn-secondary">
+                Formateurs
+              </Link>
+              <Link href="/opportunities" className="btn-secondary">
+                Opportunités
+              </Link>
+            </div>
           </div>
 
           {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}

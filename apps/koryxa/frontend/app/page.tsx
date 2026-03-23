@@ -111,12 +111,12 @@ const ECOSYSTEM_CARDS = [
 
 export default function HomePage() {
   return (
-    <main className="grid gap-8">
-      <section className="relative overflow-hidden rounded-[40px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(236,246,255,0.96))] px-6 py-8 shadow-[0_30px_90px_rgba(15,23,42,0.08)] sm:px-8 lg:px-10 lg:py-10">
-        <div className="absolute inset-y-0 right-0 w-[38%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_62%)]" aria-hidden />
-        <div className="absolute -left-24 top-8 h-56 w-56 rounded-full bg-sky-200/35 blur-3xl" aria-hidden />
-        <div className="relative grid gap-8 lg:grid-cols-[1.28fr_0.9fr] lg:items-start">
-          <div className="space-y-6">
+    <main className="grid gap-10">
+      <section className="relative overflow-hidden rounded-[48px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(238,247,255,0.98))] px-7 py-9 shadow-[0_34px_94px_rgba(15,23,42,0.08)] sm:px-10 lg:px-12 lg:py-11">
+        <div className="absolute inset-y-0 right-0 w-[42%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.2),transparent_62%)]" aria-hidden />
+        <div className="absolute -left-24 top-8 h-56 w-56 rounded-full bg-sky-200/40 blur-3xl" aria-hidden />
+        <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1.32fr)_minmax(360px,0.9fr)] lg:items-start">
+          <div className="space-y-7">
             <div className="flex flex-wrap gap-3">
               <span className="inline-flex rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-sky-700">
                 KORYXA
@@ -126,18 +126,18 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="max-w-4xl space-y-4">
-              <h1 className="text-4xl font-semibold leading-[0.98] tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-7xl">
+            <div className="max-w-[54rem] space-y-5">
+              <h1 className="kx-display max-w-[10.6ch] text-[3.5rem] font-semibold leading-[0.94] text-slate-950 sm:text-[4.35rem] lg:text-[5.8rem]">
                 La plateforme premium pour structurer les besoins IA et faire grandir les capacités IA.
               </h1>
-              <p className="max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">
+              <p className="max-w-[41rem] text-[1.06rem] leading-8 text-slate-600 sm:text-[1.18rem]">
                 KORYXA relie les besoins IA/data des entreprises, la montée en compétence vers les métiers IA,
                 l'activation de formateurs partenaires, la validation des profils et l'accès à des missions ou
                 opportunités réelles.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="grid gap-3 sm:max-w-[42rem] sm:grid-cols-[max-content_max-content]">
               <Link href="/entreprise/demarrer" className="btn-primary w-full justify-center sm:w-auto">
                 Décrire un besoin entreprise
               </Link>
@@ -151,27 +151,27 @@ export default function HomePage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               {SIGNALS.map((signal) => (
-                <div key={signal} className="rounded-[24px] border border-white/80 bg-white/78 px-4 py-4 text-sm font-semibold text-slate-700 shadow-[0_16px_36px_rgba(148,163,184,0.14)] backdrop-blur">
+                <div key={signal} className="min-h-[5.8rem] rounded-[26px] border border-white/85 bg-white/78 px-5 py-4 text-[1.02rem] font-semibold leading-7 text-slate-700 shadow-[0_18px_36px_rgba(148,163,184,0.14)] backdrop-blur">
                   {signal}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <article className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.2)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-200">Pourquoi KORYXA</p>
-              <div className="mt-5 grid gap-4">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm font-semibold">Une logique d'orchestration</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
+          <div className="grid gap-5 pt-2">
+            <article className="rounded-[36px] border border-slate-200/80 bg-slate-950 p-7 text-white shadow-[0_28px_64px_rgba(15,23,42,0.22)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.34em] text-sky-200">Pourquoi KORYXA</p>
+              <div className="mt-6 grid gap-5">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                  <p className="text-[1.02rem] font-semibold">Une logique d'orchestration</p>
+                  <p className="mt-2 text-[1.02rem] leading-8 text-slate-300">
                     KORYXA ne vend pas de l'IA abstraite. La plateforme structure un besoin, active une trajectoire,
                     pilote la validation et connecte l'exécution au bon niveau.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-sm font-semibold">Une capacité humaine pilotée</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
+                  <p className="text-[1.02rem] font-semibold">Une capacité humaine pilotée</p>
+                  <p className="mt-2 text-[1.02rem] leading-8 text-slate-300">
                     Formateurs, talents certifiables, cockpit de progression, opportunités et mission matching doivent
                     fonctionner comme un système, pas comme des modules isolés.
                   </p>
@@ -180,34 +180,36 @@ export default function HomePage() {
             </article>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-[26px] border border-slate-200/80 bg-white/90 p-5 shadow-sm">
+              <div className="rounded-[30px] border border-slate-200/80 bg-white/92 p-6 shadow-[0_16px_36px_rgba(148,163,184,0.14)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Entreprise</p>
-                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Besoins IA concrets, cadrage, pilote et livraison utile.</p>
+                <p className="kx-display mt-3 text-[2.15rem] font-semibold leading-[1.12] text-slate-950">Besoins IA concrets, cadrage, pilote et livraison utile.</p>
               </div>
-              <div className="rounded-[26px] border border-slate-200/80 bg-white/90 p-5 shadow-sm">
+              <div className="rounded-[30px] border border-slate-200/80 bg-white/92 p-6 shadow-[0_16px_36px_rgba(148,163,184,0.14)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Trajectoire</p>
-                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Orientation, matching formateur, preuves et profil vérifié.</p>
+                <p className="kx-display mt-3 text-[2.15rem] font-semibold leading-[1.12] text-slate-950">Orientation, matching formateur, preuves et profil vérifié.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="rounded-[34px] border border-slate-200/80 bg-white/92 p-6 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+      <section className="rounded-[40px] border border-slate-200/80 bg-white/94 p-7 shadow-[0_20px_52px_rgba(15,23,42,0.06)] sm:p-9 lg:p-10">
+        <div className="grid gap-5 lg:grid-cols-[1.04fr_0.96fr] lg:items-end">
+          <div className="max-w-[44rem]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Offre entreprise</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Les besoins IA/data que KORYXA structure et pilote</h2>
+            <h2 className="kx-display mt-3 text-[2.8rem] font-semibold leading-[1.08] text-slate-950 sm:text-[3.45rem]">
+              Les besoins IA/data que KORYXA structure et pilote
+            </h2>
           </div>
-          <p className="max-w-xl text-sm leading-7 text-slate-600">
+          <p className="max-w-[34rem] text-[1.06rem] leading-8 text-slate-600 lg:justify-self-end">
             Les entreprises n'achètent pas un mot à la mode. Elles achètent un besoin cadré, un cas d'usage exécutable et un résultat utile.
           </p>
         </div>
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+        <div className="mt-9 grid gap-5 lg:grid-cols-2">
           {ENTERPRISE_SUITES.map((suite) => (
-            <article key={suite.title} className="rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] p-6">
-              <h3 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{suite.title}</h3>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{suite.description}</p>
+            <article key={suite.title} className="min-h-[13.2rem] rounded-[30px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(249,251,255,0.94),rgba(255,255,255,0.99))] p-7 shadow-[0_10px_24px_rgba(148,163,184,0.08)]">
+              <h3 className="kx-display text-[2.1rem] font-semibold leading-[1.12] text-slate-950">{suite.title}</h3>
+              <p className="mt-5 text-[1.03rem] leading-8 text-slate-600">{suite.description}</p>
             </article>
           ))}
         </div>

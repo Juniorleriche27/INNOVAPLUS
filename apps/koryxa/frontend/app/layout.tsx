@@ -2,11 +2,25 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Manrope, Space_Grotesk } from "next/font/google";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider, themeInitScript } from "@/components/theme/ThemeProvider";
 import PWARegister from "@/components/util/PWARegister";
 import RouteShell from "@/components/layout/RouteShell";
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
 
 const pwaResetScript = `
 (() => {
@@ -51,7 +65,7 @@ export default function RootLayout(props: { children: ReactNode }) {
   const { children } = props;
 
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${manrope.variable} ${spaceGrotesk.variable}`}>
       <head>
         <meta charSet="utf-8" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

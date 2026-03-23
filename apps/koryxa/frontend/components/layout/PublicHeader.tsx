@@ -70,9 +70,6 @@ export default function PublicHeader() {
           </div>
           <div className="min-w-0">
             <p className="kx-display text-[1.8rem] font-semibold leading-none text-slate-950 dark:text-white">KORYXA</p>
-            <p className="hidden max-w-[15rem] text-[0.95rem] leading-6 text-slate-500 dark:text-slate-400 md:block">
-              Plateforme premium • besoins IA, trajectoires, reseau et produits
-            </p>
           </div>
         </Link>
 

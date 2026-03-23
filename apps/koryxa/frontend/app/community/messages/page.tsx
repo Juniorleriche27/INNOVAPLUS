@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import MessagesInboxClient from "../_components/MessagesInboxClient";
 
@@ -6,6 +7,14 @@ export const metadata: Metadata = {
   description:
     "Messagerie directe du réseau IA KORYXA entre talents, formateurs, équipe KORYXA et capacités activables.",
 };
+
+function MessagesInboxFallback() {
+  return (
+    <div className="rounded-[32px] border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-500 shadow-sm">
+      Chargement de la messagerie...
+    </div>
+  );
+}
 
 export default function CommunityMessagesPage() {
   return (
@@ -38,8 +47,9 @@ export default function CommunityMessagesPage() {
         </div>
       </section>
 
-      <MessagesInboxClient />
+      <Suspense fallback={<MessagesInboxFallback />}>
+        <MessagesInboxClient />
+      </Suspense>
     </main>
   );
 }
-

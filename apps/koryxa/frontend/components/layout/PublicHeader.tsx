@@ -15,14 +15,15 @@ type PublicNavLink = {
 
 const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { href: "/", label: "Accueil" },
-  { href: "/trajectoire", label: "Trajectoire" },
-  { href: "/community", label: "Réseau IA" },
-  { href: "/products", label: "Produits" },
   { href: "/entreprise", label: "Entreprise" },
-  { href: "/about", label: "À propos" },
+  { href: "/trajectoire", label: "Trajectoire" },
+  { href: "/produits", label: "Produits" },
+  { href: "/communaute", label: "Communauté" },
+  { href: "/a-propos", label: "À propos" },
 ];
 
-const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
+const KORYXA_CONNECTED_HOME = "/platform";
+const KORYXA_PLATFORM_HOME = "/platform";
 const KORYXA_PUBLIC_HOME = "/";
 
 function isActive(pathname: string, href: string): boolean {
@@ -50,6 +51,7 @@ export default function PublicHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isHome = pathname === "/";
 
   const isAuthPage =
     pathname === "/login" ||
@@ -58,18 +60,24 @@ export default function PublicHeader() {
     pathname.startsWith("/account/recover");
   const isAuthenticated = Boolean(user?.email) && !isAuthPage;
   const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
-  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
-  const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : signupHref;
+  const loginHref = isHome ? KORYXA_PLATFORM_HOME : `/login?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
+  const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : isHome ? "/trajectoire/demarrer" : signupHref;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/55 bg-white/76 backdrop-blur-2xl transition-colors dark:border-slate-800/80 dark:bg-slate-950/78">
+    <header
+      className={clsx(
+        "sticky top-0 z-40 transition-colors",
+        isHome
+          ? "border-b border-slate-200 bg-white/96 backdrop-blur"
+          : "border-b border-white/55 bg-white/76 backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950/78",
+      )}
+    >
       <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-3">
-          <div className="flex h-12 w-6 items-center justify-center rounded-[14px] border border-white/75 bg-[linear-gradient(180deg,#05111d_0%,#08304f_55%,#0ea5e9_100%)] shadow-[0_16px_30px_rgba(2,132,199,0.18)]">
-            <span className="text-[0.95rem] font-black tracking-[-0.08em] text-white">K</span>
-          </div>
           <div className="min-w-0">
-            <p className="kx-display text-[1.48rem] font-semibold leading-none text-slate-950 dark:text-white sm:text-[1.58rem]">KORYXA</p>
+            <p className={clsx("kx-display text-[1.7rem] font-semibold leading-none tracking-[-0.06em]", isHome ? "text-sky-700" : "text-slate-950 dark:text-white sm:text-[1.58rem]")}>
+              KORYXA
+            </p>
           </div>
         </Link>
 
@@ -82,7 +90,11 @@ export default function PublicHeader() {
                 href={link.href}
                 className={clsx(
                   "whitespace-nowrap rounded-full border px-4 py-2.5 text-[0.95rem] font-semibold transition",
-                  active
+                  isHome
+                    ? active
+                      ? "border-transparent bg-transparent text-sky-600"
+                      : "border-transparent bg-transparent text-slate-600 hover:text-slate-950"
+                    : active
                     ? "border-sky-200/90 bg-sky-50/95 text-sky-700 shadow-[0_12px_26px_rgba(14,165,233,0.08)] dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
                     : "border-transparent text-slate-800 hover:border-slate-200/80 hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white",
                 )}
@@ -94,11 +106,16 @@ export default function PublicHeader() {
         </nav>
 
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
-          <ThemeToggle showLabel={false} />
+          {!isHome ? <ThemeToggle showLabel={false} /> : null}
           {!isAuthenticated ? (
             <Link
               href={loginHref}
-              className="inline-flex whitespace-nowrap items-center justify-center rounded-full border border-slate-200/80 bg-white/92 px-4 py-2.5 text-[0.95rem] font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
+              className={clsx(
+                "inline-flex whitespace-nowrap items-center justify-center rounded-full px-4 py-2.5 text-[0.95rem] font-semibold transition",
+                isHome
+                  ? "border border-transparent bg-transparent text-slate-950 hover:text-sky-700"
+                  : "border border-slate-200/80 bg-white/92 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100",
+              )}
             >
               Se connecter
             </Link>
@@ -112,13 +129,18 @@ export default function PublicHeader() {
           <Link
             href={platformHref}
             className={clsx(
-              "inline-flex whitespace-nowrap items-center justify-center rounded-full px-6 py-3 text-[0.95rem] font-semibold text-white transition",
+              "inline-flex whitespace-nowrap items-center justify-center rounded-full px-6 py-3 text-[0.95rem] font-semibold transition",
+              isHome && !isAuthenticated
+                ? "bg-[#1689cf] text-white shadow-none hover:-translate-y-0.5 hover:bg-[#117fc2]"
+                : "",
               isAuthenticated
-                ? "bg-[linear-gradient(135deg,#082f49_0%,#0284c7_48%,#38bdf8_100%)] shadow-[0_18px_40px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.3)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]"
-                : "bg-[linear-gradient(135deg,#0f172a_0%,#0b4b6f_42%,#38bdf8_100%)] shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
+                ? "bg-[linear-gradient(135deg,#082f49_0%,#0284c7_48%,#38bdf8_100%)] text-white shadow-[0_18px_40px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.3)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]"
+                : isHome
+                ? ""
+                : "bg-[linear-gradient(135deg,#0f172a_0%,#0b4b6f_42%,#38bdf8_100%)] text-white shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
             )}
           >
-            {isAuthenticated ? "Ouvrir la plateforme" : "S’inscrire"}
+            {isAuthenticated ? "Ouvrir la plateforme" : isHome ? "Démarrer" : "S’inscrire"}
           </Link>
         </div>
 
@@ -134,7 +156,7 @@ export default function PublicHeader() {
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-slate-200/80 bg-white/92 px-4 py-4 dark:border-slate-800 dark:bg-slate-950 xl:hidden">
+        <div className={clsx("border-t px-4 py-4 xl:hidden", isHome ? "border-slate-200 bg-white" : "border-slate-200/80 bg-white/92 dark:border-slate-800 dark:bg-slate-950")}>
           <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] flex-col gap-2">
             {PUBLIC_NAV_LINKS.map((link) => {
               const active = isActive(pathname, link.href);
@@ -145,7 +167,11 @@ export default function PublicHeader() {
                   onClick={() => setMobileOpen(false)}
                   className={clsx(
                     "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
-                    active
+                    isHome
+                      ? active
+                        ? "border-sky-100 bg-sky-50 text-sky-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700"
+                      : active
                       ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
                       : "border-slate-200/80 bg-white/90 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-sky-400/60 dark:hover:text-sky-100",
                   )}
@@ -156,12 +182,17 @@ export default function PublicHeader() {
             })}
 
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <ThemeToggle showLabel={false} className="justify-center sm:col-span-2" />
+              {!isHome ? <ThemeToggle showLabel={false} className="justify-center sm:col-span-2" /> : null}
               {!isAuthenticated ? (
                 <Link
                   href={loginHref}
                   onClick={() => setMobileOpen(false)}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  className={clsx(
+                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold",
+                    isHome
+                      ? "border border-slate-200 bg-white text-slate-700"
+                      : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100",
+                  )}
                 >
                   Se connecter
                 </Link>
@@ -176,14 +207,17 @@ export default function PublicHeader() {
                 href={platformHref}
                 onClick={() => setMobileOpen(false)}
                 className={clsx(
-                  "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold text-white",
+                  "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold",
+                  isHome && !isAuthenticated ? "bg-[#1689cf] text-white" : "",
                   isAuthenticated
-                    ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] shadow-[0_16px_36px_rgba(2,132,199,0.22)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white"
-                    : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] shadow-[0_16px_36px_rgba(2,132,199,0.24)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950",
+                    ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] text-white shadow-[0_16px_36px_rgba(2,132,199,0.22)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white"
+                    : isHome
+                    ? ""
+                    : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] text-white shadow-[0_16px_36px_rgba(2,132,199,0.24)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950",
                   isAuthenticated ? "sm:col-span-2" : "",
                 )}
               >
-                {isAuthenticated ? "Ouvrir la plateforme" : "S’inscrire"}
+                {isAuthenticated ? "Ouvrir la plateforme" : isHome ? "Démarrer" : "S’inscrire"}
               </Link>
             </div>
           </div>

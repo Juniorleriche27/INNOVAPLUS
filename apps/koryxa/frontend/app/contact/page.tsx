@@ -1,145 +1,71 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { productCatalog } from "@/app/products/data";
-
-const DEFAULT_CONTACT_EMAIL = "support@innovaplus.africa";
-
-type SearchParams = Record<string, string | string[] | undefined>;
-type SearchParamsInput = SearchParams | Promise<SearchParams>;
-
-function one(value: string | string[] | undefined): string | undefined {
-  if (Array.isArray(value)) return value[0];
-  return value;
-}
+import { Mail, MapPin, Phone } from "lucide-react";
+import { PublishedFormShell, PublishedHero } from "@/components/marketing/PublishedSiteSections";
 
 export const metadata: Metadata = {
   title: "Contact | KORYXA",
-  description:
-    "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
-  openGraph: {
-    title: "Contact | KORYXA",
-    description:
-      "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
-    url: "/contact",
-  },
-  twitter: {
-    title: "Contact | KORYXA",
-    description:
-      "Contactez l'équipe KORYXA pour une démo, un cadrage produit, une intégration ou un accompagnement.",
-  },
+  description: "Une question ? Un projet ? Notre équipe est à votre écoute.",
 };
 
-async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchParams | undefined> {
-  if (!input) return undefined;
-  if (typeof (input as Promise<SearchParams>).then === "function") {
-    return await (input as Promise<SearchParams>);
-  }
-  return input as SearchParams;
-}
-
-export default async function ContactPage({ searchParams }: { searchParams?: SearchParamsInput }) {
-  const params = await resolveSearchParams(searchParams);
-  const productSlug = (one(params?.product) || "").trim();
-  const requestedSubject = (one(params?.subject) || "").trim();
-  const product = productCatalog[productSlug];
-
-  const contactEmail = product?.contact || DEFAULT_CONTACT_EMAIL;
-  const subject = requestedSubject || (product ? `Demande produit - ${product.name}` : "Demande KORYXA");
-  const mailtoHref = `mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(subject)}`;
-
+export default function ContactPage() {
   return (
-    <main className="grid gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <section className="rounded-[36px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8 lg:p-10">
-          <div className="max-w-3xl space-y-5">
-            <div className="flex flex-wrap gap-3">
-              <span className="inline-flex items-center rounded-full border border-sky-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-sky-700">
-                Contact KORYXA
-              </span>
-              {product ? (
-                <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                  {product.name}
-                </span>
-              ) : null}
-            </div>
-            <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.04em] text-slate-950 sm:text-5xl">
-              Parlons du bon point d'entrée.
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-              {product
-                ? `${product.name} a déjà une fiche produit. Si vous voulez une démo, un échange commercial ou un cadrage plus précis, utilisez le contact direct ci-dessous.`
-                : "Si vous voulez une démo, un échange commercial, un cadrage produit ou une mise en route KORYXA, utilisez le point d’entrée ci-dessous."}
-            </p>
+    <main>
+      <PublishedHero
+        title="Contactez-nous"
+        description="Une question ? Un projet ? Notre équipe est à votre écoute."
+      />
+
+      <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-5xl gap-12 md:grid-cols-2">
+          <div>
+            <h2 className="mb-6 text-2xl font-bold text-slate-950">Envoyez-nous un message</h2>
+            <PublishedFormShell>
+              <form className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="text-sm font-medium text-slate-700">Nom</label>
+                  <input id="name" placeholder="Votre nom" className="mt-2 h-11 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-sky-400" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+                  <input id="email" type="email" placeholder="votre@email.com" className="mt-2 h-11 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-sky-400" />
+                </div>
+                <div>
+                  <label htmlFor="subject" className="text-sm font-medium text-slate-700">Sujet</label>
+                  <input id="subject" placeholder="Objet de votre message" className="mt-2 h-11 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-sky-400" />
+                </div>
+                <div>
+                  <label htmlFor="message" className="text-sm font-medium text-slate-700">Message</label>
+                  <textarea id="message" rows={6} placeholder="Votre message..." className="mt-2 w-full rounded-md border border-slate-200 px-3 py-3 text-sm outline-none focus:border-sky-400" />
+                </div>
+                <button type="button" className="w-full rounded-xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700">
+                  Envoyer
+                </button>
+              </form>
+            </PublishedFormShell>
           </div>
-        </section>
 
-        <section className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
-          <article className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Contact direct</p>
-            <h2 className="mt-3 text-2xl font-semibold text-slate-950">{contactEmail}</h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              Objet proposé : <span className="font-semibold text-slate-900">{subject}</span>
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a href={mailtoHref} className="btn-primary">
-                Écrire à l'équipe
-              </a>
-              <Link href={product ? `/products/${product.slug}` : "/products"} className="btn-secondary">
-                {product ? "Revenir à la fiche produit" : "Voir les produits"}
-              </Link>
+          <div>
+            <h2 className="mb-6 text-2xl font-bold text-slate-950">Informations de contact</h2>
+            <div className="space-y-6">
+              {[
+                { icon: <Mail className="h-6 w-6 text-sky-600" />, title: "Email", text: "contact@koryxa.com", bg: "bg-sky-100" },
+                { icon: <MapPin className="h-6 w-6 text-emerald-600" />, title: "Adresse", text: "Dakar, Sénégal", bg: "bg-emerald-100" },
+                { icon: <Phone className="h-6 w-6 text-amber-600" />, title: "Téléphone", text: "+221 XX XXX XX XX", bg: "bg-amber-100" },
+              ].map((item) => (
+                <PublishedFormShell key={item.title}>
+                  <div className="flex gap-4">
+                    <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl ${item.bg}`}>{item.icon}</div>
+                    <div>
+                      <h3 className="font-semibold text-slate-950">{item.title}</h3>
+                      <p className="mt-1 text-sm text-slate-500">{item.text}</p>
+                    </div>
+                  </div>
+                </PublishedFormShell>
+              ))}
             </div>
-          </article>
-
-          <article className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_62px_rgba(15,23,42,0.18)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Ce qu'il faut envoyer</p>
-            <div className="mt-5 grid gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200">
-                Votre objectif principal ou votre cas d'usage.
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200">
-                Le produit visé, si vous l'avez déjà identifié.
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200">
-                Le type d'échange attendu : démo, cadrage, intégration ou accompagnement.
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              title: "Entrée Entreprise",
-              text: "Vous avez un besoin IA/data à cadrer, structurer ou transformer en pilote exécutable.",
-              href: "/entreprise/demarrer",
-              label: "Décrire un besoin",
-            },
-            {
-              title: "Entrée Trajectoire",
-              text: "Vous cherchez une orientation vers un métier IA, un diagnostic et un cadre de progression.",
-              href: "/trajectoire/demarrer",
-              label: "Commencer un diagnostic",
-            },
-            {
-              title: "Écosystème Produits",
-              text: "Vous savez déjà que votre point d’entrée est un produit ou un module de l’écosystème.",
-              href: "/products",
-              label: "Voir les produits",
-            },
-          ].map((entry) => (
-            <article
-              key={entry.title}
-              className="rounded-[28px] border border-slate-200/80 bg-white/94 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{entry.title}</p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{entry.text}</p>
-              <Link href={entry.href} className="mt-5 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800">
-                {entry.label}
-              </Link>
-            </article>
-          ))}
-        </section>
-      </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

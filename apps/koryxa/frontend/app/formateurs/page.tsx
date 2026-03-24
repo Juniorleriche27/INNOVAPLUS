@@ -1,115 +1,75 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { BadgeCheck, MapPin } from "lucide-react";
+import { PublishedHero } from "@/components/marketing/PublishedSiteSections";
 
 export const metadata: Metadata = {
-  title: "Formateurs partenaires | KORYXA",
-  description:
-    "Découvrez le réseau de formateurs partenaires KORYXA pour les métiers IA, l'accompagnement, la validation et la supervision.",
+  title: "Formateurs | KORYXA",
+  description: "Experts qui supervisent les trajectoires et valident les progressions avec rigueur.",
 };
 
 const TRAINERS = [
   {
-    name: "Aminata D.",
-    specialty: "Data Analyst",
-    capacity: "8 apprenants / mois",
-    quality: "96% de complétion",
-    note: "Spécialisée en dashboards, lecture métier et validation de mini-livrables.",
+    id: "1",
+    name: "Amadou Diallo",
+    trajectory: "Formateur Data Analyst",
+    location: "Dakar, Sénégal",
+    level: "8 ans d'expérience",
+    skills: ["Python", "SQL", "Power BI", "Statistiques"],
+    availability: "12 apprenants actifs",
+    readinessScore: 98,
   },
   {
-    name: "Jean-Marc K.",
-    specialty: "Data Engineer",
-    capacity: "6 apprenants / mois",
-    quality: "89% de validation",
-    note: "Pipelines, qualité de données, orchestration et structuration de flux.",
+    id: "2",
+    name: "Aïcha Traoré",
+    trajectory: "Formatrice Data Engineer",
+    location: "Abidjan, Côte d'Ivoire",
+    level: "10 ans d'expérience",
+    skills: ["Python", "AWS", "Airflow", "Spark"],
+    availability: "8 apprenants actifs",
+    readinessScore: 96,
   },
-  {
-    name: "Sarah T.",
-    specialty: "ML / IA appliquée",
-    capacity: "5 apprenants / mois",
-    quality: "91% d'évaluations positives",
-    note: "Modèles explicatifs, prototypes prédictifs et cadrage de cas d'usage.",
-  },
-];
-
-const RULES = [
-  "Les formateurs sont des partenaires sélectionnés, pas des comptes ouverts au hasard.",
-  "Le matching prend en compte la spécialité, la charge, la disponibilité et la qualité réelle.",
-  "Les formateurs peuvent aussi être activés sur des besoins entreprise en supervision ou accompagnement.",
 ];
 
 export default function FormateursPage() {
   return (
-    <main className="grid gap-8">
-      <section className="relative overflow-hidden rounded-[36px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(242,248,255,0.98))] px-6 py-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] sm:px-8 lg:px-10">
-        <div className="absolute inset-y-0 right-0 w-[35%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_60%)]" aria-hidden />
-        <div className="relative grid gap-8 lg:grid-cols-[1.18fr_0.82fr]">
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-3">
-              <span className="inline-flex rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
-                Formateurs partenaires
-              </span>
-              <span className="inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                qualité • capacité • supervision
-              </span>
-            </div>
-            <div className="space-y-4">
-              <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-slate-950 sm:text-5xl lg:text-6xl">
-                Un réseau de formateurs IA piloté comme une capacité stratégique.
-              </h1>
-              <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-                KORYXA ne traite pas ses formateurs comme des vendeurs de cours. Ce sont des partenaires de montée en
-                compétence, de validation et parfois de supervision sur des besoins entreprise.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/signup?redirect=%2Fformateurs" className="btn-primary w-full justify-center sm:w-auto">
-                Candidater comme partenaire
-              </Link>
-              <Link href="/myplanning/formateurs" className="btn-secondary w-full justify-center sm:w-auto">
-                Ouvrir l'espace partenaire
-              </Link>
-              <Link href="/community" className="btn-secondary w-full justify-center sm:w-auto">
-                Voir le réseau IA
-              </Link>
-            </div>
-          </div>
+    <main>
+      <PublishedHero
+        title="Formateurs partenaires"
+        description="Experts qui supervisent les trajectoires et valident les progressions avec rigueur"
+      />
 
-          <div className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.2)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Règles de qualité</p>
-            <div className="mt-5 grid gap-3">
-              {RULES.map((rule) => (
-                <div key={rule} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-7 text-slate-200">
-                  {rule}
+      <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[var(--marketing-max-w)] gap-6 md:grid-cols-2">
+          {TRAINERS.map((trainer) => (
+            <article key={trainer.id} className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sky-100 text-lg font-semibold text-sky-700">
+                  {trainer.name.split(" ").map((part) => part[0]).join("").slice(0, 2)}
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="flex-1">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+                    {trainer.name}
+                    <BadgeCheck className="h-5 w-5 text-emerald-600" />
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-sky-600">{trainer.trajectory}</p>
+                  <div className="mt-3 space-y-1.5 text-sm text-slate-500">
+                    <p className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" />{trainer.location}</p>
+                    <p>{trainer.level}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {trainer.skills.map((skill) => (
+                  <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{skill}</span>
+                ))}
+              </div>
+              <div className="mt-4 border-t border-slate-200 pt-4 text-sm">
+                <p className="text-slate-500">{trainer.availability}</p>
+                <p className="font-semibold text-sky-600">{trainer.readinessScore}/100</p>
+              </div>
+            </article>
+          ))}
         </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        {TRAINERS.map((trainer) => (
-          <article key={trainer.name} className="rounded-[30px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{trainer.specialty}</p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{trainer.name}</h2>
-              </div>
-              <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
-                Partenaire
-              </span>
-            </div>
-            <p className="mt-4 text-sm leading-7 text-slate-600">{trainer.note}</p>
-            <div className="mt-6 grid gap-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                Capacité : {trainer.capacity}
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                Qualité : {trainer.quality}
-              </div>
-            </div>
-          </article>
-        ))}
       </section>
     </main>
   );

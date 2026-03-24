@@ -1,234 +1,93 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import Image from "next/image";
-import { productCatalog, productList } from "../data";
+import { CalendarRange, Bot, HeartPulse, BookOpen, CheckCircle2 } from "lucide-react";
 
-type Props = {
-  params: { slug: string } | Promise<{ slug: string }>;
+type ProductPageProps = {
+  params: Promise<{ slug: string }>;
 };
 
-async function resolveParams(input: Props["params"]): Promise<{ slug: string }> {
-  if (typeof (input as Promise<{ slug: string }>).then === "function") {
-    return await (input as Promise<{ slug: string }>);
-  }
-  return input as { slug: string };
-}
+const PRODUCTS = {
+  myplanningai: {
+    name: "MyPlanningAI",
+    tagline: "Moteur d'exécution intelligent",
+    description: "Planifiez, suivez et exécutez vos projets IA avec un moteur intelligent qui s'adapte à vos besoins.",
+    features: ["Gestion intelligente de tâches", "Suivi automatisé", "Insights pilotés par IA", "Intégration KORYXA"],
+    icon: <CalendarRange className="h-8 w-8 text-white" />,
+  },
+  chatlaya: {
+    name: "ChatLAYA",
+    tagline: "Assistant conversationnel KORYXA",
+    description: "Assistant intelligent pour cadrer besoins, comprendre trajectoires et découvrir opportunités.",
+    features: ["Conversations contextuelles", "Recommandations", "Découverte produit", "Aide orientée parcours"],
+    icon: <Bot className="h-8 w-8 text-white" />,
+  },
+  sante: {
+    name: "KORYXA Santé & Bien-être",
+    tagline: "Accompagnement santé intelligent",
+    description: "Plateforme de suivi et accompagnement santé avec IA pour le bien-être.",
+    features: ["Suivi personnalisé", "Recommandations santé", "Prévention", "Parcours assistés"],
+    icon: <HeartPulse className="h-8 w-8 text-white" />,
+  },
+  plusbooks: {
+    name: "PlusBooks",
+    tagline: "Gestion comptable intelligente",
+    description: "Solution de gestion comptable et financière assistée par IA pour TPE et PME.",
+    features: ["Comptabilité automatisée", "Tableaux de bord", "Conformité", "Pilotage financier"],
+    icon: <BookOpen className="h-8 w-8 text-white" />,
+  },
+} as const;
 
-function getProductBySlug(slug: string) {
-  return productCatalog[decodeURIComponent(slug || "").trim().toLowerCase()];
-}
-
-export function generateStaticParams() {
-  return productList.map((product) => ({ slug: product.slug }));
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const resolvedParams = await resolveParams(params);
-  const product = getProductBySlug(resolvedParams.slug);
-  if (!product) {
-    return {
-      title: "Produit | KORYXA",
-      description: "Découvrez les produits de l'écosystème KORYXA.",
-    };
-  }
-
+export async function generateMetadata(props: ProductPageProps): Promise<Metadata> {
+  const { slug } = await props.params;
+  const product = PRODUCTS[slug as keyof typeof PRODUCTS];
   return {
-    title: `${product.name} | KORYXA`,
-    description: product.summary,
-    openGraph: {
-      title: `${product.name} | KORYXA`,
-      description: product.summary,
-      url: `/products/${product.slug}`,
-      images: [{ url: product.heroImage, alt: product.name }],
-    },
-    twitter: {
-      title: `${product.name} | KORYXA`,
-      description: product.summary,
-      images: [product.heroImage],
-    },
+    title: `${product?.name ?? slug} | KORYXA`,
+    description: product?.description ?? "Produit KORYXA",
   };
 }
 
-export default async function ProductDetailPage({ params }: Props) {
-  const resolvedParams = await resolveParams(params);
-  const product = getProductBySlug(resolvedParams.slug);
-  if (!product) return notFound();
+export default async function ProductPage(props: ProductPageProps) {
+  const { slug } = await props.params;
+  const product = PRODUCTS[slug as keyof typeof PRODUCTS] ?? PRODUCTS.myplanningai;
 
   return (
-    <main className="grid gap-8 px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header className="relative overflow-hidden rounded-[38px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.97),rgba(236,246,255,0.98))] p-6 shadow-[0_28px_80px_rgba(15,23,42,0.08)] sm:p-8 lg:p-10">
-          <div className="absolute inset-y-0 right-0 w-[36%] bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.18),transparent_62%)]" aria-hidden />
-          <div className="relative grid gap-6 md:grid-cols-[1.08fr_0.92fr]">
+    <main>
+      <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[linear-gradient(135deg,#0d8fda_0%,#0d6aa8_100%)] py-20 text-white">
+        <div className="mx-auto max-w-[var(--marketing-max-w)] px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20">{product.icon}</div>
             <div>
-              <div className="flex flex-wrap gap-3">
-                <span className="inline-flex rounded-full border border-sky-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
-                  Produit
-                </span>
-                <span className="inline-flex rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                  {product.tagline}
-                </span>
-              </div>
-              <p className="mt-6 text-xs uppercase tracking-[0.3em] text-slate-400">Produit</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">
-                {product.name}
-              </h1>
-              <p className="mt-4 text-base leading-8 text-slate-600">{product.summary}</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={product.primaryCta.href} className="btn-primary">
-                  {product.primaryCta.label}
-                </Link>
-                <Link href={`/contact?product=${encodeURIComponent(product.slug)}`} className="btn-secondary">
-                  Parler à l'équipe
-                </Link>
-                {product.secondaryCta ? (
-                  <a
-                    href={product.secondaryCta.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-secondary"
-                  >
-                    {product.secondaryCta.label}
-                  </a>
-                ) : null}
-              </div>
-              {product.contact ? (
-                <p className="mt-4 text-sm text-slate-500">
-                  Contact direct :{" "}
-                  <a className="font-semibold text-sky-600" href={`mailto:${product.contact}`}>
-                    {product.contact}
-                  </a>
-                </p>
-              ) : null}
-            </div>
-
-            <div className="relative h-72 overflow-hidden rounded-[30px] border border-white/80 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-              <Image
-                src={product.heroImage}
-                alt={product.name}
-                fill
-                sizes="(min-width: 768px) 520px, 100vw"
-                className="object-cover"
-              />
+              <h1 className="text-4xl font-bold md:text-5xl">{product.name}</h1>
+              <p className="mt-2 text-lg text-sky-100">{product.tagline}</p>
             </div>
           </div>
-        </header>
+          <p className="max-w-3xl text-xl text-sky-100">{product.description}</p>
+        </div>
+      </section>
 
-        <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <article className="rounded-[32px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-200">Pourquoi ce produit existe</p>
-            <div className="mt-5 grid gap-3 text-sm leading-7 text-slate-300">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                Chaque produit doit prolonger l’orchestration KORYXA sans diluer la marque principale.
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                Le bon produit dépend du besoin: exécution, conversation, verticale métier ou activation ciblée.
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                Le point d’entrée commercial doit rester lisible, avec un contact clair et une suite d’usage défendable.
-              </div>
+      <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[var(--marketing-max-w)] gap-12 md:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold text-slate-950">Fonctionnalités principales</h2>
+            <div className="mt-6 space-y-4">
+              {product.features.map((feature) => (
+                <div key={feature} className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-600" />
+                  <p className="text-lg text-slate-700">{feature}</p>
+                </div>
+              ))}
             </div>
-          </article>
-
-          <section className="grid gap-4 rounded-[32px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:grid-cols-3">
-            {product.stats.map((stat) => (
-              <div key={stat.label} className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-400">{stat.label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{stat.value}</p>
-              </div>
-            ))}
-          </section>
-        </section>
-
-        <section className="rounded-[32px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Adoption</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-                Pourquoi les organisations l’adoptent
-              </h2>
-            </div>
-            <p className="max-w-xl text-sm leading-7 text-slate-600">
-              Le produit doit être compris comme une réponse opérationnelle précise, pas comme une promesse technique
-              vague.
+          </div>
+          <article className="rounded-[30px] border border-slate-200/80 bg-slate-50 p-8 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+            <h3 className="text-xl font-bold text-slate-950">Commencer avec {product.name}</h3>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Découvrez comment ce produit peut transformer votre façon de travailler.
             </p>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {product.highlights.map((highlight) => (
-              <div key={highlight} className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.94),rgba(255,255,255,0.98))] p-5 text-sm leading-7 text-slate-700">
-                {highlight}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[32px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Cas d’usage</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Cas d’usage prioritaires</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {product.useCases.map((useCase) => (
-              <div key={useCase} className="rounded-[26px] border border-slate-200 bg-slate-50/90 p-5 text-sm leading-7 text-slate-700">
-                {useCase}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-3">
-          {[
-            {
-              title: "Entrée produit",
-              text: "Utiliser ce module directement quand le besoin et le contexte sont déjà clairs.",
-              href: product.primaryCta.href,
-              label: product.primaryCta.label,
-            },
-            {
-              title: "Cadrage KORYXA",
-              text: "Revenir vers KORYXA si le besoin doit d’abord être structuré ou relié à un autre flux.",
-              href: "/entreprise/demarrer",
-              label: "Décrire un besoin",
-            },
-            {
-              title: "Réseau & signaux",
-              text: "Activer le réseau IA pour discuter de cas d’usage, des métiers, des preuves et des opportunités.",
-              href: "/community",
-              label: "Explorer le réseau",
-            },
-          ].map((entry) => (
-            <article
-              key={entry.title}
-              className="rounded-[28px] border border-slate-200/80 bg-white/94 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{entry.title}</p>
-              <p className="mt-4 text-sm leading-7 text-slate-600">{entry.text}</p>
-              <Link href={entry.href} className="mt-5 inline-flex text-sm font-semibold text-sky-700 hover:text-sky-800">
-                {entry.label}
-              </Link>
-            </article>
-          ))}
-        </section>
-
-        <section className="rounded-[32px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prêt à démarrer ?</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Nous vous accompagnons sur l’intégration technique, la personnalisation des flux, la mise en action des
-            équipes et les scénarios pilotes. Le bon point d’entrée dépend du niveau de maturité du besoin et du degré
-            d’autonomie attendu.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href={`/contact?product=${encodeURIComponent(product.slug)}`} className="btn-primary">
-              Parler à l’équipe
-            </Link>
-            <Link href="/products" className="btn-secondary">
-              Revenir aux produits
-            </Link>
-            <Link href="/community" className="btn-secondary">
-              Voir le réseau IA
-            </Link>
-          </div>
-        </section>
-      </div>
+            <button type="button" className="mt-6 w-full rounded-xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700">
+              Demander une démo
+            </button>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }

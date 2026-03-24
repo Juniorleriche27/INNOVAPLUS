@@ -51,9 +51,9 @@ export default function PlatformTrajectoirePage() {
 
         <div className="space-y-6">
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="font-semibold">Formateur partenaire</h3>
-            <p className="mt-4 font-semibold">Amadou Diallo</p>
-            <p className="text-sm text-slate-500">Data Analyst Senior</p>
+            <h3 className="font-semibold">Référent trajectoire</h3>
+            <p className="mt-4 font-semibold">Attribution dynamique</p>
+            <p className="text-sm text-slate-500">Selon votre cohorte et votre niveau d'avancement</p>
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-slate-500">Apprenants</span><span>12 actifs</span></div>
               <div className="flex justify-between"><span className="text-slate-500">Taux validation</span><span className="text-emerald-600">94%</span></div>

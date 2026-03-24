@@ -48,12 +48,12 @@ export default function PlatformEntreprisePage() {
             <h3 className="font-semibold">Capacités activées</h3>
             <div className="mt-4 space-y-3">
               <div className="rounded-xl bg-slate-50 p-3">
-                <p className="text-sm font-semibold">Formateur superviseur</p>
-                <p className="text-xs text-slate-500">Amadou Diallo - Data Analyst</p>
+                <p className="text-sm font-semibold">Référent supervision</p>
+                <p className="text-xs text-slate-500">Affectation selon le besoin qualifié</p>
               </div>
               <div className="rounded-xl bg-slate-50 p-3">
                 <p className="text-sm font-semibold">Talent certifié</p>
-                <p className="text-xs text-slate-500">Fatou Ndiaye - Data Analyst</p>
+                <p className="text-xs text-slate-500">Sélectionné selon disponibilité et compétences</p>
               </div>
             </div>
           </article>

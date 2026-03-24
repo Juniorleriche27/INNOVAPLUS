@@ -1,7 +1,7 @@
 export default function PlatformMessagesPage() {
   const conversations = [
-    { name: "Amadou Diallo", role: "Formateur", lastMessage: "Super travail sur la dernière preuve !", time: "2h", unread: 2 },
-    { name: "Koffi Asante", role: "Data Engineer", lastMessage: "Merci pour ton retour sur Airflow", time: "1j", unread: 0 },
+    { name: "Référent KORYXA", role: "Accompagnement", lastMessage: "Votre prochaine étape de progression est prête.", time: "2h", unread: 2 },
+    { name: "Communauté Trajectoire", role: "Groupe métier", lastMessage: "Nouveaux échanges disponibles dans votre groupe.", time: "1j", unread: 0 },
     { name: "KORYXA Support", role: "Équipe", lastMessage: "Comment pouvons-nous vous aider ?", time: "3j", unread: 0 },
   ];
 

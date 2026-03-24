@@ -1,7 +1,7 @@
 export default function PlatformCommunautePage() {
   const posts = [
-    { author: "Amara Mensah", role: "Data Analyst", content: "Je viens de terminer mon premier projet de dashboard avec Power BI pour un client e-commerce.", meta: "Il y a 2h" },
-    { author: "Koffi Asante", role: "Data Engineer", content: "Question pour la communauté : quelle stack utilisez-vous pour vos pipelines ETL ?", meta: "Il y a 4h" },
+    { author: "Membre trajectoire", role: "Analyse de données", content: "Je viens de terminer une première preuve sur un dashboard métier et je cherche des retours sur la structure des indicateurs.", meta: "Il y a 2h" },
+    { author: "Membre communauté", role: "Data Engineering", content: "Question pour la communauté : quelle stack utilisez-vous pour industrialiser vos pipelines ETL en contexte africain ?", meta: "Il y a 4h" },
   ];
 
   return (

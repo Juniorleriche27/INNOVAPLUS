@@ -16,6 +16,7 @@ import {
   Users,
   UserCircle2,
 } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const MAIN_NAV = [
   { name: "Accueil", href: "/platform", icon: Home, exact: true },
@@ -39,12 +40,32 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return exact ? pathname === href : pathname.startsWith(href);
 }
 
+function getDisplayName(user: ReturnType<typeof useAuth>["user"]) {
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+  return fullName || user?.email || "Mon espace KORYXA";
+}
+
 export default function PlatformLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
   const currentTitle =
     MAIN_NAV.find((item) => isActive(pathname, item.href, item.exact))?.name ||
     SECONDARY_NAV.find((item) => isActive(pathname, item.href))?.name ||
     "Plateforme KORYXA";
+  const displayName = getDisplayName(user);
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "K";
+  const accountSubtitle = user?.workspace_role === "prestataire"
+    ? "Capacité / talent"
+    : user?.workspace_role === "demandeur"
+      ? "Entreprise / demandeur"
+      : loading
+        ? "Chargement..."
+        : user?.email || "Compte connecté";
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f7f8fb] text-slate-900">
@@ -98,10 +119,10 @@ export default function PlatformLayout({ children }: { children: ReactNode }) {
 
           <div className="mt-4 border-t border-slate-800 px-3 pt-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-sm font-semibold text-white">AM</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-sm font-semibold text-white">{userInitials}</div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">Amara Mensah</p>
-                <p className="truncate text-xs text-slate-400">Data Analyst</p>
+                <p className="truncate text-sm font-medium">{displayName}</p>
+                <p className="truncate text-xs text-slate-400">{accountSubtitle}</p>
               </div>
             </div>
           </div>

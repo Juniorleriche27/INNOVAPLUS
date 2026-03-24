@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function PlatformFormateursPage() {
   const trainers = [
-    { id: "1", name: "Amadou Diallo", trajectory: "Data Analyst", location: "Dakar, Sénégal", level: "Senior - 8 ans d'expérience", score: 98 },
-    { id: "2", name: "Aïcha Traoré", trajectory: "Data Engineer", location: "Abidjan, Côte d'Ivoire", level: "Expert - 10 ans d'expérience", score: 96 },
+    { id: "1", name: "Référent Data confirmé", trajectory: "Analyse de données", location: "Afrique de l'Ouest", level: "Senior - validation trajectoire", score: 98 },
+    { id: "2", name: "Référent ingénierie data", trajectory: "Data Engineering", location: "Afrique francophone", level: "Expert - accompagnement avancé", score: 96 },
   ];
 
   return (

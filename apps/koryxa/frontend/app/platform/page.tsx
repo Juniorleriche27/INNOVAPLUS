@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { Bell, Bot, BriefcaseBusiness, FolderKanban, MessageSquare, Target, Users } from "lucide-react";
+import { Bell, Bot, BriefcaseBusiness, FolderKanban, Target, Users } from "lucide-react";
+import { useMemo } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const QUICK_ACCESS = [
   { icon: Target, label: "Trajectoire", href: "/platform/trajectoire", color: "bg-sky-100 text-sky-600" },
@@ -17,10 +21,16 @@ const RECENT_ACTIVITY = [
 ];
 
 export default function PlatformHomePage() {
+  const { user } = useAuth();
+  const displayName = useMemo(() => {
+    const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+    return fullName || user?.email || "sur KORYXA";
+  }, [user]);
+
   return (
     <div className="space-y-8">
       <section className="rounded-3xl bg-[linear-gradient(135deg,#0f172a,#1e293b)] p-8 text-white">
-        <h1 className="text-3xl font-bold">Bienvenue sur KORYXA</h1>
+        <h1 className="text-3xl font-bold">Bienvenue {displayName === "sur KORYXA" ? displayName : `, ${displayName}`}</h1>
         <p className="mt-2 text-lg text-slate-300">Votre plateforme d'orchestration IA et de progression de carrière</p>
       </section>
 
@@ -49,11 +59,11 @@ export default function PlatformHomePage() {
           </div>
           <div className="py-4 text-center">
             <div className="text-4xl font-bold text-emerald-600">72%</div>
-            <p className="mt-2 text-sm text-slate-500">Score de progression Data Analyst</p>
+            <p className="mt-2 text-sm text-slate-500">Score de progression de votre trajectoire</p>
           </div>
           <div className="space-y-2 border-t border-slate-200 pt-4 text-sm">
             <div className="flex justify-between"><span className="text-slate-500">Preuves validées</span><span className="font-semibold">8/12</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Formateur</span><span className="font-semibold">Amadou Diallo</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Référent</span><span className="font-semibold">Affectation en cours</span></div>
           </div>
           <Link href="/platform/trajectoire" className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white">
             Voir le cockpit
@@ -103,7 +113,7 @@ export default function PlatformHomePage() {
         <div className="mt-4 space-y-3 text-sm text-sky-900">
           <p>Soumettre votre prochaine preuve de progression</p>
           <p>Postuler aux 3 opportunités qui correspondent à votre profil</p>
-          <p>Rejoindre le groupe "Data Analyst" pour échanger avec vos pairs</p>
+          <p>Rejoindre un groupe métier adapté à votre trajectoire</p>
         </div>
       </section>
     </div>

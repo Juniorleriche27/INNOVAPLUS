@@ -133,3 +133,13 @@ export const productCatalog: Record<string, ProductInfo> = {
 };
 
 export const productList = Object.values(productCatalog);
+
+export const productSlugAliases: Record<string, string> = {
+  myplanningai: "myplanning",
+  plusbooks: "plusbook",
+  sante: "koryxa-sante",
+};
+
+export function resolveProductSlug(slug: string): string {
+  return productSlugAliases[slug] || slug;
+}

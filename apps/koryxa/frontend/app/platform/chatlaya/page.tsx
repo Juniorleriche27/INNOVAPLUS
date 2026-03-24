@@ -76,11 +76,11 @@ export default function PlatformChatlayaPage() {
         <div className="mt-4 space-y-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <p className="text-sm font-medium">Trajectoire</p>
-            <p className="text-xs text-slate-500">Data Analyst - 72% progression</p>
+            <p className="text-xs text-slate-500">Trajectoire active - 72% progression</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-sm font-medium">Formateur</p>
-            <p className="text-xs text-slate-500">Amadou Diallo</p>
+            <p className="text-sm font-medium">Accompagnement</p>
+            <p className="text-xs text-slate-500">Référent en cours d'affectation</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <p className="text-sm font-medium">Opportunités</p>

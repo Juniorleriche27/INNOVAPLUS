@@ -1,9 +1,9 @@
 export default function PlatformNotificationsPage() {
   const notifications = [
-    "Koffi Asante a commenté votre post dans Data Analyst",
+    "Un membre de votre communauté a commenté votre post",
     "Nouvelle opportunité recommandée pour votre profil",
     "Votre preuve de progression a été validée",
-    "Message reçu de votre formateur partenaire",
+    "Message reçu de votre référent KORYXA",
   ];
 
   return (

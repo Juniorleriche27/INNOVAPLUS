@@ -38,6 +38,31 @@ function normalizeInnovaBase(base: string) {
 
 const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
 
+const PLATFORM_REDIRECTS: Array<{ from: string; to: string }> = [
+  { from: "/platform/trajectoire", to: "/myplanning/app/koryxa" },
+  { from: "/platform/entreprise", to: "/myplanning/app/koryxa-enterprise" },
+  { from: "/platform/chatlaya", to: "/chatlaya" },
+  { from: "/platform/opportunites", to: "/myplanning/opportunities" },
+  { from: "/platform/missions", to: "/myplanning/opportunities" },
+  { from: "/platform/communaute", to: "/communaute" },
+  { from: "/platform/messages", to: "/community/messages" },
+  { from: "/platform/formateurs", to: "/myplanning/formateurs" },
+  { from: "/platform/profil", to: "/myplanning/profile" },
+  { from: "/platform/notifications", to: "/myplanning/app/koryxa-home" },
+  { from: "/platform/parametres", to: "/myplanning/settings" },
+  { from: "/platform/talents", to: "/communaute" },
+  { from: "/platform", to: "/myplanning/app/koryxa-home" },
+];
+
+function mapLegacyPlatformPath(pathname: string): string | null {
+  for (const entry of PLATFORM_REDIRECTS) {
+    if (pathname === entry.from || pathname.startsWith(`${entry.from}/`)) {
+      return pathname.replace(entry.from, entry.to);
+    }
+  }
+  return null;
+}
+
 function getCookieDomain(siteBase: string): string | null {
   try {
     const host = new URL(siteBase).hostname.replace(/^\./, "");
@@ -92,7 +117,8 @@ function requiresConnectedAuth(pathname: string) {
   return CONNECTED_AUTH_REQUIRED_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-function getLoginPath(_pathname: string): "/login" {
+function getLoginPath(pathname: string): "/login" {
+  void pathname;
   return "/login";
 }
 
@@ -114,7 +140,6 @@ const V1_SIMPLE =
   (process.env.NEXT_PUBLIC_APP_MODE || "").toUpperCase() === "V1";
 
 const V1_HIDDEN_PREFIXES = [
-  "/opportunities",
   "/skills",
   "/talents",
   "/engine",
@@ -153,10 +178,15 @@ const V1_PUBLIC_PATHS = [
   "/trajectoire",
   "/entreprise",
   "/community",
+  "/communaute",
   "/formateurs",
   "/talents",
   "/about",
+  "/a-propos",
   "/products",
+  "/produits",
+  "/opportunities",
+  "/opportunites",
   "/contact",
   "/chatlaya",
   "/resources",
@@ -168,6 +198,12 @@ const V1_PUBLIC_PATHS = [
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  const legacyPlatformTarget = mapLegacyPlatformPath(pathname);
+  if (legacyPlatformTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyPlatformTarget;
+    return NextResponse.redirect(url, 308);
+  }
   if (pathname === "/logout" || pathname.startsWith("/logout/")) {
     return NextResponse.next();
   }

@@ -16,14 +16,14 @@ type PublicNavLink = {
 const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { href: "/", label: "Accueil" },
   { href: "/entreprise", label: "Entreprise" },
-  { href: "/trajectoire", label: "Trajectoire" },
-  { href: "/produits", label: "Produits" },
+  { href: "/trajectoire", label: "Trajectoires" },
+  { href: "/produits", label: "Solutions" },
+  { href: "/opportunites", label: "Opportunités" },
   { href: "/communaute", label: "Communauté" },
   { href: "/a-propos", label: "À propos" },
 ];
 
-const KORYXA_CONNECTED_HOME = "/platform";
-const KORYXA_PLATFORM_HOME = "/platform";
+const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
 const KORYXA_PUBLIC_HOME = "/";
 
 function isActive(pathname: string, href: string): boolean {
@@ -60,7 +60,7 @@ export default function PublicHeader() {
     pathname.startsWith("/account/recover");
   const isAuthenticated = Boolean(user?.email) && !isAuthPage;
   const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
-  const loginHref = isHome ? KORYXA_PLATFORM_HOME : `/login?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
+  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
   const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : isHome ? "/trajectoire/demarrer" : signupHref;
 
   return (
@@ -140,7 +140,7 @@ export default function PublicHeader() {
                 : "bg-[linear-gradient(135deg,#0f172a_0%,#0b4b6f_42%,#38bdf8_100%)] text-white shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
             )}
           >
-            {isAuthenticated ? "Ouvrir la plateforme" : isHome ? "Démarrer" : "S’inscrire"}
+            {isAuthenticated ? "Ouvrir l’espace connecté" : isHome ? "Démarrer" : "S’inscrire"}
           </Link>
         </div>
 
@@ -217,7 +217,7 @@ export default function PublicHeader() {
                   isAuthenticated ? "sm:col-span-2" : "",
                 )}
               >
-                {isAuthenticated ? "Ouvrir la plateforme" : isHome ? "Démarrer" : "S’inscrire"}
+                {isAuthenticated ? "Ouvrir l’espace connecté" : isHome ? "Démarrer" : "S’inscrire"}
               </Link>
             </div>
           </div>

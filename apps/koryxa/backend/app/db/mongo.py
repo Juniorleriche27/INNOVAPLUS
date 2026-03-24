@@ -9,7 +9,7 @@ from app.core.config import settings
 
 
 _client: AsyncIOMotorClient | None = None
-_db: AsyncIOMotorDatabase | None = None  # default DB for PlusBook
+_db: AsyncIOMotorDatabase | None = None  # default DB for KORYXA
 
 
 async def connect_to_mongo() -> None:

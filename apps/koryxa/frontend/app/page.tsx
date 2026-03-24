@@ -256,13 +256,13 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-[var(--marketing-max-w)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-[48rem]">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Produits reliés</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Solutions reliées</p>
               <h2 className="kx-display mt-4 text-[2.5rem] font-semibold leading-[1.03] tracking-[-0.06em] text-slate-950 sm:text-[3.5rem]">
-                Des produits utiles, raccordés à la plateforme et non posés à côté.
+                Des solutions utiles, raccordées à la plateforme et non posées à côté.
               </h2>
             </div>
-              <Link href="/produits" className="inline-flex items-center gap-2 text-base font-semibold text-sky-700">
-                Voir tous les produits
+            <Link href="/produits" className="inline-flex items-center gap-2 text-base font-semibold text-sky-700">
+              Voir toutes les solutions
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

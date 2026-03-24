@@ -1,7 +1,7 @@
-PlusBook FastAPI Backend
-========================
+KORYXA Backend API
+==================
 
-This is a new FastAPI backend connected directly to MongoDB, intended to replace the previous Laravel API.
+API FastAPI connectée à MongoDB pour KORYXA: auth, profils, opportunités, communauté, ChatLAYA, trajectoire, entreprise et MyPlanning.
 
 Environment
 -----------
@@ -13,6 +13,13 @@ Core variables (fichier `/etc/innovaplus/backend.env` en prod) :
 - SMTP : `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`
 - IA via API : `PROVIDER=cohere`, `COHERE_API_KEY=...` (ou `LLM_PROVIDER=cohere`)
 - Notifications WhatsApp (optionnel) : `WHATSAPP_API_URL`, `WHATSAPP_API_TOKEN`, `WHATSAPP_SENDER`
+- Paiement PayDunya :
+  - `PAYDUNYA_MODE=test|production`
+  - `PAYDUNYA_MASTER_KEY`, `PAYDUNYA_PRIVATE_KEY`, `PAYDUNYA_TOKEN`
+  - `BACKEND_BASE_URL=https://api.innovaplus.africa` (pour l'IPN)
+  - `PAYDUNYA_CALLBACK_PATH=/paydunya/ipn`
+  - `PAYDUNYA_AMOUNT_PRO_MONTHLY`, `PAYDUNYA_AMOUNT_PRO_YEARLY`
+  - `PAYDUNYA_AMOUNT_TEAM_MONTHLY`, `PAYDUNYA_AMOUNT_TEAM_YEARLY`
 
 Run locally
 -----------

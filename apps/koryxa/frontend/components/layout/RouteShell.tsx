@@ -42,11 +42,11 @@ function ConnectedShell({ children }: { children: ReactNode }) {
 export default function RouteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/myplanning") || pathname.startsWith("/school") || pathname.startsWith("/platform")) {
+  if (pathname.startsWith("/myplanning") || pathname.startsWith("/school")) {
     return <>{children}</>;
   }
 
-  if (pathname.startsWith("/chatlaya")) {
+  if (pathname.startsWith("/chatlaya") || pathname.startsWith("/community/messages")) {
     return <ConnectedShell>{children}</ConnectedShell>;
   }
 

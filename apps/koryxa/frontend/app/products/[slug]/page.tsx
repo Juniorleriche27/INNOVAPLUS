@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { CalendarRange, Bot, HeartPulse, BookOpen, CheckCircle2 } from "lucide-react";
-import { productCatalog, resolveProductSlug } from "../data";
+import { notFound, redirect } from "next/navigation";
+import { CalendarRange, Bot, BookOpen, CheckCircle2 } from "lucide-react";
+import { productCatalog, removedProductSlugs, resolveProductSlug } from "../data";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -11,8 +11,6 @@ type ProductPageProps = {
 const PRODUCT_ICONS = {
   myplanning: <CalendarRange className="h-8 w-8 text-white" />,
   chatlaya: <Bot className="h-8 w-8 text-white" />,
-  "koryxa-sante": <HeartPulse className="h-8 w-8 text-white" />,
-  plusbook: <BookOpen className="h-8 w-8 text-white" />,
 } as const;
 
 export async function generateMetadata(props: ProductPageProps): Promise<Metadata> {
@@ -26,6 +24,9 @@ export async function generateMetadata(props: ProductPageProps): Promise<Metadat
 
 export default async function ProductPage(props: ProductPageProps) {
   const { slug } = await props.params;
+  if (removedProductSlugs.has(slug)) {
+    redirect("/produits");
+  }
   const product = productCatalog[resolveProductSlug(slug)];
 
   if (!product) {

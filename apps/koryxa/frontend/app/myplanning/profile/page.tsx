@@ -156,14 +156,14 @@ export default function MyPlanningProfilePage() {
         title: "Opportunités & missions",
         detail:
           "Le profil vérifié KORYXA sert aussi à rendre votre activation plus crédible sur des opportunités, missions ou stages.",
-        href: "/opportunities",
+        href: "/opportunites",
         label: "Voir le pipeline d'activation",
       },
       {
         title: "Réseau IA & partenaires",
         detail:
           "Le réseau communautaire et les formateurs partenaires servent à accélérer échanges, supervision et visibilité métier.",
-        href: "/community",
+        href: "/communaute",
         label: "Ouvrir le réseau IA",
       },
     ],
@@ -189,10 +189,10 @@ export default function MyPlanningProfilePage() {
           opportunités et signaux d’activation dans l’écosystème KORYXA.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/login?redirect=%2Fmyplanning%2Fprofile" className="btn-primary">
+          <Link href="/myplanning/login?redirect=%2Fmyplanning%2Fprofile" className="btn-primary">
             Se connecter
           </Link>
-          <Link href="/signup?redirect=%2Fmyplanning%2Fprofile" className="btn-secondary">
+          <Link href="/myplanning/signup?redirect=%2Fmyplanning%2Fprofile" className="btn-secondary">
             Créer un compte
           </Link>
         </div>
@@ -226,7 +226,7 @@ export default function MyPlanningProfilePage() {
               <Link href="/myplanning/app/koryxa" className="btn-primary">
                 Ouvrir ma trajectoire
               </Link>
-              <Link href="/opportunities" className="btn-secondary">
+              <Link href="/opportunites" className="btn-secondary">
                 Voir les opportunités
               </Link>
               <Link href="/account/role" className="btn-secondary">
@@ -331,7 +331,7 @@ export default function MyPlanningProfilePage() {
               { href: "/community/messages", label: "Messages", detail: "Ouvrir les échanges directs du réseau IA." },
               { href: "/formateurs", label: "Formateurs partenaires", detail: "Voir la logique de matching et de capacité." },
               { href: "/myplanning/pricing", label: "Plan & accès", detail: "Gérer plan, accès et niveau d’activation." },
-              { href: "/community", label: "Réseau IA", detail: "Participer aux discussions métier et cas d’usage." },
+              { href: "/communaute", label: "Réseau IA", detail: "Participer aux discussions métier et cas d’usage." },
             ].map((entry) => (
               <Link
                 key={entry.href}

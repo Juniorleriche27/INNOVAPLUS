@@ -10,3 +10,4 @@ space while sharing the same infrastructure tooling.
 - Root files – CI/CD descriptors (`docker-compose.yml`, etc.).
 
 Refer to `docs/koryxa-handbook.md` for per-app commands and environment requirements.
+Refer to `docs/site-architecture.md` for the current KORYXA public and connected information architecture.

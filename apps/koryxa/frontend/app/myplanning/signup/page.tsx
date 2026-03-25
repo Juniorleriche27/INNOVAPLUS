@@ -3,11 +3,11 @@ import SignupClient from "@/app/signup/SignupClient";
 export default function MyPlanningSignupPage() {
   return (
     <SignupClient
-      successRedirect="/myplanning/app"
-      heading="Créer un compte MyPlanningAI"
-      subtitle="Crée ton compte pour démarrer ton cockpit de planification."
-      loginHref="/myplanning/login?redirect=/myplanning/app"
-      loginLabel="Se connecter à MyPlanningAI"
+      successRedirect="/myplanning/app/koryxa-home"
+      heading="Créer un compte KORYXA"
+      subtitle="Crée ton compte pour accéder à l’espace connecté KORYXA et au moteur MyPlanningAI."
+      loginHref="/myplanning/login?redirect=/myplanning/app/koryxa-home"
+      loginLabel="Se connecter à KORYXA"
     />
   );
 }

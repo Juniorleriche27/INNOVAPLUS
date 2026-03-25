@@ -36,14 +36,17 @@ const CONNECTED_NAV_LINKS: ConnectedNavLink[] = [
     match: (pathname) => pathname.startsWith("/chatlaya"),
   },
   {
-    href: "/community",
+    href: "/communaute",
     label: "Réseau IA",
-    match: (pathname) => pathname.startsWith("/community"),
+    match: (pathname) => pathname.startsWith("/community") || pathname.startsWith("/communaute"),
   },
   {
-    href: "/opportunities",
+    href: "/opportunites",
     label: "Opportunités",
-    match: (pathname) => pathname.startsWith("/opportunities") || pathname.startsWith("/myplanning/opportunities"),
+    match: (pathname) =>
+      pathname.startsWith("/opportunities") ||
+      pathname.startsWith("/opportunites") ||
+      pathname.startsWith("/myplanning/opportunities"),
   },
   {
     href: "/myplanning/profile",
@@ -83,10 +86,10 @@ export default function ConnectedHeader() {
   const isAuthenticated = Boolean(user?.email);
   const displayName = useMemo(() => {
     const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
-    return fullName || user?.email || "Plateforme connectée";
+    return fullName || user?.email || "Espace connecté KORYXA";
   }, [user]);
   const userInitial = displayName.charAt(0).toUpperCase();
-  const logoutRedirect = `/login?redirect=${encodeURIComponent(pathname || KORYXA_CONNECTED_HOME)}`;
+  const logoutRedirect = `/myplanning/login?redirect=${encodeURIComponent(pathname || KORYXA_CONNECTED_HOME)}`;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-[0_18px_48px_rgba(2,6,23,0.34)]">
@@ -98,7 +101,7 @@ export default function ConnectedHeader() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-base font-black tracking-wide">KORYXA</p>
-              <p className="hidden truncate text-[11px] text-slate-300 md:block">Plateforme connectée • Univers KORYXA</p>
+              <p className="hidden truncate text-[11px] text-slate-300 md:block">Espace connecté • trajectoire, entreprise, opportunités</p>
             </div>
           </Link>
         </div>
@@ -129,7 +132,7 @@ export default function ConnectedHeader() {
             {isAuthenticated ? "Connecté" : "Accès protégé"}
           </span>
           <Link
-            href={isAuthenticated ? "/myplanning/profile" : `/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`}
+            href={isAuthenticated ? "/myplanning/profile" : `/myplanning/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`}
             className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-sky-400/60 hover:text-sky-100"
           >
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-100">

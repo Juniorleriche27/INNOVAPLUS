@@ -30,7 +30,7 @@ export default function TrainerPartnerDashboardPage() {
         <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
           Cet espace sert à suivre la capacité mensuelle, les cohortes, les validations et les éventuelles activations côté entreprise.
         </p>
-        <Link href="/login?redirect=%2Fmyplanning%2Fformateurs" className="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700">
+        <Link href="/myplanning/login?redirect=%2Fmyplanning%2Fformateurs" className="mt-6 inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700">
           Se connecter
         </Link>
       </section>
@@ -94,7 +94,7 @@ export default function TrainerPartnerDashboardPage() {
             <Link href="/community/messages" className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-sky-50">
               Ouvrir les messages
             </Link>
-            <Link href="/community" className="inline-flex rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/15">
+            <Link href="/communaute" className="inline-flex rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white hover:bg-white/15">
               Voir le réseau IA
             </Link>
           </div>
@@ -103,4 +103,3 @@ export default function TrainerPartnerDashboardPage() {
     </main>
   );
 }
-

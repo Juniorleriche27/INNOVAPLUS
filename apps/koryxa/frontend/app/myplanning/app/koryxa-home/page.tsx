@@ -23,9 +23,9 @@ const ACTION_AREAS = [
     title: "Réseau IA",
     description:
       "Groupes, discussions, signal métier, formateurs partenaires et circulation d'opportunités autour de l'IA.",
-    primaryHref: "/community",
+    primaryHref: "/communaute",
     primaryLabel: "Explorer le réseau",
-    secondaryHref: "/opportunities",
+    secondaryHref: "/opportunites",
     secondaryLabel: "Voir les opportunités",
   },
 ];
@@ -89,8 +89,8 @@ export default function KoryxaConnectedHomePage() {
               { href: "/myplanning/app/koryxa", label: "Cockpit Trajectoire" },
               { href: "/myplanning/app/koryxa-enterprise", label: "Cockpit Entreprise" },
               { href: "/chatlaya", label: "ChatLAYA" },
-              { href: "/community", label: "Réseau IA" },
-              { href: "/opportunities", label: "Opportunités" },
+              { href: "/communaute", label: "Réseau IA" },
+              { href: "/opportunites", label: "Opportunités" },
               { href: "/myplanning/profile", label: "Profil vérifié" },
             ].map((entry) => (
               <Link

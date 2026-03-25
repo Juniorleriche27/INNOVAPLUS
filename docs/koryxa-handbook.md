@@ -9,6 +9,7 @@ Structure
 - `apps/koryxa/training` — scripts de fine-tuning / conversion des modèles (SmolLM, Llama, GGUF).
 
 Les anciens produits retirés du portefeuille ont été supprimés. Utilise désormais uniquement `apps/koryxa/*`.
+L’architecture de navigation publique et connectée est décrite dans `docs/site-architecture.md`.
 
 Démarrer en local
 -----------------

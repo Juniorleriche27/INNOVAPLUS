@@ -41,7 +41,7 @@ const FALLBACK_OPPORTUNITIES: Opportunity[] = [
     tags: ["prediction", "customer success"],
     created_at: "2026-03-08T14:30:00.000Z",
     source: "manual",
-    product_slug: "plusbooks",
+    product_slug: "chatlaya",
   },
 ];
 

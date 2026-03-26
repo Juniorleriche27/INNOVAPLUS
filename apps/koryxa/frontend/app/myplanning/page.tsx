@@ -27,16 +27,19 @@ const MODULES = [
 export default function MyPlanningLandingPage() {
   const { user } = useAuth();
   const isAuthenticated = Boolean(user?.email);
+  const connectedHomeHref = "/myplanning/app/koryxa-home";
+  const signupHref = `/myplanning/signup?redirect=${encodeURIComponent(connectedHomeHref)}`;
+  const loginHref = `/myplanning/login?redirect=${encodeURIComponent(connectedHomeHref)}`;
 
   return (
     <div className="space-y-8">
       <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,rgba(14,165,233,0.12),rgba(255,255,255,0.96))] px-6 py-8 shadow-sm sm:px-8">
         <div className="max-w-3xl">
           <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">
-            MyPlanningAI
+            Moteur d’exécution
           </span>
           <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-slate-950">
-            Le moteur de pilotage qui fait agir, sans mélanger vitrine et exécution.
+            MyPlanningAI, le moteur d’exécution interne de KORYXA.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
             MyPlanningAI reste le socle horizontal de pilotage. Il structure les tâches, l’exécution, les vues
@@ -44,16 +47,16 @@ export default function MyPlanningLandingPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href={isAuthenticated ? "/myplanning/app" : "/myplanning/signup"}
+              href={isAuthenticated ? connectedHomeHref : signupHref}
               className="inline-flex min-w-[176px] items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
             >
-              {isAuthenticated ? "Ouvrir la plateforme" : "S’inscrire"}
+              {isAuthenticated ? "Ouvrir l’espace connecté" : "Créer mon accès"}
             </Link>
             <Link
-              href={isAuthenticated ? "/myplanning/profile" : "/myplanning/login"}
+              href={isAuthenticated ? "/myplanning/profile" : loginHref}
               className="inline-flex min-w-[160px] items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700"
             >
-              {isAuthenticated ? "Mon profil" : "Se connecter"}
+              {isAuthenticated ? "Mon profil KORYXA" : "Se connecter"}
             </Link>
             <Link
               href="/myplanning/pricing"

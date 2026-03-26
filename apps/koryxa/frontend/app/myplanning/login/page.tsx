@@ -18,18 +18,18 @@ async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchPar
 
 export default async function MyPlanningLoginPage({ searchParams }: { searchParams?: SearchParamsInput }) {
   const params = await resolveSearchParams(searchParams);
-  const requestedRedirect = one(params?.redirect) || "/myplanning/app";
+  const requestedRedirect = one(params?.redirect) || "/myplanning/app/koryxa-home";
 
   return (
     <LoginClient
-      defaultRedirect="/myplanning/app"
+      defaultRedirect="/myplanning/app/koryxa-home"
       requestedRedirect={requestedRedirect}
-      heading="Connexion MyPlanningAI"
-      subtitle="Connecte-toi pour accéder à ton cockpit MyPlanningAI."
-      supportLabel="Support MyPlanningAI"
+      heading="Connexion KORYXA"
+      subtitle="Connecte-toi pour accéder à ton espace connecté KORYXA et au moteur MyPlanningAI."
+      supportLabel="Support KORYXA"
       supportHref="/account/recover"
-      signupHref="/myplanning/signup?redirect=/myplanning/app"
-      signupLabel="Créer un compte MyPlanningAI"
+      signupHref="/myplanning/signup?redirect=/myplanning/app/koryxa-home"
+      signupLabel="Créer un compte KORYXA"
     />
   );
 }

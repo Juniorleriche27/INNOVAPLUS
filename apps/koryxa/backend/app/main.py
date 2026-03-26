@@ -25,7 +25,6 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.core.config import settings
 from app.db.mongo import close_mongo_connection, connect_to_mongo
 from app.routers.auth import router as auth_router
-from app.routers.ebooks import router as ebooks_router
 from app.routers.posts import router as posts_router
 from app.routers.messages import router as messages_router
 from app.routers.groups import router as groups_router
@@ -33,9 +32,6 @@ from app.routers.contact import router as contact_router
 from app.routers.chatlaya import router as chatlaya_router
 from app.routers.diagnostics import router as diag_router
 from app.routers.innova import router as innova_router
-from app.routers.pieagency import router as pieagency_router
-from app.routers.farmlink import router as farmlink_router
-from app.routers.sante import router as sante_router
 from app.routers.rag import router as rag_router
 from app.routers.me import router as me_router
 from app.routers.notifications import router as notifications_router
@@ -56,6 +52,7 @@ from app.routers import studio_missions as studio_missions_router
 from app.routers.skills import router as skills_router
 from app.routers.module6 import router as module6_router
 from app.routers.youtube import router as youtube_router
+from app.routers.billing import router as billing_router
 from app.routers.trajectoire import router as trajectoire_router
 from app.routers.public_enterprise import router as public_enterprise_router
 from app.routers.public_products import router as public_products_router
@@ -2662,6 +2659,10 @@ async def on_startup():
         await db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1), ("due_datetime", 1)])
         await db["myplanning_tasks"].create_index([("user_id", 1), ("created_at", -1)])
         await db["myplanning_onboarding"].create_index([("user_id", 1)], unique=True)
+        await db["billing_events"].create_index([("provider", 1), ("event_fingerprint", 1)], unique=True)
+        await db["billing_transactions"].create_index([("paydunya_token", 1)], unique=True, sparse=True)
+        await db["billing_transactions"].create_index([("user_id", 1), ("created_at", -1)])
+        await db["users"].create_index([("paydunya_token", 1)], sparse=True)
     except Exception:
         pass
     init_pg_pool()
@@ -3155,6 +3156,7 @@ if MYPLANNING_ONLY:
     minimal.include_router(notifications_router)
     minimal.include_router(myplanning_router)
     minimal.include_router(youtube_router)
+    minimal.include_router(billing_router)
     minimal.include_router(trajectoire_router)
     minimal.include_router(public_enterprise_router)
     minimal.include_router(public_products_router)
@@ -3162,11 +3164,8 @@ if MYPLANNING_ONLY:
     app.include_router(minimal)
     logger.info("PRODUCT_MODE=myplanning -> mounted auth/notifications/myplanning/public product routers")
 else:
-    # Only include module routers (health, etc.) at root; feature APIs live under /plusbook
+    # Only include KORYXA core routers at root.
     app.include_router(innova_router)
-    app.include_router(pieagency_router)
-    app.include_router(farmlink_router)
-    app.include_router(sante_router)
     app.include_router(rag_router)
     app.include_router(chatlaya_router)
 
@@ -3174,6 +3173,11 @@ else:
     innova_api = APIRouter(prefix="")
     # Legacy INNOVA core lists (domains/contributors/technologies) disabled
     # innova_api.include_router(innova_core_router)
+    innova_api.include_router(groups_router)
+    innova_api.include_router(posts_router)
+    innova_api.include_router(messages_router)
+    innova_api.include_router(contact_router)
+    innova_api.include_router(diag_router)
     innova_api.include_router(opportunities_router)
     innova_api.include_router(market_router)
     innova_api.include_router(meet_router)
@@ -3197,6 +3201,7 @@ else:
     innova_api.include_router(module6_router)
     innova_api.include_router(youtube_router)
     innova_api.include_router(auth_router)
+    innova_api.include_router(billing_router)
     innova_api.include_router(chatlaya_router)
     app.include_router(innova_api)
     innova_rag = APIRouter(prefix="/innova")
@@ -3205,24 +3210,3 @@ else:
 
     # Serve public storage similar to Laravel's /storage symlink
     app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")
-
-    # Mount the same API under /plusbook prefix for unified gateway
-    plusbook = APIRouter(prefix="/plusbook")
-    plusbook.include_router(ebooks_router)
-    plusbook.include_router(posts_router)
-    plusbook.include_router(messages_router)
-    plusbook.include_router(groups_router)
-    plusbook.include_router(contact_router)
-    plusbook.include_router(diag_router)
-
-    @plusbook.get("/health")
-    async def plusbook_health(db: AsyncIOMotorDatabase = Depends(get_db)):
-        ok = False
-        try:
-            await db.command("ping")
-            ok = True
-        except Exception:
-            ok = False
-        return {"status": "ok" if ok else "down", "db": settings.DB_NAME, "mongo": ok}
-
-    app.include_router(plusbook)

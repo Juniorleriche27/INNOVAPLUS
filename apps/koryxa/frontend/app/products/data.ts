@@ -15,7 +15,7 @@ export type ProductInfo = {
 export const productCatalog: Record<string, ProductInfo> = {
   "myplanning": {
     slug: "myplanning",
-    name: "MyPlanning",
+    name: "MyPlanningAI",
     tagline: "Assistant temps & priorités pour équipes africaines.",
     summary:
       "MyPlanning orchestre Eisenhower, MoSCoW, Kanban, Pomodoro et suggestions IA Llama pour aider étudiants, entrepreneurs et équipes à structurer leurs journées.",
@@ -71,73 +71,14 @@ export const productCatalog: Record<string, ProductInfo> = {
       "Aider une équipe à transformer une idée floue en plan d'action exploitable",
     ],
   },
-  "koryxa-sante": {
-    slug: "koryxa-sante",
-    name: "KORYXA Santé & Bien-être",
-    tagline: "Plateforme IA pour la prévention, l'analyse et l'assistance médicale intelligente.",
-    summary:
-      "Suite d'outils d'analytique santé avec datasets spécialisés, modèles prédictifs, chatbot RAG médical et interface Streamlit prête à déployer pour les ministères, ONG et hôpitaux.",
-    heroImage:
-      "https://images.unsplash.com/photo-1580281657521-6c798d38b577?auto=format&fit=crop&w=1200&q=60",
-    highlights: [
-      "10 datasets santé (hôpitaux, nutrition, environnement, santé mentale…) avec pipeline d'analyse",
-      "Modèles prédictifs : risques sanitaires, recommandations nutritionnelles, détection d'anomalies et épidémio",
-      "Chatbot RAG médical pour interpréter les résultats et générer des rapports en langage naturel",
-      "Interface Streamlit + API FastAPI pour intégration rapide dans vos programmes publics ou privés",
-    ],
-    stats: [
-      { label: "Datasets intégrés", value: "10+" },
-      { label: "Modèles IA prêts", value: "6" },
-      { label: "Délai de déploiement", value: "48h" },
-    ],
-    primaryCta: { label: "Tester la démo Streamlit", href: "/contact?product=koryxa-sante" },
-    secondaryCta: {
-      label: "Lire la documentation",
-      href: "https://github.com/innovaplus/KORYXA/tree/main/products/koryxa-sante",
-    },
-    contact: "sante@koryxa.africa",
-    useCases: [
-      "Ministères de la Santé et équipes épidémiologiques",
-      "Clinique privée souhaitant un cockpit IA prédictif",
-      "Laboratoires et ONG santé publique",
-    ],
-  },
-  plusbook: {
-    slug: "plusbook",
-    name: "PlusBooks",
-    tagline: "Plateforme numérique pour publier, lire et partager des e-books locaux.",
-    summary:
-      "Expérience livrée dans le frontend KORYXA + API FastAPI pour créer une bibliothèque numérique communautaire : publication d'ebooks, recommandations IA, communauté de lecteurs et créateurs.",
-    heroImage:
-      "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=60",
-    highlights: [
-      "Interface Next intégrée (Home, Explorer, Publication, communauté)",
-      "Backend PlusBook (FastAPI) déjà intégré à l'API KORYXA",
-      "Compatibilité mobile, dark mode, SEO optimisé",
-      "Idéal pour bibliothèques numériques, écoles, éditeurs indépendants",
-    ],
-    stats: [
-      { label: "E-books pris en charge", value: "PDF · EPUB" },
-      { label: "Modules", value: "Publication · Lecture · Communauté" },
-      { label: "Déploiement", value: "On-premise ou cloud" },
-    ],
-    primaryCta: { label: "Découvrir la démo", href: "/contact?product=plusbook" },
-    // Pas de repo frontend dédié : parcours intégré dans le Next KORYXA
-    contact: "plusbook@koryxa.africa",
-    useCases: [
-      "Bibliothèques numériques africaines",
-      "Écoles / campus souhaitant un portail e-books",
-      "Communautés d'auteurs indépendants",
-    ],
-  },
 };
 
 export const productList = Object.values(productCatalog);
 
+export const removedProductSlugs = new Set(["plusbook", "plusbooks", "koryxa-sante", "sante"]);
+
 export const productSlugAliases: Record<string, string> = {
   myplanningai: "myplanning",
-  plusbooks: "plusbook",
-  sante: "koryxa-sante",
 };
 
 export function resolveProductSlug(slug: string): string {

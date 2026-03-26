@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { BarChart3, BrainCircuit, Database, CheckCircle2 } from "lucide-react";
-import { PublishedCard, PublishedGradientBand, PublishedHero, PublishedSectionHeading } from "@/components/marketing/PublishedSiteSections";
+import { BarChart3, BrainCircuit, Database } from "lucide-react";
+import { PublishedGradientBand, PublishedHero, PublishedSectionHeading } from "@/components/marketing/PublishedSiteSections";
 
 export const metadata: Metadata = {
   title: "Trajectoire | KORYXA",

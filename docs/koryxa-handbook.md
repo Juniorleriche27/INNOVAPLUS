@@ -4,14 +4,12 @@ KORYXA Monorepo
 Structure
 ---------
 
-- `apps/koryxa/backend` — passerelle FastAPI (MongoDB, auth, modules PlusBook, PieAgency, Farmlink, Santé, etc.).
-- `apps/koryxa/frontend` — interface Next.js (app Chatlaya/Koryxa) qui sert désormais tout le portefeuille.
+- `apps/koryxa/backend` — API FastAPI KORYXA (MongoDB, auth, profils, opportunités, communauté, ChatLAYA, MyPlanning, trajectoire, entreprise).
+- `apps/koryxa/frontend` — interface Next.js publique et connectée de KORYXA.
 - `apps/koryxa/training` — scripts de fine-tuning / conversion des modèles (SmolLM, Llama, GGUF).
-- `products/pie-agency` — prompts/docs/données PieAgency (pas de frontend dédié, intégré dans le Next).
-- `products/farmlink` — assets FarmLink (Streamlit + données).
-- `products/koryxa-sante` — stack Streamlit Koryxa Santé & Bien-être.
 
-Les anciens chemins hérités ont été retirés ; utilise désormais uniquement `apps/koryxa/*` et `products/*` (les scripts d’automatisation sont alignés dessus).
+Les anciens produits retirés du portefeuille ont été supprimés. Utilise désormais uniquement `apps/koryxa/*`.
+L’architecture de navigation publique et connectée est décrite dans `docs/site-architecture.md`.
 
 Démarrer en local
 -----------------
@@ -26,7 +24,6 @@ Démarrer en local
    ```
    MONGO_URI=your_mongodb_uri
    DB_INNOVA=innova_db
-   DB_PLUSBOOK=plusbook_db
    DB_NAME=innova_db
    JWT_SECRET=change_me
    JWT_EXPIRES_MINUTES=60
@@ -34,7 +31,7 @@ Démarrer en local
 
 5. `uvicorn app.main:app --reload --port 8080`
 
-Endpoints principaux : `/innova/health`, `/plusbook/health`, `/farmlink/health`, `/pieagency/health`, `/sante/health`, `/innova/api/*`, `/innova/chat`, `/innova/ingest`.
+Endpoints principaux : `/innova/health`, `/innova/api/*`, `/innova/chat`, `/innova/ingest`.
 
 ### Frontend Next.js (apps/koryxa/frontend)
 
@@ -43,18 +40,12 @@ Endpoints principaux : `/innova/health`, `/plusbook/health`, `/farmlink/health`
 3. `cp .env.example .env.local` puis définir `NEXT_PUBLIC_API_URL=https://api.innovaplus.africa/innova/api`
 4. `pnpm dev`
 
-### Frontends produits
-
-- PlusBook / PieAgency : frontends Vite retirés — tout est servi depuis `apps/koryxa/frontend`.
-- FarmLink : `cd products/farmlink/farmlink/frontend && streamlit run ...` (`API_URL=https://api.innovaplus.africa/farmlink`).
-- Koryxa Santé : `cd products/koryxa-sante/streamlit_app && streamlit run simple_main.py` (`API_URL=https://api.innovaplus.africa/sante`).
-
 Notes
 -----
 
 - Les uploads (`apps/koryxa/backend/storage/public`) restent servis via `/storage/...`.
 - Les appels IA utilisent une API (ex: Cohere) via `COHERE_API_KEY` et `PROVIDER=cohere`.
-- Scripts CI (GitHub Actions) / Vercel doivent pointer vers `apps/koryxa/*` ou `products/*` selon le module ciblé.
+- Scripts CI (GitHub Actions) / Vercel doivent pointer vers `apps/koryxa/*`.
 
 Missions & matching
 -------------------

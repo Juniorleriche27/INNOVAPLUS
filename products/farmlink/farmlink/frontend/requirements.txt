@@ -1,3 +1,0 @@
-# === Frontend Streamlit ===
-streamlit
-requests

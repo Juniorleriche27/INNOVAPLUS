@@ -41,9 +41,9 @@ const CONNECTED_PRIMARY_GROUP: NavGroup = {
 
 const SIDEBAR_MYPLANNING_GROUPS: NavGroup[] = [
   {
-    title: "MyPlanningAI",
+    title: "Moteur d'exécution",
     links: [
-      { href: "/myplanning/app", label: "Vue d’exécution", icon: "📅", prefix: "/myplanning/app" },
+      { href: "/myplanning/app", label: "Cockpit d’exécution", icon: "📅", prefix: "/myplanning/app" },
       { href: "/myplanning/app/pro/stats", label: "Stats & graphiques", icon: "📈", prefix: "/myplanning/app/pro/stats", badge: "PRO" },
       { href: "/myplanning/app/pro/coaching", label: "Coaching IA", icon: "🤖", prefix: "/myplanning/app/pro/coaching", badge: "PRO" },
       { href: "/myplanning/app/pro/templates", label: "Templates", icon: "📐", prefix: "/myplanning/app/pro/templates", badge: "PRO" },
@@ -66,7 +66,7 @@ const SIDEBAR_MYPLANNING_GROUPS: NavGroup[] = [
 ];
 
 const FULLSCREEN_LINKS_FREE: NavEntry[] = [
-  { href: "/myplanning/app", label: "App" },
+  { href: "/myplanning/app", label: "Exécution" },
   { href: "/myplanning/pricing", label: "Tarifs" },
 ];
 
@@ -84,16 +84,6 @@ const FULLSCREEN_LINKS_ENTERPRISE: NavEntry[] = [
   ...FULLSCREEN_LINKS_TEAM,
   { href: "/myplanning/enterprise", label: "Organisation" },
 ];
-
-function isAuthRoute(pathname: string): boolean {
-  return pathname.startsWith("/myplanning/login") || pathname.startsWith("/myplanning/signup");
-}
-
-function isMarketingRoute(pathname: string): boolean {
-  if (!pathname.startsWith("/myplanning")) return false;
-  if (isAuthRoute(pathname)) return true;
-  return !isProductRoute(pathname);
-}
 
 function isProductRoute(pathname: string): boolean {
   if (!pathname.startsWith("/myplanning")) return false;
@@ -184,18 +174,18 @@ function isActive(pathname: string, entry: NavEntry): boolean {
 }
 
 function breadcrumbTitle(pathname: string): string {
-  if (pathname.startsWith("/myplanning/app/koryxa-home")) return "Plateforme / Accueil KORYXA";
-  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "Plateforme / Entreprise";
-  if (pathname.startsWith("/myplanning/app/koryxa")) return "Plateforme / Trajectoire";
-  if (pathname.startsWith("/myplanning/opportunities")) return "Plateforme / Opportunités";
-  if (pathname.startsWith("/myplanning/profile")) return "Plateforme / Profil";
-  if (pathname.startsWith("/myplanning/settings")) return "Plateforme / Paramètres";
-  if (pathname.startsWith("/myplanning/team")) return "Plateforme / Espaces";
-  if (pathname.startsWith("/myplanning/orgs")) return "Plateforme / Organisations";
-  if (pathname.startsWith("/myplanning/enterprise")) return "Plateforme / Entreprise";
-  if (pathname.startsWith("/myplanning/pro")) return "Plateforme / MyPlanningAI";
-  if (pathname.startsWith("/myplanning/app")) return "Plateforme / Accueil";
-  return "MyPlanning";
+  if (pathname.startsWith("/myplanning/app/koryxa-home")) return "Espace connecté / Accueil";
+  if (pathname.startsWith("/myplanning/app/koryxa-enterprise")) return "Espace connecté / Entreprise";
+  if (pathname.startsWith("/myplanning/app/koryxa")) return "Espace connecté / Trajectoire";
+  if (pathname.startsWith("/myplanning/opportunities")) return "Espace connecté / Opportunités";
+  if (pathname.startsWith("/myplanning/profile")) return "Espace connecté / Profil";
+  if (pathname.startsWith("/myplanning/settings")) return "Espace connecté / Paramètres";
+  if (pathname.startsWith("/myplanning/team")) return "Exécution / Espaces";
+  if (pathname.startsWith("/myplanning/orgs")) return "Exécution / Organisations";
+  if (pathname.startsWith("/myplanning/enterprise")) return "Exécution / Entreprise";
+  if (pathname.startsWith("/myplanning/pro")) return "Exécution / Modules Pro";
+  if (pathname.startsWith("/myplanning/app")) return "Exécution / Cockpit";
+  return "KORYXA";
 }
 
 function FullscreenIcon({ active }: { active: boolean }) {
@@ -224,10 +214,10 @@ function ProductSidebar({
         {!collapsed ? (
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-              {focusMode ? "KORYXA" : "Plateforme"}
+              {focusMode ? "KORYXA" : "Exécution"}
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
-              {focusMode ? "Espace connecté KORYXA" : "KORYXA × MyPlanningAI"}
+              {focusMode ? "Espace connecté KORYXA" : "MyPlanningAI dans KORYXA"}
             </p>
           </div>
         ) : (
@@ -298,7 +288,7 @@ function ProductTopbar({
   displayName: string;
   focusMode: boolean;
 }) {
-  const logoutRedirect = pathname.startsWith("/myplanning/") ? "/myplanning/login" : "/login";
+  const logoutRedirect = "/myplanning/login";
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-2 py-3 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/92 sm:px-3" style={{ minHeight: "var(--topbar-h)" }}>
       <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3">
@@ -307,7 +297,7 @@ function ProductTopbar({
             ← Site KORYXA
           </Link>
           <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100">
-            {focusMode ? "KORYXA connecté" : "Plateforme connectée"}
+            {focusMode ? "KORYXA connecté" : "Moteur d'exécution"}
           </span>
           <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">{breadcrumbTitle(pathname)}</p>
         </div>
@@ -333,7 +323,7 @@ function ProductTopbar({
               scroll={false}
               className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100"
             >
-              Gérer mon plan
+              Plans & accès
             </Link>
           ) : null}
           {isAuthenticated ? (
@@ -377,11 +367,11 @@ function MarketingHeader({
       <div className="mx-auto flex w-full items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
         <Link href="/myplanning" className="flex min-w-0 items-center gap-3">
           <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-sky-500 via-sky-400 to-sky-600 flex items-center justify-center shadow-lg shadow-sky-500/25">
-            <span className="text-xs font-semibold text-white">MP</span>
+            <span className="text-xs font-semibold text-white">KY</span>
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-black tracking-wide text-slate-900 dark:text-white">MyPlanningAI</p>
-            <p className="hidden truncate text-[11px] text-slate-500 dark:text-slate-400 md:block">Organisation universelle • Powered by KORYXA</p>
+            <p className="truncate text-base font-black tracking-wide text-slate-900 dark:text-white">KORYXA</p>
+            <p className="hidden truncate text-[11px] text-slate-500 dark:text-slate-400 md:block">Moteur MyPlanningAI • pilotage et exécution</p>
           </div>
         </Link>
 
@@ -428,7 +418,7 @@ function MarketingHeader({
                 className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
               />
               <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[148px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">
-                Ouvrir la plateforme
+                Ouvrir l’espace connecté
               </Link>
             </>
           ) : (
@@ -442,7 +432,7 @@ function MarketingHeader({
                 Se connecter
               </Link>
               <Link href={ctaHref} prefetch scroll={false} className="inline-flex min-w-[132px] items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">
-                S’inscrire
+                Créer mon accès
               </Link>
             </>
           )}
@@ -521,8 +511,9 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
     return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [isFullscreen]);
 
-  const ctaHref = isAuthenticated ? "/myplanning/app" : "/myplanning/signup";
-  const profileHref = isAuthenticated ? "/myplanning/profile" : "/myplanning/login?redirect=/myplanning/profile";
+  const connectedHomeHref = "/myplanning/app/koryxa-home";
+  const ctaHref = isAuthenticated ? connectedHomeHref : `/myplanning/signup?redirect=${encodeURIComponent(connectedHomeHref)}`;
+  const profileHref = isAuthenticated ? "/myplanning/profile" : `/myplanning/login?redirect=${encodeURIComponent("/myplanning/profile")}`;
   const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.email || "";
   const userInitial = displayName ? displayName.charAt(0).toUpperCase() : "M";
 
@@ -544,7 +535,7 @@ export default function MyPlanningRouteLayout({ children }: { children: ReactNod
         </main>
         <footer className="border-t border-slate-200 bg-white px-[var(--content-pad-sm)] py-4 text-xs text-slate-500 transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 sm:px-[var(--content-pad)] lg:px-8">
           <div className="mx-auto flex w-full flex-wrap items-center justify-between gap-3" style={{ maxWidth: "var(--marketing-max-w)" }}>
-            <p>MyPlanningAI • Produit SaaS de pilotage quotidien.</p>
+            <p>KORYXA • Moteur d’exécution MyPlanningAI pour trajectoires, besoins et opérations.</p>
             <div className="flex items-center gap-3">
               <Link href="/privacy" className="hover:text-sky-700 dark:hover:text-sky-300">
                 Confidentialité

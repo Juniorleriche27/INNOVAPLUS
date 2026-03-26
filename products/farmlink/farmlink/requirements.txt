@@ -1,2 +1,0 @@
-# Délègue vers le backend
--r backend/requirements.txt

@@ -15,7 +15,7 @@ def _load_dotenv_with_fallback() -> None:
     here = Path(__file__).resolve()
     guesses = [
         here.parents[2] / ".env",              # project backend folder .env
-        here.parents[3] / ".env",              # PlusBook/.env
+        here.parents[3] / ".env",              # repository root fallback
         here.parents[1] / ".env",              # app/.env
     ]
     for candidate in guesses:
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     MONGO_URI: str
     DB_NAME: str
     ENV: str = os.getenv("ENV", "development")
-    APP_NAME: str = "plusbooks-fastapi"
+    APP_NAME: str = "koryxa-backend"
     PRODUCT_MODE: str = os.getenv("PRODUCT_MODE", "all")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "insecure-dev-secret-change-me")
     JWT_ALG: str = "HS256"
@@ -78,12 +78,7 @@ class Settings(BaseSettings):
     FAIRNESS_NEED_INDEX_JSON: str | None = os.getenv("FAIRNESS_NEED_INDEX_JSON")
     FAIRNESS_MIN_QUOTA: float = float(os.getenv("FAIRNESS_MIN_QUOTA", "0.05"))
     FAIRNESS_MAX_QUOTA: float = float(os.getenv("FAIRNESS_MAX_QUOTA", "0.5"))
-    # Multi-DB names (modules)
-    DB_PLUSBOOK: str | None = None
     DB_INNOVA: str | None = None
-    DB_PIEAGENCY: str | None = None
-    DB_FARMLINK: str | None = None
-    DB_SANTE: str | None = None
     OTP_CODE_LENGTH: int = int(os.getenv("OTP_CODE_LENGTH", "6"))
     OTP_TTL_MIN: int = int(os.getenv("OTP_TTL_MIN", "10"))
     OTP_DEV_DEBUG: bool = os.getenv("OTP_DEV_DEBUG", "false").lower() in {"1", "true", "yes"}
@@ -94,6 +89,24 @@ class Settings(BaseSettings):
     SIGNUP_NOTIFY_EMAILS: str | None = os.getenv("SIGNUP_NOTIFY_EMAILS")
     YOUTUBE_API_KEY: str | None = os.getenv("YOUTUBE_API_KEY")
     ADMIN_EMAILS: str | None = os.getenv("ADMIN_EMAILS", "seniorlamadokou@gmail.com")
+    BACKEND_BASE_URL: str = os.getenv("BACKEND_BASE_URL", "https://api.innovaplus.africa")
+    PAYDUNYA_MODE: str = os.getenv("PAYDUNYA_MODE", "test")
+    PAYDUNYA_BASE_URL: str | None = os.getenv("PAYDUNYA_BASE_URL")
+    PAYDUNYA_MASTER_KEY: str | None = os.getenv("PAYDUNYA_MASTER_KEY")
+    PAYDUNYA_PRIVATE_KEY: str | None = os.getenv("PAYDUNYA_PRIVATE_KEY")
+    PAYDUNYA_TOKEN: str | None = os.getenv("PAYDUNYA_TOKEN")
+    PAYDUNYA_STORE_NAME: str = os.getenv("PAYDUNYA_STORE_NAME", "KORYXA")
+    PAYDUNYA_STORE_TAGLINE: str = os.getenv("PAYDUNYA_STORE_TAGLINE", "Plateforme KORYXA")
+    PAYDUNYA_CHANNELS: str | None = os.getenv("PAYDUNYA_CHANNELS")
+    PAYDUNYA_VERIFY_HASH: bool = os.getenv("PAYDUNYA_VERIFY_HASH", "true").lower() in {"1", "true", "yes"}
+    PAYDUNYA_HTTP_TIMEOUT_S: int = int(os.getenv("PAYDUNYA_HTTP_TIMEOUT_S", "20"))
+    PAYDUNYA_RETURN_PATH: str = os.getenv("PAYDUNYA_RETURN_PATH", "/myplanning/pricing?checkout=success")
+    PAYDUNYA_CANCEL_PATH: str = os.getenv("PAYDUNYA_CANCEL_PATH", "/myplanning/pricing?checkout=cancel")
+    PAYDUNYA_CALLBACK_PATH: str = os.getenv("PAYDUNYA_CALLBACK_PATH", "/paydunya/ipn")
+    PAYDUNYA_AMOUNT_PRO_MONTHLY: int = int(os.getenv("PAYDUNYA_AMOUNT_PRO_MONTHLY", "5000"))
+    PAYDUNYA_AMOUNT_PRO_YEARLY: int = int(os.getenv("PAYDUNYA_AMOUNT_PRO_YEARLY", "50000"))
+    PAYDUNYA_AMOUNT_TEAM_MONTHLY: int = int(os.getenv("PAYDUNYA_AMOUNT_TEAM_MONTHLY", "20000"))
+    PAYDUNYA_AMOUNT_TEAM_YEARLY: int = int(os.getenv("PAYDUNYA_AMOUNT_TEAM_YEARLY", "200000"))
 
     class Config:
         env_file = ".env"
@@ -102,7 +115,7 @@ class Settings(BaseSettings):
 
 settings = Settings(
     MONGO_URI=os.getenv("MONGO_URI", "mongodb://localhost:27017"),
-    DB_NAME=os.getenv("DB_NAME", "plusbook_db"),
+    DB_NAME=os.getenv("DB_NAME", "innova_db"),
 )
 
 # Prefer INNOVA as the default (root) DB if provided
@@ -110,9 +123,3 @@ settings.DB_INNOVA = settings.DB_INNOVA or "innova_db"
 if os.getenv("DB_NAME") is None:
     # If DB_NAME not explicitly set in env, use DB_INNOVA for the root app
     settings.DB_NAME = settings.DB_INNOVA
-
-# Defaults for module DBs
-settings.DB_PLUSBOOK = settings.DB_PLUSBOOK or "plusbook_db"
-settings.DB_PIEAGENCY = settings.DB_PIEAGENCY or "pieagency_db"
-settings.DB_FARMLINK = settings.DB_FARMLINK or "farmlink_db"
-settings.DB_SANTE = settings.DB_SANTE or "sante_db"

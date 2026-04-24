@@ -1,306 +1,315 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Bot, BriefcaseBusiness, GraduationCap, Users } from "lucide-react";
-import { productList } from "./products/data";
+import {
+  ArrowRight,
+  Bot,
+  BriefcaseBusiness,
+  ChartNoAxesCombined,
+  CheckCircle2,
+  Compass,
+  Cpu,
+  FolderKanban,
+  Sparkles,
+  Target,
+  Zap,
+} from "lucide-react";
+import LiveSignalBars from "@/components/marketing/LiveSignalBars";
+import LoopTypewriter from "@/components/marketing/LoopTypewriter";
+import ScrollReveal from "@/components/ui/ScrollReveal";
+import CountUp from "@/components/ui/CountUp";
+import GlowCard from "@/components/ui/GlowCard";
+import AnimatedBeam from "@/components/ui/AnimatedBeam";
+import AnimatedTicker from "@/components/ui/AnimatedTicker";
+import JsonLd from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "Accueil | KORYXA",
+  title: "KORYXA | Plateforme IA Orchestration Afrique — Blueprint, Entreprise, ChatLAYA",
   description:
-    "KORYXA structure les besoins IA des entreprises, active les trajectoires IA et connecte talents, formateurs, missions et produits dans une plateforme premium.",
+    "KORYXA est la premiere plateforme d'orchestration IA en Afrique. Cadrez vos besoins, executez vos projets data et IA, activez vos talents avec Blueprint, Entreprise, Service IA et ChatLAYA.",
+  keywords: [
+    "plateforme IA Afrique",
+    "orchestration IA",
+    "service data intelligence artificielle",
+    "Blueprint talent Afrique",
+    "chatbot entreprise Afrique",
+    "cadrage besoin IA",
+    "data scientist Afrique",
+  ],
   openGraph: {
-    title: "Accueil | KORYXA",
+    title: "KORYXA | L'IA qui transforme vos besoins en execution",
     description:
-      "KORYXA structure les besoins IA des entreprises, active les trajectoires IA et connecte talents, formateurs, missions et produits dans une plateforme premium.",
+      "La premiere plateforme d'orchestration IA orientee execution en Afrique: cadrage, build et delivery pour entreprises et talents.",
     url: "/",
-  },
-  twitter: {
-    title: "Accueil | KORYXA",
-    description:
-      "KORYXA structure les besoins IA des entreprises, active les trajectoires IA et connecte talents, formateurs, missions et produits dans une plateforme premium.",
+    type: "website",
   },
 };
 
-const HERO_METRICS = [
-  { value: "4", label: "Piliers orchestrés", detail: "Entreprise, trajectoire, produits et communauté" },
-  { value: "24h", label: "Temps de cadrage", detail: "Pour transformer un besoin IA en plan exécutable" },
-  { value: "Premium", label: "Positionnement", detail: "Expérience haut de gamme pour des parcours réels" },
-];
+const TICKER_ITEMS = [
+  "Python",
+  "Pandas",
+  "NumPy",
+  "SQL",
+  "LLM",
+  "Automation",
+  "Forecasting",
+  "Data Viz",
+  "APIs",
+  "MLOps",
+] as const;
 
-const PLATFORM_PILLARS = [
-  {
-    icon: BriefcaseBusiness,
-    title: "Entreprise",
-    description: "Structurez un besoin IA concret, clarifiez les priorités et déclenchez la bonne exécution.",
-    href: "/entreprise",
-    cta: "Explorer l’offre entreprise",
-  },
-  {
-    icon: GraduationCap,
-    title: "Trajectoire",
-    description: "Orientez les talents vers les métiers IA, les preuves attendues et les bons formateurs.",
-    href: "/trajectoire",
-    cta: "Voir les trajectoires",
-  },
-  {
-    icon: Bot,
-    title: "Produits",
-    description: "Activez les outils KORYXA qui prolongent l’apprentissage, l’analyse et l’exécution.",
-    href: "/produits",
-    cta: "Découvrir les produits",
-  },
-  {
-    icon: Users,
-    title: "Communauté",
-    description: "Connectez entreprises, talents et experts dans un réseau IA organisé autour de cas réels.",
-    href: "/communaute",
-    cta: "Entrer dans la communauté",
-  },
-];
+const KPI_ITEMS = [
+  { icon: Cpu, label: "Briques connectees", value: 5, suffix: " modules", detail: "Blueprint, Entreprise, Service IA, ChatLAYA" },
+  { icon: BriefcaseBusiness, label: "Execution Service IA", value: 10, suffix: " offres", detail: "Data, IA, automations, apps et systemes metier" },
+  { icon: Target, label: "Qualification rapide", value: 72, suffix: "h", detail: "Premiere qualification et cadrage du besoin" },
+  { icon: FolderKanban, label: "Mode delivery", value: 100, suffix: "%", detail: "De la demande au livrable exploitable" },
+] as const;
 
-const ORCHESTRATION_STEPS = [
-  {
-    step: "01",
-    title: "Exprimer un besoin IA",
-    text: "Le point d’entrée n’est pas un buzzword. KORYXA part d’un besoin métier clair, d’un objectif et d’un contexte.",
-  },
-  {
-    step: "02",
-    title: "Activer la bonne trajectoire",
-    text: "La plateforme oriente vers le bon produit, le bon parcours ou la bonne combinaison de ressources humaines.",
-  },
-  {
-    step: "03",
-    title: "Prouver la progression",
-    text: "Chaque étape est reliée à des preuves, à une montée en capacité et à des signaux de qualité visibles.",
-  },
-  {
-    step: "04",
-    title: "Transformer en impact",
-    text: "Opportunités, missions, accompagnement et exécution utile sont activés au moment où le système est prêt.",
-  },
-];
+const MODULE_ITEMS = [
+  { icon: Compass, title: "Blueprint", description: "Profilage talent, trajectoire claire, plan d'action concret.", href: "/trajectoire", cta: "Lancer Blueprint" },
+  { icon: BriefcaseBusiness, title: "Entreprise", description: "Cadrage intelligent des besoins avant toute execution.", href: "/entreprise", cta: "Cadrer un besoin" },
+  { icon: Bot, title: "Service IA", description: "Execution professionnelle: agents IA, modeles, apps, plateformes.", href: "/services-ia", cta: "Demander un service" },
+  { icon: ChartNoAxesCombined, title: "Opportunites", description: "Pipeline de missions et activation commerciale sur les besoins qualifies.", href: "/opportunites", cta: "Voir les opportunites" },
+  { icon: Sparkles, title: "ChatLAYA", description: "Assistant de travail pour lancer, structurer et vendre un projet.", href: "/chatlaya", cta: "Ouvrir ChatLAYA" },
+] as const;
 
-const FOCUS_AREAS = [
-  "Analyse et lecture de données",
-  "Modèles prédictifs et aide à la décision",
-  "Automatisation intelligente des opérations",
-  "Assistants IA et copilotes métier",
-];
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "KORYXA",
+  url: "https://koryxa.com",
+  logo: "https://koryxa.com/logo.png",
+  description: "Plateforme d'orchestration IA en Afrique — Blueprint, Entreprise, Service IA, ChatLAYA",
+  areaServed: "Africa",
+  knowsAbout: ["Intelligence Artificielle", "Data Science", "Machine Learning", "Automatisation"],
+};
+
+const serviceJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "KORYXA Service IA",
+  provider: { "@type": "Organization", name: "KORYXA" },
+  description: "Services professionnels d'intelligence artificielle, data engineering, agents IA et automatisation en Afrique.",
+  areaServed: "Africa",
+  serviceType: "Intelligence Artificielle et Data",
+};
 
 export default function HomePage() {
   return (
-    <main className="space-y-0">
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[linear-gradient(135deg,#0f223d_0%,#112846_38%,#13375d_72%,#16476f_100%)] text-white">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-40"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(120,155,190,0.18) 1.2px, transparent 0)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-        <div aria-hidden className="absolute inset-y-0 right-[-8%] w-[46%] bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.18),transparent_64%)]" />
-        <div aria-hidden className="absolute left-[-10%] top-20 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
-        <div aria-hidden className="absolute bottom-[-10%] right-[14%] h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
+    <>
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={serviceJsonLd} />
+      <main className="space-y-0">
+        {/* Hero */}
+        <section className="relative overflow-hidden bg-[linear-gradient(140deg,#020617_0%,#07111f_46%,#0b1a30_100%)] text-white">
+          <AnimatedBeam />
+          <div aria-hidden className="kx-animated-grid absolute inset-0 opacity-20" />
+          <div aria-hidden className="kx-orb kx-orb-a" />
+          <div aria-hidden className="kx-orb kx-orb-b" />
+          <div aria-hidden className="kx-orb kx-orb-c" />
+          <div aria-hidden className="kx-orb kx-orb-d" />
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span
+              key={`p-${i}`}
+              aria-hidden
+              className="kx-particle"
+              style={{ left: `${(i * 11) % 100}%`, top: `${(i * 23) % 100}%`, animationDelay: `-${i * 0.9}s`, animationDuration: `${10 + (i % 5) * 1.8}s` }}
+            />
+          ))}
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-88px)] w-full max-w-[var(--marketing-max-w)] flex-col px-4 pb-16 pt-20 sm:px-6 md:justify-center md:pb-24 md:pt-24 lg:px-8">
-          <div className="mx-auto max-w-[70rem] text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-5 py-3 text-sm font-semibold text-sky-200 shadow-[0_0_0_1px_rgba(14,165,233,0.08)] backdrop-blur">
-              <span className="text-base leading-none">✦</span>
-              Plateforme premium d&apos;orchestration IA
-            </div>
+          <div className="relative mx-auto flex min-h-[calc(100svh-72px)] w-full max-w-[var(--marketing-max-w)] flex-col justify-center px-4 pb-20 pt-16 sm:min-h-[calc(100vh-80px)] sm:px-6 sm:pb-24 sm:pt-24 lg:px-8">
+            <div className="mx-auto w-full max-w-5xl text-center">
+              <div className="kx-hero-badge-pulse kx-reveal-up inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500/8 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
+                <Sparkles className="h-4 w-4 text-sky-300" />
+                IA Orchestration Platform — Afrique
+              </div>
 
-            <h1 className="kx-display mt-8 text-[3.35rem] font-semibold leading-[0.95] tracking-[-0.08em] text-white sm:text-[4.6rem] lg:text-[6.4rem]">
-              Structurez vos besoins IA.
-              <span className="mt-3 block bg-[linear-gradient(90deg,#40b8ff_0%,#17d3d2_52%,#1de39f_100%)] bg-clip-text text-transparent">
-                Bâtissez vos carrières IA.
-              </span>
-            </h1>
+              <h1 className="mt-8 text-[2.5rem] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-[4.2rem] lg:text-[5.3rem]">
+                <span className="kx-title-gradient-loop kx-display block">KORYXA</span>
+                <span className="mt-2 block text-white/90">la premiere plateforme d'orchestration IA en Afrique.</span>
+              </h1>
 
-            <p className="mx-auto mt-8 max-w-[58rem] text-lg leading-9 text-slate-200 sm:text-[1.55rem] sm:leading-[2.6rem]">
-              KORYXA connecte entreprises, talents, formateurs et missions dans un écosystème
-              d&apos;excellence pour l&apos;intelligence artificielle appliquée.
-            </p>
-
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/entreprise/demarrer"
-                className="inline-flex min-w-[18rem] items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#0f9ae8_0%,#1492dc_100%)] px-7 py-4 text-lg font-semibold text-white shadow-[0_22px_60px_rgba(14,165,233,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_26px_66px_rgba(14,165,233,0.35)]"
-              >
-                Exprimer un besoin IA
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                href="/trajectoire/demarrer"
-                className="inline-flex min-w-[18rem] items-center justify-center gap-3 rounded-2xl border border-white/16 bg-white/10 px-7 py-4 text-lg font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/14"
-              >
-                Démarrer une trajectoire
-                <ArrowUpRight className="h-5 w-5" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-16 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="grid gap-4 sm:grid-cols-3">
-              {HERO_METRICS.map((metric) => (
-                <article
-                  key={metric.label}
-                  className="rounded-[28px] border border-white/10 bg-white/[0.08] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.16)] backdrop-blur"
-                >
-                  <p className="text-3xl font-semibold tracking-[-0.05em] text-white">{metric.value}</p>
-                  <p className="mt-3 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">{metric.label}</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{metric.detail}</p>
-                </article>
-              ))}
-            </div>
-
-            <article className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.08))] p-6 shadow-[0_24px_64px_rgba(15,23,42,0.2)] backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Positionnement</p>
-              <h2 className="kx-display mt-4 text-[2rem] font-semibold leading-[1.05] tracking-[-0.06em] text-white sm:text-[2.5rem]">
-                Une interface premium pour piloter l’IA appliquée.
-              </h2>
-              <p className="mt-4 text-base leading-8 text-slate-300">
-                Le prototype montre une promesse claire: même marque, même plateforme, plusieurs parcours reliés
-                entre eux. Cette landing raconte cette orchestration avec un langage plus haut de gamme et plus net.
+              <p className="mx-auto mt-6 max-w-4xl text-base leading-8 text-slate-300 sm:text-[1.15rem] sm:leading-9">
+                De l'idee au delivery reel: Blueprint profile les talents, Entreprise cadre les besoins,
+                Service IA execute, et ChatLAYA aide a lancer, structurer et vendre.
               </p>
-            </article>
-          </div>
-        </div>
-      </section>
 
-      <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[#f3f8fd] px-4 py-20 text-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[var(--marketing-max-w)]">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Plateforme KORYXA</p>
-              <h2 className="kx-display mt-4 text-[2.8rem] font-semibold leading-[1.02] tracking-[-0.07em] sm:text-[4rem]">
-                Une même architecture pour connecter besoin, apprentissage et exécution.
-              </h2>
-            </div>
-            <p className="max-w-[44rem] text-[1.05rem] leading-8 text-slate-600 lg:justify-self-end">
-              Le prototype place KORYXA comme une plateforme premium d’orchestration IA. La homepage est donc
-              reconstruite autour de quatre blocs clairs, reliés par une logique de progression.
-            </p>
-          </div>
+              <div className="mt-6 text-sm font-semibold text-sky-200 sm:text-base">
+                Nous construisons avec{" "}
+                <LoopTypewriter
+                  words={["Data Analysts", "Data Scientists", "Data Engineers", "AI Builders"]}
+                  className="text-white"
+                />
+              </div>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {PLATFORM_PILLARS.map((pillar) => {
-              const Icon = pillar.icon;
-              return (
-                <article
-                  key={pillar.title}
-                  className="group rounded-[32px] border border-slate-200 bg-white p-7 shadow-[0_20px_54px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_28px_66px_rgba(15,23,42,0.1)]"
+              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Link
+                  href="/services-ia"
+                  className="kx-cta-glow inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_100%)] px-8 py-4 text-base font-semibold text-white shadow-[0_24px_58px_rgba(2,132,199,0.28)] sm:w-auto sm:min-w-[18rem]"
                 >
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#e0f2fe_0%,#dcfce7_100%)] text-sky-700">
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <h3 className="mt-6 text-[1.75rem] font-semibold tracking-[-0.05em] text-slate-950">{pillar.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{pillar.description}</p>
-                  <Link
-                    href={pillar.href}
-                    className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-sky-700 transition group-hover:text-emerald-600"
-                  >
-                    {pillar.cta}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+                  Demander un service IA
+                  <ArrowRight className="kx-arrow-bounce h-4 w-4" />
+                </Link>
+                <Link
+                  href="/entreprise/demarrer"
+                  className="inline-flex w-full items-center justify-center rounded-2xl border border-white/12 bg-white/6 px-8 py-4 text-base font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto sm:min-w-[18rem]"
+                >
+                  Cadrer un besoin entreprise
+                </Link>
+              </div>
 
-      <section className="relative left-1/2 w-screen -translate-x-1/2 bg-white px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto grid w-full max-w-[var(--marketing-max-w)] gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-[36px] bg-[linear-gradient(135deg,#eaf6ff_0%,#ffffff_65%)] p-7 shadow-[0_22px_60px_rgba(15,23,42,0.06)] sm:p-9">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Offre entreprise</p>
-            <h2 className="kx-display mt-4 text-[2.4rem] font-semibold leading-[1.03] tracking-[-0.06em] text-slate-950 sm:text-[3.35rem]">
-              Les besoins IA que KORYXA peut cadrer et transformer en action.
-            </h2>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {FOCUS_AREAS.map((area) => (
-                <div key={area} className="rounded-[24px] border border-slate-200/80 bg-white/90 px-5 py-4 text-sm font-semibold text-slate-700 shadow-[0_8px_22px_rgba(148,163,184,0.08)]">
-                  {area}
+              <div className="mt-12">
+                <AnimatedTicker items={TICKER_ITEMS} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* KPIs */}
+        <section className="bg-[#020617] px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[var(--marketing-max-w)]">
+            <ScrollReveal>
+              <div className="mb-8 max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Execution Metrics</p>
+                <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.06em] text-white sm:text-[2.8rem]">
+                  Un systeme pense pour livrer, pas pour afficher.
+                </h2>
+              </div>
+            </ScrollReveal>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {KPI_ITEMS.map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <ScrollReveal key={item.label} delay={i * 0.08}>
+                    <GlowCard as="article" className="h-full">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-500/8 text-sky-300">
+                          <Icon className="kx-kpi-icon-loop h-5 w-5" style={{ animationDelay: `${i * 0.25}s` }} />
+                        </div>
+                        <p className="text-2xl font-semibold text-white">
+                          <CountUp to={item.value} suffix={item.suffix} />
+                        </p>
+                      </div>
+                      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
+                      <p className="mt-2 text-sm leading-7 text-slate-300">{item.detail}</p>
+                    </GlowCard>
+                  </ScrollReveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Modules */}
+        <section className="bg-[#020617] px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[var(--marketing-max-w)]">
+            <ScrollReveal>
+              <div className="mb-8 max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Product Stack</p>
+                <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.06em] text-white sm:text-[2.8rem]">
+                  Chaque module a un role clair dans la chaine de valeur.
+                </h2>
+              </div>
+            </ScrollReveal>
+
+            <div className="grid gap-4 lg:grid-cols-5">
+              {MODULE_ITEMS.map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <ScrollReveal key={item.title} delay={i * 0.07}>
+                    <GlowCard as="article" className="flex h-full flex-col">
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-500/8 text-sky-300">
+                        <Icon className="kx-module-icon-loop h-5 w-5" style={{ animationDelay: `${i * 0.2}s` }} />
+                      </div>
+                      <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-white">{item.title}</h3>
+                      <p className="mt-2 flex-1 text-sm leading-7 text-slate-400">{item.description}</p>
+                      <Link href={item.href} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-400 hover:text-sky-300">
+                        {item.cta}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </GlowCard>
+                  </ScrollReveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Live Pulse + Methode */}
+        <section className="bg-[#020617] px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto grid max-w-[var(--marketing-max-w)] gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <ScrollReveal direction="left">
+              <GlowCard as="article" className="rounded-[30px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Live Pulse</p>
+                <h2 className="kx-display mt-3 text-[1.9rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.5rem]">
+                  Pipeline operationnel en mouvement.
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  Le rythme de production suit un cycle clair: cadrage, audit, build, tests, delivery.
+                </p>
+                <div className="mt-6">
+                  <LiveSignalBars />
                 </div>
-              ))}
-            </div>
-            <Link href="/entreprise/demarrer" className="btn-primary mt-8">
-              Démarrer un cadrage
-            </Link>
-          </article>
+              </GlowCard>
+            </ScrollReveal>
 
-          <article className="rounded-[36px] bg-[linear-gradient(135deg,#10223b_0%,#133659_55%,#145e7b_100%)] p-7 text-white shadow-[0_26px_72px_rgba(15,23,42,0.18)] sm:p-9">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-200">Orchestration</p>
-            <h2 className="kx-display mt-4 text-[2.25rem] font-semibold leading-[1.04] tracking-[-0.06em] sm:text-[3.1rem]">
-              De l’intention à l’impact, sans casser le parcours.
-            </h2>
-            <div className="mt-8 grid gap-4">
-              {ORCHESTRATION_STEPS.map((item) => (
-                <article key={item.step} className="rounded-[24px] border border-white/10 bg-white/[0.06] px-5 py-5 backdrop-blur">
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-cyan-100">
-                      {item.step}
-                    </span>
-                    <h3 className="text-base font-semibold text-white">{item.title}</h3>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{item.text}</p>
-                </article>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[linear-gradient(180deg,#ffffff_0%,#eef7fb_100%)] px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[var(--marketing-max-w)]">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-[48rem]">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-700">Solutions reliées</p>
-              <h2 className="kx-display mt-4 text-[2.5rem] font-semibold leading-[1.03] tracking-[-0.06em] text-slate-950 sm:text-[3.5rem]">
-                Des solutions utiles, raccordées à la plateforme et non posées à côté.
-              </h2>
-            </div>
-            <Link href="/produits" className="inline-flex items-center gap-2 text-base font-semibold text-sky-700">
-              Voir toutes les solutions
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {productList.slice(0, 3).map((product) => (
-              <article
-                key={product.slug}
-                className="rounded-[30px] border border-slate-200/80 bg-white p-7 shadow-[0_20px_54px_rgba(15,23,42,0.06)]"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{product.tagline}</p>
-                <h3 className="mt-4 text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.05em] text-slate-950">
-                  {product.name}
-                </h3>
-                <p className="mt-4 text-sm leading-7 text-slate-600">{product.summary}</p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {product.highlights.slice(0, 2).map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
-                    >
-                      {item}
-                    </span>
+            <ScrollReveal direction="right">
+              <GlowCard as="article" className="rounded-[30px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Methode</p>
+                <h2 className="kx-display mt-3 text-[1.9rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.5rem]">
+                  Ce que KORYXA apporte en pratique.
+                </h2>
+                <div className="mt-6 space-y-3">
+                  {[
+                    "Une entree claire selon votre besoin reel",
+                    "Un cadrage metier avant le choix technique",
+                    "Une execution pilotee avec livrables concrets",
+                    "Un interlocuteur unique jusqu'a la mise en production",
+                  ].map((item, i) => (
+                    <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
+                      <CheckCircle2 className="kx-check-loop mt-0.5 h-5 w-5 shrink-0 text-emerald-400" style={{ animationDelay: `${i * 0.2}s` }} />
+                      <p className="text-sm leading-7 text-slate-300">{item}</p>
+                    </div>
                   ))}
                 </div>
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href={`/produits/${product.slug}`} className="btn-primary">
-                    Voir la fiche
-                  </Link>
-                  <Link href={product.primaryCta.href} className="btn-secondary">
-                    {product.primaryCta.label}
-                  </Link>
-                </div>
-              </article>
-            ))}
+              </GlowCard>
+            </ScrollReveal>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+
+        {/* CTA final */}
+        <section className="relative overflow-hidden bg-[linear-gradient(145deg,#020617_0%,#07111f_44%,#0b1a30_100%)] px-4 py-16 text-white sm:px-6 lg:px-8">
+          <AnimatedBeam />
+          <div aria-hidden className="kx-animated-grid absolute inset-0 opacity-15" />
+          <div className="relative mx-auto max-w-[var(--marketing-max-w)] text-center">
+            <ScrollReveal>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
+                <Zap className="h-4 w-4 text-sky-300" />
+                Start now
+              </div>
+              <h2 className="kx-display mx-auto mt-6 max-w-4xl text-[2.15rem] font-semibold leading-[0.95] tracking-[-0.07em] sm:text-[3.2rem]">
+                Vous avez un besoin data ou IA ?<br />
+                On le transforme en execution.
+              </h2>
+            </ScrollReveal>
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/services-ia"
+                className="kx-cta-glow inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0ea5e9,#0284c7)] px-8 py-4 text-base font-semibold text-white"
+              >
+                Ouvrir Service IA
+                <ArrowRight className="kx-arrow-bounce h-4 w-4" />
+              </Link>
+              <Link
+                href="/chatlaya"
+                className="inline-flex items-center rounded-2xl border border-white/12 bg-white/6 px-8 py-4 text-base font-semibold text-white backdrop-blur hover:bg-white/10"
+              >
+                Discuter avec ChatLAYA
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

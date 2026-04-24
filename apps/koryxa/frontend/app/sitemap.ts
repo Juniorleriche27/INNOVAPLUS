@@ -1,22 +1,21 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://koryxa.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
-  const now = new Date();
-  const pages: Array<{ loc: string; priority: number }> = [
-    { loc: "/", priority: 1.0 },
-    { loc: "/opportunities", priority: 0.9 },
-    { loc: "/chatlaya", priority: 0.8 },
-    { loc: "/meet", priority: 0.7 },
-    { loc: "/marketplace", priority: 0.7 },
-    { loc: "/about", priority: 0.6 },
-    { loc: "/resources", priority: 0.6 },
-    { loc: "/privacy", priority: 0.5 },
+  const routes = [
+    { url: "/", priority: 1.0, changeFrequency: "weekly" as const },
+    { url: "/trajectoire", priority: 0.9, changeFrequency: "monthly" as const },
+    { url: "/entreprise", priority: 0.9, changeFrequency: "monthly" as const },
+    { url: "/services-ia", priority: 0.9, changeFrequency: "monthly" as const },
+    { url: "/chatlaya", priority: 0.8, changeFrequency: "monthly" as const },
+    { url: "/about", priority: 0.7, changeFrequency: "monthly" as const },
+    { url: "/opportunites", priority: 0.7, changeFrequency: "weekly" as const },
   ];
-  return pages.map((p) => ({
-    url: `${base}${p.loc}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: p.priority,
+  return routes.map(({ url, priority, changeFrequency }) => ({
+    url: `${BASE_URL}${url}`,
+    lastModified: new Date(),
+    changeFrequency,
+    priority,
   }));
 }

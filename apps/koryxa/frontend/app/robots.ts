@@ -1,16 +1,12 @@
-import type { MetadataRoute } from "next";
+﻿import type { MetadataRoute } from "next";
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://koryxa.com";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://innovaplus.africa";
   return {
     rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: ["/innova/api/"],
-      },
+      { userAgent: "*", allow: "/", disallow: ["/api/", "/account/", "/me/"] },
     ],
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: `${BASE_URL}/sitemap.xml`,
   };
 }
-

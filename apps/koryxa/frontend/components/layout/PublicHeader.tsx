@@ -1,12 +1,16 @@
-"use client";
+﻿"use client";
 
+import type { SVGProps } from "react";
 import clsx from "clsx";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { UserCircle } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LogoutButton from "@/components/auth/LogoutButton";
+import BrandLogo from "@/components/layout/BrandLogo";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { CONNECTED_ROUTES, PUBLIC_ROUTES } from "@/config/routes";
 
 type PublicNavLink = {
   href: string;
@@ -14,24 +18,21 @@ type PublicNavLink = {
 };
 
 const PUBLIC_NAV_LINKS: PublicNavLink[] = [
-  { href: "/", label: "Accueil" },
-  { href: "/entreprise", label: "Entreprise" },
-  { href: "/trajectoire", label: "Trajectoires" },
-  { href: "/produits", label: "Solutions" },
-  { href: "/opportunites", label: "Opportunités" },
-  { href: "/communaute", label: "Communauté" },
-  { href: "/a-propos", label: "À propos" },
+  { href: PUBLIC_ROUTES.home, label: "Accueil" },
+  { href: PUBLIC_ROUTES.trajectoire, label: "Blueprint" },
+  { href: PUBLIC_ROUTES.entreprise, label: "Entreprise" },
+  { href: PUBLIC_ROUTES.chatlaya, label: "ChatLAYA" },
+  { href: PUBLIC_ROUTES.serviceIa, label: "Service IA" },
+  { href: PUBLIC_ROUTES.apropos, label: "A propos" },
 ];
 
-const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
-const KORYXA_PUBLIC_HOME = "/";
-
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
+  if (href === PUBLIC_ROUTES.home) return pathname === PUBLIC_ROUTES.home;
+  if (href === PUBLIC_ROUTES.entreprise) return pathname.startsWith(PUBLIC_ROUTES.entreprise);
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function IconMenu(props: React.SVGProps<SVGSVGElement>) {
+function IconMenu(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -39,7 +40,7 @@ function IconMenu(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function IconClose(props: React.SVGProps<SVGSVGElement>) {
+function IconClose(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -51,37 +52,39 @@ export default function PublicHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isHome = pathname === "/";
 
-  const isAuthPage =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname.startsWith("/reset") ||
-    pathname.startsWith("/account/recover");
-  const isAuthenticated = Boolean(user?.email) && !isAuthPage;
-  const signupHref = `/signup?redirect=${encodeURIComponent(KORYXA_PUBLIC_HOME)}`;
-  const loginHref = `/login?redirect=${encodeURIComponent(KORYXA_CONNECTED_HOME)}`;
-  const platformHref = isAuthenticated ? KORYXA_CONNECTED_HOME : isHome ? "/trajectoire/demarrer" : signupHref;
+  const isHome = pathname === PUBLIC_ROUTES.home;
+  const isAuthenticated = Boolean(user?.email);
+  const isStartChooser = pathname === PUBLIC_ROUTES.demarrer;
+  const isFunnelStart =
+    pathname === `${PUBLIC_ROUTES.trajectoire}/demarrer` || pathname === `${PUBLIC_ROUTES.entreprise}/demarrer`;
+  const nextPublicStep = pathname.startsWith(PUBLIC_ROUTES.entreprise)
+    ? `${PUBLIC_ROUTES.entreprise}/demarrer`
+    : `${PUBLIC_ROUTES.trajectoire}/demarrer`;
+  const signupTarget = isFunnelStart ? pathname || nextPublicStep : nextPublicStep;
+  const loginHref = `${CONNECTED_ROUTES.login}?redirect=${encodeURIComponent(pathname || PUBLIC_ROUTES.home)}`;
+  const primaryHref =
+    isStartChooser
+      ? PUBLIC_ROUTES.demarrer
+      : pathname.startsWith(PUBLIC_ROUTES.trajectoire) || pathname.startsWith(PUBLIC_ROUTES.entreprise)
+        ? `${CONNECTED_ROUTES.signup}?redirect=${encodeURIComponent(signupTarget)}`
+        : PUBLIC_ROUTES.demarrer;
+  const primaryLabel = isFunnelStart ? "Creer mon acces" : "Demarrer";
+  const showPrimaryCta = !isAuthenticated && !isFunnelStart && !isStartChooser;
 
   return (
     <header
-      className={clsx(
-        "sticky top-0 z-40 transition-colors",
-        isHome
-          ? "border-b border-slate-200 bg-white/96 backdrop-blur"
-          : "border-b border-white/55 bg-white/76 backdrop-blur-2xl dark:border-slate-800/80 dark:bg-slate-950/78",
-      )}
+      className="sticky top-0 z-40 border-b border-white/8 bg-slate-950/80 backdrop-blur-xl transition-colors"
     >
-      <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-3">
-          <div className="min-w-0">
-            <p className={clsx("kx-display text-[1.7rem] font-semibold leading-none tracking-[-0.06em]", isHome ? "text-sky-700" : "text-slate-950 dark:text-white sm:text-[1.58rem]")}>
-              KORYXA
-            </p>
-          </div>
+      <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
+        <Link href={PUBLIC_ROUTES.home} className="flex shrink-0 items-center gap-3">
+          <BrandLogo className="h-10 w-10 rounded-2xl sm:h-12 sm:w-12" />
+          <p className="kx-display text-[1.3rem] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[1.55rem]">
+            KORYXA
+          </p>
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex">
           {PUBLIC_NAV_LINKS.map((link) => {
             const active = isActive(pathname, link.href);
             return (
@@ -89,65 +92,62 @@ export default function PublicHeader() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "whitespace-nowrap rounded-full border px-4 py-2.5 text-[0.95rem] font-semibold transition",
-                  isHome
-                    ? active
-                      ? "border-transparent bg-transparent text-sky-600"
-                      : "border-transparent bg-transparent text-slate-600 hover:text-slate-950"
-                    : active
-                    ? "border-sky-200/90 bg-sky-50/95 text-sky-700 shadow-[0_12px_26px_rgba(14,165,233,0.08)] dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
-                    : "border-transparent text-slate-800 hover:border-slate-200/80 hover:bg-white/80 hover:text-slate-950 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-900 dark:hover:text-white",
+                  "relative shrink-0 whitespace-nowrap px-3 py-2.5 text-[0.95rem] font-semibold tracking-[-0.02em] transition-colors 2xl:px-4 2xl:text-[1.05rem]",
+                  active
+                    ? "text-sky-300"
+                    : "text-slate-300 hover:text-white",
                 )}
               >
                 {link.label}
+                {active && (
+                  <span className="absolute bottom-0 left-4 right-4 h-[2.5px] rounded-full bg-gradient-to-r from-sky-500 to-cyan-400" />
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-2 xl:flex">
-          {!isHome ? <ThemeToggle showLabel={false} /> : null}
+        <div className="hidden shrink-0 items-center gap-2 xl:flex 2xl:gap-3">
           {!isAuthenticated ? (
             <Link
               href={loginHref}
-              className={clsx(
-                "inline-flex whitespace-nowrap items-center justify-center rounded-full px-4 py-2.5 text-[0.95rem] font-semibold transition",
-                isHome
-                  ? "border border-transparent bg-transparent text-slate-950 hover:text-sky-700"
-                  : "border border-slate-200/80 bg-white/92 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100",
-              )}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-[0.9rem] font-semibold text-slate-200 transition hover:border-sky-400/40 hover:text-sky-300 2xl:px-5 2xl:text-[0.95rem]"
             >
+              <UserCircle className="h-4 w-4" />
               Se connecter
             </Link>
+          ) : (
+            <>
+              <Link
+                href="/account/role"
+                className="inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-[0.88rem] font-semibold text-slate-700 shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition hover:border-sky-200 hover:shadow-[0_4px_14px_rgba(2,132,199,0.12)] hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 2xl:text-[0.92rem]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-[0.7rem] font-bold text-white shadow-sm">
+                  {user?.email?.[0]?.toUpperCase() ?? "?"}
+                </span>
+                Compte
+              </Link>
+              <LogoutButton
+                redirectTo={pathname}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[0.88rem] font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+              />
+            </>
+          )}
+
+          {showPrimaryCta ? (
+            <Link
+              href={primaryHref}
+                className="inline-flex min-w-[8.5rem] shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#082f49_0%,#0284c7_52%,#38bdf8_100%)] px-4 py-3 text-[0.88rem] font-semibold text-white shadow-[0_18px_40px_rgba(2,132,199,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.3)] 2xl:min-w-[9rem] 2xl:px-5 2xl:text-[0.92rem]"
+            >
+              {primaryLabel}
+            </Link>
           ) : null}
-          {isAuthenticated ? (
-            <LogoutButton
-              redirectTo={pathname}
-              className="inline-flex whitespace-nowrap items-center justify-center rounded-full border border-slate-200/80 bg-white/92 px-4 py-2.5 text-[0.95rem] font-semibold text-slate-700 transition hover:border-rose-200 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-rose-400/50 dark:hover:text-rose-200"
-            />
-          ) : null}
-          <Link
-            href={platformHref}
-            className={clsx(
-              "inline-flex whitespace-nowrap items-center justify-center rounded-full px-6 py-3 text-[0.95rem] font-semibold transition",
-              isHome && !isAuthenticated
-                ? "bg-[#1689cf] text-white shadow-none hover:-translate-y-0.5 hover:bg-[#117fc2]"
-                : "",
-              isAuthenticated
-                ? "bg-[linear-gradient(135deg,#082f49_0%,#0284c7_48%,#38bdf8_100%)] text-white shadow-[0_18px_40px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:shadow-[0_22px_48px_rgba(2,132,199,0.3)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]"
-                : isHome
-                ? ""
-                : "bg-[linear-gradient(135deg,#0f172a_0%,#0b4b6f_42%,#38bdf8_100%)] text-white shadow-[0_18px_42px_rgba(2,132,199,0.28)] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_rgba(2,132,199,0.34)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950 dark:shadow-[0_18px_42px_rgba(14,165,233,0.22)]",
-            )}
-          >
-            {isAuthenticated ? "Ouvrir l’espace connecté" : isHome ? "Démarrer" : "S’inscrire"}
-          </Link>
         </div>
 
         <button
           type="button"
           onClick={() => setMobileOpen((current) => !current)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/90 text-slate-700 xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/92 text-slate-700 xl:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={mobileOpen}
         >
@@ -156,8 +156,10 @@ export default function PublicHeader() {
       </div>
 
       {mobileOpen ? (
-        <div className={clsx("border-t px-4 py-4 xl:hidden", isHome ? "border-slate-200 bg-white" : "border-slate-200/80 bg-white/92 dark:border-slate-800 dark:bg-slate-950")}>
+        <div className="border-t border-white/8 bg-slate-950/95 px-4 py-4 xl:hidden">
           <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] flex-col gap-2">
+            <ThemeToggle showLabel={false} className="justify-center" />
+
             {PUBLIC_NAV_LINKS.map((link) => {
               const active = isActive(pathname, link.href);
               return (
@@ -166,14 +168,10 @@ export default function PublicHeader() {
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={clsx(
-                    "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
-                    isHome
-                      ? active
-                        ? "border-sky-100 bg-sky-50 text-sky-700"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700"
-                      : active
+                    "rounded-2xl border px-5 py-3.5 text-[1rem] font-semibold tracking-[-0.02em] transition",
+                    active
                       ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-400/50 dark:bg-sky-500/15 dark:text-sky-100"
-                      : "border-slate-200/80 bg-white/90 text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-sky-400/60 dark:hover:text-sky-100",
+                      : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:text-sky-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-100",
                   )}
                 >
                   {link.label}
@@ -181,44 +179,44 @@ export default function PublicHeader() {
               );
             })}
 
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {!isHome ? <ThemeToggle showLabel={false} className="justify-center sm:col-span-2" /> : null}
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {!isAuthenticated ? (
                 <Link
                   href={loginHref}
                   onClick={() => setMobileOpen(false)}
-                  className={clsx(
-                    "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold",
-                    isHome
-                      ? "border border-slate-200 bg-white text-slate-700"
-                      : "border border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100",
-                  )}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[0.95rem] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
+                  <UserCircle className="h-4 w-4" />
                   Se connecter
                 </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/account/role"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[0.95rem] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-blue-600 text-[0.7rem] font-bold text-white">
+                      {user?.email?.[0]?.toUpperCase() ?? "?"}
+                    </span>
+                    Compte
+                  </Link>
+                  <LogoutButton
+                    redirectTo={pathname}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-[0.95rem] font-semibold text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
+                  />
+                </>
+              )}
+
+              {showPrimaryCta ? (
+                <Link
+                  href={primaryHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#082f49_0%,#0284c7_52%,#38bdf8_100%)] px-4 py-3 text-sm font-semibold text-white sm:col-span-2"
+                >
+                  {primaryLabel}
+                </Link>
               ) : null}
-              {isAuthenticated ? (
-                <LogoutButton
-                  redirectTo={pathname}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                />
-              ) : null}
-              <Link
-                href={platformHref}
-                onClick={() => setMobileOpen(false)}
-                className={clsx(
-                  "inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold",
-                  isHome && !isAuthenticated ? "bg-[#1689cf] text-white" : "",
-                  isAuthenticated
-                    ? "bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_58%,#0369a1_100%)] text-white shadow-[0_16px_36px_rgba(2,132,199,0.22)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-white"
-                    : isHome
-                    ? ""
-                    : "bg-[linear-gradient(135deg,#0f172a_0%,#0369a1_46%,#38bdf8_100%)] text-white shadow-[0_16px_36px_rgba(2,132,199,0.24)] dark:bg-[linear-gradient(135deg,#38bdf8_0%,#0ea5e9_52%,#0284c7_100%)] dark:text-slate-950",
-                  isAuthenticated ? "sm:col-span-2" : "",
-                )}
-              >
-                {isAuthenticated ? "Ouvrir l’espace connecté" : isHome ? "Démarrer" : "S’inscrire"}
-              </Link>
             </div>
           </div>
         </div>
@@ -226,3 +224,4 @@ export default function PublicHeader() {
     </header>
   );
 }
+

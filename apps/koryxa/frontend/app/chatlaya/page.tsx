@@ -1,7 +1,10 @@
-"use client";
+﻿"use client";
 
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUp, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
+
+type AssistantMode = "general" | "launch_structure_sell";
 
 type ChatMessage = {
   id: string;
@@ -17,217 +20,111 @@ type Conversation = {
   created_at: string;
   updated_at: string;
   archived: boolean;
+  assistant_mode: AssistantMode;
 };
 
 const API_BASE = CHATLAYA_API_BASE;
 const STREAM_TIMEOUT_MS = 45_000;
-const STARTER_PROMPTS = [
+const TYPEWRITER_BASE_DELAY_MS = 12;
+const TYPEWRITER_PAUSE_DELAY_MS = 26;
+const GENERAL_STARTER_PROMPTS = [
   {
-    label: "Comprendre ma trajectoire",
-    prompt: "Aide-moi à comprendre ma trajectoire KORYXA, mon score actuel et mes prochaines étapes prioritaires.",
+    label: "Clarifier ma trajectoire",
+    prompt: "Aide-moi à clarifier ma trajectoire KORYXA, mon point de départ et mes prochaines étapes prioritaires.",
   },
   {
     label: "Cadrer un besoin entreprise",
     prompt: "Aide-moi à cadrer un besoin entreprise en distinguant objectif, contexte, livrable, urgence et mode de traitement.",
   },
   {
-    label: "Choisir le bon produit",
-    prompt: "Explique-moi la différence entre ChatLAYA et MyPlanningAI et dans quel cas utiliser chacun.",
+    label: "Choisir la bonne entrée",
+    prompt: "Aide-moi à choisir la bonne entrée KORYXA selon mon besoin actuel.",
   },
   {
-    label: "Voir mes opportunités cibles",
-    prompt: "Dis-moi quelles opportunités cibles je peux viser selon ma progression, mon niveau de préparation et mes preuves.",
+    label: "Prioriser mes prochaines étapes",
+    prompt: "Aide-moi à identifier les prochaines étapes les plus utiles selon ma situation actuelle.",
   },
 ] as const;
-const SECTION_ICON_MAP: Record<string, string> = {
-  "1) Resume bref": "💡",
-  "2) Reponse detaillee": "📘",
-  "3) Pistes d'action (3 puces max)": "🚀",
-  "4) KPIs (1-3) si utiles": "📊",
-  "5) Risques / limites (1-2) si utiles": "⚠️",
-};
-type StructuredSection = {
-  title: string;
-  body: string;
-};
 
-function normalizeSectionTitle(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+const SPECIALIST_STARTER_PROMPTS = [
+  {
+    label: "Lancer mon projet",
+    prompt: "Aide-moi a lancer mon projet en identifiant les etapes essentielles pour passer de l'idee a une offre claire.",
+  },
+  {
+    label: "Structurer mon offre",
+    prompt: "Aide-moi a structurer mon offre pour qu'elle soit lisible, utile et vendable.",
+  },
+  {
+    label: "Construire un business plan",
+    prompt: "Aide-moi a construire un business plan simple et exploitable pour mon activite.",
+  },
+  {
+    label: "Mieux vendre",
+    prompt: "Aide-moi a mieux vendre mon offre en clarifiant proposition de valeur, cible et argumentaire commercial.",
+  },
+] as const;
+
+const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint: string }> = [
+  {
+    value: "general",
+    label: "Mode general",
+    hint: "ChatLAYA repond avec son contexte produit habituel.",
+  },
+  {
+    value: "launch_structure_sell",
+    label: "Lancer, Structurer, Vendre",
+    hint: "ChatLAYA repond uniquement avec le corpus dedie a cette fonctionnalite.",
+  },
+];
+
+function normalizeTitle(value?: string | null) {
+  return value?.trim() || "Nouvelle conversation";
 }
 
-const SECTION_ICON_ENTRIES = Object.entries(SECTION_ICON_MAP).map(([label, icon]) => ({
-  icon,
-  normalized: normalizeSectionTitle(label),
-}));
-
-function resolveSectionIcon(title: string): string | undefined {
-  const normalized = normalizeSectionTitle(title);
-  const entry = SECTION_ICON_ENTRIES.find((candidate) => normalized.startsWith(candidate.normalized));
-  return entry?.icon;
+function normalizeAssistantMode(value?: string | null): AssistantMode {
+  return value === "launch_structure_sell" ? "launch_structure_sell" : "general";
 }
 
-function parseStructuredSections(content: string): StructuredSection[] {
-  const lines = content.split(/\r?\n/);
-  const sections: StructuredSection[] = [];
-  let currentTitle: string | null = null;
-  let buffer: string[] = [];
-  const commit = () => {
-    if (!currentTitle) return;
-    const body = buffer.join("\n").trim();
-    sections.push({ title: currentTitle, body });
-    buffer = [];
+function normalizeConversation(conversation: Conversation): Conversation {
+  return {
+    ...conversation,
+    assistant_mode: normalizeAssistantMode(conversation?.assistant_mode),
   };
-
-  for (const rawLine of lines) {
-    const headingMatch = rawLine.match(/^#{2,3}\s+(.*)$/);
-    if (headingMatch) {
-      if (currentTitle) commit();
-      currentTitle = headingMatch[1].trim();
-      continue;
-    }
-    if (currentTitle) {
-      buffer.push(rawLine);
-    }
-  }
-  if (currentTitle) commit();
-  return sections;
 }
 
-function normalizeStreamError(text: string, status?: number, contentType?: string | null): string {
+function formatDate(value?: string | null) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return "";
+  }
+}
+
+function normalizeStreamError(text: string, status?: number, contentType?: string | null) {
   const raw = text.trim();
   const lower = raw.toLowerCase();
-  const htmlLike = (contentType || "").includes("text/html") || lower.includes("<html") || lower.includes("<title>");
+  const htmlLike = (contentType || "").includes("text/html") || lower.includes("<html");
   if (status === 504 || lower.includes("gateway time-out") || lower.includes("gateway timeout")) {
-    return "ChatLAYA met trop de temps à répondre. Réessaie dans un instant.";
+    return "ChatLAYA met trop de temps à répondre. Réessayez dans un instant.";
   }
   if (status === 502 || status === 503 || htmlLike) {
-    return "Le service ChatLAYA est temporairement indisponible. Réessaie dans un instant.";
+    return "Le service ChatLAYA est temporairement indisponible. Réessayez dans un instant.";
   }
-  return raw || "Échec de la réponse";
+  return raw || "Échec de la réponse.";
 }
 
-function IconCopy(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-    </svg>
-  );
+function AssistantContent({ content }: { content: string }) {
+  return <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-800">{content}</div>;
 }
 
-type ContentBlock =
-  | {
-      type: "paragraph";
-      lines: string[];
-    }
-  | {
-      type: "list";
-      items: string[];
-    };
-
-function buildContentBlocks(text: string): ContentBlock[] {
-  const blocks: ContentBlock[] = [];
-  let paragraph: string[] = [];
-  let list: string[] = [];
-
-  const flushParagraph = () => {
-    if (!paragraph.length) return;
-    blocks.push({ type: "paragraph", lines: [...paragraph] });
-    paragraph = [];
-  };
-
-  const flushList = () => {
-    if (!list.length) return;
-    blocks.push({ type: "list", items: [...list] });
-    list = [];
-  };
-
-  const lines = text.split(/\r?\n/);
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) {
-      flushParagraph();
-      flushList();
-      continue;
-    }
-    if (/^[-*]\s+/.test(line)) {
-      flushParagraph();
-      list.push(line.replace(/^[-*]\s+/, "").trim());
-      continue;
-    }
-    flushList();
-    paragraph.push(line);
-  }
-  flushParagraph();
-  flushList();
-  return blocks;
-}
-
-function StructuredSectionContent({ text }: { text: string }) {
-  if (!text.trim()) return null;
-  const blocks = buildContentBlocks(text);
-  if (!blocks.length) {
-    return <p className="mt-1 text-sm text-slate-700">{text}</p>;
-  }
-  return (
-    <>
-      {blocks.map((block, idx) => {
-        if (block.type === "paragraph") {
-          return (
-            <p key={`p-${idx}`} className={`${idx === 0 ? "mt-1" : "mt-2"} text-sm text-slate-700`}>
-              {block.lines.join(" ")}
-            </p>
-          );
-        }
-        return (
-          <ul
-            key={`ul-${idx}`}
-            className={`${idx === 0 ? "mt-1" : "mt-2"} list-disc pl-5 text-sm text-slate-700 marker:text-sky-500`}
-          >
-            {block.items.map((item, itemIdx) => (
-              <li key={itemIdx} className="mb-1 last:mb-0">
-                {item}
-              </li>
-            ))}
-          </ul>
-        );
-      })}
-    </>
-  );
-}
-
-function AssistantMessageContent({ content }: { content: string }) {
-  const sections = parseStructuredSections(content);
-  if (!sections.length) {
-    return <span className="whitespace-pre-wrap break-words">{content}</span>;
-  }
-  return (
-    <div className="space-y-4">
-      {sections.map((section, index) => {
-        const icon = resolveSectionIcon(section.title);
-        return (
-          <div key={`${section.title}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-sky-800">
-              {icon ? (
-                <span aria-hidden="true" className="text-base">
-                  {icon}
-                </span>
-              ) : null}
-              <span>{section.title}</span>
-            </div>
-            <StructuredSectionContent text={section.body} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-export default function ChatlayaPage() {
-  // ---- State ----
+function ChatlayaContent() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -237,269 +134,342 @@ export default function ChatlayaPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
+  const [assistantModeSaving, setAssistantModeSaving] = useState(false);
 
-  // ---- Refs ----
-  const ensuredConversation = useRef(false);
+  const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
+  const conversationsViewportRef = useRef<HTMLDivElement | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
+  const typewriterQueueRef = useRef("");
+  const typewriterTimerRef = useRef<number | null>(null);
+  const typewriterDrainWaitersRef = useRef<Array<() => void>>([]);
 
-  // ---- UI toggles / layout ----
-  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
-  const [fullScreen, setFullScreen] = useState(false);
-
-  const isAuthFailure = useCallback((_status: number) => false, []);
-
-  const ensureSeedConversation = useCallback(async () => {
-    if (ensuredConversation.current) return;
-    ensuredConversation.current = true;
+  function focusComposer(preventScroll = false) {
+    const composer = composerRef.current;
+    if (!composer) return;
     try {
-      const res = await fetch(`${API_BASE}/chatlaya/session`, {
-        method: "POST",
+      composer.focus({ preventScroll });
+    } catch {
+      composer.focus();
+    }
+  }
+
+  function resolveTypewriterDrain() {
+    const waiters = [...typewriterDrainWaitersRef.current];
+    typewriterDrainWaitersRef.current = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
+  }
+
+  function resetTypewriterQueue() {
+    typewriterQueueRef.current = "";
+    if (typewriterTimerRef.current !== null) {
+      window.clearTimeout(typewriterTimerRef.current);
+      typewriterTimerRef.current = null;
+    }
+    resolveTypewriterDrain();
+  }
+
+  function flushTypewriterTick() {
+    if (!typewriterQueueRef.current) {
+      typewriterTimerRef.current = null;
+      resolveTypewriterDrain();
+      return;
+    }
+
+    const nextCharacter = typewriterQueueRef.current[0];
+    typewriterQueueRef.current = typewriterQueueRef.current.slice(1);
+    setMessages((current) =>
+      current.map((item) => (item.pending ? { ...item, content: item.content + nextCharacter } : item)),
+    );
+
+    const delay =
+      nextCharacter === "\n" || /[.!?;:,]/.test(nextCharacter)
+        ? TYPEWRITER_PAUSE_DELAY_MS
+        : nextCharacter === " "
+          ? Math.max(6, TYPEWRITER_BASE_DELAY_MS - 4)
+          : TYPEWRITER_BASE_DELAY_MS;
+    typewriterTimerRef.current = window.setTimeout(flushTypewriterTick, delay);
+  }
+
+  function enqueueTypewriterChunk(chunk: string) {
+    if (!chunk) return;
+    typewriterQueueRef.current += chunk;
+    if (typewriterTimerRef.current === null) {
+      typewriterTimerRef.current = window.setTimeout(flushTypewriterTick, TYPEWRITER_BASE_DELAY_MS);
+    }
+  }
+
+  function waitForTypewriterDrain() {
+    if (!typewriterQueueRef.current && typewriterTimerRef.current === null) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      typewriterDrainWaitersRef.current.push(resolve);
+    });
+  }
+
+  function forwardWheelToViewport(
+    event: ReactWheelEvent<HTMLElement>,
+    viewportRef: React.RefObject<HTMLDivElement | null>,
+  ) {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const target = event.target;
+    if (target instanceof Element && viewport.contains(target)) return;
+    if (viewport.scrollHeight <= viewport.clientHeight) return;
+
+    const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+    if ((event.deltaY < 0 && viewport.scrollTop <= 0) || (event.deltaY > 0 && viewport.scrollTop >= maxScrollTop)) {
+      return;
+    }
+
+    event.preventDefault();
+    viewport.scrollTop = Math.min(maxScrollTop, Math.max(0, viewport.scrollTop + event.deltaY));
+  }
+
+  function forwardWheelToChatLayout(event: ReactWheelEvent<HTMLElement>) {
+    const target = event.target;
+    if (target instanceof Element && conversationsViewportRef.current?.contains(target)) {
+      forwardWheelToViewport(event, conversationsViewportRef);
+      return;
+    }
+    forwardWheelToViewport(event, messagesViewportRef);
+  }
+
+  async function createConversationRequest() {
+    const response = await fetch(`${API_BASE}/chatlaya/conversations`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.detail || "Impossible de créer la conversation.");
+    }
+    return normalizeConversation((await response.json()) as Conversation);
+  }
+
+  async function ensureSession() {
+    const response = await fetch(`${API_BASE}/chatlaya/session`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.detail || "Impossible d’ouvrir la session ChatLAYA.");
+    }
+    const data = await response.json().catch(() => ({}));
+    if (data?.mode === "guest" || data?.mode === "user") {
+      setAccessMode(data.mode);
+    }
+  }
+
+  async function createConversation() {
+    setError(null);
+    try {
+      streamAbortRef.current?.abort();
+      resetTypewriterQueue();
+      setStreaming(false);
+      const created = await createConversationRequest();
+      setConversations((current) => [created, ...current.filter((item) => item.conversation_id !== created.conversation_id)]);
+      setSelectedConversationId(created.conversation_id);
+      setMessages([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    }
+  }
+
+  async function loadConversations(force = false) {
+    setConversationsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/chatlaya/conversations`, {
+        cache: "no-store",
         credentials: "include",
       });
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de creer la conversation initiale");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible de charger les conversations.");
       }
-      const data = await res.json().catch(() => ({}));
-      if (data?.mode === "guest" || data?.mode === "user") {
-        setAccessMode(data.mode);
+
+      const data = await response.json().catch(() => ({}));
+      const items: Conversation[] = Array.isArray(data?.items) ? data.items.map(normalizeConversation) : [];
+
+      if (!items.length && !force) {
+        await ensureSession();
+        await loadConversations(true);
+        return;
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-    }
-  }, [isAuthFailure]);
 
-  const loadConversations = useCallback(
-    async (force = false) => {
-      setConversationsLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/chatlaya/conversations`, {
-          cache: "no-store",
-          credentials: "include",
-        });
-        if (!res.ok) {
-          if (isAuthFailure(res.status)) return;
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data?.detail || "Impossible de charger les conversations");
-        }
-        const data = await res.json();
-        const items: Conversation[] = Array.isArray(data?.items) ? data.items : [];
-
-        if (items.length === 0 && !force) {
-          await ensureSeedConversation();
-          await loadConversations(true);
-          return;
-        }
-        setConversations(items);
-
-        if (items.length === 0) {
-          setSelectedConversationId(null);
-          setMessages([]);
-          return;
-        }
-
-        setSelectedConversationId((previousId) => {
-          if (previousId && items.some((c) => c.conversation_id === previousId)) return previousId;
-          return items[0]?.conversation_id ?? null;
-        });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erreur inattendue");
-      } finally {
-        setConversationsLoading(false);
-      }
-    },
-    [ensureSeedConversation, isAuthFailure]
-  );
-
-  const loadMessages = useCallback(
-    async (id: string) => {
-      setMessagesLoading(true);
-      try {
-        const res = await fetch(
-          `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(id)}`,
-          { credentials: "include", cache: "no-store" },
-        );
-        if (!res.ok) {
-          if (isAuthFailure(res.status)) return;
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data?.detail || "Impossible de recuperer les messages");
-        }
-        const data = await res.json().catch(() => ({}));
-        setMessages(data.items ?? []);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erreur inattendue");
+      if (!items.length && force) {
+        const created = await createConversationRequest();
+        setConversations([created]);
+        setSelectedConversationId(created.conversation_id);
         setMessages([]);
-      } finally {
-        setMessagesLoading(false);
+        return;
       }
-    },
-    [isAuthFailure]
-  );
 
-  // Charger conversations/messages
+      setConversations(items);
+      setSelectedConversationId((current) => {
+        if (current && items.some((item) => item.conversation_id === current)) return current;
+        return items[0]?.conversation_id ?? null;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    } finally {
+      setConversationsLoading(false);
+    }
+  }
+
+  async function loadMessages(conversationId: string) {
+    setMessagesLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(conversationId)}`,
+        { cache: "no-store", credentials: "include" },
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible de récupérer les messages.");
+      }
+      const data = await response.json().catch(() => ({}));
+      resetTypewriterQueue();
+      setMessages(Array.isArray(data?.items) ? data.items : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+      setMessages([]);
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
+
   useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     void loadConversations();
-  }, [loadConversations]);
+  }, []);
+
   useEffect(() => {
     if (!selectedConversationId) {
       setMessages([]);
       return;
     }
     void loadMessages(selectedConversationId);
-  }, [selectedConversationId, loadMessages]);
-
-  // Autoscroll dans la liste des messages (pas la page)
-  useEffect(() => {
-    const el = messagesViewportRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
-
-  // Focus composer quand on change de conv
-  useEffect(() => {
-    composerRef.current?.focus();
   }, [selectedConversationId]);
-  // Ajuster automatiquement la hauteur du textarea
+
+  const latestMessageContent = messages[messages.length - 1]?.content ?? "";
+
+  useEffect(() => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: streaming ? "auto" : "smooth" });
+  }, [messages.length, latestMessageContent, streaming]);
+
+  useEffect(() => {
+    focusComposer(true);
+  }, [selectedConversationId]);
+
   useEffect(() => {
     const el = composerRef.current;
     if (!el) return;
     el.style.height = "0px";
-    const maxHeight = 200;
-    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    const nextHeight = Math.min(el.scrollHeight, 220);
     el.style.height = `${nextHeight}px`;
-    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+    el.style.overflowY = el.scrollHeight > 220 ? "auto" : "hidden";
   }, [input]);
 
-  // Annuler le stream à l’unmount
-  useEffect(() => () => streamAbortRef.current?.abort(), []);
+  useEffect(
+    () => () => {
+      streamAbortRef.current?.abort();
+      resetTypewriterQueue();
+    },
+    [],
+  );
 
-  // Bloquer le scroll du body pendant l'utilisation de la page
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
+    if (typeof document !== "undefined") {
+      document.title = "ChatLAYA | KORYXA";
+    }
   }, []);
 
-  async function handleSelectConversation(id: string) {
-    streamAbortRef.current?.abort();
-    const collapse = typeof window !== "undefined" ? window.innerWidth < 768 : false;
-    if (id === selectedConversationId) {
-      if (collapse) setHistoryDrawerOpen(false);
-      return;
-    }
-    setError(null);
-    setMessages([]);
-    setSelectedConversationId(id);
-    if (collapse) setHistoryDrawerOpen(false);
-  }
-
-  async function handleCreateConversation() {
+  async function archiveConversation(conversationId: string) {
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/chatlaya/conversations`, {
+      const response = await fetch(`${API_BASE}/chatlaya/conversations/${conversationId}/archive`, {
         method: "POST",
         credentials: "include",
       });
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de creer la conversation");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible d’archiver la conversation.");
       }
-      const created: Conversation = await res.json();
-      setConversations((prev) => [
-        created,
-        ...prev.filter((c) => c.conversation_id !== created.conversation_id),
-      ]);
-      setSelectedConversationId(created.conversation_id);
-      setMessages([]);
-      if (typeof window !== "undefined" && window.innerWidth < 768) setHistoryDrawerOpen(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
-    }
-  }
-
-  async function handleArchiveConversation(id: string) {
-    try {
-      const res = await fetch(`${API_BASE}/chatlaya/conversations/${id}/archive`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (isAuthFailure(res.status)) return;
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible d'archiver la conversation");
-      }
-      setConversations((prev) => {
-        const remaining = prev.filter((c) => c.conversation_id !== id);
-        if (selectedConversationId === id) {
+      setConversations((current) => {
+        const remaining = current.filter((item) => item.conversation_id !== conversationId);
+        if (selectedConversationId === conversationId) {
           setSelectedConversationId(remaining[0]?.conversation_id ?? null);
           setMessages([]);
         }
         return remaining;
       });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur inattendue");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
     }
   }
 
-  function handleStarterPrompt(prompt: string) {
+  async function updateConversationMode(nextMode: AssistantMode) {
+    if (!selectedConversationId || assistantModeSaving || streaming) return;
+    const previous = conversations.find((item) => item.conversation_id === selectedConversationId);
+    if (!previous) return;
+    const normalizedNextMode = normalizeAssistantMode(nextMode);
+    if (previous.assistant_mode === normalizedNextMode) return;
+
+    setAssistantModeSaving(true);
     setError(null);
-    setInput(prompt);
-    composerRef.current?.focus();
-  }
-
-  async function sendMessage() {
-    if (!selectedConversationId || streaming) return;
-    const prompt = input.trim();
-    if (!prompt) return;
-    setError(null);
-
-    const now = Date.now();
-    const userEntry: ChatMessage = { id: `local-${now}`, role: "user", content: prompt };
-    const assistantPlaceholder: ChatMessage = {
-      id: `pending-${now}`,
-      role: "assistant",
-      content: "",
-      pending: true,
-    };
-
-    setMessages((prev) => [...prev, userEntry, assistantPlaceholder]);
-    setInput("");
-    setStreaming(true);
-    composerRef.current?.focus();
+    setConversations((current) =>
+      current.map((item) =>
+        item.conversation_id === selectedConversationId
+          ? { ...item, assistant_mode: normalizedNextMode }
+          : item,
+      ),
+    );
 
     try {
-      await streamAssistant(selectedConversationId, prompt);
-      await loadMessages(selectedConversationId);
-      await loadConversations(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur pendant la generation");
-      setMessages((prev) => prev.filter((m) => !m.id.startsWith("pending-")));
+      const response = await fetch(`${API_BASE}/chatlaya/conversations/${selectedConversationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ assistant_mode: normalizedNextMode }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible de changer le mode assistant.");
+      }
+      const updated = normalizeConversation((await response.json()) as Conversation);
+      setConversations((current) =>
+        current.map((item) => (item.conversation_id === updated.conversation_id ? updated : item)),
+      );
+    } catch (err) {
+      setConversations((current) =>
+        current.map((item) =>
+          item.conversation_id === previous.conversation_id
+            ? { ...item, assistant_mode: previous.assistant_mode }
+            : item,
+        ),
+      );
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
-      setStreaming(false);
+      setAssistantModeSaving(false);
     }
   }
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    await sendMessage();
+  function applyStarterPrompt(prompt: string) {
+    setError(null);
+    setInput(prompt);
+    focusComposer(true);
   }
 
-  function handleComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void sendMessage();
-    }
-  }
-
-  // ---- Streaming SSE ----
-  async function streamAssistant(id: string, prompt: string) {
+  async function streamAssistant(conversationId: string, prompt: string) {
     const controller = new AbortController();
     streamAbortRef.current = controller;
     let timedOut = false;
@@ -511,24 +481,22 @@ export default function ChatlayaPage() {
           }, STREAM_TIMEOUT_MS)
         : null;
 
-    const res = await fetch(`${API_BASE}/chatlaya/message`, {
+    const response = await fetch(`${API_BASE}/chatlaya/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ conversation_id: id, message: prompt }),
+      body: JSON.stringify({ conversation_id: conversationId, message: prompt }),
       signal: controller.signal,
     });
 
-    const contentType = res.headers.get("content-type");
+    const contentType = response.headers.get("content-type");
     const isEventStream = (contentType || "").includes("text/event-stream");
-
-    if (!res.ok || !res.body || !isEventStream) {
-      if (!res.ok && isAuthFailure(res.status)) throw new Error("Authentification requise");
-      const text = await res.text().catch(() => "");
-      throw new Error(normalizeStreamError(text, res.status, contentType));
+    if (!response.ok || !response.body || !isEventStream) {
+      const text = await response.text().catch(() => "");
+      throw new Error(normalizeStreamError(text, response.status, contentType));
     }
 
-    const reader = res.body.getReader();
+    const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -536,10 +504,9 @@ export default function ChatlayaPage() {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-        let boundary: number;
 
+        let boundary: number;
         while ((boundary = buffer.indexOf("\n\n")) !== -1) {
           const packet = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
@@ -549,366 +516,348 @@ export default function ChatlayaPage() {
           const dataLines: string[] = [];
           for (const line of packet.split("\n")) {
             if (line.startsWith("event:")) event = line.slice(6).trim();
-            else if (line.startsWith("data:")) dataLines.push(line.slice(5));
+            if (line.startsWith("data:")) dataLines.push(line.slice(5));
           }
-          const data = dataLines.join("\n");
 
+          const data = dataLines.join("\n");
           if (event === "token") {
-            setMessages((prev) =>
-              prev.map((m) => (m.pending ? { ...m, content: m.content + data } : m)),
-            );
+            enqueueTypewriterChunk(data);
           } else if (event === "done") {
-            setMessages((prev) => prev.filter((m) => !m.pending));
+            await waitForTypewriterDrain();
+            setMessages((current) => current.filter((item) => !item.pending));
             return;
           } else if (event === "error") {
-            throw new Error(data || "Erreur de streaming");
+            throw new Error(data || "Erreur de streaming.");
           }
         }
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        setMessages((prev) => prev.filter((m) => !m.pending));
+        resetTypewriterQueue();
+        setMessages((current) => current.filter((item) => !item.pending));
         if (timedOut) {
-          throw new Error("ChatLAYA met trop de temps à répondre. Réessaie dans un instant.");
+          throw new Error("ChatLAYA met trop de temps à répondre. Réessayez dans un instant.");
         }
         return;
       }
+      resetTypewriterQueue();
       if (err instanceof Error) throw err;
-      throw new Error("Erreur de streaming");
+      throw new Error("Erreur de streaming.");
     } finally {
       if (timeoutId !== null) {
         window.clearTimeout(timeoutId);
       }
-      if (streamAbortRef.current === controller) streamAbortRef.current = null;
+      if (streamAbortRef.current === controller) {
+        streamAbortRef.current = null;
+      }
     }
   }
 
-  // ---- Utils ----
-  function normalizeTitle(title?: string | null) {
-    if (!title) return "Nouvelle conversation";
-    const t = title.trim();
-    return t.length > 0 ? t : "Nouvelle conversation";
-  }
-  function formatRelativeTimestamp(timestamp?: string | null) {
-    if (!timestamp) return "";
+  async function sendMessage() {
+    if (!selectedConversationId || streaming) return;
+    const prompt = input.trim();
+    if (!prompt) return;
+
+    setError(null);
+    resetTypewriterQueue();
+    const now = Date.now();
+    setMessages((current) => [
+      ...current,
+      { id: `user-${now}`, role: "user", content: prompt },
+      { id: `pending-${now}`, role: "assistant", content: "", pending: true },
+    ]);
+    setInput("");
+    setStreaming(true);
+
     try {
-      return new Intl.DateTimeFormat("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "short",
-      }).format(new Date(timestamp));
-    } catch {
-      return "";
+      await streamAssistant(selectedConversationId, prompt);
+      await loadMessages(selectedConversationId);
+      await loadConversations(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur pendant la génération.");
+      setMessages((current) => current.filter((item) => !item.pending));
+    } finally {
+      setStreaming(false);
+      focusComposer(true);
     }
   }
 
-  // ---- Dérivés d'UI (UN SEUL BLOC) ----
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await sendMessage();
+  }
+
+  function onComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendMessage();
+    }
+  }
+
   const activeConversation = useMemo(
-    () => conversations.find((c) => c.conversation_id === selectedConversationId) ?? null,
+    () => conversations.find((item) => item.conversation_id === selectedConversationId) ?? null,
     [conversations, selectedConversationId],
   );
-  const activeConversationTitle = normalizeTitle(activeConversation?.title);
-  const activeConversationUpdatedAt = formatRelativeTimestamp(activeConversation?.updated_at);
-  const composerDisabled = streaming || !selectedConversationId;
-
-  // ---- Sidebar (liste) ----
-  function SidebarContent({ onClose }: { onClose?: () => void }) {
-    return (
-      <div className="flex h-full min-h-0 flex-col bg-white">
-        <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Historique</h2>
-            <p className="text-xs text-slate-500">Tous vos echanges Chatlaya</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onClose?.()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-slate-700 md:hidden"
-          >
-            <span className="sr-only">Fermer l'historique</span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-4 w-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </header>
-        <div className="border-b border-slate-100 px-4 py-3">
-          <button
-            type="button"
-            onClick={handleCreateConversation}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
-          >
-            <span aria-hidden>＋</span>
-            Nouvelle conversation
-          </button>
-        </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 pr-4">
-          {conversationsLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-              ))}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-              Aucune conversation encore. Lancez-vous pour remplir l'historique.
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {conversations.map((c) => {
-                const isActive = c.conversation_id === selectedConversationId;
-                const label = normalizeTitle(c.title);
-                const updatedLabel = formatRelativeTimestamp(c.updated_at) || "Jamais utilisee";
-                return (
-                  <li key={c.conversation_id}>
-                    <div
-                      className={`rounded-2xl border ${
-                        isActive
-                          ? "border-sky-500 bg-sky-50"
-                          : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3 px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => void handleSelectConversation(c.conversation_id)}
-                          className="flex-1 text-left"
-                        >
-                          <p className="truncate text-sm font-semibold text-slate-900">{label}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {isActive ? "Session en cours" : `Mis a jour · ${updatedLabel}`}
-                          </p>
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleArchiveConversation(c.conversation_id);
-                          }}
-                        >
-                          Archiver
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </nav>
-      </div>
-    );
-  }
-
-  // ---- Message bubbles ----
-  const bubbleBaseClass = "rounded-3xl px-5 py-4 text-sm leading-relaxed shadow transition";
-  const userBubbleClass =
-    `${bubbleBaseClass} max-w-2xl bg-[#edf0f5] text-slate-900 border border-slate-200 shadow-slate-900/5`;
-  const assistantBubbleClass =
-    `${bubbleBaseClass} max-w-3xl bg-white text-slate-900 border border-slate-200/70 shadow-slate-900/5`;
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
-
-  async function handleCopy(content: string, id: string) {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopiedMessageId(id);
-      setTimeout(() => setCopiedMessageId((current) => (current === id ? null : current)), 2000);
-    } catch {
-      setCopiedMessageId(null);
-    }
-  }
-
-  // ---- Rendu ----
-  const containerClasses = fullScreen
-    ? "fixed inset-0 z-50 flex w-full overflow-hidden bg-[#f7f7f8]"
-    : "flex h-[calc(100vh-90px)] w-full flex-1 overflow-hidden rounded-3xl border border-slate-200/70 bg-white shadow-xl";
+  const activeAssistantMode = activeConversation?.assistant_mode ?? "general";
+  const starterPrompts =
+    activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
 
   return (
-    <div className={containerClasses}>
-      <aside className="hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-r border-slate-200/60 bg-[#f3f4f8] md:flex">
-        <SidebarContent />
-      </aside>
-      <main className="flex min-w-0 flex-1 flex-col bg-[#f7f7f8]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Conversation</p>
-            <p className="truncate text-lg font-semibold text-slate-900">{activeConversationTitle}</p>
-            <p className="text-xs text-slate-500">
-              {activeConversationUpdatedAt
-                ? `Derniere activite · ${activeConversationUpdatedAt}`
-                : "Commencez votre echange avec Chatlaya"}
-            </p>
-          </div>
-          <div className="flex flex-none items-center gap-2">
+    <main onWheelCapture={forwardWheelToChatLayout} className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+        <aside
+          ref={conversationsViewportRef}
+          className="grid content-start gap-4 overflow-y-auto overscroll-y-contain touch-pan-y [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] lg:min-h-0 lg:pr-1"
+        >
+          <section className="rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Historique</p>
+              <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950 sm:text-xl">Conversations</h2>
+              {activeConversation ? (
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+                  {activeAssistantMode === "launch_structure_sell" ? "Lancer, Structurer, Vendre" : "Mode general"}
+                </p>
+              ) : null}
+            </div>
+
             {accessMode ? (
-              <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 sm:inline-flex">
+              <p className="mt-3 inline-flex rounded-full border border-white/8 bg-white/4 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
                 {accessMode === "guest" ? "Mode invité" : "Mode connecté"}
-              </span>
+              </p>
             ) : null}
-            <button
-              type="button"
-              onClick={() => setHistoryDrawerOpen(true)}
-              className="inline-flex items-center rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 md:hidden"
-            >
-              Historique
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateConversation}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-            >
-              Nouvelle conversation
-            </button>
-            {activeConversation && (
+
+            <div className="mt-4 rounded-[22px] border border-white/8 bg-white/4 px-4 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Conversation active</p>
+              <p className="mt-2 truncate text-sm font-semibold text-slate-950">{normalizeTitle(activeConversation?.title)}</p>
+              <p className="mt-1 text-xs leading-6 text-slate-500">
+                {activeConversation?.updated_at
+                  ? `Dernière activité : ${formatDate(activeConversation.updated_at)}`
+                  : "Posez votre première question pour démarrer."}
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-2">
               <button
                 type="button"
-                onClick={() => void handleArchiveConversation(activeConversation.conversation_id)}
-                disabled={streaming}
-                className="rounded-full border border-transparent px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => void createConversation()}
+                className="inline-flex items-center justify-center gap-2 rounded-[20px] bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(2,132,199,0.22)] transition hover:bg-sky-700"
               >
-                Archiver
+                <MessageSquarePlus className="h-4 w-4" />
+                Nouvelle conversation
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setFullScreen((v) => !v)}
-              className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50"
-            >
-              {fullScreen ? "Quitter le plein écran" : "Plein écran"}
-            </button>
-          </div>
-        </div>
-        <div ref={messagesViewportRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
-          {error && (
-            <div className="mx-auto mb-4 w-full max-w-3xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
-          {messagesLoading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex justify-center">
-                  <div className="h-16 w-full max-w-3xl animate-pulse rounded-2xl bg-slate-100" />
-                </div>
-              ))}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="w-full max-w-lg rounded-3xl border border-dashed border-slate-300 bg-white/80 px-8 py-10 shadow-sm">
-                <h3 className="text-base font-semibold text-slate-900">Besoin d'un repere clair ?</h3>
-                <p className="mt-2 text-sm text-slate-500">
-                  ChatLAYA peut vous aider à comprendre votre trajectoire, cadrer un besoin entreprise, choisir le bon
-                  produit KORYXA ou identifier les prochaines étapes les plus utiles.
-                </p>
+              {activeConversation ? (
                 <button
                   type="button"
-                  onClick={() => composerRef.current?.focus()}
-                  className="mt-4 rounded-full bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-700"
+                  onClick={() => void archiveConversation(activeConversation.conversation_id)}
+                  disabled={streaming}
+                  className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-sky-400/40 hover:text-sky-300 disabled:opacity-50"
                 >
-                  Commencer
+                  Archiver
                 </button>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {STARTER_PROMPTS.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => handleStarterPrompt(item.prompt)}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {conversationsLoading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="h-20 animate-pulse rounded-[22px] bg-slate-100" />
+                ))
+              ) : conversations.length === 0 ? (
+                <div className="rounded-[22px] border border-dashed border-white/12 bg-white/3 px-4 py-6 text-sm leading-7 text-slate-500">
+                  Aucune conversation pour le moment.
                 </div>
+              ) : (
+                conversations.map((conversation) => {
+                  const active = conversation.conversation_id === selectedConversationId;
+                  return (
+                    <button
+                      key={conversation.conversation_id}
+                      type="button"
+                      onClick={() => {
+                        streamAbortRef.current?.abort();
+                        resetTypewriterQueue();
+                        setStreaming(false);
+                        setError(null);
+                        setMessages([]);
+                        setSelectedConversationId(conversation.conversation_id);
+                      }}
+                      className={`rounded-[22px] border px-4 py-4 text-left transition ${
+                        active
+                          ? "border-sky-300 bg-sky-50 shadow-[0_14px_30px_rgba(14,165,233,0.10)]"
+                          : "border-white/8 bg-white/4 hover:border-sky-400/30 hover:bg-white/8"
+                      }`}
+                    >
+                      <p className="truncate text-sm font-semibold text-slate-950">{normalizeTitle(conversation.title)}</p>
+                      <p className="mt-2 text-xs leading-6 text-slate-500">
+                        {formatDate(conversation.updated_at) || "Nouvelle conversation"}
+                      </p>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Démarrage rapide</p>
+            <div className="mt-4 grid gap-2">
+              {starterPrompts.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => applyStarterPrompt(item.prompt)}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:border-sky-400/30 hover:bg-sky-500/10 hover:text-sky-300"
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </aside>
+
+        <section
+          onWheelCapture={(event) => forwardWheelToViewport(event, messagesViewportRef)}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5"
+        >
+          {error ? (
+            <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
+
+          <div className={`${error ? "mt-3" : ""} shrink-0 rounded-[22px] border border-white/8 bg-white/4 px-4 py-4`}>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Mode assistant</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">
+                  {activeAssistantMode === "launch_structure_sell" ? "Lancer, Structurer, Vendre" : "Mode general KORYXA"}
+                </p>
+                <p className="mt-1 text-xs leading-6 text-slate-500">
+                  {activeAssistantMode === "launch_structure_sell"
+                    ? "Reponses limitees au corpus dedie a cette fonctionnalite."
+                    : "Reponses avec le contexte produit habituel de ChatLAYA."}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {ASSISTANT_MODE_OPTIONS.map((option) => {
+                  const active = option.value === activeAssistantMode;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={!selectedConversationId || assistantModeSaving || streaming}
+                      onClick={() => void updateConversationMode(option.value)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        active
+                          ? "border-sky-300 bg-sky-50 text-sky-700"
+                          : "border-white/8 bg-white/4 text-slate-200 hover:border-sky-400/30 hover:text-sky-300"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                      title={option.hint}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <div className="space-y-4 pb-16 mx-auto w-full max-w-4xl">
-              {messages.map((m) => {
-                const isUser = m.role === "user";
-                return (
-                  <div key={m.id} className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
-                    <div className={`${isUser ? userBubbleClass : assistantBubbleClass} w-full`}>
-                      {m.pending && !m.content ? (
-                        <span className="inline-flex items-center gap-2 text-slate-400">
-                          <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                          Chatlaya reflechit...
-                        </span>
-                      ) : isUser ? (
-                        m.content
-                      ) : (
-                        <div className="space-y-3">
-                          <AssistantMessageContent content={m.content} />
-                          <div className="flex justify-end text-xs text-slate-500">
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(m.content, m.id)}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 transition hover:border-slate-300 hover:text-slate-700"
-                            >
-                              <IconCopy className="h-3.5 w-3.5" />
-                              <span className="text-[11px] font-medium">
-                                {copiedMessageId === m.id ? "Copié" : "Copier"}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+          </div>
+
+          <div
+            ref={messagesViewportRef}
+            className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y rounded-[26px] border border-white/8 bg-white/3 px-4 py-4 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
+          >
+            {messagesLoading ? (
+              <div className="grid gap-3">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="h-20 animate-pulse rounded-[22px] bg-white/8" />
+                ))}
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="flex h-full min-h-[220px] items-center justify-center">
+                <div className="w-full max-w-xl rounded-[26px] border border-dashed border-white/12 bg-white/3 px-6 py-8 text-center shadow-sm">
+                  <p className="text-xl font-semibold text-slate-950">Partez d’une question simple.</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    ChatLAYA vous aide à clarifier, cadrer et décider avant d’ouvrir la bonne suite dans KORYXA.
+                  </p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {starterPrompts.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => applyStarterPrompt(item.prompt)}
+                        className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-sky-400/30 hover:bg-sky-500/10 hover:text-sky-300"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <form onSubmit={onSubmit} className="border-t border-slate-100 bg-[#f7f7f8] px-4 py-4 sm:px-6 lg:px-10">
-          <div className="mx-auto mb-3 flex w-full max-w-4xl flex-wrap gap-2">
-            {STARTER_PROMPTS.map((item) => (
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+                {messages.map((message) => {
+                  const isUser = message.role === "user";
+                  return (
+                    <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`w-full rounded-[26px] border px-5 py-4 shadow-sm ${
+                          isUser
+                            ? "max-w-2xl border-slate-200 bg-[#edf2f7]"
+                            : "max-w-3xl border-white/8 bg-slate-900/70"
+                        }`}
+                      >
+                        {message.pending && !message.content ? (
+                          <span className="inline-flex items-center gap-2 text-sm text-slate-400">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
+                            ChatLAYA est en train de répondre...
+                          </span>
+                        ) : isUser ? (
+                          <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">{message.content}</div>
+                        ) : (
+                          <AssistantContent content={message.content} />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={onSubmit} className="mt-3 shrink-0 rounded-[20px] border border-white/8 bg-slate-900/80 px-3 py-3 sm:rounded-[24px] sm:px-4">
+            <div className="flex items-end gap-3 rounded-[18px] border border-white/8 bg-white/4 px-3 py-3 sm:rounded-[22px] sm:px-4">
+              <textarea
+                ref={composerRef}
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={onComposerKeyDown}
+                placeholder={streaming ? "Patientez pendant la réponse..." : "Posez votre question à ChatLAYA"}
+                rows={1}
+                aria-label="Message pour ChatLAYA"
+                className="min-h-[48px] w-full resize-none bg-transparent text-sm leading-7 text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                disabled={streaming || !selectedConversationId}
+              />
               <button
-                key={item.label}
-                type="button"
-                onClick={() => handleStarterPrompt(item.prompt)}
-                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                type="submit"
+                disabled={streaming || !selectedConversationId || !input.trim()}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
               >
-                {item.label}
+                <span className="sr-only">Envoyer</span>
+                <ArrowUp className="h-4 w-4" />
               </button>
-            ))}
-          </div>
-          <div className="mx-auto flex w-full max-w-4xl items-end gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100">
-            <textarea
-              ref={composerRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleComposerKeyDown}
-              placeholder={streaming ? "Patientez pendant la reponse..." : "Pose ta question a Chatlaya"}
-              rows={1}
-              aria-label="Message pour Chatlaya"
-              className="max-h-[200px] min-h-[48px] w-full resize-none bg-transparent text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none"
-              disabled={composerDisabled}
-            />
-            <button
-              type="submit"
-              disabled={composerDisabled || !input.trim()}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-            >
-              <span className="sr-only">Envoyer</span>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-                <path d="M3.4 20.6a1 1 0 0 1-1.28-1.28l3-9a1 1 0 0 1 .63-.63l9-3a1 1 0 0 1 1.28 1.28L13 12l4.03 4.03a1 1 0 0 1-1.42 1.42L11.59 13.4l-3.73 4.04-.01.01a1 1 0 0 1-1.72-.37z" />
-              </svg>
-            </button>
-          </div>
-          <p className="mx-auto mt-2 max-w-3xl text-right text-xs text-slate-400">
-            Entree pour envoyer · Maj + Entree pour aller a la ligne
-          </p>
-        </form>
-      </main>
-      {historyDrawerOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setHistoryDrawerOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 flex w-80 max-w-full flex-col bg-white shadow-2xl md:hidden">
-            <SidebarContent onClose={() => setHistoryDrawerOpen(false)} />
-          </div>
-        </>
-      )}
-    </div>
+            </div>
+            <p className="mt-2 text-left text-xs text-slate-400 sm:text-right">Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne</p>
+          </form>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+export default function ChatlayaPage() {
+  return (
+    <Suspense>
+      <ChatlayaContent />
+    </Suspense>
   );
 }

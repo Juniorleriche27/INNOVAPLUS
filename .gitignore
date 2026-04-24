@@ -1,6 +1,11 @@
 products/koryxa-sante/data/raw/
 products/koryxa-sante/data/processed/
 
+# local dev artifacts
+/data/
+/mongodb-windows-x86_64-8.2.6-signed/
+/tools/
+
 # secrets
 .env
 .env.*
@@ -9,3 +14,17 @@ products/koryxa-sante/data/processed/
 **/.env.*
 secrets.toml
 **/secrets.toml
+
+# generated / temp artifacts
+/tmp_*
+/logs/
+/graphify-out/
+/logo/
+/mart/
+/support/
+/scripts/
+/chatlaya/
+/*.png
+/*.html
+/*.js
+/*.cookies

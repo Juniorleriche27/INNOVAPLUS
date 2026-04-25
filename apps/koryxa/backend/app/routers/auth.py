@@ -17,7 +17,7 @@ from app.core.auth import (
 )
 from app.core.config import settings
 from app.core.email import send_email_async
-from app.db.mongo import get_db
+from app.db.mongo import get_db_instance
 from app.deps.auth import get_current_user
 from app.repositories.auth_pg import (
     create_reset_token,
@@ -224,7 +224,7 @@ async def register(
     payload: UserCreate,
     response: Response,
     request: Request,
-    db=Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         email = normalize_email(payload.email)
@@ -245,6 +245,7 @@ async def register(
         expires_at = _issue_session_pg(response, str(user["id"]), request)
         return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     existing = await db["users"].find_one({"email": email})
     if existing:
@@ -298,7 +299,7 @@ async def register(
 @router.post("/request-otp")
 async def request_otp(
     payload: OTPRequestPayload,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         email = normalize_email(payload.email)
@@ -324,6 +325,7 @@ async def request_otp(
             response_payload["debug_code"] = code
         return response_payload
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     if payload.intent == "login":
         existing = await db["users"].find_one({"email": email})
@@ -365,7 +367,7 @@ async def login_with_otp(
     payload: OTPVerifyPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         email = normalize_email(payload.email)
@@ -390,6 +392,7 @@ async def login_with_otp(
         session_expires_at = _issue_session_pg(response, str(user["id"]), request)
         return {"user": _public_user_pg(user), "session_expires_at": session_expires_at}
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     now = datetime.now(timezone.utc)
     otp_doc = await db[OTP_COLLECTION].find_one({"email": email})
@@ -433,7 +436,7 @@ async def login(
     payload: LoginPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         user = get_user_by_email(normalize_email(payload.email))
@@ -444,6 +447,7 @@ async def login(
         expires_at = _issue_session_pg(response, str(user["id"]), request)
         return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     user = await db["users"].find_one({"email": email})
     if not user:
@@ -466,7 +470,7 @@ async def login(
 async def dev_login(
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         if not _dev_auth_enabled():
@@ -475,6 +479,7 @@ async def dev_login(
         expires_at = _issue_session_pg(response, str(user["id"]), request)
         return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
+    db = get_db_instance()
     if not _dev_auth_enabled():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
@@ -515,7 +520,7 @@ async def me(current: dict = Depends(get_current_user)):
 async def set_workspace_role(
     payload: RoleUpdatePayload,
     current: dict = Depends(get_current_user),
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         user = update_user_fields(str(current["_id"]), workspace_role=payload.role)
@@ -524,6 +529,7 @@ async def set_workspace_role(
             current.update(user)
         return {"workspace_role": payload.role}
 
+    db = get_db_instance()
     await db["users"].update_one(
         {"_id": current["_id"]},
         {"$set": {"workspace_role": payload.role}},
@@ -536,7 +542,7 @@ async def set_workspace_role(
 async def logout(
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         token = request.cookies.get(settings.SESSION_COOKIE_NAME)
@@ -546,6 +552,7 @@ async def logout(
         response.headers["Cache-Control"] = "no-store"
         return {"ok": True}
 
+    db = get_db_instance()
     token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if token:
         token_hash = hash_token(token)
@@ -563,7 +570,7 @@ async def logout(
 async def forgot_password(
     payload: ForgotPasswordPayload,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         email = normalize_email(payload.email)
@@ -584,6 +591,7 @@ async def forgot_password(
             logger.warning("Failed to send password reset email: %s", exc)
         return {"ok": True}
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     user = await db["users"].find_one({"email": email})
     if not user:
@@ -636,7 +644,7 @@ async def reset_password(
     payload: ResetPasswordPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     if not settings.REQUIRE_MONGO:
         email = normalize_email(payload.email)
@@ -653,6 +661,7 @@ async def reset_password(
         response.headers["Cache-Control"] = "no-store"
         return {"ok": True}
 
+    db = get_db_instance()
     email = normalize_email(payload.email)
     user = await db["users"].find_one({"email": email})
     if not user:
@@ -707,6 +716,6 @@ async def signup_alias(
     payload: UserCreate,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase | None = None,
 ):
     return await register(payload, response, request, db)

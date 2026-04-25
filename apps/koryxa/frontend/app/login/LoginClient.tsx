@@ -19,6 +19,23 @@ type LoginClientProps = {
   signupLabel?: string;
 };
 
+async function readErrorMessage(response: Response): Promise<string> {
+  const fallback = `Erreur ${response.status}`;
+  const text = await response.text().catch(() => "");
+  if (!text) return fallback;
+
+  try {
+    const data = JSON.parse(text);
+    if (typeof data?.detail === "string") return data.detail;
+    if (typeof data?.detail?.detail === "string") return data.detail.detail;
+  } catch {
+    // Keep plain-text or HTML responses readable enough for debugging.
+  }
+
+  const compact = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return compact ? `${fallback}: ${compact.slice(0, 180)}` : fallback;
+}
+
 export default function LoginClient({
   defaultRedirect = "/",
   requestedRedirect,
@@ -109,16 +126,10 @@ export default function LoginClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, intent: "login" }),
       });
-      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const message =
-          typeof data?.detail === "string"
-            ? data.detail
-            : typeof data?.detail?.detail === "string"
-              ? data.detail.detail
-              : "Impossible d'envoyer le code.";
-        throw new Error(message);
+        throw new Error(await readErrorMessage(response));
       }
+      const data = await response.json().catch(() => ({}));
 
       setStep("verify");
       setInfo("Code envoye. Consultez votre boite mail ou le canal configure.");

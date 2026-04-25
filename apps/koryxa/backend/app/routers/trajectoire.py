@@ -5,9 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from app.core.config import settings
 from app.core.public_access import ensure_guest_id, get_guest_id
-from app.db.mongo import get_db, get_db_instance
 from app.deps.auth import get_current_user, get_current_user_optional
 from app.repositories.trajectory_pg import (
     claim_flow_for_user,
@@ -86,74 +84,27 @@ async def _resolve_flow(
     response: Response | None,
     current: dict | None,
 ) -> dict[str, Any]:
-    if not settings.REQUIRE_MONGO:
-        guest_id = get_guest_id(request)
-        if current:
-            flow = get_flow_for_user(flow_id, str(current["_id"]))
-            if flow:
-                return flow
-            if guest_id:
-                flow = get_flow_for_guest(flow_id, guest_id)
-                if flow and not flow.get("user_id"):
-                    claimed = claim_flow_for_user(flow_id, str(current["_id"]))
-                    if claimed:
-                        return claimed
-            flow = claim_flow_for_user(flow_id, str(current["_id"]))
-            if flow:
-                return flow
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
-
-        resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id
-        if not resolved_guest_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invitée introuvable")
-        flow = get_flow_for_guest(flow_id, resolved_guest_id)
-        if not flow:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
-        return flow
-
-    db = get_db_instance()
-    from app.utils.ids import to_object_id
-
-    flow_oid = to_object_id(flow_id)
     guest_id = get_guest_id(request)
 
     if current:
-        flow = await db["trajectory_flows"].find_one({"_id": flow_oid, "user_id": current["_id"]})
+        flow = get_flow_for_user(flow_id, str(current["_id"]))
         if flow:
             return flow
         if guest_id:
-            flow = await db["trajectory_flows"].find_one(
-                {
-                    "_id": flow_oid,
-                    "guest_id": guest_id,
-                    "$or": [{"user_id": None}, {"user_id": current["_id"]}],
-                }
-            )
-            if flow:
-                now = datetime.now(timezone.utc)
-                await db["trajectory_flows"].update_one(
-                    {"_id": flow_oid},
-                    {"$set": {"user_id": current["_id"], "updated_at": now}},
-                )
-                flow["user_id"] = current["_id"]
-                flow["updated_at"] = now
-                return flow
-        flow = await db["trajectory_flows"].find_one({"_id": flow_oid, "user_id": None})
+            flow = get_flow_for_guest(flow_id, guest_id)
+            if flow and not flow.get("user_id"):
+                claimed = claim_flow_for_user(flow_id, str(current["_id"]))
+                if claimed:
+                    return claimed
+        flow = claim_flow_for_user(flow_id, str(current["_id"]))
         if flow:
-            now = datetime.now(timezone.utc)
-            await db["trajectory_flows"].update_one(
-                {"_id": flow_oid, "user_id": None},
-                {"$set": {"user_id": current["_id"], "updated_at": now}},
-            )
-            flow["user_id"] = current["_id"]
-            flow["updated_at"] = now
             return flow
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
 
     resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id
     if not resolved_guest_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invitée introuvable")
-    flow = await db["trajectory_flows"].find_one({"_id": flow_oid, "guest_id": resolved_guest_id})
+    flow = get_flow_for_guest(flow_id, resolved_guest_id)
     if not flow:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
     return flow
@@ -164,13 +115,7 @@ async def _ensure_cockpit_bindings(
     current: dict,
 ) -> tuple[str, dict[str, dict[str, Any]], int]:
     context_id = trajectory_context_id(str(flow["_id"]))
-    if not settings.REQUIRE_MONGO:
-        existing = list_bindings(str(flow["_id"]), str(current["_id"]))
-    else:
-        db = get_db_instance()
-        existing = await db["trajectory_task_bindings"].find(
-            {"flow_id": flow["_id"], "user_id": current["_id"]}
-        ).to_list(length=200)
+    existing = list_bindings(str(flow["_id"]), str(current["_id"]))
     binding_map = {str(item.get("koryxa_task_key") or ""): item for item in existing}
     created_task_count = 0
     now = datetime.now(timezone.utc)
@@ -196,23 +141,18 @@ async def _ensure_cockpit_bindings(
                 "created_at": now,
                 "updated_at": now,
             }
-            if not settings.REQUIRE_MONGO:
-                created = create_binding(
-                    flow_id=str(flow["_id"]),
-                    user_id=str(current["_id"]),
-                    context_id=context_id,
-                    stage_key=str(stage.get("key") or ""),
-                    task_key=task_key,
-                    proof_required=bool(task.get("proof_required", False)),
-                    feature_gate=str(task.get("feature_gate") or "") or None,
-                    now=now,
-                )
-                if created:
-                    binding_doc["_id"] = created["id"]
-            else:
-                db = get_db_instance()
-                result = await db["trajectory_task_bindings"].insert_one(binding_doc)
-                binding_doc["_id"] = result.inserted_id
+            created = create_binding(
+                flow_id=str(flow["_id"]),
+                user_id=str(current["_id"]),
+                context_id=context_id,
+                stage_key=str(stage.get("key") or ""),
+                task_key=task_key,
+                proof_required=bool(task.get("proof_required", False)),
+                feature_gate=str(task.get("feature_gate") or "") or None,
+                now=now,
+            )
+            if created:
+                binding_doc["_id"] = created["id"]
         binding_map[task_key] = binding_doc
 
     return context_id, binding_map, created_task_count
@@ -276,31 +216,13 @@ async def create_trajectory_onboarding(
 ):
     now = datetime.now(timezone.utc)
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
-    if not settings.REQUIRE_MONGO:
-        doc = create_flow(
-            guest_id=guest_id,
-            user_id=str(current["_id"]) if current else None,
-            onboarding=payload.model_dump(),
-            status="onboarded",
-            now=now,
-        )
-        return _serialize_flow(doc)
-    db = get_db_instance()
-    doc: dict[str, Any] = {
-        "guest_id": guest_id,
-        "user_id": current["_id"] if current else None,
-        "status": "onboarded",
-        "onboarding": payload.model_dump(),
-        "diagnostic": None,
-        "progress_plan": None,
-        "proofs": [],
-        "verified_profile": None,
-        "opportunity_targets": [],
-        "created_at": now,
-        "updated_at": now,
-    }
-    result = await db["trajectory_flows"].insert_one(doc)
-    doc["_id"] = result.inserted_id
+    doc = create_flow(
+        guest_id=guest_id,
+        user_id=str(current["_id"]) if current else None,
+        onboarding=payload.model_dump(),
+        status="onboarded",
+        now=now,
+    )
     return _serialize_flow(doc)
 
 
@@ -337,7 +259,7 @@ async def create_trajectory_diagnostic(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="flow_id requis")
 
     flow = await _resolve_flow(flow_id, request, response, current)
-    partner_catalog = DEFAULT_PARTNERS if not settings.REQUIRE_MONGO else await list_public_partners(get_db_instance())
+    partner_catalog = DEFAULT_PARTNERS
     try:
         experience = await build_trajectory_experience(flow.get("onboarding") or {}, partner_catalog=partner_catalog)
     except BlueprintAIGenerationError as exc:
@@ -356,21 +278,17 @@ async def create_trajectory_diagnostic(
         "status": "diagnosed",
         "updated_at": now,
     }
-    if not settings.REQUIRE_MONGO:
-        update_flow_state(
-            str(flow["_id"]),
-            diagnostic=experience["diagnostic"],
-            progress_plan=experience["progress_plan"],
-            final_recommendation=update_doc["final_recommendation"],
-            proofs=experience["proofs"],
-            verified_profile=experience["verified_profile"],
-            opportunity_targets=experience["opportunity_targets"],
-            status="diagnosed",
-            updated_at=now,
-        )
-    else:
-        db = get_db_instance()
-        await db["trajectory_flows"].update_one({"_id": flow["_id"]}, {"$set": update_doc})
+    update_flow_state(
+        str(flow["_id"]),
+        diagnostic=experience["diagnostic"],
+        progress_plan=experience["progress_plan"],
+        final_recommendation=update_doc["final_recommendation"],
+        proofs=experience["proofs"],
+        verified_profile=experience["verified_profile"],
+        opportunity_targets=experience["opportunity_targets"],
+        status="diagnosed",
+        updated_at=now,
+    )
     flow.update(update_doc)
     return _serialize_flow(flow)
 
@@ -378,7 +296,7 @@ async def create_trajectory_diagnostic(
 @router.get("/partners/public", response_model=PublicPartnerListResponse)
 async def list_trajectory_partners(
 ):
-    return {"items": DEFAULT_PARTNERS if not settings.REQUIRE_MONGO else await list_public_partners(get_db_instance())}
+    return {"items": DEFAULT_PARTNERS}
 
 
 @router.get("/flows/{flow_id}", response_model=TrajectoryFlowResponse)
@@ -393,32 +311,17 @@ async def get_trajectory_flow(
     if flow.get("diagnostic") and flow.get("progress_plan"):
         refreshed = recompute_trajectory_state(flow)
         refreshed["updated_at"] = datetime.now(timezone.utc)
-        if not settings.REQUIRE_MONGO:
-            update_flow_state(
-                str(flow["_id"]),
-                diagnostic=refreshed["diagnostic"],
-                progress_plan=refreshed["progress_plan"],
-                final_recommendation=_build_final_recommendation(refreshed),
-                proofs=refreshed["proofs"],
-                verified_profile=refreshed["verified_profile"],
-                opportunity_targets=refreshed["opportunity_targets"],
-                status=refreshed["status"],
-                updated_at=refreshed["updated_at"],
-            )
-        else:
-            db = get_db_instance()
-            await db["trajectory_flows"].update_one(
-                {"_id": flow["_id"]},
-                {"$set": {
-                    "diagnostic": refreshed["diagnostic"],
-                    "progress_plan": refreshed["progress_plan"],
-                    "proofs": refreshed["proofs"],
-                    "verified_profile": refreshed["verified_profile"],
-                    "opportunity_targets": refreshed["opportunity_targets"],
-                    "status": refreshed["status"],
-                    "updated_at": refreshed["updated_at"],
-                }},
-            )
+        update_flow_state(
+            str(flow["_id"]),
+            diagnostic=refreshed["diagnostic"],
+            progress_plan=refreshed["progress_plan"],
+            final_recommendation=_build_final_recommendation(refreshed),
+            proofs=refreshed["proofs"],
+            verified_profile=refreshed["verified_profile"],
+            opportunity_targets=refreshed["opportunity_targets"],
+            status=refreshed["status"],
+            updated_at=refreshed["updated_at"],
+        )
         flow = refreshed
     return _serialize_flow(flow)
 
@@ -435,18 +338,16 @@ async def submit_trajectory_contact(
     if not flow.get("diagnostic") or not flow.get("progress_plan"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré avant l'envoi.")
     submitted_at = datetime.now(timezone.utc)
-    if not settings.REQUIRE_MONGO:
-        submit_flow_lead(
-            flow_id=str(flow["_id"]),
-            first_name=payload.first_name.strip(),
-            last_name=payload.last_name.strip(),
-            email=str(payload.email).strip().lower(),
-            whatsapp_country_code=payload.whatsapp_country_code.strip(),
-            whatsapp_number=payload.whatsapp_number.strip(),
-            submitted_at=submitted_at,
-        )
-        return {"ok": True, "flow_id": str(flow["_id"]), "submitted_to_team": True}
-    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Mode Mongo désactivé pour cette action.")
+    submit_flow_lead(
+        flow_id=str(flow["_id"]),
+        first_name=payload.first_name.strip(),
+        last_name=payload.last_name.strip(),
+        email=str(payload.email).strip().lower(),
+        whatsapp_country_code=payload.whatsapp_country_code.strip(),
+        whatsapp_number=payload.whatsapp_number.strip(),
+        submitted_at=submitted_at,
+    )
+    return {"ok": True, "flow_id": str(flow["_id"]), "submitted_to_team": True}
 
 
 @router.patch("/flows/{flow_id}/progress", response_model=TrajectoryFlowResponse)

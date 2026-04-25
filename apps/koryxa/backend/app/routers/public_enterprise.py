@@ -6,9 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from app.core.config import settings
 from app.core.public_access import ensure_guest_id, get_guest_id
-from app.db.mongo import get_db, get_db_instance
 from app.deps.auth import get_current_user_optional
 from app.repositories.enterprise_pg import (
     claim_need_for_user,
@@ -116,95 +114,29 @@ async def _resolve_need(
     response: Response | None,
     current: dict | None,
 ) -> dict[str, Any]:
-    if not settings.REQUIRE_MONGO:
-        guest_id = get_guest_id(request)
-        if current:
-            need = get_need_for_user(need_id, str(current["_id"]))
-            if need:
-                return need
-            if guest_id:
-                need = get_need_for_guest(need_id, guest_id)
-                if need and not need.get("user_id"):
-                    claimed = claim_need_for_user(need_id, str(current["_id"]))
-                    if claimed:
-                        sync_need_related_user(need_id, str(current["_id"]))
-                        return claimed
-            need = claim_need_for_user(need_id, str(current["_id"]))
-            if need:
-                sync_need_related_user(need_id, str(current["_id"]))
-                return need
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Besoin introuvable")
-
-        resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id
-        if not resolved_guest_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invitée introuvable")
-        need = get_need_for_guest(need_id, resolved_guest_id)
-        if not need:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Besoin introuvable")
-        return need
-
-    db = get_db_instance()
-    from app.utils.ids import to_object_id
-
-    try:
-        need_oid = to_object_id(need_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Identifiant de besoin invalide") from exc
     guest_id = get_guest_id(request)
 
     if current:
-        need = await db["enterprise_needs"].find_one({"_id": need_oid, "user_id": current["_id"]})
+        need = get_need_for_user(need_id, str(current["_id"]))
         if need:
             return need
         if guest_id:
-            need = await db["enterprise_needs"].find_one(
-                {
-                    "_id": need_oid,
-                    "guest_id": guest_id,
-                    "$or": [{"user_id": None}, {"user_id": current["_id"]}],
-                }
-            )
-            if need:
-                now = datetime.now(timezone.utc)
-                await db["enterprise_needs"].update_one(
-                    {"_id": need_oid},
-                    {"$set": {"user_id": current["_id"], "updated_at": now}},
-                )
-                await db["enterprise_missions"].update_one(
-                    {"need_id": need_oid},
-                    {"$set": {"user_id": current["_id"], "updated_at": now}},
-                )
-                await db["enterprise_opportunities"].update_one(
-                    {"need_id": need_oid},
-                    {"$set": {"user_id": current["_id"], "updated_at": now}},
-                )
-                need["user_id"] = current["_id"]
-                need["updated_at"] = now
-                return need
-        need = await db["enterprise_needs"].find_one({"_id": need_oid, "user_id": None})
+            need = get_need_for_guest(need_id, guest_id)
+            if need and not need.get("user_id"):
+                claimed = claim_need_for_user(need_id, str(current["_id"]))
+                if claimed:
+                    sync_need_related_user(need_id, str(current["_id"]))
+                    return claimed
+        need = claim_need_for_user(need_id, str(current["_id"]))
         if need:
-            now = datetime.now(timezone.utc)
-            await db["enterprise_needs"].update_one(
-                {"_id": need_oid, "user_id": None},
-                {"$set": {"user_id": current["_id"], "updated_at": now}},
-            )
-            await db["enterprise_missions"].update_one(
-                {"need_id": need_oid, "user_id": None},
-                {"$set": {"user_id": current["_id"], "updated_at": now}},
-            )
-            await db["enterprise_opportunities"].update_one(
-                {"need_id": need_oid},
-                {"$set": {"updated_at": now, "user_id": current["_id"]}},
-            )
-            need["user_id"] = current["_id"]
-            need["updated_at"] = now
+            sync_need_related_user(need_id, str(current["_id"]))
             return need
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Besoin introuvable")
 
     resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id
     if not resolved_guest_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invitée introuvable")
-    need = await db["enterprise_needs"].find_one({"_id": need_oid, "guest_id": resolved_guest_id})
+    need = get_need_for_guest(need_id, resolved_guest_id)
     if not need:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Besoin introuvable")
     return need
@@ -216,13 +148,7 @@ async def _ensure_cockpit_bindings(
     current: dict,
 ) -> tuple[str, dict[str, dict[str, Any]], int]:
     context_id = _enterprise_context_id(str(need["_id"]))
-    if not settings.REQUIRE_MONGO:
-        existing = list_task_bindings(str(need["_id"]), str(current["_id"]))
-    else:
-        db = get_db_instance()
-        existing = await db["enterprise_task_bindings"].find(
-            {"need_id": need["_id"], "user_id": current["_id"]}
-        ).to_list(length=50)
+    existing = list_task_bindings(str(need["_id"]), str(current["_id"]))
     binding_map = {str(item.get("step_key") or ""): item for item in existing}
     created_task_count = 0
     now = datetime.now(timezone.utc)
@@ -243,21 +169,16 @@ async def _ensure_cockpit_bindings(
             "created_at": now,
             "updated_at": now,
         }
-        if not settings.REQUIRE_MONGO:
-            created = create_task_binding(
-                need_id=str(need["_id"]),
-                user_id=str(current["_id"]),
-                context_id=context_id,
-                step_key=step_key,
-                step_title=str(step_text),
-                now=now,
-            )
-            if created:
-                binding_doc["_id"] = created["id"]
-        else:
-            db = get_db_instance()
-            result = await db["enterprise_task_bindings"].insert_one(binding_doc)
-            binding_doc["_id"] = result.inserted_id
+        created = create_task_binding(
+            need_id=str(need["_id"]),
+            user_id=str(current["_id"]),
+            context_id=context_id,
+            step_key=step_key,
+            step_title=str(step_text),
+            now=now,
+        )
+        if created:
+            binding_doc["_id"] = created["id"]
         binding_map[step_key] = binding_doc
 
     return context_id, binding_map, created_task_count
@@ -597,62 +518,25 @@ async def create_enterprise_need(
         "structured_summary": structured["need_summary"],
         "next_recommended_action": structured["next_recommended_action"],
     }
-    if not settings.REQUIRE_MONGO:
-        need_doc = create_need(payload=need_payload, guest_id=guest_id, user_id=str(current["_id"]) if current else None, now=now)
-        mission_doc = create_mission(
-            need_id=str(need_doc["_id"]),
-            guest_id=guest_id,
-            user_id=str(current["_id"]) if current else None,
-            payload=structured["mission"],
-            status=statuses["mission_status"],
-            now=now,
-        )
-    else:
-        db = get_db_instance()
-        need_doc = {**need_payload, "guest_id": guest_id, "user_id": current["_id"] if current else None, "created_at": now, "updated_at": now}
-        need_result = await db["enterprise_needs"].insert_one(need_doc)
-        need_doc["_id"] = need_result.inserted_id
-        mission_doc = {
-            "need_id": need_doc["_id"],
-            "guest_id": guest_id,
-            "user_id": current["_id"] if current else None,
-            "title": structured["mission"]["title"],
-            "summary": structured["mission"]["summary"],
-            "deliverable": structured["mission"]["deliverable"],
-            "execution_mode": structured["mission"]["execution_mode"],
-            "status": statuses["mission_status"],
-            "steps": structured["mission"]["steps"],
-            "created_at": now,
-            "updated_at": now,
-        }
-        mission_result = await db["enterprise_missions"].insert_one(mission_doc)
-        mission_doc["_id"] = mission_result.inserted_id
+    need_doc = create_need(payload=need_payload, guest_id=guest_id, user_id=str(current["_id"]) if current else None, now=now)
+    mission_doc = create_mission(
+        need_id=str(need_doc["_id"]),
+        guest_id=guest_id,
+        user_id=str(current["_id"]) if current else None,
+        payload=structured["mission"],
+        status=statuses["mission_status"],
+        now=now,
+    )
 
     opportunity_doc: dict[str, Any] | None = None
     if recommended_mode == "publie":
-        if not settings.REQUIRE_MONGO:
-            opportunity_doc = create_opportunity(
-                need_id=str(need_doc["_id"]),
-                mission_id=str(mission_doc["_id"]),
-                payload=structured["opportunity"],
-                status=statuses["opportunity_status"],
-                now=now,
-            )
-        else:
-            opportunity_doc = {
-                "need_id": need_doc["_id"],
-                "mission_id": mission_doc["_id"],
-                "type": structured["opportunity"]["type"],
-                "title": structured["opportunity"]["title"],
-                "summary": structured["opportunity"]["summary"],
-                "status": statuses["opportunity_status"],
-                "highlights": structured["opportunity"]["highlights"],
-                "published_at": now,
-                "created_at": now,
-                "updated_at": now,
-            }
-            opportunity_result = await db["enterprise_opportunities"].insert_one(opportunity_doc)
-            opportunity_doc["_id"] = opportunity_result.inserted_id
+        opportunity_doc = create_opportunity(
+            need_id=str(need_doc["_id"]),
+            mission_id=str(mission_doc["_id"]),
+            payload=structured["opportunity"],
+            status=statuses["opportunity_status"],
+            now=now,
+        )
 
     return {
         "need": _serialize_need(need_doc),
@@ -699,62 +583,25 @@ async def create_enterprise_need_adaptive(
         "structured_summary": structured["need_summary"],
         "next_recommended_action": structured["next_recommended_action"],
     }
-    if not settings.REQUIRE_MONGO:
-        need_doc = create_need(payload=need_payload_db, guest_id=guest_id, user_id=str(current["_id"]) if current else None, now=now)
-        mission_doc = create_mission(
-            need_id=str(need_doc["_id"]),
-            guest_id=guest_id,
-            user_id=str(current["_id"]) if current else None,
-            payload=structured["mission"],
-            status=statuses["mission_status"],
-            now=now,
-        )
-    else:
-        db = get_db_instance()
-        need_doc = {**need_payload_db, "guest_id": guest_id, "user_id": current["_id"] if current else None, "created_at": now, "updated_at": now}
-        need_result = await db["enterprise_needs"].insert_one(need_doc)
-        need_doc["_id"] = need_result.inserted_id
-        mission_doc = {
-            "need_id": need_doc["_id"],
-            "guest_id": guest_id,
-            "user_id": current["_id"] if current else None,
-            "title": structured["mission"]["title"],
-            "summary": structured["mission"]["summary"],
-            "deliverable": structured["mission"]["deliverable"],
-            "execution_mode": structured["mission"]["execution_mode"],
-            "status": statuses["mission_status"],
-            "steps": structured["mission"]["steps"],
-            "created_at": now,
-            "updated_at": now,
-        }
-        mission_result = await db["enterprise_missions"].insert_one(mission_doc)
-        mission_doc["_id"] = mission_result.inserted_id
+    need_doc = create_need(payload=need_payload_db, guest_id=guest_id, user_id=str(current["_id"]) if current else None, now=now)
+    mission_doc = create_mission(
+        need_id=str(need_doc["_id"]),
+        guest_id=guest_id,
+        user_id=str(current["_id"]) if current else None,
+        payload=structured["mission"],
+        status=statuses["mission_status"],
+        now=now,
+    )
 
     opportunity_doc: dict[str, Any] | None = None
     if recommended_mode == "publie":
-        if not settings.REQUIRE_MONGO:
-            opportunity_doc = create_opportunity(
-                need_id=str(need_doc["_id"]),
-                mission_id=str(mission_doc["_id"]),
-                payload=structured["opportunity"],
-                status=statuses["opportunity_status"],
-                now=now,
-            )
-        else:
-            opportunity_doc = {
-                "need_id": need_doc["_id"],
-                "mission_id": mission_doc["_id"],
-                "type": structured["opportunity"]["type"],
-                "title": structured["opportunity"]["title"],
-                "summary": structured["opportunity"]["summary"],
-                "status": statuses["opportunity_status"],
-                "highlights": structured["opportunity"]["highlights"],
-                "published_at": now,
-                "created_at": now,
-                "updated_at": now,
-            }
-            opportunity_result = await db["enterprise_opportunities"].insert_one(opportunity_doc)
-            opportunity_doc["_id"] = opportunity_result.inserted_id
+        opportunity_doc = create_opportunity(
+            need_id=str(need_doc["_id"]),
+            mission_id=str(mission_doc["_id"]),
+            payload=structured["opportunity"],
+            status=statuses["opportunity_status"],
+            now=now,
+        )
 
     return {
         "need": _serialize_need(need_doc),
@@ -769,15 +616,7 @@ async def get_need_matches(
     limit: int = 5,
 ):
     """Retourne les meilleurs profils talents matchant un besoin entreprise."""
-    if not settings.REQUIRE_MONGO:
-        return {"need_id": need_id, "matches": [], "count": 0}
-    db = get_db_instance()
-    result = await find_matches_for_need(need_id, db, limit=min(limit, 20))
-    if result.get("error") == "need not found":
-        raise HTTPException(status_code=404, detail="need not found")
-    if result.get("error") == "invalid need_id":
-        raise HTTPException(status_code=400, detail="invalid need_id")
-    return result
+    return {"need_id": need_id, "matches": [], "count": 0}
 
 
 @router.post("/analyse/ai", response_model=EnterpriseFileAiAnalysisResponse)
@@ -791,11 +630,7 @@ async def analyze_enterprise_file_with_ai(
 @router.get("/opportunities/public", response_model=EnterpriseOpportunityListResponse)
 async def list_public_enterprise_opportunities(
 ):
-    if not settings.REQUIRE_MONGO:
-        items = list_public_opportunities()
-        return {"items": [_serialize_opportunity(item) for item in items if item]}
-    db = get_db_instance()
-    items = await db["enterprise_opportunities"].find({"status": "published"}).sort("published_at", -1).to_list(length=24)
+    items = list_public_opportunities()
     return {"items": [_serialize_opportunity(item) for item in items if item]}
 
 
@@ -806,11 +641,7 @@ async def list_enterprise_needs(
     """Retourne tous les besoins soumis par l'utilisateur authentifié."""
     if not current:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Connexion requise")
-    if not settings.REQUIRE_MONGO:
-        docs = list_user_needs(str(current["_id"]))
-        return {"needs": [_serialize_need(doc) for doc in docs]}
-    db = get_db_instance()
-    docs = await db["enterprise_needs"].find({"user_id": current["_id"]}).sort("created_at", -1).to_list(length=50)
+    docs = list_user_needs(str(current["_id"]))
     return {"needs": [_serialize_need(doc) for doc in docs]}
 
 
@@ -822,14 +653,10 @@ async def get_enterprise_need(
     current: dict | None = Depends(get_current_user_optional),
 ):
     need = await _resolve_need(need_id, request, response, current)
-    if not settings.REQUIRE_MONGO:
-        mission = get_mission_for_need(str(need["_id"]))
-    else:
-        db = get_db_instance()
-        mission = await db["enterprise_missions"].find_one({"need_id": need["_id"]})
+    mission = get_mission_for_need(str(need["_id"]))
     if not mission:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission introuvable pour ce besoin")
-    opportunity = get_opportunity_for_need(str(need["_id"])) if not settings.REQUIRE_MONGO else await db["enterprise_opportunities"].find_one({"need_id": need["_id"]})
+    opportunity = get_opportunity_for_need(str(need["_id"]))
     return {
         "need": _serialize_need(need),
         "mission": _serialize_mission(mission),
@@ -845,7 +672,7 @@ async def activate_enterprise_cockpit(
     current: dict | None = Depends(get_current_user_optional),
 ):
     need = await _resolve_need(need_id, request, response, current)
-    mission = get_mission_for_need(str(need["_id"])) if not settings.REQUIRE_MONGO else await get_db_instance()["enterprise_missions"].find_one({"need_id": need["_id"]})
+    mission = get_mission_for_need(str(need["_id"]))
     if not mission:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission introuvable pour ce besoin")
 
@@ -884,9 +711,9 @@ async def get_enterprise_cockpit_context(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Connexion requise pour le cockpit entreprise")
 
     need = await _resolve_need(need_id, request, None, current)
-    mission = get_mission_for_need(str(need["_id"])) if not settings.REQUIRE_MONGO else await get_db_instance()["enterprise_missions"].find_one({"need_id": need["_id"]})
+    mission = get_mission_for_need(str(need["_id"]))
     if not mission:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mission introuvable pour ce besoin")
-    opportunity = get_opportunity_for_need(str(need["_id"])) if not settings.REQUIRE_MONGO else await get_db_instance()["enterprise_opportunities"].find_one({"need_id": need["_id"]})
+    opportunity = get_opportunity_for_need(str(need["_id"]))
     context_id, binding_map, _ = await _ensure_cockpit_bindings(need, mission, current)
     return _serialize_cockpit_context(need, mission, opportunity, context_id, binding_map)

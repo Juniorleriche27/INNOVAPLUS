@@ -107,8 +107,7 @@ jobs:
               "curl -fsS --max-time 10 '${HEALTH_URL}'" || true)
             last_response="${response}"
             status=$(printf '%s' "${response}" | jq -r '.status // empty' 2>/dev/null || true)
-            mongo=$(printf '%s' "${response}" | jq -r '.mongo // empty' 2>/dev/null || true)
-            if [ "${status}" = "ok" ] && [ "${mongo}" = "ok" ]; then
+            if [ "${status}" = "ok" ]; then
               echo "Health check succeeded on attempt ${attempt}."
               exit 0
             fi
@@ -116,7 +115,7 @@ jobs:
             attempt=$((attempt + 1))
           done
 
-          echo "::error::Health endpoint did not report status==ok and mongo==ok within timeout."
+          echo "::error::Health endpoint did not report status==ok within timeout."
           echo "Last response from ${HEALTH_URL}:"
           printf '%s\n' "${last_response}"
 

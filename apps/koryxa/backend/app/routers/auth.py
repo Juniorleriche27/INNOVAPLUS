@@ -17,7 +17,6 @@ from app.core.auth import (
 )
 from app.core.config import settings
 from app.core.email import send_email_async
-from app.db.mongo import get_db_instance
 from app.deps.auth import get_current_user
 from app.repositories.auth_pg import (
     create_reset_token,
@@ -49,9 +48,6 @@ from app.schemas.users import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
-OTP_COLLECTION = "login_otps"
-
-
 def _generate_otp(length: int | None = None) -> str:
     digits = "0123456789"
     size = length or settings.OTP_CODE_LENGTH
@@ -175,31 +171,6 @@ def _build_dev_user_doc(now: datetime) -> dict:
     }
 
 
-async def _issue_session(
-    response: Response,
-    db: AsyncIOMotorDatabase,
-    user_id,
-    request: Request,
-) -> datetime:
-    token = generate_session_token()
-    now = datetime.now(timezone.utc)
-    expires_at = session_expiry()
-    session_doc = {
-        "user_id": user_id,
-        "token_hash": hash_token(token),
-        "issued_at": now,
-        "expires_at": expires_at,
-        "revoked": False,
-        "ip": getattr(request.client, "host", None),
-        "ua": request.headers.get("user-agent"),
-        "last_seen_at": now,
-    }
-    await db["sessions"].insert_one(session_doc)
-    _set_session_cookie(response, token, expires_at)
-    response.headers["Cache-Control"] = "no-store"
-    return expires_at
-
-
 def _public_user_pg(user: dict) -> UserPublic:
     return _public_user(user)
 
@@ -224,126 +195,37 @@ async def register(
     payload: UserCreate,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        email = normalize_email(payload.email)
-        existing = get_user_by_email(email)
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={"code": "EMAIL_EXISTS", "detail": "Email deja utilise"},
-            )
-        user = create_pg_user(
-            email=email,
-            password_hash=hash_password(payload.password),
-            first_name=payload.first_name.strip(),
-            last_name=payload.last_name.strip(),
-            country=payload.country.strip(),
-            account_type=payload.account_type,
-        )
-        expires_at = _issue_session_pg(response, str(user["id"]), request)
-        return {"user": _public_user_pg(user), "session_expires_at": expires_at}
-
-    db = get_db_instance()
     email = normalize_email(payload.email)
-    existing = await db["users"].find_one({"email": email})
+    existing = get_user_by_email(email)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "EMAIL_EXISTS", "detail": "Email déjà utilisé"},
+            detail={"code": "EMAIL_EXISTS", "detail": "Email deja utilise"},
         )
-
-    now = datetime.now(timezone.utc)
-    user_doc = {
-        "email": email,
-        "password_hash": hash_password(payload.password),
-        "first_name": payload.first_name.strip(),
-        "last_name": payload.last_name.strip(),
-        "country": payload.country.strip(),
-        "account_type": payload.account_type,
-        "roles": ["user"],
-        "plan": "free",
-        "created_at": now,
-    }
-    res = await db["users"].insert_one(user_doc)
-    user_doc["_id"] = res.inserted_id
-
-    notify = settings.SIGNUP_NOTIFY_EMAILS
-    if notify:
-        recipients = [e.strip() for e in notify.split(",") if e.strip()]
-        if recipients:
-            subject = "Nouvelle inscription KORYXA"
-            full_name = f"{user_doc.get('first_name', '').strip()} {user_doc.get('last_name', '').strip()}".strip()
-            created = now.strftime("%Y-%m-%d %H:%M:%S UTC")
-            html_body = f"""
-            <html lang=\"fr\">
-              <body>
-                <p>Nouvelle inscription sur KORYXA.</p>
-                <ul>
-                  <li><strong>Email:</strong> {email}</li>
-                  <li><strong>Nom:</strong> {full_name or 'Non renseigné'}</li>
-                  <li><strong>Date:</strong> {created}</li>
-                </ul>
-              </body>
-            </html>
-            """
-            text_body = f"Nouvelle inscription KORYXA\nEmail: {email}\nNom: {full_name or 'Non renseigne'}\nDate: {created}"
-            for recipient in recipients:
-                asyncio.create_task(send_email_async(subject, recipient, html_body, text_body))
-
-    expires_at = await _issue_session(response, db, user_doc["_id"], request)
-    return {"user": _public_user(user_doc), "session_expires_at": expires_at}
+    user = create_pg_user(
+        email=email,
+        password_hash=hash_password(payload.password),
+        first_name=payload.first_name.strip(),
+        last_name=payload.last_name.strip(),
+        country=payload.country.strip(),
+        account_type=payload.account_type,
+    )
+    expires_at = _issue_session_pg(response, str(user["id"]), request)
+    return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
 
 @router.post("/request-otp")
 async def request_otp(
     payload: OTPRequestPayload,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        email = normalize_email(payload.email)
-        if payload.intent == "login" and not get_user_by_email(email):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compte introuvable. Merci de vous inscrire.")
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_TTL_MIN)
-        code = _generate_otp()
-        replace_otp(email=email, code_hash=hash_password(code), expires_at=expires_at, intent=payload.intent or "auto")
-        subject = "Code de connexion KORYXA"
-        html_body = f"""
-        <html lang=\"fr\">
-            <body>
-                <p>Bonjour,</p>
-                <p>Voici votre code de connexion KORYXA :</p>
-                <p style=\"font-size:24px;font-weight:bold;letter-spacing:4px;\">{code}</p>
-                <p>Il expire dans {settings.OTP_TTL_MIN} minutes.</p>
-            </body>
-        </html>
-        """
-        asyncio.create_task(send_email_async(subject, email, html_body, f"Code: {code}"))
-        response_payload = {"ok": True, "expires_at": expires_at.isoformat()}
-        if settings.ENV != "production" or settings.OTP_DEV_DEBUG:
-            response_payload["debug_code"] = code
-        return response_payload
-
-    db = get_db_instance()
     email = normalize_email(payload.email)
     if payload.intent == "login":
-        existing = await db["users"].find_one({"email": email})
-        if not existing:
+        if not get_user_by_email(email):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compte introuvable. Merci de vous inscrire.")
-    now = datetime.now(timezone.utc)
-    expires_at = now + timedelta(minutes=settings.OTP_TTL_MIN)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_TTL_MIN)
     code = _generate_otp()
-    otp_doc = {
-        "email": email,
-        "code_hash": hash_password(code),
-        "expires_at": expires_at,
-        "attempts": 0,
-        "intent": payload.intent or "auto",
-        "created_at": now,
-    }
-    await db[OTP_COLLECTION].update_one({"email": email}, {"$set": otp_doc}, upsert=True)
-
+    replace_otp(email=email, code_hash=hash_password(code), expires_at=expires_at, intent=payload.intent or "auto")
     subject = "Code de connexion KORYXA"
     html_body = f"""
     <html lang=\"fr\">
@@ -367,68 +249,28 @@ async def login_with_otp(
     payload: OTPVerifyPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        email = normalize_email(payload.email)
-        otp_doc = get_latest_otp(email)
-        now = datetime.now(timezone.utc)
-        expires_at = otp_doc.get("expires_at") if otp_doc else None
-        if not otp_doc or not isinstance(expires_at, datetime) or expires_at <= now:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expire. Merci de renvoyer un OTP.")
-        if not verify_password(payload.code, otp_doc.get("code_hash") or ""):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code invalide.")
-        delete_otp(str(otp_doc["id"]))
-        user = get_user_by_email(email)
-        if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Compte introuvable. Merci de vous inscrire d'abord.")
-        updates: dict[str, str] = {}
-        if payload.first_name and not user.get("first_name"):
-            updates["first_name"] = payload.first_name.strip()
-        if payload.last_name and not user.get("last_name"):
-            updates["last_name"] = payload.last_name.strip()
-        if updates:
-            user = update_user_fields(str(user["id"]), **updates) or user
-        session_expires_at = _issue_session_pg(response, str(user["id"]), request)
-        return {"user": _public_user_pg(user), "session_expires_at": session_expires_at}
-
-    db = get_db_instance()
     email = normalize_email(payload.email)
+    otp_doc = get_latest_otp(email)
     now = datetime.now(timezone.utc)
-    otp_doc = await db[OTP_COLLECTION].find_one({"email": email})
-
     expires_at = otp_doc.get("expires_at") if otp_doc else None
-    if isinstance(expires_at, datetime) and expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-
     if not otp_doc or not isinstance(expires_at, datetime) or expires_at <= now:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expiré. Merci de renvoyer un OTP.")
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expire. Merci de renvoyer un OTP.")
     if not verify_password(payload.code, otp_doc.get("code_hash") or ""):
-        attempts = int(otp_doc.get("attempts", 0)) + 1
-        await db[OTP_COLLECTION].update_one({"_id": otp_doc["_id"]}, {"$set": {"attempts": attempts}})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code invalide.")
-
-    await db[OTP_COLLECTION].delete_one({"_id": otp_doc["_id"]})
-
-    user = await db["users"].find_one({"email": email})
+    delete_otp(str(otp_doc["id"]))
+    user = get_user_by_email(email)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Compte introuvable. Merci de vous inscrire d'abord.",
-        )
-    else:
-        updates = {}
-        if payload.first_name and not user.get("first_name"):
-            updates["first_name"] = payload.first_name.strip()
-        if payload.last_name and not user.get("last_name"):
-            updates["last_name"] = payload.last_name.strip()
-        if updates:
-            await db["users"].update_one({"_id": user["_id"]}, {"$set": updates})
-            user.update(updates)
-
-    expires_at = await _issue_session(response, db, user["_id"], request)
-    return {"user": _public_user(user), "session_expires_at": expires_at}
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Compte introuvable. Merci de vous inscrire d'abord.")
+    updates: dict[str, str] = {}
+    if payload.first_name and not user.get("first_name"):
+        updates["first_name"] = payload.first_name.strip()
+    if payload.last_name and not user.get("last_name"):
+        updates["last_name"] = payload.last_name.strip()
+    if updates:
+        user = update_user_fields(str(user["id"]), **updates) or user
+    session_expires_at = _issue_session_pg(response, str(user["id"]), request)
+    return {"user": _public_user_pg(user), "session_expires_at": session_expires_at}
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -436,79 +278,26 @@ async def login(
     payload: LoginPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        user = get_user_by_email(normalize_email(payload.email))
-        if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides")
-        if not verify_password(payload.password, user.get("password_hash") or ""):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides")
-        expires_at = _issue_session_pg(response, str(user["id"]), request)
-        return {"user": _public_user_pg(user), "session_expires_at": expires_at}
-
-    db = get_db_instance()
-    email = normalize_email(payload.email)
-    user = await db["users"].find_one({"email": email})
+    user = get_user_by_email(normalize_email(payload.email))
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides")
-
-    stored_hash = user.get("password_hash") or user.get("password")
-    if not stored_hash or not verify_password(payload.password, stored_hash):
+    if not verify_password(payload.password, user.get("password_hash") or ""):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Identifiants invalides")
-
-    # Promote legacy password field to password_hash
-    if "password_hash" not in user or not user.get("password_hash"):
-        await db["users"].update_one({"_id": user["_id"]}, {"$set": {"password_hash": stored_hash}, "$unset": {"password": ""}})
-        user["password_hash"] = stored_hash
-
-    expires_at = await _issue_session(response, db, user["_id"], request)
-    return {"user": _public_user(user), "session_expires_at": expires_at}
+    expires_at = _issue_session_pg(response, str(user["id"]), request)
+    return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
 
 @router.post("/dev-login", response_model=AuthResponse)
 async def dev_login(
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        if not _dev_auth_enabled():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-        user = upsert_dev_user(_build_dev_user_doc(datetime.now(timezone.utc)))
-        expires_at = _issue_session_pg(response, str(user["id"]), request)
-        return {"user": _public_user_pg(user), "session_expires_at": expires_at}
-
-    db = get_db_instance()
     if not _dev_auth_enabled():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-
-    now = datetime.now(timezone.utc)
-    dev_doc = _build_dev_user_doc(now)
-    email = dev_doc["email"]
-    user = await db["users"].find_one({"email": email})
-
-    if not user:
-        res = await db["users"].insert_one(dev_doc)
-        dev_doc["_id"] = res.inserted_id
-        user = dev_doc
-    else:
-        updates = {}
-        for key in ("first_name", "last_name", "country", "account_type", "plan", "workspace_role"):
-            if user.get(key) != dev_doc.get(key):
-                updates[key] = dev_doc[key]
-        existing_roles = user.get("roles") or []
-        if not isinstance(existing_roles, list):
-            existing_roles = [str(existing_roles)]
-        merged_roles = list(dict.fromkeys([*existing_roles, "user", "dev"]))
-        if merged_roles != existing_roles:
-            updates["roles"] = merged_roles
-        if updates:
-            await db["users"].update_one({"_id": user["_id"]}, {"$set": updates})
-            user.update(updates)
-
-    expires_at = await _issue_session(response, db, user["_id"], request)
-    return {"user": _public_user(user), "session_expires_at": expires_at}
+    user = upsert_dev_user(_build_dev_user_doc(datetime.now(timezone.utc)))
+    expires_at = _issue_session_pg(response, str(user["id"]), request)
+    return {"user": _public_user_pg(user), "session_expires_at": expires_at}
 
 
 @router.get("/me", response_model=UserPublic)
@@ -520,21 +309,11 @@ async def me(current: dict = Depends(get_current_user)):
 async def set_workspace_role(
     payload: RoleUpdatePayload,
     current: dict = Depends(get_current_user),
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        user = update_user_fields(str(current["_id"]), workspace_role=payload.role)
-        current["workspace_role"] = payload.role
-        if user:
-            current.update(user)
-        return {"workspace_role": payload.role}
-
-    db = get_db_instance()
-    await db["users"].update_one(
-        {"_id": current["_id"]},
-        {"$set": {"workspace_role": payload.role}},
-    )
+    user = update_user_fields(str(current["_id"]), workspace_role=payload.role)
     current["workspace_role"] = payload.role
+    if user:
+        current.update(user)
     return {"workspace_role": payload.role}
 
 
@@ -542,25 +321,10 @@ async def set_workspace_role(
 async def logout(
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        token = request.cookies.get(settings.SESSION_COOKIE_NAME)
-        if token:
-            revoke_session_by_token(hash_token(token))
-        _clear_session_cookie(response)
-        response.headers["Cache-Control"] = "no-store"
-        return {"ok": True}
-
-    db = get_db_instance()
     token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if token:
-        token_hash = hash_token(token)
-        now = datetime.now(timezone.utc)
-        await db["sessions"].update_many(
-            {"token_hash": token_hash, "revoked": False},
-            {"$set": {"revoked": True, "revoked_at": now}},
-        )
+        revoke_session_by_token(hash_token(token))
     _clear_session_cookie(response)
     response.headers["Cache-Control"] = "no-store"
     return {"ok": True}
@@ -570,72 +334,23 @@ async def logout(
 async def forgot_password(
     payload: ForgotPasswordPayload,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        email = normalize_email(payload.email)
-        user = get_user_by_email(email)
-        if not user:
-            return {"ok": True}
-        token = generate_session_token()
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.RESET_TOKEN_TTL_MIN)
-        create_reset_token(user_id=str(user["id"]), token_hash=hash_token(token), expires_at=expires_at)
-        params = urlencode({"token": token, "email": email})
-        reset_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/reset?{params}"
-        first_name = user.get("first_name", "") or "membre"
-        subject = "Reinitialisation de votre mot de passe KORYXA"
-        html_body = f"<p>Bonjour {first_name},</p><p>Ouvrez ce lien : <a href=\"{reset_url}\">{reset_url}</a></p>"
-        try:
-            await send_email_async(subject=subject, recipient=email, html_body=html_body, text_body=reset_url)
-        except Exception as exc:
-            logger.warning("Failed to send password reset email: %s", exc)
-        return {"ok": True}
-
-    db = get_db_instance()
     email = normalize_email(payload.email)
-    user = await db["users"].find_one({"email": email})
+    user = get_user_by_email(email)
     if not user:
-        # Toujours répondre ok pour éviter l'énumération d'emails
         return {"ok": True}
-
     token = generate_session_token()
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.RESET_TOKEN_TTL_MIN)
-    doc = {
-        "user_id": user["_id"],
-        "token_hash": hash_token(token),
-        "expires_at": expires_at,
-        "used": False,
-        "created_at": datetime.now(timezone.utc),
-        "ip": getattr(request.client, "host", None),
-        "ua": request.headers.get("user-agent"),
-    }
-    await db["password_reset_tokens"].insert_one(doc)
-
+    create_reset_token(user_id=str(user["id"]), token_hash=hash_token(token), expires_at=expires_at)
     params = urlencode({"token": token, "email": email})
     reset_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/reset?{params}"
-    subject = "Réinitialisation de votre mot de passe KORYXA"
+    subject = "Reinitialisation de votre mot de passe KORYXA"
     first_name = user.get("first_name", "") or "membre"
-    html_body = f"""
-    <p>Bonjour {first_name},</p>
-    <p>Vous avez demandé à réinitialiser votre mot de passe KORYXA.</p>
-    <p>Veuillez cliquer sur le lien ci-dessous (valide {settings.RESET_TOKEN_TTL_MIN} minutes) :</p>
-    <p><a href="{reset_url}">{reset_url}</a></p>
-    <p>Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.</p>
-    <p>L’équipe KORYXA</p>
-    """
-    text_body = (
-        f"Bonjour {first_name},\n\n"
-        "Vous avez demandé à réinitialiser votre mot de passe KORYXA.\n"
-        f"Veuillez ouvrir le lien suivant (valide {settings.RESET_TOKEN_TTL_MIN} minutes) :\n{reset_url}\n\n"
-        "Si vous n'êtes pas à l'origine de cette demande, ignorez ce courriel.\n\n"
-        "L’équipe KORYXA"
-    )
-
+    html_body = f"<p>Bonjour {first_name},</p><p>Ouvrez ce lien : <a href=\"{reset_url}\">{reset_url}</a></p>"
     try:
-        await send_email_async(subject=subject, recipient=email, html_body=html_body, text_body=text_body)
+        await send_email_async(subject=subject, recipient=email, html_body=html_body, text_body=reset_url)
     except Exception as exc:
         logger.warning("Failed to send password reset email: %s", exc)
-
     return {"ok": True}
 
 
@@ -644,68 +359,17 @@ async def reset_password(
     payload: ResetPasswordPayload,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    if not settings.REQUIRE_MONGO:
-        email = normalize_email(payload.email)
-        user = get_user_by_email(email)
-        if not user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expire")
-        token_doc = get_valid_reset_token(user_id=str(user["id"]), token_hash=hash_token(payload.token))
-        if not token_doc:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expire")
-        update_user_fields(str(user["id"]), password_hash=hash_password(payload.new_password))
-        mark_reset_token_used(str(token_doc["id"]))
-        revoke_sessions_for_user(str(user["id"]))
-        _clear_session_cookie(response)
-        response.headers["Cache-Control"] = "no-store"
-        return {"ok": True}
-
-    db = get_db_instance()
     email = normalize_email(payload.email)
-    user = await db["users"].find_one({"email": email})
+    user = get_user_by_email(email)
     if not user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expiré")
-
-    now = datetime.now(timezone.utc)
-    token_hash = hash_token(payload.token)
-    token_doc = await db["password_reset_tokens"].find_one(
-        {
-            "user_id": user["_id"],
-            "token_hash": token_hash,
-            "used": False,
-            "expires_at": {"$gt": now},
-        }
-    )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expire")
+    token_doc = get_valid_reset_token(user_id=str(user["id"]), token_hash=hash_token(payload.token))
     if not token_doc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expiré")
-
-    new_hash = hash_password(payload.new_password)
-    await db["users"].update_one(
-        {"_id": user["_id"]},
-        {
-            "$set": {
-                "password_hash": new_hash,
-                "password_updated_at": now,
-            },
-            "$unset": {"password": ""},
-        },
-    )
-    await db["password_reset_tokens"].update_one(
-        {"_id": token_doc["_id"]},
-        {
-            "$set": {
-                "used": True,
-                "used_at": now,
-                "used_ip": getattr(request.client, "host", None),
-                "used_ua": request.headers.get("user-agent"),
-            }
-        },
-    )
-    await db["sessions"].update_many(
-        {"user_id": user["_id"], "revoked": False},
-        {"$set": {"revoked": True, "revoked_at": now}},
-    )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token invalide ou expire")
+    update_user_fields(str(user["id"]), password_hash=hash_password(payload.new_password))
+    mark_reset_token_used(str(token_doc["id"]))
+    revoke_sessions_for_user(str(user["id"]))
     _clear_session_cookie(response)
     response.headers["Cache-Control"] = "no-store"
     return {"ok": True}
@@ -716,6 +380,5 @@ async def signup_alias(
     payload: UserCreate,
     response: Response,
     request: Request,
-    db: AsyncIOMotorDatabase | None = None,
 ):
-    return await register(payload, response, request, db)
+    return await register(payload, response, request)

@@ -23,7 +23,6 @@ import cohere
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.core.config import get_allowed_hosts, is_production_env, settings
-from app.db.mongo import close_mongo_connection, connect_to_mongo, get_db_instance
 from app.services.postgres_bootstrap import (
     _pg_relation_exists,
     close_pg_pool,
@@ -71,29 +70,6 @@ app = FastAPI(
     ],
 )
 logger = logging.getLogger(__name__)
-MONGO_ROUTES_ENABLED = settings.REQUIRE_MONGO
-if MONGO_ROUTES_ENABLED:
-    from app.routers.innova import router as innova_router
-    from app.routers.rag import router as rag_router
-if MONGO_ROUTES_ENABLED:
-    from app.routers.posts import router as posts_router
-    from app.routers.messages import router as messages_router
-    from app.routers.groups import router as groups_router
-    from app.routers.contact import router as contact_router
-    from app.routers.chatlaya import router as chatlaya_router
-    from app.routers.diagnostics import router as diag_router
-    from app.routers.me import router as me_router
-    from app.routers.metrics import router as metrics_router
-    from app.routers.opportunities import router as opportunities_router
-    from app.routers.engine import router as engine_router
-    from app.routers.marketplace import router as market_router
-    from app.routers.meet_api import router as meet_router
-    from app.routers.profiles import router as profiles_router
-    from app.routers.profiles_v1 import router as profiles_v1_router
-    from app.routers.missions import router as missions_router
-    from app.routers.studio import router as studio_router
-    from app.routers import studio_missions as studio_missions_router
-    from app.routers.skills import router as skills_router
 CO: Any = None
 LEAD_RATE_LIMIT_WINDOW_S = int(os.environ.get("ENTERPRISE_LEADS_RATE_WINDOW_S", "60"))
 LEAD_RATE_LIMIT_MAX = int(os.environ.get("ENTERPRISE_LEADS_RATE_MAX", "5"))
@@ -272,8 +248,6 @@ def _validate_production_config() -> list[str]:
 
     if settings.DEV_AUTH_BYPASS:
         issues.append("DEV_AUTH_BYPASS must be false in production")
-    if settings.REQUIRE_MONGO and not (settings.MONGO_URI or "").strip():
-        issues.append("MONGO_URI missing while REQUIRE_MONGO=true")
     if not get_allowed_hosts():
         issues.append("ALLOWED_HOSTS is empty or invalid")
     return issues
@@ -513,10 +487,6 @@ async def on_startup():
         raise RuntimeError(
             "Invalid production configuration: " + "; ".join(production_config_issues)
         )
-    mongo_connected = False
-    if settings.REQUIRE_MONGO:
-        await connect_to_mongo()
-        mongo_connected = True
     # Verify embedding dimension dynamically and adjust if needed
     try:
         actual = detect_embed_dim()
@@ -531,33 +501,6 @@ async def on_startup():
     except Exception:
         pass
     
-    # Ensure indexes
-    if mongo_connected:
-        try:
-            from app.db.mongo import get_db
-            from fastapi import Depends
-
-            db = await get_db()  # type: ignore
-            await db["market_offers"].create_index([("status", 1), ("created_at", -1)])
-            await db["market_offers"].create_index([("country", 1)])
-            await db["mission_offers"].create_index([("mission_id", 1), ("prestataire_id", 1)])
-            await db["missions"].create_index([("user_id", 1), ("status", 1)])
-            await db["mission_events"].create_index([("mission_id", 1), ("ts", -1)])
-            await db["mission_messages"].create_index([("mission_id", 1), ("created_at", 1)])
-            await db["mission_milestones"].create_index([("mission_id", 1)])
-            await db["mission_escalations"].create_index([("decided_at", -1)])
-            await db["assignments"].create_index([("offer_id", 1), ("user_id", 1)], unique=True)
-            await db["meet_posts"].create_index([("country", 1), ("created_at", -1)])
-            await db["notifications"].create_index([("user_id", 1), ("created_at", -1)])
-            await db["metrics_product"].create_index([("name", 1), ("ts", -1)])
-            await db["me_profiles"].create_index([("user_id", 1)], unique=True)
-            await db["decisions_audit"].create_index([("offer_id", 1), ("ts", -1)])
-            await db["billing_events"].create_index([("provider", 1), ("event_fingerprint", 1)], unique=True)
-            await db["billing_transactions"].create_index([("paydunya_token", 1)], unique=True, sparse=True)
-            await db["billing_transactions"].create_index([("user_id", 1), ("created_at", -1)])
-            await db["users"].create_index([("paydunya_token", 1)], sparse=True)
-        except Exception:
-            pass
     init_pg_pool()
     try:
         ensure_enterprise_leads_table()
@@ -569,8 +512,6 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     close_pg_pool()
-    if settings.REQUIRE_MONGO:
-        await close_mongo_connection()
 
 
 START_TIME = __import__("time").time()
@@ -612,22 +553,13 @@ async def root():
 
 @app.get("/health", include_in_schema=not is_production_env())
 async def health():
-    mongo_ok = not settings.REQUIRE_MONGO
-    if settings.REQUIRE_MONGO:
-        try:
-            db = get_db_instance()
-            await db.command("ping")
-            mongo_ok = True
-        except Exception:
-            mongo_ok = False
     uptime = int(__import__("time").time() - START_TIME)
     config_issues = _validate_production_config()
     vector_index = True  # placeholder
     queue_depth = 0      # placeholder
     return {
-        "status": "ok" if mongo_ok and not config_issues else "down",
+        "status": "ok" if not config_issues else "down",
         "db": settings.DB_NAME,
-        "mongo": "disabled" if not settings.REQUIRE_MONGO else ("ok" if mongo_ok else "fail"),
         "vector_index": vector_index,
         "config_issues": config_issues,
         "queue_depth": queue_depth,

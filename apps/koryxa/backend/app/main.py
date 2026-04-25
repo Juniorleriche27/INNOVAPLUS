@@ -13,7 +13,6 @@ from typing import Any, Literal
 from fastapi import FastAPI, Depends, HTTPException, Query, Request, Response
 from fastapi import APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlparse
@@ -475,10 +474,6 @@ app.add_middleware(
 allowed_hosts = get_allowed_hosts()
 if allowed_hosts:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
-
-if is_production_env() and settings.ENFORCE_HTTPS_REDIRECT:
-    app.add_middleware(HTTPSRedirectMiddleware)
-
 
 @app.on_event("startup")
 async def on_startup():

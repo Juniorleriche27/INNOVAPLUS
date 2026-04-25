@@ -963,11 +963,6 @@ async def enterprise_leads_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=500, detail="Webhook handling error")
 
-# Only include KORYXA core routers at root.
-if MONGO_ROUTES_ENABLED:
-    app.include_router(innova_router)
-    app.include_router(rag_router)
-
 # Mount API routes at root; /innova/api prefix is normalized by middleware.
 innova_api = APIRouter(prefix="")
 innova_api.include_router(auth_router)
@@ -979,30 +974,7 @@ innova_api.include_router(trajectoire_router)
 innova_api.include_router(public_enterprise_router)
 innova_api.include_router(public_products_router)
 innova_api.include_router(notifications_router)
-if MONGO_ROUTES_ENABLED:
-    innova_api.include_router(engine_router)
-    innova_api.include_router(groups_router)
-    innova_api.include_router(posts_router)
-    innova_api.include_router(messages_router)
-    innova_api.include_router(contact_router)
-    innova_api.include_router(diag_router)
-    innova_api.include_router(opportunities_router)
-    innova_api.include_router(market_router)
-    innova_api.include_router(meet_router)
-    innova_api.include_router(me_router)
-    innova_api.include_router(metrics_router)
-    innova_api.include_router(profiles_router)
-    innova_api.include_router(profiles_v1_router)
-    innova_api.include_router(missions_router)
-    innova_api.include_router(studio_router)
-    innova_api.include_router(skills_router)
-    innova_api.include_router(studio_missions_router.router)
-    innova_api.include_router(chatlaya_router)
 app.include_router(innova_api)
-if MONGO_ROUTES_ENABLED:
-    innova_rag = APIRouter(prefix="/innova")
-    innova_rag.include_router(rag_router)
-    app.include_router(innova_rag)
 
 # Serve public storage similar to Laravel's /storage symlink
 app.mount("/storage", StaticFiles(directory="storage/public"), name="storage")

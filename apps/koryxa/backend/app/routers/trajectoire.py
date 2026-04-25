@@ -1,40 +1,48 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
+from datetime import datetime, timezone
 from typing import Any
-from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.core.config import settings
 from app.core.public_access import ensure_guest_id, get_guest_id
-from app.db.mongo import get_db
+from app.db.mongo import get_db, get_db_instance
 from app.deps.auth import get_current_user, get_current_user_optional
-from app.routers.myplanning import _dual_create_task, _myplanning_tasks_store, _pg_create_task
-from app.schemas.myplanning import TaskCreatePayload
+from app.repositories.trajectory_pg import (
+    claim_flow_for_user,
+    create_binding,
+    create_flow,
+    get_flow_for_guest,
+    get_flow_for_user,
+    list_bindings,
+    mark_flow_enrolled,
+    submit_flow_lead,
+    update_flow_state,
+)
 from app.schemas.partner_public import PublicPartnerListResponse
 from app.schemas.trajectory import (
     TrajectoryCockpitActivationResponse,
     TrajectoryCockpitContextResponse,
     TrajectoryFlowResponse,
+    TrajectoryLeadSubmitPayload,
     TrajectoryOnboardingPayload,
     TrajectoryProofCreatePayload,
     TrajectoryProgressUpdatePayload,
 )
-from app.services.partner_registry import list_public_partners
+from app.services.partner_registry import DEFAULT_PARTNERS, list_public_partners
 from app.services.trajectory_service import (
+    BlueprintAIGenerationError,
     build_trajectory_execution_stages,
     build_trajectory_experience,
+    compute_blueprint_certificate,
+    compute_sprint,
     create_proof_submission,
     recompute_trajectory_state,
     trajectory_context_id,
     trajectory_result_benefits,
     trajectory_result_next_actions,
 )
-from app.utils.ids import to_object_id
-
-
 router = APIRouter(prefix="/trajectoire", tags=["trajectoire"])
 
 
@@ -46,6 +54,8 @@ def _serialize_flow(doc: dict[str, Any]) -> dict[str, Any]:
         "onboarding": doc.get("onboarding") or {},
         "diagnostic": doc.get("diagnostic"),
         "progress_plan": doc.get("progress_plan"),
+        "final_recommendation": doc.get("final_recommendation"),
+        "submitted_to_team": bool(doc.get("submitted_to_team", False)),
         "proofs": list(doc.get("proofs") or []),
         "verified_profile": doc.get("verified_profile"),
         "opportunity_targets": list(doc.get("opportunity_targets") or []),
@@ -63,25 +73,47 @@ def _find_task(plan: dict[str, Any], task_key: str) -> dict[str, Any] | None:
 
 
 def _cockpit_url(flow_id: str, context_id: str) -> str:
-    return f"/myplanning/app/koryxa?flow_id={quote(flow_id)}&context_id={quote(context_id)}"
+    return f"/trajectoire/espace?flow_id={flow_id}&context_id={context_id}"
 
 
 def _cockpit_login_url(flow_id: str, context_id: str) -> str:
-    redirect = quote(_cockpit_url(flow_id, context_id), safe="")
-    return f"/myplanning/login?redirect={redirect}"
-
-
-def _request_stub() -> SimpleNamespace:
-    return SimpleNamespace(headers={})
+    return _cockpit_url(flow_id, context_id)
 
 
 async def _resolve_flow(
     flow_id: str,
     request: Request,
     response: Response | None,
-    db: AsyncIOMotorDatabase,
     current: dict | None,
 ) -> dict[str, Any]:
+    if not settings.REQUIRE_MONGO:
+        guest_id = get_guest_id(request)
+        if current:
+            flow = get_flow_for_user(flow_id, str(current["_id"]))
+            if flow:
+                return flow
+            if guest_id:
+                flow = get_flow_for_guest(flow_id, guest_id)
+                if flow and not flow.get("user_id"):
+                    claimed = claim_flow_for_user(flow_id, str(current["_id"]))
+                    if claimed:
+                        return claimed
+            flow = claim_flow_for_user(flow_id, str(current["_id"]))
+            if flow:
+                return flow
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
+
+        resolved_guest_id = ensure_guest_id(request, response) if response is not None else guest_id
+        if not resolved_guest_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invitée introuvable")
+        flow = get_flow_for_guest(flow_id, resolved_guest_id)
+        if not flow:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flow trajectoire introuvable")
+        return flow
+
+    db = get_db_instance()
+    from app.utils.ids import to_object_id
+
     flow_oid = to_object_id(flow_id)
     guest_id = get_guest_id(request)
 
@@ -127,86 +159,18 @@ async def _resolve_flow(
     return flow
 
 
-def _priority_for_stage(order: int) -> str:
-    if order <= 1:
-        return "urgent_important"
-    if order == 2:
-        return "important_not_urgent"
-    return "urgent_not_important"
-
-
-def _duration_for_task(task: dict[str, Any], stage_order: int) -> int:
-    if task.get("proof_required"):
-        return 60
-    if stage_order >= 3:
-        return 50
-    return 40
-
-
-def _build_myplanning_task_payload(
-    flow: dict[str, Any],
-    context_id: str,
-    stage: dict[str, Any],
-    task: dict[str, Any],
-    task_index: int,
-) -> TaskCreatePayload:
-    flow_id = str(flow["_id"])
-    stage_order = int(stage.get("order") or 1)
-    due_at = datetime.utcnow() + timedelta(days=min(21, max(1, (stage_order - 1) * 5 + task_index + 1)))
-    task_status = str(task.get("status") or "todo")
-    kanban_state = "done" if task_status == "done" else "in_progress" if task_status == "in_progress" else "todo"
-    return TaskCreatePayload(
-        title=str(task.get("title") or "Action KORYXA"),
-        description=str(task.get("description") or "Action issue du plan de progression KORYXA."),
-        category="KORYXA",
-        context_type="professional",
-        context_id=context_id,
-        priority_eisenhower=_priority_for_stage(stage_order),
-        kanban_state=kanban_state,
-        high_impact=bool(task.get("proof_required")) or stage_order <= 2,
-        estimated_duration_minutes=_duration_for_task(task, stage_order),
-        due_datetime=due_at,
-        linked_goal=f"koryxa:{flow_id}:{stage.get('key')}:{task.get('key')}",
-        source="ia",
-        status="todo",
-        comments="Tâche générée depuis le blueprint métier KORYXA. Sa complétion n'entraîne pas automatiquement une validation KORYXA.",
-    )
-
-
-async def _create_myplanning_task(
-    payload: TaskCreatePayload,
-    db: AsyncIOMotorDatabase,
-    current: dict,
-) -> str:
-    store = _myplanning_tasks_store()
-    if store == "postgres":
-        created = await _pg_create_task(payload, _request_stub(), db, current)
-        return created.id
-    if store == "dual":
-        created = await _dual_create_task(payload, _request_stub(), db, current)
-        return created.id
-
-    now = datetime.utcnow()
-    doc = payload.model_dump(exclude_none=True)
-    doc["user_id"] = current["_id"]
-    doc["source"] = doc.get("source") or "ia"
-    if doc.get("kanban_state") == "done":
-        doc["completed_at"] = now
-    doc["created_at"] = now
-    doc["updated_at"] = now
-    result = await db["myplanning_tasks"].insert_one(doc)
-    return str(result.inserted_id)
-
-
 async def _ensure_cockpit_bindings(
     flow: dict[str, Any],
-    db: AsyncIOMotorDatabase,
     current: dict,
 ) -> tuple[str, dict[str, dict[str, Any]], int]:
     context_id = trajectory_context_id(str(flow["_id"]))
-    existing = await db["trajectory_task_bindings"].find(
-        {"flow_id": flow["_id"], "user_id": current["_id"]}
-    ).to_list(length=200)
+    if not settings.REQUIRE_MONGO:
+        existing = list_bindings(str(flow["_id"]), str(current["_id"]))
+    else:
+        db = get_db_instance()
+        existing = await db["trajectory_task_bindings"].find(
+            {"flow_id": flow["_id"], "user_id": current["_id"]}
+        ).to_list(length=200)
     binding_map = {str(item.get("koryxa_task_key") or ""): item for item in existing}
     created_task_count = 0
     now = datetime.now(timezone.utc)
@@ -217,14 +181,9 @@ async def _ensure_cockpit_bindings(
             if not task_key:
                 continue
             binding = binding_map.get(task_key)
-            if binding and binding.get("myplanning_task_id"):
+            if binding:
                 continue
 
-            myplanning_task_id = await _create_myplanning_task(
-                _build_myplanning_task_payload(flow, context_id, stage, task, task_index),
-                db=db,
-                current=current,
-            )
             created_task_count += 1
             binding_doc = {
                 "flow_id": flow["_id"],
@@ -232,22 +191,29 @@ async def _ensure_cockpit_bindings(
                 "context_id": context_id,
                 "koryxa_stage_key": str(stage.get("key") or ""),
                 "koryxa_task_key": task_key,
-                "myplanning_task_id": myplanning_task_id,
                 "proof_required": bool(task.get("proof_required", False)),
                 "feature_gate": str(task.get("feature_gate") or "") or None,
                 "created_at": now,
                 "updated_at": now,
             }
-            if binding and binding.get("_id"):
-                await db["trajectory_task_bindings"].update_one(
-                    {"_id": binding["_id"]},
-                    {"$set": {**binding_doc, "created_at": binding.get("created_at") or now}},
+            if not settings.REQUIRE_MONGO:
+                created = create_binding(
+                    flow_id=str(flow["_id"]),
+                    user_id=str(current["_id"]),
+                    context_id=context_id,
+                    stage_key=str(stage.get("key") or ""),
+                    task_key=task_key,
+                    proof_required=bool(task.get("proof_required", False)),
+                    feature_gate=str(task.get("feature_gate") or "") or None,
+                    now=now,
                 )
-                binding_doc["_id"] = binding["_id"]
+                if created:
+                    binding_doc["_id"] = created["id"]
             else:
+                db = get_db_instance()
                 result = await db["trajectory_task_bindings"].insert_one(binding_doc)
                 binding_doc["_id"] = result.inserted_id
-            binding_map[task_key] = binding_doc
+        binding_map[task_key] = binding_doc
 
     return context_id, binding_map, created_task_count
 
@@ -306,11 +272,20 @@ async def create_trajectory_onboarding(
     payload: TrajectoryOnboardingPayload,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     now = datetime.now(timezone.utc)
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
+    if not settings.REQUIRE_MONGO:
+        doc = create_flow(
+            guest_id=guest_id,
+            user_id=str(current["_id"]) if current else None,
+            onboarding=payload.model_dump(),
+            status="onboarded",
+            now=now,
+        )
+        return _serialize_flow(doc)
+    db = get_db_instance()
     doc: dict[str, Any] = {
         "guest_id": guest_id,
         "user_id": current["_id"] if current else None,
@@ -329,42 +304,81 @@ async def create_trajectory_onboarding(
     return _serialize_flow(doc)
 
 
+def _build_final_recommendation(flow: dict[str, Any]) -> dict[str, Any]:
+    diagnostic = flow.get("diagnostic") or {}
+    progress_plan = flow.get("progress_plan") or {}
+    recommended = diagnostic.get("recommended_trajectory") or {}
+    return {
+        "headline": str(recommended.get("title") or "Parcours Formation IA recommandé"),
+        "summary": str(diagnostic.get("profile_summary") or "Votre diagnostic Formation IA est prêt."),
+        "training_path_title": str(progress_plan.get("title") or recommended.get("title") or "Parcours recommandé"),
+        "training_path_steps": [
+            str(stage.get("title") or "").strip()
+            for stage in (progress_plan.get("stages") or [])[:5]
+            if str(stage.get("title") or "").strip()
+        ],
+        "next_steps": [
+            str(item).strip()
+            for item in (diagnostic.get("next_steps") or progress_plan.get("next_actions") or [])[:3]
+            if str(item).strip()
+        ],
+    }
+
+
 @router.post("/diagnostic", response_model=TrajectoryFlowResponse)
 async def create_trajectory_diagnostic(
     payload: dict[str, str],
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     flow_id = (payload.get("flow_id") or "").strip()
     if not flow_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="flow_id requis")
 
-    flow = await _resolve_flow(flow_id, request, response, db, current)
-
-    partner_catalog = await list_public_partners(db)
-    experience = await build_trajectory_experience(flow.get("onboarding") or {}, partner_catalog=partner_catalog)
+    flow = await _resolve_flow(flow_id, request, response, current)
+    partner_catalog = DEFAULT_PARTNERS if not settings.REQUIRE_MONGO else await list_public_partners(get_db_instance())
+    try:
+        experience = await build_trajectory_experience(flow.get("onboarding") or {}, partner_catalog=partner_catalog)
+    except BlueprintAIGenerationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
     now = datetime.now(timezone.utc)
     update_doc = {
         "diagnostic": experience["diagnostic"],
         "progress_plan": experience["progress_plan"],
+        "final_recommendation": _build_final_recommendation(experience),
         "proofs": experience["proofs"],
         "verified_profile": experience["verified_profile"],
         "opportunity_targets": experience["opportunity_targets"],
-        "status": experience["status"],
+        "status": "diagnosed",
         "updated_at": now,
     }
-    await db["trajectory_flows"].update_one({"_id": flow["_id"]}, {"$set": update_doc})
+    if not settings.REQUIRE_MONGO:
+        update_flow_state(
+            str(flow["_id"]),
+            diagnostic=experience["diagnostic"],
+            progress_plan=experience["progress_plan"],
+            final_recommendation=update_doc["final_recommendation"],
+            proofs=experience["proofs"],
+            verified_profile=experience["verified_profile"],
+            opportunity_targets=experience["opportunity_targets"],
+            status="diagnosed",
+            updated_at=now,
+        )
+    else:
+        db = get_db_instance()
+        await db["trajectory_flows"].update_one({"_id": flow["_id"]}, {"$set": update_doc})
     flow.update(update_doc)
     return _serialize_flow(flow)
 
 
 @router.get("/partners/public", response_model=PublicPartnerListResponse)
 async def list_trajectory_partners(
-    db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    return {"items": await list_public_partners(db)}
+    return {"items": DEFAULT_PARTNERS if not settings.REQUIRE_MONGO else await list_public_partners(get_db_instance())}
 
 
 @router.get("/flows/{flow_id}", response_model=TrajectoryFlowResponse)
@@ -372,18 +386,30 @@ async def get_trajectory_flow(
     flow_id: str,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
-    flow = await _resolve_flow(flow_id, request, response, db, current)
+    flow = await _resolve_flow(flow_id, request, response, current)
 
     if flow.get("diagnostic") and flow.get("progress_plan"):
         refreshed = recompute_trajectory_state(flow)
         refreshed["updated_at"] = datetime.now(timezone.utc)
-        await db["trajectory_flows"].update_one(
-            {"_id": flow["_id"]},
-            {
-                "$set": {
+        if not settings.REQUIRE_MONGO:
+            update_flow_state(
+                str(flow["_id"]),
+                diagnostic=refreshed["diagnostic"],
+                progress_plan=refreshed["progress_plan"],
+                final_recommendation=_build_final_recommendation(refreshed),
+                proofs=refreshed["proofs"],
+                verified_profile=refreshed["verified_profile"],
+                opportunity_targets=refreshed["opportunity_targets"],
+                status=refreshed["status"],
+                updated_at=refreshed["updated_at"],
+            )
+        else:
+            db = get_db_instance()
+            await db["trajectory_flows"].update_one(
+                {"_id": flow["_id"]},
+                {"$set": {
                     "diagnostic": refreshed["diagnostic"],
                     "progress_plan": refreshed["progress_plan"],
                     "proofs": refreshed["proofs"],
@@ -391,11 +417,36 @@ async def get_trajectory_flow(
                     "opportunity_targets": refreshed["opportunity_targets"],
                     "status": refreshed["status"],
                     "updated_at": refreshed["updated_at"],
-                }
-            },
-        )
+                }},
+            )
         flow = refreshed
     return _serialize_flow(flow)
+
+
+@router.post("/flows/{flow_id}/submit-contact")
+async def submit_trajectory_contact(
+    flow_id: str,
+    payload: TrajectoryLeadSubmitPayload,
+    request: Request,
+    response: Response,
+    current: dict | None = Depends(get_current_user_optional),
+):
+    flow = await _resolve_flow(flow_id, request, response, current)
+    if not flow.get("diagnostic") or not flow.get("progress_plan"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré avant l'envoi.")
+    submitted_at = datetime.now(timezone.utc)
+    if not settings.REQUIRE_MONGO:
+        submit_flow_lead(
+            flow_id=str(flow["_id"]),
+            first_name=payload.first_name.strip(),
+            last_name=payload.last_name.strip(),
+            email=str(payload.email).strip().lower(),
+            whatsapp_country_code=payload.whatsapp_country_code.strip(),
+            whatsapp_number=payload.whatsapp_number.strip(),
+            submitted_at=submitted_at,
+        )
+        return {"ok": True, "flow_id": str(flow["_id"]), "submitted_to_team": True}
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Mode Mongo désactivé pour cette action.")
 
 
 @router.patch("/flows/{flow_id}/progress", response_model=TrajectoryFlowResponse)
@@ -404,66 +455,9 @@ async def update_trajectory_progress(
     payload: TrajectoryProgressUpdatePayload,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
-    flow = await _resolve_flow(flow_id, request, response, db, current)
-    if not flow.get("progress_plan"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré d'abord.")
-
-    progress_plan = flow.get("progress_plan") or {}
-    task = _find_task(progress_plan, payload.step_key)
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Étape introuvable")
-    if task.get("proof_required") and payload.status == "done":
-        validated_proofs = sum(
-            1
-            for proof in flow.get("proofs") or []
-            if proof.get("task_key") == payload.step_key and proof.get("status") == "validated"
-        )
-        if validated_proofs == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ajoutez d'abord une preuve validée avant de marquer cette étape comme terminée.",
-            )
-
-    task["status"] = payload.status
-    if payload.proof and task.get("proof_required"):
-        proof_payload = {
-            "stage_key": next(
-                (
-                    stage.get("key")
-                    for stage in progress_plan.get("stages") or []
-                    if any(item.get("key") == payload.step_key for item in stage.get("tasks") or [])
-                ),
-                "",
-            ),
-            "task_key": payload.step_key,
-            "proof_type": "summary_note",
-            "value": payload.proof,
-            "summary": "Preuve fournie depuis la mise à jour rapide de progression.",
-        }
-        flow.setdefault("proofs", []).append(create_proof_submission(proof_payload))
-
-    flow["progress_plan"] = progress_plan
-    refreshed = recompute_trajectory_state(flow)
-    refreshed["updated_at"] = datetime.now(timezone.utc)
-    await db["trajectory_flows"].update_one(
-        {"_id": flow["_id"]},
-        {
-            "$set": {
-                "diagnostic": refreshed["diagnostic"],
-                "progress_plan": refreshed["progress_plan"],
-                "proofs": refreshed["proofs"],
-                "verified_profile": refreshed["verified_profile"],
-                "opportunity_targets": refreshed["opportunity_targets"],
-                "status": refreshed["status"],
-                "updated_at": refreshed["updated_at"],
-            }
-        },
-    )
-    return _serialize_flow(refreshed)
-
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="La logique apr?s diagnostic est supprim?e. Utilisez l'envoi des coordonn?es.")
 
 @router.post("/flows/{flow_id}/proofs", response_model=TrajectoryFlowResponse)
 async def submit_trajectory_proof(
@@ -471,101 +465,41 @@ async def submit_trajectory_proof(
     payload: TrajectoryProofCreatePayload,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
-    flow = await _resolve_flow(flow_id, request, response, db, current)
-    if not flow.get("progress_plan"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré avant toute preuve.")
-
-    task = _find_task(flow.get("progress_plan") or {}, payload.task_key)
-    if not task:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tâche introuvable pour cette preuve.")
-
-    proof = create_proof_submission(payload.model_dump())
-    flow.setdefault("proofs", []).append(proof)
-    refreshed = recompute_trajectory_state(flow)
-    refreshed["updated_at"] = datetime.now(timezone.utc)
-    await db["trajectory_flows"].update_one(
-        {"_id": flow["_id"]},
-        {
-            "$set": {
-                "diagnostic": refreshed["diagnostic"],
-                "progress_plan": refreshed["progress_plan"],
-                "proofs": refreshed["proofs"],
-                "verified_profile": refreshed["verified_profile"],
-                "opportunity_targets": refreshed["opportunity_targets"],
-                "status": refreshed["status"],
-                "updated_at": refreshed["updated_at"],
-            }
-        },
-    )
-    return _serialize_flow(refreshed)
-
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Les preuves apr?s diagnostic sont supprim?es.")
 
 @router.post("/flows/{flow_id}/cockpit", response_model=TrajectoryCockpitActivationResponse)
 async def activate_trajectory_cockpit(
     flow_id: str,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
-    flow = await _resolve_flow(flow_id, request, response, db, current)
-    if not flow.get("diagnostic") or not flow.get("progress_plan"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré avant l'ouverture du cockpit.")
-
-    context_id = trajectory_context_id(str(flow["_id"]))
-    redirect_url = _cockpit_url(str(flow["_id"]), context_id)
-    if not current:
-        return {
-            "status": "auth_required",
-            "flow_id": str(flow["_id"]),
-            "context_id": context_id,
-            "task_query": {"context_type": "professional", "context_id": context_id},
-            "redirect_url": _cockpit_login_url(str(flow["_id"]), context_id),
-            "binding_count": 0,
-            "created_task_count": 0,
-        }
-
-    _, binding_map, created_task_count = await _ensure_cockpit_bindings(flow, db, current)
-    return {
-        "status": "ready",
-        "flow_id": str(flow["_id"]),
-        "context_id": context_id,
-        "task_query": {"context_type": "professional", "context_id": context_id},
-        "redirect_url": redirect_url,
-        "binding_count": len(binding_map),
-        "created_task_count": created_task_count,
-    }
-
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Le cockpit apr?s diagnostic est supprim?.")
 
 @router.get("/flows/{flow_id}/cockpit", response_model=TrajectoryCockpitContextResponse)
 async def get_trajectory_cockpit_context(
     flow_id: str,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict = Depends(get_current_user),
 ):
-    flow = await _resolve_flow(flow_id, request, None, db, current)
-    if not flow.get("diagnostic") or not flow.get("progress_plan"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le diagnostic doit être généré avant le cockpit.")
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Le contexte cockpit est supprim?.")
 
-    refreshed = recompute_trajectory_state(flow)
-    refreshed["updated_at"] = datetime.now(timezone.utc)
-    await db["trajectory_flows"].update_one(
-        {"_id": flow["_id"]},
-        {
-            "$set": {
-                "diagnostic": refreshed["diagnostic"],
-                "progress_plan": refreshed["progress_plan"],
-                "proofs": refreshed["proofs"],
-                "verified_profile": refreshed["verified_profile"],
-                "opportunity_targets": refreshed["opportunity_targets"],
-                "status": refreshed["status"],
-                "updated_at": refreshed["updated_at"],
-            }
-        },
-    )
-    context_id, binding_map, _ = await _ensure_cockpit_bindings(refreshed, db, current)
-    return _serialize_cockpit_context(refreshed, context_id, binding_map)
+@router.get("/flows/{flow_id}/sprint")
+async def get_blueprint_sprint(
+    flow_id: str,
+    request: Request,
+    response: Response,
+    current: dict | None = Depends(get_current_user_optional),
+) -> dict[str, Any]:
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Le sprint apr?s diagnostic est supprim?.")
+
+@router.get("/flows/{flow_id}/certificate")
+async def get_blueprint_certificate(
+    flow_id: str,
+    request: Request,
+    response: Response,
+    current: dict | None = Depends(get_current_user_optional),
+) -> dict[str, Any]:
+    raise HTTPException(status_code=status.HTTP_410_GONE, detail="Le certificat apr?s diagnostic est supprim?.")

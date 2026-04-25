@@ -29,3 +29,4 @@ export default async function SignupPage({ searchParams }: { searchParams?: Sear
 
   return <SignupClient successRedirect={successRedirect} loginHref={loginHref} />;
 }
+

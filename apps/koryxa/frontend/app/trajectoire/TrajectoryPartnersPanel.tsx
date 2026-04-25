@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { INNOVA_API_BASE } from "@/lib/env";
+import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 
 type PublicPartner = {
   slug: string;
@@ -44,7 +44,7 @@ export default function TrajectoryPartnersPanel() {
 
   useEffect(() => {
     let active = true;
-    fetch(`${INNOVA_API_BASE}/trajectoire/partners/public`, {
+    fetch(`${CLIENT_INNOVA_API_BASE}/trajectoire/partners/public`, {
       credentials: "include",
       cache: "no-store",
     })

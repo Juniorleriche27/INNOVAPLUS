@@ -6,12 +6,16 @@ from typing import List, Literal
 from pydantic import BaseModel, Field
 
 
+AssistantMode = Literal["general", "launch_structure_sell"]
+
+
 class ConversationResponse(BaseModel):
     conversation_id: str
     title: str
     created_at: datetime
     updated_at: datetime
     archived: bool = False
+    assistant_mode: AssistantMode = "general"
 
 
 class ConversationListResponse(BaseModel):
@@ -23,6 +27,10 @@ class ConversationListResponse(BaseModel):
 class ChatMessagePayload(BaseModel):
     conversation_id: str
     message: str = Field(..., min_length=1, max_length=4000)
+
+
+class ConversationUpdatePayload(BaseModel):
+    assistant_mode: AssistantMode
 
 
 class ChatMessageItem(BaseModel):

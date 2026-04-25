@@ -2,16 +2,16 @@ import Link from "next/link";
 
 const RESOURCE_BLOCKS = [
   {
-    title: "Guides d'utilisation",
+    title: "Guides d'usage",
     text: "Comprendre les trajectoires, les outils et les logiques d'usage du produit.",
   },
   {
     title: "Bonnes pratiques",
-    text: "Retrouver les principes de cadrage, d'exécution et de restitution utilisés par KORYXA.",
+    text: "Retrouver les principes de cadrage, d'execution et de restitution utilises par KORYXA.",
   },
   {
     title: "Documentation produit",
-    text: "Structurer à terme les références frontend, backend, intégrations et architecture.",
+    text: "Consolider dans le temps les references frontend, backend, integrations et architecture.",
   },
 ];
 
@@ -22,11 +22,10 @@ export default function ResourcesPage() {
         <section className="rounded-[34px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,247,255,0.95))] p-6 shadow-[0_20px_54px_rgba(15,23,42,0.07)] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-700">Ressources</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">
-            Une base de ressources pour rendre KORYXA plus lisible et plus actionnable.
+            Une base claire pour rendre KORYXA plus lisible et plus actionnable.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-            Cette section a vocation à réunir les guides d'usage, les bonnes pratiques et la documentation produit
-            nécessaires pour garder la plateforme claire dans la durée.
+            Cette section a vocation a rassembler les guides d'usage, les bonnes pratiques et la documentation necessaires pour garder la plateforme coherente dans la duree.
           </p>
         </section>
 
@@ -43,10 +42,9 @@ export default function ResourcesPage() {
         </section>
 
         <section className="rounded-[30px] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-[0_22px_54px_rgba(15,23,42,0.2)] sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em]">Où continuer ?</h2>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em]">Ou continuer ?</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-            Si tu veux comprendre la logique du produit avant la doc complète, les pages Trajectoire, Entreprise et À propos
-            sont les meilleures entrées.
+            Pour comprendre la logique produit avant une documentation complete, les pages Trajectoire, Entreprise et A propos sont les meilleures entrees.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/trajectoire" className="inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-50">
@@ -55,8 +53,8 @@ export default function ResourcesPage() {
             <Link href="/entreprise" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
               Aller sur Entreprise
             </Link>
-            <Link href="/about" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
-              Aller sur À propos
+            <Link href="/a-propos" className="inline-flex items-center rounded-full border border-white/16 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15">
+              Aller sur A propos
             </Link>
           </div>
         </section>

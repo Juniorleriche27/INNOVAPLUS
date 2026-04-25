@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import clsx from "clsx";
 import Link from "next/link";
@@ -6,34 +6,32 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiNotifications } from "@/lib/api";
 import { IS_V1_SIMPLE } from "@/lib/env";
+import { CONNECTED_ROUTES, PUBLIC_ROUTES } from "@/config/routes";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 const IS_V1 = IS_V1_SIMPLE;
 
 const NAV_LINKS = [
-  { href: "/", label: "Accueil" },
-  { href: "/opportunities", label: "Opportunités IA" },
-  { href: "/resources", label: "Ressources & docs" },
-  { href: "/about", label: "À propos" },
-  { href: "/missions/match", label: "Matching express" },
+  { href: PUBLIC_ROUTES.home, label: "Accueil" },
+  { href: PUBLIC_ROUTES.resources, label: "Ressources & docs" },
+  { href: PUBLIC_ROUTES.apropos, label: "À propos" },
+  { href: PUBLIC_ROUTES.missionMatch, label: "Matching express" },
 ];
 
 const NAV_LINKS_V1 = [
-  { href: "/", label: "Accueil" },
-  { href: "/trajectoire", label: "Trajectoire" },
-  { href: "/entreprise", label: "Entreprise" },
-  { href: "/products", label: "Produits" },
-  { href: "/about", label: "À propos" },
+  { href: PUBLIC_ROUTES.home, label: "Accueil" },
+  { href: PUBLIC_ROUTES.trajectoire, label: "Trajectoire" },
+  { href: PUBLIC_ROUTES.entreprise, label: "Entreprise" },
+  { href: PUBLIC_ROUTES.produits, label: "Produits" },
+  { href: PUBLIC_ROUTES.apropos, label: "À propos" },
 ];
 
 const PUBLIC_PRODUCT_LINKS = [
-  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et exécution" },
-  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'exécution" },
+  { href: PUBLIC_ROUTES.serviceIa, label: "Service IA", hint: "Studio d'execution IA pour les besoins entreprise" },
 ];
 
 const PRODUCT_LINKS = [
-  { href: "/myplanning", label: "MyPlanningAI", hint: "Pilotage de progression et exécution" },
-  { href: "/chatlaya", label: "ChatLAYA", hint: "Copilote conversationnel et support d'exécution" },
+  { href: PUBLIC_ROUTES.serviceIa, label: "Service IA", hint: "Studio d'execution IA pour les besoins entreprise" },
 ];
 
 const NAV_PILL_CLASS =
@@ -44,55 +42,49 @@ const CTA_PILL_CLASS =
 
 const PUBLIC_SEARCH_ACTIONS = [
   {
-    href: "/",
+    href: PUBLIC_ROUTES.home,
     label: "Accueil",
     hint: "Vue d'ensemble KORYXA",
     keywords: ["home", "accueil", "koryxa"],
   },
   {
-    href: "/trajectoire",
+    href: PUBLIC_ROUTES.trajectoire,
     label: "Trajectoire",
     hint: "Orientation, diagnostic et progression",
     keywords: ["trajectoire", "diagnostic", "progression", "matching"],
   },
   {
-    href: "/trajectoire/demarrer",
+    href: `${PUBLIC_ROUTES.trajectoire}/demarrer`,
     label: "Commencer mon diagnostic",
     hint: "Lancer l'onboarding et le diagnostic",
     keywords: ["commencer", "onboarding", "demarrer", "diagnostic"],
   },
   {
-    href: "/entreprise",
+    href: PUBLIC_ROUTES.entreprise,
     label: "Entreprise",
-    hint: "Besoin, mission et opportunité",
-    keywords: ["entreprise", "need", "mission", "opportunite"],
+    hint: "Besoin et mission",
+    keywords: ["entreprise", "need", "mission"],
   },
   {
-    href: "/entreprise/demarrer",
+    href: `${PUBLIC_ROUTES.entreprise}/demarrer`,
     label: "Décrire un besoin entreprise",
     hint: "Lancer la qualification du besoin",
     keywords: ["deposer", "besoin", "brief", "entreprise"],
   },
   {
-    href: "/products",
+    href: PUBLIC_ROUTES.produits,
     label: "Produits",
     hint: "Les outils actifs de l'écosystème",
     keywords: ["produits", "tools", "outils"],
   },
   {
-    href: "/myplanning",
-    label: "MyPlanningAI",
-    hint: "Pilotage de progression et exécution",
-    keywords: ["myplanning", "pilotage", "planning"],
+    href: PUBLIC_ROUTES.serviceIa,
+    label: "Service IA",
+    hint: "Execution IA de bout en bout",
+    keywords: ["service ia", "services", "execution", "offre"],
   },
   {
-    href: "/chatlaya",
-    label: "ChatLAYA",
-    hint: "Copilote conversationnel",
-    keywords: ["chatlaya", "chat", "copilote"],
-  },
-  {
-    href: "/about",
+    href: PUBLIC_ROUTES.apropos,
     label: "À propos",
     hint: "Mission et principes KORYXA",
     keywords: ["about", "apropos", "mission", "principes"],
@@ -145,21 +137,12 @@ function IconSparkles(props: React.SVGProps<SVGSVGElement>) {
 export default function Headbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const hideHeadbar = pathname.startsWith("/myplanning");
   const [scrolled, setScrolled] = useState(false);
   const { user, initialLoggedIn, loading, clear } = useAuth();
-  const isMyPlanning = hideHeadbar;
   const productLinks = IS_V1 ? PUBLIC_PRODUCT_LINKS : PRODUCT_LINKS;
   const navLinks = useMemo(() => {
-    if (isMyPlanning) {
-      return [
-        { href: "/myplanning", label: "Accueil" },
-        { href: "/myplanning/pricing", label: "Tarifs" },
-        { href: "/myplanning/app", label: "App" },
-      ];
-    }
     return IS_V1 ? NAV_LINKS_V1 : NAV_LINKS;
-  }, [isMyPlanning]);
+  }, []);
   const displayName = useMemo(() => {
     if (!user) return "";
     const parts = [user.first_name, user.last_name].filter(Boolean);
@@ -168,7 +151,7 @@ export default function Headbar() {
   }, [user]);
   const userInitial = useMemo(() => (displayName ? displayName.charAt(0).toUpperCase() : "I"), [displayName]);
   const showAccount = initialLoggedIn || Boolean(user);
-  const accountTitle = displayName || (loading ? "Chargement..." : "Mon espace");
+  const accountTitle = displayName || (loading ? "Chargement..." : "Compte");
   const accountEmail = user?.email ?? (loading ? "Connexion en cours..." : "");
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -178,6 +161,11 @@ export default function Headbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<Array<{ id: string; type: string; payload: Record<string, unknown> | null; created_at: string; read_at?: string }>>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const hideHeadbar =
+    pathname.startsWith("/services-ia") ||
+    pathname.startsWith("/trajectoire/demarrer") ||
+    pathname.startsWith("/entreprise/demarrer") ||
+    pathname.startsWith("/entreprise/cadrage");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -239,7 +227,7 @@ export default function Headbar() {
     if (!showAccount) return;
     const userId = user?.id ?? "demo-user";
     let active = true;
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let idleId: number | null = null;
 
     const run = () => {
@@ -256,7 +244,7 @@ export default function Headbar() {
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       idleId = (window as Window & { requestIdleCallback: (cb: IdleRequestCallback) => number }).requestIdleCallback(() => run());
     } else if (typeof window !== "undefined") {
-      timeoutId = window.setTimeout(run, 250);
+      timeoutId = setTimeout(run, 250);
     } else {
       run();
     }
@@ -267,7 +255,7 @@ export default function Headbar() {
         (window as Window & { cancelIdleCallback: (id: number) => void }).cancelIdleCallback(idleId);
       }
       if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
       }
     };
   }, [showAccount, user]);
@@ -304,21 +292,21 @@ export default function Headbar() {
         <div className="flex items-center justify-between gap-3 py-3 sm:gap-4 sm:py-4">
           {/* Left: Brand */}
           <div className="flex items-center gap-3 min-w-0">
-            <Link href={isMyPlanning ? "/myplanning" : "/"} className="flex items-center gap-3 group">
+            <Link href="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="flex h-11 w-11 items-center justify-center rounded-[18px] bg-gradient-to-br from-slate-950 via-sky-900 to-sky-500 shadow-[0_18px_34px_rgba(2,132,199,0.24)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_22px_40px_rgba(2,132,199,0.28)]">
-                  <span className="text-white font-semibold text-xs">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
+                  <span className="text-white font-semibold text-xs">{IS_V1 ? "K" : "AI"}</span>
                 </div>
                 <div className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-emerald-400 ring-4 ring-white/80" />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-base font-black tracking-[-0.04em] text-slate-950 transition-colors group-hover:text-sky-700 sm:text-lg">
-                  {isMyPlanning ? "MyPlanningAI" : "KORYXA"}
+                  KORYXA
                 </p>
                 <div className="hidden items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-[11px] font-medium text-slate-600 shadow-sm backdrop-blur md:inline-flex">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span className="whitespace-nowrap">
-                    {isMyPlanning ? "Organisation universelle • Powered by KORYXA" : IS_V1 ? "Trajectoires & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
+                    {IS_V1 ? "Trajectoires & missions réelles" : "Intelligence Artificielle • Transparence • Équité"}
                   </span>
                 </div>
               </div>
@@ -328,9 +316,9 @@ export default function Headbar() {
           {/* Center: Nav */}
           <nav className="ml-4 hidden flex-1 items-center gap-2 whitespace-nowrap md:flex md:overflow-x-auto md:overflow-y-visible lg:ml-6 lg:overflow-visible">
             {navLinks.map((link) => {
-              const isProductsLink = link.href === "/products";
+              const isProductsLink = link.href === PUBLIC_ROUTES.produits;
               const active = isProductsLink
-                ? pathname.startsWith("/products") || productLinks.some((item) => pathname.startsWith(item.href))
+                ? pathname.startsWith(PUBLIC_ROUTES.produits) || productLinks.some((item) => pathname.startsWith(item.href))
                 : link.href === "/"
                   ? pathname === "/"
                   : pathname.startsWith(link.href);
@@ -501,22 +489,12 @@ export default function Headbar() {
                     </div>
                     <Link 
                       className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors" 
-                      href="/account/demandeur"
+                      href="/account/role"
                       onClick={() => setAccountOpen(false)}
                     >
                       <IconSparkles className="h-4 w-4" />
-                      Profil
+                      Compte
                     </Link>
-                    {!IS_V1 && (
-                      <Link 
-                        className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors" 
-                        href="/opportunities"
-                        onClick={() => setAccountOpen(false)}
-                      >
-                        <IconSparkles className="h-4 w-4" />
-                        Mes opportunités
-                      </Link>
-                    )}
                     <button 
                       onClick={() => { 
                         setAccountOpen(false); 
@@ -534,14 +512,14 @@ export default function Headbar() {
             ) : (
               <div className="flex items-center gap-2">
                 <Link
-                  href="/login"
+                  href={CONNECTED_ROUTES.login}
                   prefetch={false}
                     className={clsx(CTA_PILL_CLASS, "hidden sm:inline-flex border border-white/80 bg-white/72 text-slate-700 backdrop-blur hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white hover:text-sky-700")}
                 >
                   Se connecter
                 </Link>
                 <Link
-                  href="/signup"
+                  href={CONNECTED_ROUTES.signup}
                   prefetch={false}
                     className={clsx(CTA_PILL_CLASS, "bg-[linear-gradient(135deg,#0f172a,#0284c7_58%,#38bdf8)] text-white shadow-[0_16px_30px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:brightness-105")}
                 >
@@ -619,20 +597,20 @@ export default function Headbar() {
               </button>
               {!IS_V1 && (
                 <Link
-                  href="/products"
+                  href={PUBLIC_ROUTES.produits}
                   className="rounded-full border border-white/80 bg-white/72 px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur"
                 >
                   Produits
                 </Link>
               )}
               <Link
-                href="/login"
+                href={CONNECTED_ROUTES.login}
                 className="hidden sm:inline-flex rounded-full border border-white/80 bg-white/72 px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur"
               >
                 Connexion
               </Link>
               <Link
-                href="/signup"
+                href={CONNECTED_ROUTES.signup}
                 className="hidden sm:inline-flex rounded-full bg-[linear-gradient(135deg,#0f172a,#0284c7_58%,#38bdf8)] px-3 py-2 text-[11px] font-semibold text-white shadow-[0_14px_24px_rgba(2,132,199,0.22)]"
               >
                 Créer
@@ -672,7 +650,7 @@ export default function Headbar() {
                     type="search"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={IS_V1 ? "Rechercher une page, un produit ou une action" : "Rechercher des opportunités, compétences, pays..."}
+                    placeholder={IS_V1 ? "Rechercher une page, un produit ou une action" : "Rechercher compétences, pays..."}
                     className="h-11 w-full rounded-xl border-none text-sm text-slate-700 outline-none placeholder:text-slate-400 bg-transparent"
                   />
                   <button
@@ -720,11 +698,11 @@ export default function Headbar() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-80 max-w-[85%] bg-white/95 backdrop-blur-xl p-6 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
-              <Link href={isMyPlanning ? "/myplanning" : "/"} onClick={() => setDrawerOpen(false)} className="flex items-center gap-3">
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-sm">{isMyPlanning ? "MP" : IS_V1 ? "K" : "AI"}</span>
+                  <span className="text-white font-bold text-sm">{IS_V1 ? "K" : "AI"}</span>
                 </div>
-                <span className="text-lg font-semibold text-slate-900">{isMyPlanning ? "MyPlanningAI" : "KORYXA"}</span>
+                <span className="text-lg font-semibold text-slate-900">KORYXA</span>
               </Link>
               <button 
                 aria-label="Fermer" 
@@ -807,7 +785,7 @@ export default function Headbar() {
             <div className="space-y-3">
               {IS_V1 ? (
                 <Link 
-                  href="/entreprise" 
+                  href={PUBLIC_ROUTES.entreprise} 
                   onClick={() => setDrawerOpen(false)} 
                   className="flex items-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 transition-colors"
                 >
@@ -817,20 +795,12 @@ export default function Headbar() {
               ) : (
                 <>
                   <Link 
-                    href="/opportunities/create" 
-                    onClick={() => setDrawerOpen(false)} 
-                    className="flex items-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 transition-colors"
-                  >
-                    <IconSparkles className="h-4 w-4" />
-                    Créer une opportunité
-                  </Link>
-                  <Link 
-                    href="/chatlaya" 
+                    href={PUBLIC_ROUTES.serviceIa} 
                     onClick={() => setDrawerOpen(false)} 
                     className="flex items-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors"
                   >
                     <IconSparkles className="h-4 w-4" />
-                    CHATLAYA
+                    SERVICE IA
                   </Link>
                 </>
               )}

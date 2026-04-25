@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarRange, Bot, BookOpen, CheckCircle2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Sparkles } from "lucide-react";
 import { productCatalog, removedProductSlugs, resolveProductSlug } from "../data";
 
 type ProductPageProps = {
@@ -9,8 +9,7 @@ type ProductPageProps = {
 };
 
 const PRODUCT_ICONS = {
-  myplanning: <CalendarRange className="h-8 w-8 text-white" />,
-  chatlaya: <Bot className="h-8 w-8 text-white" />,
+  "service-ia": <Sparkles className="h-8 w-8 text-white" />,
 } as const;
 
 export async function generateMetadata(props: ProductPageProps): Promise<Metadata> {
@@ -37,16 +36,16 @@ export default async function ProductPage(props: ProductPageProps) {
 
   return (
     <main>
-      <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[linear-gradient(135deg,#0d8fda_0%,#0d6aa8_100%)] py-20 text-white">
+      <section className="relative w-full bg-[linear-gradient(135deg,#0d8fda_0%,#0d6aa8_100%)] py-16 text-white sm:py-20">
         <div className="mx-auto max-w-[var(--marketing-max-w)] px-4 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20">{productIcon}</div>
+          <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 sm:h-16 sm:w-16">{productIcon}</div>
             <div>
-              <h1 className="text-4xl font-bold md:text-5xl">{product.name}</h1>
-              <p className="mt-2 text-lg text-sky-100">{product.tagline}</p>
+              <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">{product.name}</h1>
+              <p className="mt-2 text-base text-sky-100 sm:text-lg">{product.tagline}</p>
             </div>
           </div>
-          <p className="max-w-3xl text-xl text-sky-100">{product.summary}</p>
+          <p className="max-w-3xl text-base text-sky-100 sm:text-xl">{product.summary}</p>
         </div>
       </section>
 

@@ -554,9 +554,23 @@ function ChatlayaContent() {
   }
 
   async function sendMessage() {
-    if (!selectedConversationId || streaming) return;
+    if (streaming) return;
     const prompt = input.trim();
     if (!prompt) return;
+
+    let convId = selectedConversationId;
+    if (!convId) {
+      try {
+        const created = await createConversationRequest();
+        setConversations((current) => [created, ...current]);
+        setSelectedConversationId(created.conversation_id);
+        setMessages([]);
+        convId = created.conversation_id;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Impossible de créer la conversation.");
+        return;
+      }
+    }
 
     setError(null);
     resetTypewriterQueue();
@@ -570,8 +584,8 @@ function ChatlayaContent() {
     setStreaming(true);
 
     try {
-      await streamAssistant(selectedConversationId, prompt);
-      await loadMessages(selectedConversationId);
+      await streamAssistant(convId, prompt);
+      await loadMessages(convId);
       await loadConversations(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur pendant la génération.");
@@ -603,13 +617,13 @@ function ChatlayaContent() {
     activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
 
   return (
-    <main onWheelCapture={forwardWheelToChatLayout} className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+    <main onWheelCapture={forwardWheelToChatLayout} className="flex h-full min-h-0 flex-col gap-3 overflow-hidden bg-slate-50/60">
       <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside
           ref={conversationsViewportRef}
           className="grid content-start gap-4 overflow-y-auto overscroll-y-contain touch-pan-y [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] lg:min-h-0 lg:pr-1"
         >
-          <section className="rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
+          <section className="rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Historique</p>
               <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950 sm:text-xl">Conversations</h2>
@@ -621,12 +635,12 @@ function ChatlayaContent() {
             </div>
 
             {accessMode ? (
-              <p className="mt-3 inline-flex rounded-full border border-white/8 bg-white/4 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+              <p className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
                 {accessMode === "guest" ? "Mode invité" : "Mode connecté"}
               </p>
             ) : null}
 
-            <div className="mt-4 rounded-[22px] border border-white/8 bg-white/4 px-4 py-4">
+            <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Conversation active</p>
               <p className="mt-2 truncate text-sm font-semibold text-slate-950">{normalizeTitle(activeConversation?.title)}</p>
               <p className="mt-1 text-xs leading-6 text-slate-500">
@@ -650,7 +664,7 @@ function ChatlayaContent() {
                   type="button"
                   onClick={() => void archiveConversation(activeConversation.conversation_id)}
                   disabled={streaming}
-                  className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-sky-400/40 hover:text-sky-300 disabled:opacity-50"
+                  className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-sky-400 hover:text-sky-700 disabled:opacity-50"
                 >
                   Archiver
                 </button>
@@ -663,7 +677,7 @@ function ChatlayaContent() {
                   <div key={index} className="h-20 animate-pulse rounded-[22px] bg-slate-100" />
                 ))
               ) : conversations.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-white/12 bg-white/3 px-4 py-6 text-sm leading-7 text-slate-500">
+                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm leading-7 text-slate-500">
                   Aucune conversation pour le moment.
                 </div>
               ) : (
@@ -684,7 +698,7 @@ function ChatlayaContent() {
                       className={`rounded-[22px] border px-4 py-4 text-left transition ${
                         active
                           ? "border-sky-300 bg-sky-50 shadow-[0_14px_30px_rgba(14,165,233,0.10)]"
-                          : "border-white/8 bg-white/4 hover:border-sky-400/30 hover:bg-white/8"
+                          : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50"
                       }`}
                     >
                       <p className="truncate text-sm font-semibold text-slate-950">{normalizeTitle(conversation.title)}</p>
@@ -698,7 +712,7 @@ function ChatlayaContent() {
             </div>
           </section>
 
-          <section className="rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
+          <section className="rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Démarrage rapide</p>
             <div className="mt-4 grid gap-2">
               {starterPrompts.map((item) => (
@@ -706,7 +720,7 @@ function ChatlayaContent() {
                   key={item.label}
                   type="button"
                   onClick={() => applyStarterPrompt(item.prompt)}
-                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-200 transition hover:border-sky-400/30 hover:bg-sky-500/10 hover:text-sky-300"
+                  className="rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
                 >
                   {item.label}
                 </button>
@@ -717,7 +731,7 @@ function ChatlayaContent() {
 
         <section
           onWheelCapture={(event) => forwardWheelToViewport(event, messagesViewportRef)}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-white/8 bg-slate-900/80 p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5"
         >
           {error ? (
             <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -725,7 +739,7 @@ function ChatlayaContent() {
             </div>
           ) : null}
 
-          <div className={`${error ? "mt-3" : ""} shrink-0 rounded-[22px] border border-white/8 bg-white/4 px-4 py-4`}>
+          <div className={`${error ? "mt-3" : ""} shrink-0 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4`}>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Mode assistant</p>
@@ -749,8 +763,8 @@ function ChatlayaContent() {
                       onClick={() => void updateConversationMode(option.value)}
                       className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         active
-                          ? "border-sky-300 bg-sky-50 text-sky-700"
-                          : "border-white/8 bg-white/4 text-slate-200 hover:border-sky-400/30 hover:text-sky-300"
+                          ? "border-sky-400 bg-sky-50 text-sky-700"
+                          : "border-slate-300 bg-white text-slate-600 hover:border-sky-400 hover:text-sky-600"
                       } disabled:cursor-not-allowed disabled:opacity-60`}
                       title={option.hint}
                     >
@@ -764,7 +778,7 @@ function ChatlayaContent() {
 
           <div
             ref={messagesViewportRef}
-            className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y rounded-[26px] border border-white/8 bg-white/3 px-4 py-4 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
+            className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y rounded-[26px] border border-slate-200 bg-slate-50/60 px-4 py-4 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
           >
             {messagesLoading ? (
               <div className="grid gap-3">
@@ -774,7 +788,7 @@ function ChatlayaContent() {
               </div>
             ) : messages.length === 0 ? (
               <div className="flex h-full min-h-[220px] items-center justify-center">
-                <div className="w-full max-w-xl rounded-[26px] border border-dashed border-white/12 bg-white/3 px-6 py-8 text-center shadow-sm">
+                <div className="w-full max-w-xl rounded-[26px] border border-dashed border-slate-300 bg-white px-6 py-8 text-center shadow-sm">
                   <p className="text-xl font-semibold text-slate-950">Partez d’une question simple.</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
                     ChatLAYA vous aide à clarifier, cadrer et décider avant d’ouvrir la bonne suite dans KORYXA.
@@ -785,7 +799,7 @@ function ChatlayaContent() {
                         key={item.label}
                         type="button"
                         onClick={() => applyStarterPrompt(item.prompt)}
-                        className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-sky-400/30 hover:bg-sky-500/10 hover:text-sky-300"
+                        className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
                       >
                         {item.label}
                       </button>
@@ -803,7 +817,7 @@ function ChatlayaContent() {
                         className={`w-full rounded-[26px] border px-5 py-4 shadow-sm ${
                           isUser
                             ? "max-w-2xl border-slate-200 bg-[#edf2f7]"
-                            : "max-w-3xl border-white/8 bg-slate-900/70"
+                            : "max-w-3xl border-slate-200 bg-slate-50"
                         }`}
                       >
                         {message.pending && !message.content ? (
@@ -824,8 +838,8 @@ function ChatlayaContent() {
             )}
           </div>
 
-          <form onSubmit={onSubmit} className="mt-3 shrink-0 rounded-[20px] border border-white/8 bg-slate-900/80 px-3 py-3 sm:rounded-[24px] sm:px-4">
-            <div className="flex items-end gap-3 rounded-[18px] border border-white/8 bg-white/4 px-3 py-3 sm:rounded-[22px] sm:px-4">
+          <form onSubmit={onSubmit} className="mt-3 shrink-0 rounded-[20px] border border-slate-200 bg-white px-3 py-3 sm:rounded-[24px] sm:px-4">
+            <div className="flex items-end gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3 sm:rounded-[22px] sm:px-4">
               <textarea
                 ref={composerRef}
                 value={input}
@@ -834,12 +848,12 @@ function ChatlayaContent() {
                 placeholder={streaming ? "Patientez pendant la réponse..." : "Posez votre question à ChatLAYA"}
                 rows={1}
                 aria-label="Message pour ChatLAYA"
-                className="min-h-[48px] w-full resize-none bg-transparent text-sm leading-7 text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                disabled={streaming || !selectedConversationId}
+                className="min-h-[48px] w-full resize-none bg-transparent text-sm leading-7 text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                disabled={streaming}
               />
               <button
                 type="submit"
-                disabled={streaming || !selectedConversationId || !input.trim()}
+                disabled={streaming || !input.trim()}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
               >
                 <span className="sr-only">Envoyer</span>

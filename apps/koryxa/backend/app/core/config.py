@@ -82,6 +82,14 @@ class Settings(BaseSettings):
     OTP_CODE_LENGTH: int = int(os.getenv("OTP_CODE_LENGTH", "6"))
     OTP_TTL_MIN: int = int(os.getenv("OTP_TTL_MIN", "10"))
     OTP_DEV_DEBUG: bool = os.getenv("OTP_DEV_DEBUG", "false").lower() in {"1", "true", "yes"}
+    DEV_AUTH_BYPASS: bool = os.getenv("DEV_AUTH_BYPASS", "false").lower() in {"1", "true", "yes"}
+    DEV_AUTH_BYPASS_EMAIL: str = os.getenv("DEV_AUTH_BYPASS_EMAIL", "dev@koryxa.app")
+    DEV_AUTH_BYPASS_FIRST_NAME: str = os.getenv("DEV_AUTH_BYPASS_FIRST_NAME", "Dev")
+    DEV_AUTH_BYPASS_LAST_NAME: str = os.getenv("DEV_AUTH_BYPASS_LAST_NAME", "Local")
+    DEV_AUTH_BYPASS_COUNTRY: str = os.getenv("DEV_AUTH_BYPASS_COUNTRY", "TG")
+    DEV_AUTH_BYPASS_ACCOUNT_TYPE: str = os.getenv("DEV_AUTH_BYPASS_ACCOUNT_TYPE", "organization")
+    DEV_AUTH_BYPASS_PLAN: str = os.getenv("DEV_AUTH_BYPASS_PLAN", "team")
+    DEV_AUTH_BYPASS_WORKSPACE_ROLE: str = os.getenv("DEV_AUTH_BYPASS_WORKSPACE_ROLE", "demandeur")
     WHATSAPP_API_URL: str | None = os.getenv("WHATSAPP_API_URL")
     WHATSAPP_API_TOKEN: str | None = os.getenv("WHATSAPP_API_TOKEN")
     WHATSAPP_SENDER: str | None = os.getenv("WHATSAPP_SENDER")
@@ -100,13 +108,16 @@ class Settings(BaseSettings):
     PAYDUNYA_CHANNELS: str | None = os.getenv("PAYDUNYA_CHANNELS")
     PAYDUNYA_VERIFY_HASH: bool = os.getenv("PAYDUNYA_VERIFY_HASH", "true").lower() in {"1", "true", "yes"}
     PAYDUNYA_HTTP_TIMEOUT_S: int = int(os.getenv("PAYDUNYA_HTTP_TIMEOUT_S", "20"))
-    PAYDUNYA_RETURN_PATH: str = os.getenv("PAYDUNYA_RETURN_PATH", "/myplanning/pricing?checkout=success")
-    PAYDUNYA_CANCEL_PATH: str = os.getenv("PAYDUNYA_CANCEL_PATH", "/myplanning/pricing?checkout=cancel")
+    PAYDUNYA_RETURN_PATH: str = os.getenv("PAYDUNYA_RETURN_PATH", "/pricing?checkout=success")
+    PAYDUNYA_CANCEL_PATH: str = os.getenv("PAYDUNYA_CANCEL_PATH", "/pricing?checkout=cancel")
     PAYDUNYA_CALLBACK_PATH: str = os.getenv("PAYDUNYA_CALLBACK_PATH", "/paydunya/ipn")
     PAYDUNYA_AMOUNT_PRO_MONTHLY: int = int(os.getenv("PAYDUNYA_AMOUNT_PRO_MONTHLY", "5000"))
     PAYDUNYA_AMOUNT_PRO_YEARLY: int = int(os.getenv("PAYDUNYA_AMOUNT_PRO_YEARLY", "50000"))
     PAYDUNYA_AMOUNT_TEAM_MONTHLY: int = int(os.getenv("PAYDUNYA_AMOUNT_TEAM_MONTHLY", "20000"))
     PAYDUNYA_AMOUNT_TEAM_YEARLY: int = int(os.getenv("PAYDUNYA_AMOUNT_TEAM_YEARLY", "200000"))
+    ENFORCE_HTTPS_REDIRECT: bool = os.getenv("ENFORCE_HTTPS_REDIRECT", "true").lower() in {"1", "true", "yes"}
+    ALLOWED_HOSTS: str | None = os.getenv("ALLOWED_HOSTS")
+    REQUIRE_MONGO: bool = os.getenv("REQUIRE_MONGO", "true").lower() in {"1", "true", "yes"}
 
     class Config:
         env_file = ".env"
@@ -123,3 +134,32 @@ settings.DB_INNOVA = settings.DB_INNOVA or "innova_db"
 if os.getenv("DB_NAME") is None:
     # If DB_NAME not explicitly set in env, use DB_INNOVA for the root app
     settings.DB_NAME = settings.DB_INNOVA
+
+
+def is_production_env() -> bool:
+    return (settings.ENV or "").strip().lower() == "production"
+
+
+def get_allowed_hosts() -> list[str]:
+    raw = [host.strip() for host in (settings.ALLOWED_HOSTS or "").split(",") if host.strip()]
+    if raw:
+        return raw
+
+    hosts: list[str] = []
+    for candidate in (settings.FRONTEND_BASE_URL, settings.BACKEND_BASE_URL):
+        try:
+            parsed = Path(candidate).name  # noop fallback guard for malformed values
+            del parsed
+        except Exception:
+            pass
+        try:
+            from urllib.parse import urlparse
+
+            hostname = (urlparse(candidate).hostname or "").strip()
+        except Exception:
+            hostname = ""
+        if hostname:
+            hosts.append(hostname)
+            if not hostname.startswith("www."):
+                hosts.append(f"www.{hostname}")
+    return list(dict.fromkeys(hosts))

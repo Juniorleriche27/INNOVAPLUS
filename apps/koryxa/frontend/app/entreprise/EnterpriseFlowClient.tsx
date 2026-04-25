@@ -1,207 +1,291 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { INNOVA_API_BASE } from "@/lib/env";
-
+import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { PUBLIC_ROUTES } from "@/config/routes";
+import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 import { ENTERPRISE_STORAGE_KEY, type EnterpriseSubmissionResponse } from "./flow";
 
-type Answers = {
-  primary_goal: string;
-  need_type: string;
-  expected_result: string;
-  urgency: string;
-  treatment_preference: string;
-  team_context: string;
-  support_preference: string;
-  short_brief: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Option = { value: string; label: string; hint?: string; emoji?: string };
+
+type DynamicQuestion = {
+  id: string;
+  text: string;
+  hint?: string;
+  type: "options" | "textarea" | "text";
+  options?: Option[];
+  phase: "identification" | "contexte" | "validation";
+  isLast?: boolean;
+  optional?: boolean;
 };
 
-type Option = {
-  value: string;
-  label: string;
+type ApiNextQuestion = {
+  question_id: string;
+  question_text: string;
+  hint?: string;
+  type: string;
+  options?: Option[];
+  phase: string;
+  is_last: boolean;
 };
 
-type Question = {
-  key:
-    | "primary_goal"
-    | "need_type"
-    | "expected_result"
-    | "urgency"
-    | "treatment_preference"
-    | "team_context"
-    | "support_preference";
-  title: string;
-  description: string;
-  options: Option[];
-};
+// ─── Static initial questions ─────────────────────────────────────────────────
 
-const QUESTIONS: Question[] = [
+const STATIC_QUESTIONS: DynamicQuestion[] = [
   {
-    key: "primary_goal",
-    title: "Qu’est-ce que vous cherchez à améliorer en priorité ?",
-    description: "Choisissez l'objectif business ou opérationnel qui compte le plus maintenant.",
-    options: [
-      { value: "Notre visibilité", label: "Notre visibilité" },
-      { value: "Notre chiffre d’affaires", label: "Notre chiffre d’affaires" },
-      { value: "Notre organisation interne", label: "Notre organisation interne" },
-      { value: "Le suivi de notre activité", label: "Le suivi de notre activité" },
-      { value: "L’automatisation de certaines tâches", label: "L’automatisation de certaines tâches" },
-      { value: "La structuration de nos données", label: "La structuration de nos données" },
-      { value: "Le pilotage de nos équipes", label: "Le pilotage de nos équipes" },
-      { value: "Un projet précis à lancer ou cadrer", label: "Un projet précis à lancer ou cadrer" },
-    ],
+    id: "company_name",
+    text: "Quel est le nom de votre entreprise ?",
+    hint: "Le nom exact ancre le cadrage et évite un diagnostic trop générique.",
+    type: "text",
+    phase: "identification",
   },
   {
-    key: "need_type",
-    title: "Quel type de besoin avez-vous aujourd’hui ?",
-    description: "Le but est de qualifier le besoin, pas encore de remplir un dossier administratif.",
+    id: "primary_goal",
+    text: "Dans quel domaine voulez-vous qu'une solution IA intervienne ?",
+    hint: "Votre réponse oriente toutes les questions suivantes. KORYXA règle uniquement les besoins IA des entreprises.",
+    type: "options",
+    phase: "identification",
     options: [
-      { value: "Analyse / aide à la décision", label: "Analyse / aide à la décision" },
-      { value: "Dashboard / reporting", label: "Dashboard / reporting" },
-      { value: "Automatisation", label: "Automatisation" },
-      { value: "Organisation / structuration", label: "Organisation / structuration" },
-      { value: "Données / base de données", label: "Données / base de données" },
-      { value: "Exécution d’un projet", label: "Exécution d’un projet" },
-      { value: "Besoin de mission / appui externe", label: "Besoin de mission / appui externe" },
-      { value: "Autre", label: "Autre" },
-    ],
-  },
-  {
-    key: "expected_result",
-    title: "Quel résultat attendez-vous concrètement ?",
-    description: "Choisissez le résultat qui vous ferait dire que ce besoin avance vraiment.",
-    options: [
-      { value: "Mieux comprendre notre activité", label: "Mieux comprendre notre activité" },
-      { value: "Gagner du temps", label: "Gagner du temps" },
-      { value: "Suivre nos performances", label: "Suivre nos performances" },
-      { value: "Améliorer notre visibilité", label: "Améliorer notre visibilité" },
-      { value: "Augmenter nos ventes", label: "Augmenter nos ventes" },
-      { value: "Structurer une mission claire", label: "Structurer une mission claire" },
-      { value: "Obtenir un livrable précis", label: "Obtenir un livrable précis" },
-      { value: "Faire avancer un projet", label: "Faire avancer un projet" },
-    ],
-  },
-  {
-    key: "urgency",
-    title: "À quel niveau est l’urgence ?",
-    description: "On cherche le bon rythme d’exécution, pas à dramatiser la demande.",
-    options: [
-      { value: "Ce n’est pas urgent", label: "Ce n’est pas urgent" },
-      { value: "À traiter bientôt", label: "À traiter bientôt" },
-      { value: "Priorité forte", label: "Priorité forte" },
-      { value: "Très urgent", label: "Très urgent" },
-    ],
-  },
-  {
-    key: "treatment_preference",
-    title: "Comment voulez-vous traiter ce besoin ?",
-    description: "Ce choix aide KORYXA à recommander le bon mode d’entrée dans l’exécution.",
-    options: [
-      { value: "Le garder privé", label: "Le garder privé" },
-      { value: "Être accompagné pour le structurer", label: "Être accompagné pour le structurer" },
-      { value: "Le transformer en mission", label: "Le transformer en mission" },
-      { value: "Le publier comme opportunité si pertinent", label: "Le publier comme opportunité si pertinent" },
-      { value: "Je veux d’abord une recommandation", label: "Je veux d’abord une recommandation" },
-    ],
-  },
-  {
-    key: "team_context",
-    title: "Dans quel cadre travaillez-vous aujourd’hui ?",
-    description: "On adapte la structuration du besoin au bon niveau d’organisation.",
-    options: [
-      { value: "Je travaille seul", label: "Je travaille seul" },
-      { value: "Petite équipe", label: "Petite équipe" },
-      { value: "PME / organisation structurée", label: "PME / organisation structurée" },
-      { value: "ONG / association", label: "ONG / association" },
-      { value: "Institution / structure plus grande", label: "Institution / structure plus grande" },
-    ],
-  },
-  {
-    key: "support_preference",
-    title: "Quel type d’accompagnement vous conviendrait le mieux ?",
-    description: "Le but est de recommander un cadre d’action vraiment utile, pas un parcours standard.",
-    options: [
-      { value: "Un cadrage rapide", label: "Un cadrage rapide" },
-      { value: "Un suivi pas à pas", label: "Un suivi pas à pas" },
-      { value: "Un cockpit pour piloter l’exécution", label: "Un cockpit pour piloter l’exécution" },
-      { value: "Une mise en relation utile", label: "Une mise en relation utile" },
-      { value: "Un mélange de plusieurs options", label: "Un mélange de plusieurs options" },
+      { value: "ia_data_reporting",    label: "Data & Reporting IA",       hint: "Tableaux de bord automatisés, KPIs en temps réel, analyse prédictive.", emoji: "📊" },
+      { value: "ia_automatisation",    label: "Automatisation IA",         hint: "Suppression des tâches répétitives, workflows intelligents, scripts.", emoji: "🤖" },
+      { value: "ia_marketing_content", label: "Marketing & Contenu IA",    hint: "Génération de contenu, personnalisation, acquisition assistée par IA.", emoji: "📣" },
+      { value: "ia_sales_crm",         label: "Sales & CRM IA",            hint: "Scoring de leads, relances automatiques, pipeline intelligent.", emoji: "🤝" },
+      { value: "ia_ops_process",       label: "Ops & Process IA",          hint: "Optimisation des processus, détection d'anomalies, coordination IA.", emoji: "⚙️" },
+      { value: "ia_rh_talent",         label: "RH & Talent IA",            hint: "Recrutement IA, matching RH, analyse des compétences.", emoji: "🤲" },
+      { value: "ia_finance_pilotage",  label: "Finance & Pilotage IA",     hint: "Prévisions financières IA, détection de fraude, contrôle de gestion.", emoji: "💳" },
+      { value: "ia_produit_tech",      label: "Produit & Tech IA",         hint: "Intégration IA dans un produit, APIs IA, LLMs, no-code IA.", emoji: "💻" },
+      { value: "ia_service_client",    label: "Service Client IA",         hint: "Chatbots, réponses automatisées, analyse sentiment, tickets IA.", emoji: "💬" },
+      { value: "ia_strategie",         label: "Stratégie & Décision IA",   hint: "Aide à la décision, diagnostic IA, veille et intelligence compétitive.", emoji: "🎯" },
     ],
   },
 ];
 
-const INITIAL_ANSWERS: Answers = {
-  primary_goal: "",
-  need_type: "",
-  expected_result: "",
-  urgency: "",
-  treatment_preference: "",
-  team_context: "",
-  support_preference: "",
-  short_brief: "",
-};
+// ─── Phase strip config ───────────────────────────────────────────────────────
 
-function optionGridClass(optionCount: number): string {
-  if (optionCount <= 4) return "sm:grid-cols-2";
-  if (optionCount <= 6) return "sm:grid-cols-2 xl:grid-cols-3";
-  return "sm:grid-cols-2 xl:grid-cols-4";
+const PHASES = [
+  { id: "identification", number: "01", label: "Identification" },
+  { id: "contexte",       number: "02", label: "Contexte" },
+  { id: "validation",     number: "03", label: "Validation" },
+] as const;
+
+type PhaseId = (typeof PHASES)[number]["id"];
+
+// Pas de limite fixe — l'IA décide quand elle a compris le besoin à 100%
+const MAX_QUESTIONS = 50;
+
+// ─── UI atoms (same style as Blueprint) ───────────────────────────────────────
+
+function OptionCard({ option, active, onClick }: { option: Option; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-checked={active}
+      role="radio"
+      className={`group relative w-full rounded-[18px] border px-4 py-3.5 text-left transition-all duration-150 sm:rounded-[20px] sm:px-5 sm:py-4 ${
+        active
+          ? "border-slate-900 bg-slate-900 text-white shadow-[0_20px_40px_rgba(15,23,42,0.15)]"
+          : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+      }`}
+    >
+      <div className="flex items-start gap-3 pr-8 sm:pr-9">
+        {option.emoji ? <span className="mt-0.5 text-base leading-none sm:text-lg">{option.emoji}</span> : null}
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-6 sm:text-[13.5px]">{option.label}</p>
+          {option.hint ? (
+            <p className={`mt-1 text-xs leading-5 sm:text-[11.5px] ${active ? "text-slate-300" : "text-slate-500"}`}>
+              {option.hint}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <span
+        className={`absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full border transition ${
+          active ? "border-white bg-white text-slate-900" : "border-slate-200 bg-white text-transparent"
+        }`}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </span>
+    </button>
+  );
 }
+
+function PhaseStrip({ currentPhase }: { currentPhase: PhaseId }) {
+  const currentIndex = PHASES.findIndex((p) => p.id === currentPhase);
+  return (
+    <div className="-mx-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+      <div className="flex min-w-max gap-1.5 sm:gap-2">
+        {PHASES.map((phase, i) => {
+          const isDone = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          return (
+            <div
+              key={phase.id}
+              className={`flex items-center gap-2 rounded-full border px-3 py-2 transition-all sm:gap-2.5 sm:px-4 sm:py-2.5 ${
+                isCurrent
+                  ? "border-slate-900 bg-slate-900 text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)]"
+                  : isDone
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-slate-200 bg-white text-slate-400"
+              }`}
+            >
+              <span
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
+                  isCurrent
+                    ? "bg-white text-slate-900"
+                    : isDone
+                      ? "bg-emerald-500 text-white"
+                      : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {isDone ? <Check className="h-3.5 w-3.5" /> : phase.number}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] sm:text-[11px]">{phase.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function isAnswered(q: DynamicQuestion, answers: Record<string, string>): boolean {
+  if (q.optional) return true;
+  const val = answers[q.id] ?? "";
+  if (q.type === "text") return val.trim().length >= 2;
+  if (q.type === "textarea") return true;
+  return val.trim().length > 0;
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function EnterpriseFlowClient() {
   const router = useRouter();
-  const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answers>(INITIAL_ANSWERS);
+  const [questions, setQuestions] = useState<DynamicQuestion[]>(STATIC_QUESTIONS);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [loadingNext, setLoadingNext] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedNeedId, setSavedNeedId] = useState<string | null>(null);
 
-  const currentQuestion = QUESTIONS[stepIndex];
-  const isLastQuestion = stepIndex === QUESTIONS.length - 1;
-  const progress = Math.round(((stepIndex + 1) / QUESTIONS.length) * 100);
+  const currentQuestion = questions[questionIndex];
+  const currentPhase = currentQuestion.phase;
+  // Progression : base 12 questions (2 statiques + 10 par domaine), extensible par l'IA
+  const PROGRESS_BASE = Math.max(questions.length + 1, 12);
+  const progressPct = Math.min(Math.round(((questionIndex + 1) / PROGRESS_BASE) * 100), 99);
+  const canContinue = isAnswered(currentQuestion, answers);
+  const isCurrentLast = currentQuestion.isLast ?? false;
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setSavedNeedId(window.localStorage.getItem(ENTERPRISE_STORAGE_KEY));
-    }
-  }, []);
-
-  const currentValue = answers[currentQuestion.key];
-  const canContinue = useMemo(() => currentValue.trim().length > 0, [currentValue]);
-
-  function updateAnswer(key: keyof Answers, value: string) {
-    setAnswers((current) => ({ ...current, [key]: value }));
+  function updateAnswer(id: string, value: string) {
+    setAnswers((prev) => ({ ...prev, [id]: value }));
     setError(null);
   }
 
-  function handleNext() {
-    if (!canContinue) return;
-    setStepIndex((current) => Math.min(current + 1, QUESTIONS.length - 1));
+  function handleBack() {
+    if (submitting || loadingNext) return;
+    if (questionIndex === 0) { router.push(PUBLIC_ROUTES.entreprise); return; }
+    setQuestionIndex((i) => i - 1);
   }
 
-  function handleBack() {
-    setStepIndex((current) => Math.max(current - 1, 0));
+  function buildAnswersPayload() {
+    return questions.slice(0, questionIndex + 1).map((q) => ({
+      question_id: q.id,
+      question_text: q.text,
+      answer: answers[q.id] ?? "",
+    }));
+  }
+
+  async function fetchNextQuestion() {
+    setLoadingNext(true);
+    setError(null);
+    try {
+      const res = await fetch(`${CLIENT_INNOVA_API_BASE}/enterprise/needs/next-question`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ answers: buildAnswersPayload() }),
+      });
+      if (!res.ok) throw new Error("Impossible de charger la prochaine question.");
+      const data: ApiNextQuestion = await res.json();
+
+      if (data.is_last && !data.question_text) {
+        await handleSubmit();
+        return;
+      }
+
+      const phase: PhaseId =
+        data.phase === "validation" ? "validation" : data.phase === "contexte" ? "contexte" : "identification";
+
+      const newQ: DynamicQuestion = {
+        id: data.question_id,
+        text: data.question_text,
+        hint: data.hint,
+        type: data.type === "textarea" || data.type === "text" ? data.type : "options",
+        options: data.options,
+        phase,
+        isLast: data.is_last,
+      };
+
+      setQuestions((prev) => [...prev, newQ]);
+      setQuestionIndex((i) => i + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    } finally {
+      setLoadingNext(false);
+    }
+  }
+
+  async function handleNext() {
+    if (!canContinue && !currentQuestion.optional) return;
+
+    // Already have next question loaded → just navigate forward
+    if (questionIndex < questions.length - 1) {
+      setQuestionIndex((i) => i + 1);
+      return;
+    }
+
+    // Marked as last question → submit
+    if (isCurrentLast) {
+      await handleSubmit();
+      return;
+    }
+
+    // Sécurité absolue : jamais plus de 50 questions (ne devrait jamais arriver)
+    if (questionIndex >= MAX_QUESTIONS - 1) {
+      await handleSubmit();
+      return;
+    }
+
+    // Fetch next adaptive question from AI
+    await fetchNextQuestion();
   }
 
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`${INNOVA_API_BASE}/enterprise/needs`, {
+      const fullAnswers = questions.map((q) => ({
+        question_id: q.id,
+        question_text: q.text,
+        answer: answers[q.id] ?? "",
+      }));
+
+      const res = await fetch(`${CLIENT_INNOVA_API_BASE}/enterprise/needs/adaptive`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          ...answers,
-          short_brief: answers.short_brief.trim() || undefined,
-        }),
+        body: JSON.stringify({ adaptive_answers: fullAnswers }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.detail || "Qualification impossible pour le moment.");
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error((d as { detail?: string })?.detail || "Qualification impossible pour le moment.");
       }
-      const payload: EnterpriseSubmissionResponse = await response.json();
+
+      const payload: EnterpriseSubmissionResponse = await res.json();
       if (typeof window !== "undefined") {
         window.localStorage.setItem(ENTERPRISE_STORAGE_KEY, payload.need.id);
       }
@@ -212,123 +296,132 @@ export default function EnterpriseFlowClient() {
     }
   }
 
+  const showSubmit = isCurrentLast;
+
   return (
-    <div className="grid gap-6">
-      <section className="rounded-[32px] border border-slate-200/80 bg-white/94 p-6 shadow-[0_20px_48px_rgba(15,23,42,0.06)] sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Qualification entreprise</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
-              Quelques réponses claires pour structurer le bon besoin
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-              Le but n’est pas de vous faire remplir un dossier. Le but est de produire un besoin structuré, une
-              première mission utile et une vraie entrée dans le cockpit d’exécution.
+    <section className="mx-auto w-full max-w-5xl rounded-[28px] border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-3 shadow-[0_24px_60px_rgba(15,23,42,0.06)] sm:rounded-[36px] sm:p-6">
+      <PhaseStrip currentPhase={currentPhase} />
+      <div className="mt-4 rounded-full bg-slate-100">
+        <div
+          className="h-2 rounded-full bg-slate-900 transition-all duration-500"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
+      <div className="mt-5 rounded-[24px] border border-slate-200 bg-white sm:rounded-[28px]">
+        {/* Header */}
+        <div className="border-b border-slate-100 px-4 py-5 sm:px-8 sm:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              Question {questionIndex + 1}
+            </span>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {progressPct}% complété
             </p>
           </div>
-          {savedNeedId ? (
-            <Link
-              href={`/entreprise/resultat/${encodeURIComponent(savedNeedId)}`}
-              className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700"
-            >
-              Reprendre mon dernier résultat
-            </Link>
+          <h2 className="mt-4 max-w-3xl text-[1.45rem] font-semibold leading-[1.2] tracking-[-0.04em] text-slate-950 sm:mt-5 sm:text-[1.75rem] lg:text-[2.1rem]">
+            {currentQuestion.text}
+          </h2>
+          {currentQuestion.hint ? (
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:leading-7">{currentQuestion.hint}</p>
           ) : null}
         </div>
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-            <span>
-              Étape {stepIndex + 1} sur {QUESTIONS.length}
-            </span>
-            <span>{progress}%</span>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-slate-100">
-            <div className="h-2 rounded-full bg-sky-600 transition-all duration-300" style={{ width: `${progress}%` }} />
-          </div>
+        {/* Body */}
+        <div className="px-4 py-5 sm:px-8 sm:py-7">
+          {loadingNext ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              <p className="text-sm font-medium text-slate-400">L'IA prépare la prochaine question…</p>
+            </div>
+          ) : (
+            <>
+              {currentQuestion.type === "options" && currentQuestion.options ? (
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {currentQuestion.options.map((opt) => (
+                    <OptionCard
+                      key={opt.value}
+                      option={opt}
+                      active={answers[currentQuestion.id] === opt.value}
+                      onClick={() => updateAnswer(currentQuestion.id, opt.value)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {currentQuestion.type === "text" ? (
+                <input
+                  type="text"
+                  value={answers[currentQuestion.id] ?? ""}
+                  onChange={(e) => updateAnswer(currentQuestion.id, e.target.value)}
+                  maxLength={120}
+                  placeholder="Ex: KORYXA, Acme SARL, Studio Atlas..."
+                  className="w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white placeholder:text-slate-400 sm:rounded-[20px] sm:px-5 sm:py-4"
+                />
+              ) : null}
+
+              {currentQuestion.type === "textarea" ? (
+                <div>
+                  <textarea
+                    value={answers[currentQuestion.id] ?? ""}
+                    onChange={(e) => updateAnswer(currentQuestion.id, e.target.value)}
+                    rows={5}
+                    maxLength={400}
+                    placeholder="Décrivez votre besoin en quelques lignes..."
+                    className="w-full rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm leading-7 text-slate-900 outline-none transition focus:border-slate-900 focus:bg-white placeholder:text-slate-400 sm:rounded-[20px] sm:px-5 sm:py-4"
+                  />
+                  <p className="mt-1.5 text-right text-[11px] text-slate-400">
+                    {(answers[currentQuestion.id] ?? "").length} / 400
+                  </p>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
-      </section>
 
-      <section className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_20px_48px_rgba(15,23,42,0.06)] sm:p-8">
-        <div className="max-w-3xl">
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">{currentQuestion.title}</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">{currentQuestion.description}</p>
-        </div>
-
-        <div className={`mt-8 grid gap-3 ${optionGridClass(currentQuestion.options.length)}`}>
-          {currentQuestion.options.map((option) => {
-            const active = currentValue === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => updateAnswer(currentQuestion.key, option.value)}
-                className={`rounded-[24px] border px-5 py-5 text-left transition ${
-                  active
-                    ? "border-sky-300 bg-sky-50 shadow-[0_12px_26px_rgba(14,165,233,0.12)]"
-                    : "border-slate-200 bg-white hover:border-sky-200 hover:bg-slate-50"
-                }`}
-              >
-                <span className={`block text-base font-semibold ${active ? "text-sky-700" : "text-slate-950"}`}>
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {isLastQuestion ? (
-          <div className="mt-6 max-w-2xl rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5">
-            <label className="text-sm font-medium text-slate-700">
-              En quelques lignes, que cherchez-vous à résoudre ou obtenir ?
-              <textarea
-                value={answers.short_brief}
-                onChange={(event) => updateAnswer("short_brief", event.target.value)}
-                rows={3}
-                maxLength={320}
-                placeholder="Facultatif. Quelques lignes suffisent."
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
-              />
-            </label>
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-              Ce champ reste facultatif. Il sert seulement à enrichir la qualification initiale.
-            </p>
-          </div>
-        ) : null}
-
-        {error ? <p className="mt-5 text-sm font-medium text-rose-600">{error}</p> : null}
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Footer */}
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-5">
           <button
             type="button"
             onClick={handleBack}
-            disabled={stepIndex === 0 || submitting}
-            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700 disabled:opacity-40"
+            disabled={submitting || loadingNext}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-50 sm:w-auto"
           >
-            Retour
+            <ChevronLeft className="h-4 w-4" />
+            {questionIndex === 0 ? "Retour" : "Précédent"}
           </button>
 
-          {isLastQuestion ? (
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+            {error ? <p className="text-sm font-medium text-rose-600 sm:text-right">{error}</p> : null}
             <button
               type="button"
-              onClick={() => void handleSubmit()}
-              disabled={submitting || !canContinue}
-              className="btn-primary w-full justify-center sm:w-auto disabled:opacity-60"
+              onClick={() => void handleNext()}
+              disabled={(!canContinue && !currentQuestion.optional) || submitting || loadingNext}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-7 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 sm:w-auto"
             >
-              {submitting ? "Qualification en cours..." : "Lancer la qualification"}
+              {submitting ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Analyse en cours…
+                </>
+              ) : showSubmit ? (
+                <>
+                  Voir le résultat
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Continuer
+                  <ChevronRight className="h-4 w-4" />
+                </>
+              )}
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={!canContinue}
-              className="btn-primary w-full justify-center sm:w-auto disabled:opacity-60"
-            >
-              Suivant
-            </button>
-          )}
+          </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

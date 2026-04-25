@@ -4,6 +4,7 @@ export type EnterpriseSubmissionResponse = {
   need: {
     id: string;
     title: string;
+    company_name: string;
     primary_goal: string;
     need_type: string;
     expected_result: string;

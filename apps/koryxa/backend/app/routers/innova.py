@@ -10,11 +10,17 @@ from app.db.mongo import get_db_by_name
 router = APIRouter(prefix="/innova", tags=["innova"])
 
 
+async def get_innova_db() -> AsyncIOMotorDatabase:
+    async for db in get_db_by_name(settings.DB_INNOVA):
+        return db
+    raise RuntimeError("MongoDB dependency could not be resolved")
+
+
 @router.get("/health")
-async def health(db: AsyncIOMotorDatabase = Depends(lambda: get_db_by_name(settings.DB_INNOVA))):
+async def health(db: AsyncIOMotorDatabase = Depends(get_innova_db)):
     ok = False
     try:
-        await (await db).command("ping")
+        await db.command("ping")
         ok = True
     except Exception:
         ok = False

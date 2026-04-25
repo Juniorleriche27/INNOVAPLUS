@@ -1,50 +1,8 @@
-// src/lib/api.ts
-export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
+import { AUTH_API_BASE } from "@/lib/env";
+import { requestJsonPath } from "@/lib/api";
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    // listes = pas de cache, détail = force revalidate si tu veux
-    cache: "no-store",
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`API ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json() as Promise<T>;
+export const API_BASE = AUTH_API_BASE;
+
+export function api<T>(path: string, init?: RequestInit): Promise<T> {
+  return requestJsonPath<T>(API_BASE, path, init);
 }
-
-/** Types partagés */
-export type UUID = string;
-
-// Legacy entities (removed)
-export type Project = { id: UUID; name: string; slug: string };
-
-export type Domain = {
-  id: UUID;
-  name: string;
-  slug: string;
-  description?: string | null;
-  image_url?: string | null;
-};
-
-export type Contributor = {
-  id: UUID;
-  project_id: UUID;
-  user_id: UUID;
-  name?: string | null;
-  role?: string | null;
-  email?: string | null;
-  github?: string | null;
-};
-
-export type Technology = {
-  id: UUID;
-  project_id: UUID;
-  name?: string | null;
-  version?: string | null;
-};
-
-/** Endpoints */
-// Legacy endpoints removed: projects/contributors/technologies/domains

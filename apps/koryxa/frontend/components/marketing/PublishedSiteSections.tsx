@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ export function PublishedHero(props: {
   const { title, description, actions = [] } = props;
 
   return (
-    <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[linear-gradient(135deg,#111f35_0%,#132846_55%,#16395d_100%)] text-white">
+    <section className="relative w-full overflow-hidden bg-[linear-gradient(135deg,#111f35_0%,#132846_55%,#16395d_100%)] text-white">
       <div
         aria-hidden
         className="absolute inset-0 opacity-35"
@@ -28,11 +28,11 @@ export function PublishedHero(props: {
           backgroundSize: "28px 28px",
         }}
       />
-      <div aria-hidden className="absolute inset-y-0 right-[-6%] w-[40%] bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.16),transparent_65%)]" />
-      <div className="relative mx-auto w-full max-w-[var(--marketing-max-w)] px-4 py-20 sm:px-6 lg:px-8">
+      <div aria-hidden className="absolute inset-y-0 right-[-8%] w-48 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.16),transparent_65%)] sm:w-[40%]" />
+      <div className="relative mx-auto w-full max-w-[var(--marketing-max-w)] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         <div className="max-w-4xl">
-          <h1 className="kx-display text-5xl font-semibold leading-[1.02] tracking-[-0.07em] sm:text-6xl">{title}</h1>
-          <p className="mt-6 max-w-3xl text-xl leading-9 text-slate-300">{description}</p>
+          <h1 className="kx-display text-[2.35rem] font-semibold leading-[1.02] tracking-[-0.07em] sm:text-5xl lg:text-6xl">{title}</h1>
+          <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-xl sm:leading-9">{description}</p>
           {actions.length ? (
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               {actions.map((action) => (
@@ -41,8 +41,8 @@ export function PublishedHero(props: {
                   href={action.href}
                   className={
                     action.variant === "secondary"
-                      ? "inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-7 py-4 text-lg font-semibold text-white backdrop-blur transition hover:bg-white/16"
-                      : "inline-flex items-center justify-center rounded-2xl bg-sky-600 px-7 py-4 text-lg font-semibold text-white shadow-[0_20px_52px_rgba(2,132,199,0.24)] transition hover:bg-sky-700"
+                      ? "inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 py-3.5 text-base font-semibold text-white backdrop-blur transition hover:bg-white/16 sm:w-auto sm:px-7 sm:py-4 sm:text-lg"
+                      : "inline-flex w-full items-center justify-center rounded-2xl bg-sky-600 px-6 py-3.5 text-base font-semibold text-white shadow-[0_20px_52px_rgba(2,132,199,0.24)] transition hover:bg-sky-700 sm:w-auto sm:px-7 sm:py-4 sm:text-lg"
                   }
                 >
                   {action.label}
@@ -60,9 +60,9 @@ export function PublishedHero(props: {
 export function PublishedSectionHeading(props: { title: string; description?: string }) {
   const { title, description } = props;
   return (
-    <div className="mb-16 text-center">
-      <h2 className="text-4xl font-bold tracking-[-0.04em] text-slate-950">{title}</h2>
-      {description ? <p className="mx-auto mt-4 max-w-3xl text-xl text-slate-500">{description}</p> : null}
+    <div className="mb-10 text-center sm:mb-16">
+      <h2 className="text-3xl font-bold tracking-[-0.04em] text-slate-950 sm:text-4xl">{title}</h2>
+      {description ? <p className="mx-auto mt-4 max-w-3xl text-base text-slate-500 sm:text-xl">{description}</p> : null}
     </div>
   );
 }
@@ -82,11 +82,11 @@ export function PublishedCard(props: { icon?: ReactNode; title: string; descript
 export function PublishedGradientBand(props: { title: string; description: string; actionHref: string; actionLabel: string }) {
   const { title, description, actionHref, actionLabel } = props;
   return (
-    <section className="relative left-1/2 w-screen -translate-x-1/2 bg-[linear-gradient(135deg,#0d8fda_0%,#0d6aa8_100%)] py-20 text-white">
+    <section className="relative w-full bg-[linear-gradient(135deg,#0d8fda_0%,#0d6aa8_100%)] py-16 text-white sm:py-20">
       <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-bold tracking-[-0.04em]">{title}</h2>
-        <p className="mt-6 text-xl text-sky-100">{description}</p>
-        <Link href={actionHref} className="mt-10 inline-flex items-center justify-center rounded-2xl bg-white px-7 py-4 text-lg font-semibold text-sky-700 transition hover:bg-slate-50">
+        <h2 className="text-3xl font-bold tracking-[-0.04em] sm:text-4xl">{title}</h2>
+        <p className="mt-6 text-base text-sky-100 sm:text-xl">{description}</p>
+        <Link href={actionHref} className="mt-10 inline-flex w-full items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-base font-semibold text-slate-900 transition hover:bg-slate-50 sm:w-auto sm:px-7 sm:py-4 sm:text-lg">
           {actionLabel}
           <ArrowRight className="ml-2 h-5 w-5" />
         </Link>

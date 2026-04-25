@@ -12,17 +12,17 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "type": "organisme",
         "name": "Atelier Data Cohort",
         "headline": "Organisme partenaire pour structurer une base data et des validations progressives.",
-        "summary": "Cohortes guidées, cas réels, évaluations régulières et accompagnement méthodique pour renforcer une trajectoire data ou reporting.",
+        "summary": "Cohortes guidees, cas reels, evaluations regulieres et accompagnement methodique pour renforcer une trajectoire data ou reporting.",
         "domains": ["Data", "Reporting", "Analyse"],
-        "levels": ["Débutant", "Intermédiaire"],
+        "levels": ["Debutant", "Intermediaire"],
         "formats": ["cohorte", "distanciel"],
-        "languages": ["français"],
+        "languages": ["francais"],
         "geographies": ["Afrique de l'Ouest", "Distanciel"],
         "remote": True,
-        "price_range": "budget intermédiaire",
+        "price_range": "budget intermediaire",
         "rhythm_options": ["4-6h / semaine", "7-10h / semaine"],
         "proof_capabilities": ["summary_note", "structured_answer", "project_submission"],
-        "target_profiles": ["transition data", "reporting", "analyse opérationnelle"],
+        "target_profiles": ["transition data", "reporting", "analyse operationnelle"],
         "external_url": None,
         "status": "published",
         "visible": True,
@@ -31,12 +31,12 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "slug": "ops-practice-platform",
         "type": "plateforme",
         "name": "Ops Practice Platform",
-        "headline": "Plateforme partenaire pour avancer à son rythme sur des mini-projets orientés exécution.",
-        "summary": "Ressources asynchrones, projets pratiques, modèles de livrables et checkpoints utiles pour transformer une trajectoire en preuves concrètes.",
-        "domains": ["Automatisation", "Support opérationnel", "Coordination", "Tableau de bord"],
-        "levels": ["Débutant", "Intermédiaire", "Avancé"],
+        "headline": "Plateforme partenaire pour avancer a son rythme sur des mini-projets orientes execution.",
+        "summary": "Ressources asynchrones, projets pratiques, modeles de livrables et checkpoints utiles pour transformer une trajectoire en preuves concretes.",
+        "domains": ["Automatisation", "Support operationnel", "Coordination", "Tableau de bord"],
+        "levels": ["Debutant", "Intermediaire", "Avance"],
         "formats": ["asynchrone", "distanciel"],
-        "languages": ["français", "anglais"],
+        "languages": ["francais", "anglais"],
         "geographies": ["Global", "Distanciel"],
         "remote": True,
         "price_range": "budget flexible",
@@ -51,15 +51,15 @@ DEFAULT_PARTNERS: list[dict[str, Any]] = [
         "slug": "coach-readiness-1to1",
         "type": "coach",
         "name": "Coach Readiness 1:1",
-        "headline": "Coach partenaire pour relire les preuves, garder le cap et préparer l'accès aux opportunités.",
-        "summary": "Accompagnement individuel centré sur le cadrage, la relecture des preuves, la synthèse de progression et la préparation à une mission ou collaboration.",
-        "domains": ["Progression", "Validation", "Préparation mission"],
-        "levels": ["Intermédiaire", "Avancé"],
+        "headline": "Coach partenaire pour relire les preuves, garder le cap et preparer l'acces aux opportunites.",
+        "summary": "Accompagnement individuel centre sur le cadrage, la relecture des preuves, la synthese de progression et la preparation a une mission ou collaboration.",
+        "domains": ["Progression", "Validation", "Preparation mission"],
+        "levels": ["Intermediaire", "Avance"],
         "formats": ["1:1", "visio"],
-        "languages": ["français"],
+        "languages": ["francais"],
         "geographies": ["Distanciel"],
         "remote": True,
-        "price_range": "budget ciblé",
+        "price_range": "budget cible",
         "rhythm_options": ["1-3h / semaine", "4-6h / semaine"],
         "proof_capabilities": ["structured_answer", "summary_note", "mini_deliverable"],
         "target_profiles": ["profils en validation", "mission ready", "besoin de feedback"],
@@ -138,7 +138,9 @@ def score_partner_match(partner: dict[str, Any], onboarding: dict[str, Any]) -> 
         score += 12
     if weekly_rhythm and any(weekly_rhythm in rhythm or rhythm in weekly_rhythm for rhythm in rhythm_options):
         score += 10
-    if any("cas réels" in pref or "cas reels" in pref for pref in preferences) and any("cohorte" in fmt or "asynchrone" in fmt for fmt in formats):
+    if any("cas reels" in pref or "cas réels" in pref for pref in preferences) and any(
+        "cohorte" in fmt or "asynchrone" in fmt for fmt in formats
+    ):
         score += 4
     if any("feedback" in pref or "coach" in pref for pref in preferences) and partner.get("type") == "coach":
         score += 8
@@ -157,13 +159,18 @@ def recommend_partners_from_catalog(
     ranked = sorted(
         (
             {
-                **partner,
-                "match_score": score_partner_match(partner, onboarding),
+                "type": partner["type"],
+                "label": partner["name"],
                 "reason": (
-                    f"Recommandé pour {onboarding.get('domain_interest') or 'cette trajectoire'}, "
+                    f"Recommande pour {onboarding.get('domain_interest') or 'cette trajectoire'}, "
                     f"avec un format {', '.join(partner.get('formats') or ['adaptable'])} "
                     "et des preuves compatibles avec la progression KORYXA."
                 ),
+                "match_score": score_partner_match(partner, onboarding),
+                "formats": list(partner.get("formats") or []),
+                "languages": list(partner.get("languages") or []),
+                "price_hint": partner.get("price_range"),
+                "proof_fit": list(partner.get("proof_capabilities") or []),
             }
             for partner in partners
         ),

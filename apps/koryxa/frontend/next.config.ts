@@ -1,4 +1,4 @@
-// next.config.ts
+﻿// next.config.ts
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
 
@@ -8,6 +8,13 @@ const isProd = process.env.NODE_ENV === "production";
 // (ex: /api/projects -> http://localhost:8000/projects)
 const DEFAULT_API_BASE = "https://api.innovaplus.africa";
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(/\/+$/, "");
+const INNOVA_API_BASE = (() => {
+  let base = API_BASE.replace(/(\/innova\/api)+$/, "/innova/api");
+  if (!base.endsWith("/innova/api")) {
+    base = `${base}/innova/api`;
+  }
+  return base;
+})();
 
 type NextConfigWithTurbopack = NextConfig & {
   turbopack?: {
@@ -19,7 +26,7 @@ const nextConfig: NextConfigWithTurbopack = {
   reactStrictMode: true,
   poweredByHeader: false,
 
-  typescript: { ignoreBuildErrors: isProd },
+  typescript: { ignoreBuildErrors: false },
 
   typedRoutes: false,
 
@@ -46,8 +53,12 @@ const nextConfig: NextConfigWithTurbopack = {
       { source: "/api/auth/:path*", destination: `${API_BASE}/auth/:path*` },
       { source: "/api/chatlaya/:path*", destination: `${API_BASE}/chatlaya/:path*` },
       {
+        source: "/innova/api/:path*",
+        destination: `${INNOVA_API_BASE}/:path*`,
+      },
+      {
         source: "/innova/api/innova/api/:path*",
-        destination: "https://api.innovaplus.africa/innova/api/:path*",
+        destination: `${INNOVA_API_BASE}/:path*`,
       },
     ];
   },

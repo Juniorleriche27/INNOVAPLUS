@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Bot, CalendarRange } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
 import { PublishedHero } from "@/components/marketing/PublishedSiteSections";
 import { productList } from "./data";
 
@@ -10,13 +10,9 @@ export const metadata: Metadata = {
 };
 
 const PRODUCT_PRESENTATION = {
-  myplanning: {
-    icon: <CalendarRange className="h-8 w-8 text-sky-600" />,
-    bg: "bg-sky-100",
-  },
-  chatlaya: {
-    icon: <Bot className="h-8 w-8 text-emerald-600" />,
-    bg: "bg-emerald-100",
+  "service-ia": {
+    icon: <Sparkles className="h-8 w-8 text-violet-600" />,
+    bg: "bg-violet-100",
   },
 } as const;
 
@@ -25,7 +21,7 @@ export default function ProductsPage() {
     <main>
       <PublishedHero
         title="Solutions KORYXA"
-        description="Deux solutions coeur prolongent la plateforme: MyPlanningAI pour l’exécution et ChatLAYA pour le cadrage conversationnel."
+        description="Service IA, le studio KORYXA pour transformer un besoin entreprise en execution concrete."
       />
 
       <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
@@ -49,9 +45,20 @@ export default function ProductsPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/produits/${product.slug}`} className="mt-6 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700">
-                  En savoir plus
-                </Link>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href={product.primaryCta.href}
+                    className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                  >
+                    {product.primaryCta.label}
+                  </Link>
+                  <Link
+                    href={`/produits/${product.slug}`}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700"
+                  >
+                    Voir la fiche
+                  </Link>
+                </div>
               </article>
             );
           })}

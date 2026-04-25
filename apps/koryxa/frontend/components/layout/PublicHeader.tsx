@@ -19,7 +19,7 @@ type PublicNavLink = {
 
 const PUBLIC_NAV_LINKS: PublicNavLink[] = [
   { href: PUBLIC_ROUTES.home, label: "Accueil" },
-  { href: PUBLIC_ROUTES.trajectoire, label: "Blueprint" },
+  { href: PUBLIC_ROUTES.trajectoire, label: "Formation IA" },
   { href: PUBLIC_ROUTES.entreprise, label: "Entreprise" },
   { href: PUBLIC_ROUTES.chatlaya, label: "ChatLAYA" },
   { href: PUBLIC_ROUTES.serviceIa, label: "Service IA" },
@@ -74,12 +74,12 @@ export default function PublicHeader() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-white/8 bg-slate-950/80 backdrop-blur-xl transition-colors"
+      className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl transition-colors"
     >
       <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
         <Link href={PUBLIC_ROUTES.home} className="flex shrink-0 items-center gap-3">
           <BrandLogo className="h-10 w-10 rounded-2xl sm:h-12 sm:w-12" />
-          <p className="kx-display text-[1.3rem] font-semibold leading-none tracking-[-0.06em] text-white sm:text-[1.55rem]">
+          <p className="kx-display text-[1.3rem] font-semibold leading-none tracking-[-0.06em] text-slate-900 sm:text-[1.55rem]">
             KORYXA
           </p>
         </Link>
@@ -94,13 +94,13 @@ export default function PublicHeader() {
                 className={clsx(
                   "relative shrink-0 whitespace-nowrap px-3 py-2.5 text-[0.95rem] font-semibold tracking-[-0.02em] transition-colors 2xl:px-4 2xl:text-[1.05rem]",
                   active
-                    ? "text-sky-300"
-                    : "text-slate-300 hover:text-white",
+                    ? "text-sky-600"
+                    : "text-slate-600 hover:text-slate-900",
                 )}
               >
                 {link.label}
                 {active && (
-                  <span className="absolute bottom-0 left-4 right-4 h-[2.5px] rounded-full bg-gradient-to-r from-sky-500 to-cyan-400" />
+                  <span className="absolute bottom-0 left-4 right-4 h-[2.5px] rounded-full bg-gradient-to-r from-sky-500 to-sky-400" />
                 )}
               </Link>
             );
@@ -111,7 +111,7 @@ export default function PublicHeader() {
           {!isAuthenticated ? (
             <Link
               href={loginHref}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2.5 text-[0.9rem] font-semibold text-slate-200 transition hover:border-sky-400/40 hover:text-sky-300 2xl:px-5 2xl:text-[0.95rem]"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-slate-700 transition hover:border-sky-400 hover:text-sky-600 2xl:px-5 2xl:text-[0.95rem]"
             >
               <UserCircle className="h-4 w-4" />
               Se connecter
@@ -156,7 +156,7 @@ export default function PublicHeader() {
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-white/8 bg-slate-950/95 px-4 py-4 xl:hidden">
+        <div className="border-t border-slate-200/80 bg-white/98 px-4 py-4 xl:hidden">
           <div className="mx-auto flex w-full max-w-[var(--marketing-max-w)] flex-col gap-2">
             <ThemeToggle showLabel={false} className="justify-center" />
 

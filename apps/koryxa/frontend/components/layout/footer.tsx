@@ -16,7 +16,7 @@ export default function Footer() {
             <p className="font-semibold text-white">KORYXA</p>
             <p className="mt-1 text-xs text-slate-400">
               {IS_V1_SIMPLE
-                ? "Blueprint, Entreprise et Service IA dans un cadre simple et premium."
+                ? "Formation IA, Entreprise et Service IA dans un cadre simple et premium."
                 : "KORYXA, plateforme d'orchestration IA pour cadrer, piloter et activer."}
             </p>
           </div>
@@ -25,9 +25,6 @@ export default function Footer() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 sm:text-sm">
           <Link href="/services-ia" className="transition hover:text-sky-300">
             Service IA
-          </Link>
-          <Link href="/opportunites" className="transition hover:text-sky-300">
-            Opportunites
           </Link>
           <Link href="/about" className="transition hover:text-sky-300">
             A propos

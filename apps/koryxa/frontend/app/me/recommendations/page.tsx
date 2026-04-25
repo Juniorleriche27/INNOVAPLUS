@@ -16,29 +16,33 @@ export default async function MeRecommendations() {
     credentials: "include",
   });
   if (!meRes.ok) redirect("/login?redirect=/me/recommendations");
+
   const me = (await meRes.json().catch(() => ({}))) as { id?: string };
   const userId = me?.id || "unknown";
   const recos = await apiMe.recommendations(userId).catch(() => []);
   apiMetrics.event("view_me_reco", undefined, userId).catch(() => {});
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Vos recommandations</h1>
-      {recos.length === 0 ? (
-        <p className="text-sm text-slate-600">Aucune recommandation. Terminez l\'onboarding pour des résultats personnalisés.</p>
-      ) : (
-        <ul className="space-y-3">
-          {recos.map((r) => (
-            <li key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-900">{r.title}</p>
-                <span className="text-xs text-sky-700">Score {r.score}</span>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">{r.reasons.join(" · ")}</p>
-            </li>
-          ))}
-        </ul>
-      )}
+    <main className="mx-auto max-w-4xl p-6">
+      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Recommandations</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Vos prochaines pistes utiles</h1>
+        {recos.length === 0 ? (
+          <p className="mt-4 text-sm leading-7 text-slate-600">Aucune recommandation pour le moment. Terminez l'onboarding pour obtenir un cadrage plus personnalise.</p>
+        ) : (
+          <ul className="mt-5 grid gap-3">
+            {recos.map((recommendation) => (
+              <li key={recommendation.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-900">{recommendation.title}</p>
+                  <span className="text-xs font-semibold text-sky-700">Score {recommendation.score}</span>
+                </div>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{recommendation.reasons.join(" · ")}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

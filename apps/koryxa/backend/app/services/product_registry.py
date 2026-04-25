@@ -1,21 +1,13 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.services.postgres_bootstrap import db_execute, db_fetchall
 
 
 PUBLIC_PRODUCTS: list[dict[str, Any]] = [
-    {
-        "slug": "myplanning",
-        "name": "MyPlanningAI",
-        "href": "/products/myplanning",
-        "eyebrow": "Pilotage",
-        "summary": "MyPlanningAI aide à organiser les tâches, suivre la progression, piloter les priorités et structurer l'exécution, en individuel comme en équipe.",
-        "bullets": ["Progression visible", "Priorités plus claires", "Exécution mieux structurée"],
-        "cta": "Voir MyPlanningAI",
-    },
     {
         "slug": "chatlaya",
         "name": "ChatLAYA",
@@ -28,26 +20,55 @@ PUBLIC_PRODUCTS: list[dict[str, Any]] = [
 ]
 
 
-async def ensure_public_products_seed(db: AsyncIOMotorDatabase) -> None:
+async def ensure_public_products_seed(db) -> None:
     now = datetime.now(timezone.utc)
     for item in PUBLIC_PRODUCTS:
-        await db["public_products"].update_one(
-            {"slug": item["slug"]},
-            {
-                "$set": {
-                    **item,
-                    "visible": True,
-                    "updated_at": now,
+        if db is None:
+            db_execute(
+                """
+                insert into app.public_products(slug, name, href, eyebrow, summary, bullets, cta, visible, created_at, updated_at)
+                values (%s, %s, %s, %s, %s, %s::jsonb, %s, true, %s, %s)
+                on conflict (slug) do update
+                set name = excluded.name,
+                    href = excluded.href,
+                    eyebrow = excluded.eyebrow,
+                    summary = excluded.summary,
+                    bullets = excluded.bullets,
+                    cta = excluded.cta,
+                    visible = true,
+                    updated_at = excluded.updated_at;
+                """,
+                (item["slug"], item["name"], item["href"], item["eyebrow"], item["summary"], json.dumps(item["bullets"]), item["cta"], now, now),
+            )
+        else:
+            await db["public_products"].update_one(
+                {"slug": item["slug"]},
+                {
+                    "$set": {
+                        **item,
+                        "visible": True,
+                        "updated_at": now,
+                    },
+                    "$setOnInsert": {"created_at": now},
                 },
-                "$setOnInsert": {"created_at": now},
-            },
-            upsert=True,
-        )
+                upsert=True,
+            )
 
 
-async def list_public_products(db: AsyncIOMotorDatabase) -> list[dict[str, Any]]:
+async def list_public_products(db) -> list[dict[str, Any]]:
     await ensure_public_products_seed(db)
-    items = await db["public_products"].find({"visible": True}).sort("name", 1).to_list(length=20)
+    if db is None:
+        items = db_fetchall(
+            """
+            select slug, name, href, eyebrow, summary, bullets, cta
+            from app.public_products
+            where visible = true
+            order by name asc
+            limit 20;
+            """
+        )
+    else:
+        items = await db["public_products"].find({"visible": True}).sort("name", 1).to_list(length=20)
     normalized: list[dict[str, Any]] = []
     for item in items:
         normalized.append(
@@ -57,7 +78,7 @@ async def list_public_products(db: AsyncIOMotorDatabase) -> list[dict[str, Any]]
                 "href": item["href"],
                 "eyebrow": item["eyebrow"],
                 "summary": item["summary"],
-                "bullets": list(item.get("bullets") or []),
+                "bullets": list(item.get("bullets") or [] if isinstance(item.get("bullets"), list) else json.loads(item.get("bullets") or "[]")),
                 "cta": item["cta"],
             }
         )

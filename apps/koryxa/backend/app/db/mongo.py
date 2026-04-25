@@ -2,8 +2,15 @@ from __future__ import annotations
 
 from typing import AsyncGenerator
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from pymongo.errors import PyMongoError
+try:
+    from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+    from pymongo.errors import PyMongoError
+except Exception:  # noqa: BLE001
+    AsyncIOMotorClient = None  # type: ignore[assignment]
+    AsyncIOMotorDatabase = object  # type: ignore[assignment]
+
+    class PyMongoError(Exception):
+        pass
 
 from app.core.config import settings
 
@@ -14,6 +21,8 @@ _db: AsyncIOMotorDatabase | None = None  # default DB for KORYXA
 
 async def connect_to_mongo() -> None:
     global _client, _db
+    if AsyncIOMotorClient is None:
+        raise RuntimeError("motor is not installed")
     if _client is None:
         _client = AsyncIOMotorClient(settings.MONGO_URI)
         _db = _client[settings.DB_NAME]
@@ -46,44 +55,10 @@ async def connect_to_mongo() -> None:
             await _db["assignments"].create_index("user_id")
             await _db["fairness_windows"].create_index("period_start")
             await _db["decisions_audit"].create_index("created_at")
-            await _db["myplanning_tasks"].create_index([("user_id", 1), ("due_datetime", 1)])
-            await _db["myplanning_tasks"].create_index([("user_id", 1), ("kanban_state", 1)])
-            await _db["myplanning_onboarding"].create_index([("user_id", 1)], unique=True)
-            await _db["myplanning_workspaces"].create_index([("owner_user_id", 1), ("updated_at", -1)])
-            await _db["myplanning_workspaces"].create_index([("name", 1)])
-            await _db["myplanning_workspace_members"].create_index(
-                [("workspace_id", 1), ("user_id", 1)],
-                unique=True,
-                partialFilterExpression={"user_id": {"$exists": True}, "status": "active"},
-            )
-            await _db["myplanning_workspace_members"].create_index([("workspace_id", 1), ("status", 1)])
-            await _db["myplanning_workspace_members"].create_index([("user_id", 1), ("status", 1)])
-            await _db["myplanning_workspace_members"].create_index([("workspace_id", 1), ("email", 1), ("status", 1)])
             # Data reservoir collections
             await _db["ai_interactions"].create_index([("user_id_anon", 1), ("ts", -1)])
             await _db["social_messages"].create_index([("thread_id", 1), ("ts", 1)])
             await _db["planning_events"].create_index([("user_id_anon", 1), ("ts", -1)])
-
-            # KORYXA School collections
-            await _db["certificate_programs"].create_index([("slug", 1)], unique=True)
-            await _db["certificate_programs"].create_index([("category", 1), ("status", 1)])
-            await _db["certificate_modules"].create_index([("certificate_id", 1), ("order_index", 1)])
-            await _db["certificate_lessons"].create_index([("certificate_id", 1), ("order_index", 1)])
-            await _db["lesson_resources"].create_index([("lesson_id", 1)])
-            await _db["certificate_enrollments"].create_index([("user_id", 1), ("certificate_id", 1)], unique=True)
-            await _db["lesson_progress"].create_index([("enrollment_id", 1), ("lesson_id", 1)], unique=True)
-            await _db["certificate_evidence"].create_index([("certificate_id", 1), ("user_id", 1)])
-            await _db["issued_certificates"].create_index([("certificate_id", 1), ("user_id", 1)], unique=True)
-            await _db["certificate_skill_links"].create_index([("certificate_id", 1), ("skill_slug", 1)], unique=True)
-            await _db["user_certificate_skills"].create_index([("user_id", 1), ("skill_slug", 1)], unique=True)
-            await _db["module_submissions"].create_index([("user_id", 1), ("module_id", 1), ("created_at", -1)])
-            await _db["module_test_sessions"].create_index([("test_id", 1)], unique=True)
-            await _db["module_test_sessions"].create_index([("user_id", 1), ("created_at", -1)])
-            await _db["module_test_attempts"].create_index([("user_id", 1), ("module_id", 1), ("created_at", -1)])
-            await _db["module1_submissions"].create_index([("user_id", 1), ("created_at", -1)])
-            await _db["module1_notebook_validations"].create_index([("user_id", 1)], unique=True)
-            await _db["module1_quiz_sessions"].create_index([("user_id", 1), ("created_at", -1)])
-            await _db["module1_quiz_attempts"].create_index([("user_id", 1), ("created_at", -1)])
 
             # Auth & Chatlaya collections
             await _db["sessions"].create_index("token_hash", unique=True)
@@ -107,7 +82,6 @@ async def connect_to_mongo() -> None:
                 unique=True,
             )
             await _db["trajectory_task_bindings"].create_index([("user_id", 1), ("context_id", 1), ("updated_at", -1)])
-            await _db["trajectory_task_bindings"].create_index([("myplanning_task_id", 1)], sparse=True)
             await _db["enterprise_needs"].create_index([("guest_id", 1), ("created_at", -1)])
             await _db["enterprise_needs"].create_index([("user_id", 1), ("created_at", -1)])
             await _db["enterprise_needs"].create_index([("status", 1), ("created_at", -1)])
@@ -119,7 +93,6 @@ async def connect_to_mongo() -> None:
                 unique=True,
             )
             await _db["enterprise_task_bindings"].create_index([("user_id", 1), ("context_id", 1), ("updated_at", -1)])
-            await _db["enterprise_task_bindings"].create_index([("myplanning_task_id", 1)], sparse=True)
             await _db["public_products"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("status", 1), ("visible", 1), ("type", 1)])

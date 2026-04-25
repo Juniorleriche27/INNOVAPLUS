@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import clsx from "clsx";
 import Link from "next/link";
@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LogoutButton from "@/components/auth/LogoutButton";
+import BrandLogo from "@/components/layout/BrandLogo";
 import ThemeToggle from "@/components/theme/ThemeToggle";
+import { CONNECTED_ROUTES, PUBLIC_ROUTES } from "@/config/routes";
 
 type ConnectedNavLink = {
   href: string;
@@ -16,51 +18,26 @@ type ConnectedNavLink = {
 
 const CONNECTED_NAV_LINKS: ConnectedNavLink[] = [
   {
-    href: "/myplanning/app/koryxa-home",
-    label: "Accueil",
-    match: (pathname) => pathname.startsWith("/myplanning/app/koryxa-home"),
+    href: PUBLIC_ROUTES.trajectoire,
+    label: "Formation IA",
+    match: (pathname) => pathname.startsWith(PUBLIC_ROUTES.trajectoire),
   },
   {
-    href: "/myplanning/app/koryxa",
-    label: "Trajectoire",
-    match: (pathname) => pathname === "/myplanning/app/koryxa" || pathname.startsWith("/myplanning/app/koryxa/"),
-  },
-  {
-    href: "/myplanning/app/koryxa-enterprise",
+    href: PUBLIC_ROUTES.entreprise,
     label: "Entreprise",
-    match: (pathname) => pathname === "/myplanning/app/koryxa-enterprise" || pathname.startsWith("/myplanning/app/koryxa-enterprise/"),
+    match: (pathname) => pathname.startsWith(PUBLIC_ROUTES.entreprise),
   },
   {
-    href: "/chatlaya",
+    href: PUBLIC_ROUTES.chatlaya,
     label: "ChatLAYA",
-    match: (pathname) => pathname.startsWith("/chatlaya"),
+    match: (pathname) => pathname.startsWith(PUBLIC_ROUTES.chatlaya),
   },
   {
-    href: "/communaute",
-    label: "Réseau IA",
-    match: (pathname) => pathname.startsWith("/community") || pathname.startsWith("/communaute"),
-  },
-  {
-    href: "/opportunites",
-    label: "Opportunités",
-    match: (pathname) =>
-      pathname.startsWith("/opportunities") ||
-      pathname.startsWith("/opportunites") ||
-      pathname.startsWith("/myplanning/opportunities"),
-  },
-  {
-    href: "/myplanning/profile",
-    label: "Profil",
-    match: (pathname) => pathname.startsWith("/myplanning/profile"),
-  },
-  {
-    href: "/myplanning/settings",
-    label: "Paramètres",
-    match: (pathname) => pathname.startsWith("/myplanning/settings"),
+    href: PUBLIC_ROUTES.serviceIa,
+    label: "Service IA",
+    match: (pathname) => pathname.startsWith(PUBLIC_ROUTES.serviceIa),
   },
 ];
-
-const KORYXA_CONNECTED_HOME = "/myplanning/app/koryxa-home";
 
 function IconMenu(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -86,27 +63,21 @@ export default function ConnectedHeader() {
   const isAuthenticated = Boolean(user?.email);
   const displayName = useMemo(() => {
     const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
-    return fullName || user?.email || "Espace connecté KORYXA";
+    return fullName || user?.email || "Compte";
   }, [user]);
   const userInitial = displayName.charAt(0).toUpperCase();
-  const logoutRedirect = `/myplanning/login?redirect=${encodeURIComponent(pathname || KORYXA_CONNECTED_HOME)}`;
+  const loginHref = `${CONNECTED_ROUTES.login}?redirect=${encodeURIComponent(pathname || CONNECTED_ROUTES.home)}`;
+  const accountHref = isAuthenticated ? "/account/role" : loginHref;
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-[0_18px_48px_rgba(2,6,23,0.34)]">
-      <div className="mx-auto flex w-full max-w-[var(--app-max-w)] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link href={KORYXA_CONNECTED_HOME} className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,#0f172a,#0ea5e9)]">
-              <span className="text-sm font-black tracking-[0.18em] text-white">K</span>
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-base font-black tracking-wide">KORYXA</p>
-              <p className="hidden truncate text-[11px] text-slate-300 md:block">Espace connecté • trajectoire, entreprise, opportunités</p>
-            </div>
-          </Link>
-        </div>
+      <div className="mx-auto flex w-full max-w-[var(--app-max-w)] items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8">
+        <Link href={CONNECTED_ROUTES.home} className="flex shrink-0 items-center gap-3">
+          <BrandLogo className="h-10 w-10 border-white/15 shadow-[0_18px_36px_rgba(2,6,23,0.26)] sm:h-11 sm:w-11" />
+          <p className="truncate text-base font-black tracking-wide">KORYXA</p>
+        </Link>
 
-        <nav className="hidden items-center gap-2 xl:flex">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex">
           {CONNECTED_NAV_LINKS.map((link) => {
             const active = link.match(pathname);
             return (
@@ -114,7 +85,7 @@ export default function ConnectedHeader() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  "shrink-0 whitespace-nowrap rounded-full border px-3 py-2.5 text-[0.88rem] font-semibold transition 2xl:text-[0.92rem]",
                   active
                     ? "border-sky-400/60 bg-sky-500/15 text-white"
                     : "border-transparent text-slate-200 hover:border-slate-700 hover:bg-slate-900 hover:text-white",
@@ -126,24 +97,21 @@ export default function ConnectedHeader() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <ThemeToggle variant="dark" showLabel={false} />
-          <span className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-200">
-            {isAuthenticated ? "Connecté" : "Accès protégé"}
-          </span>
+        <div className="hidden shrink-0 items-center gap-2 xl:flex">
           <Link
-            href={isAuthenticated ? "/myplanning/profile" : `/myplanning/login?redirect=${encodeURIComponent(pathname || "/chatlaya")}`}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-sky-400/60 hover:text-sky-100"
+            href={accountHref}
+            className="inline-flex min-w-[8.75rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2.5 text-[0.88rem] font-semibold text-white transition hover:border-sky-400/60 hover:text-sky-100 2xl:min-w-[9.5rem] 2xl:text-sm"
           >
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/15 text-xs font-bold text-sky-100">
               {userInitial}
             </span>
-            <span>{isAuthenticated ? "Profil" : "Se connecter"}</span>
+            <span>{isAuthenticated ? "Compte" : "Se connecter"}</span>
           </Link>
+
           {isAuthenticated ? (
             <LogoutButton
-              redirectTo={logoutRedirect}
-              className="inline-flex items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:border-rose-400/60 hover:text-rose-100"
+              redirectTo={loginHref}
+              className="inline-flex min-w-[8.5rem] items-center justify-center rounded-full border border-slate-700 bg-slate-900 px-4 py-2.5 text-[0.88rem] font-semibold text-white transition hover:border-rose-400/60 hover:text-rose-100 2xl:min-w-[9rem] 2xl:text-sm"
             />
           ) : null}
         </div>
@@ -151,8 +119,8 @@ export default function ConnectedHeader() {
         <button
           type="button"
           onClick={() => setMobileOpen((current) => !current)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-white xl:hidden"
-          aria-label={mobileOpen ? "Fermer le menu connecté" : "Ouvrir le menu connecté"}
+          className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-slate-900 text-white xl:hidden"
+          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={mobileOpen}
         >
           {mobileOpen ? <IconClose className="h-5 w-5" /> : <IconMenu className="h-5 w-5" />}
@@ -162,7 +130,8 @@ export default function ConnectedHeader() {
       {mobileOpen ? (
         <div className="border-t border-slate-800 bg-slate-950 px-4 py-4 xl:hidden">
           <div className="mx-auto flex w-full max-w-[var(--app-max-w)] flex-col gap-2">
-            <ThemeToggle variant="dark" className="justify-center" />
+            <ThemeToggle variant="dark" showLabel={false} className="justify-center" />
+
             {CONNECTED_NAV_LINKS.map((link) => {
               const active = link.match(pathname);
               return (
@@ -181,10 +150,19 @@ export default function ConnectedHeader() {
                 </Link>
               );
             })}
+
+            <Link
+              href={accountHref}
+              onClick={() => setMobileOpen(false)}
+              className="mt-2 inline-flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
+            >
+              {isAuthenticated ? "Compte" : "Se connecter"}
+            </Link>
+
             {isAuthenticated ? (
               <LogoutButton
-                redirectTo={logoutRedirect}
-                className="mt-2 inline-flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
+                redirectTo={loginHref}
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-semibold text-slate-200"
               />
             ) : null}
           </div>

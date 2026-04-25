@@ -5,13 +5,27 @@ import { usePathname } from "next/navigation";
 import Footer from "@/components/layout/footer";
 import PublicHeader from "@/components/layout/PublicHeader";
 import ConnectedHeader from "@/components/layout/ConnectedHeader";
+import FloatingNav from "@/components/layout/FloatingNav";
 
 function PublicShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isChatPage = pathname === "/chatlaya";
+  const isFunnelStart =
+    pathname === "/trajectoire/demarrer" ||
+    pathname === "/entreprise/demarrer" ||
+    pathname === "/entreprise/cadrage";
 
   return (
     <div className="public-shell kx-grid-backdrop relative flex min-h-screen flex-col overflow-hidden text-slate-900 transition-colors duration-300 dark:text-slate-100">
+      {!isChatPage ? (
+        <>
+          <div aria-hidden className="kx-animated-grid pointer-events-none absolute inset-0 opacity-[0.14] dark:opacity-[0.18]" />
+          <div aria-hidden className="kx-orb kx-orb-a opacity-40 dark:opacity-30" />
+          <div aria-hidden className="kx-orb kx-orb-b opacity-35 dark:opacity-25" />
+          <div aria-hidden className="kx-orb kx-orb-d opacity-30 dark:opacity-22" />
+        </>
+      ) : null}
       {!isHome ? (
         <>
           <div className="pointer-events-none absolute inset-x-0 top-0 h-[460px] bg-[radial-gradient(circle_at_top,rgba(186,230,253,0.58),transparent_62%)] dark:bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.26),transparent_56%)]" aria-hidden />
@@ -20,10 +34,36 @@ function PublicShell({ children }: { children: ReactNode }) {
         </>
       ) : null}
       <PublicHeader />
-      <main id="page-content" className={isHome ? "relative flex-1" : "relative flex-1 px-4 py-10 sm:px-6 lg:px-8 lg:py-12"}>
-        <div className={isHome ? "w-full" : "mx-auto w-full max-w-[var(--marketing-max-w)]"}>{children}</div>
-      </main>
-      <Footer />
+      <>
+        <main
+          id="page-content"
+          className={
+            isHome
+              ? "relative flex-1"
+              : isChatPage
+                ? "relative h-[calc(100dvh-88px)] overflow-hidden px-4 py-4 sm:px-6 sm:py-5 lg:px-8"
+                : isFunnelStart
+                  ? "relative flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+                  : "relative flex-1 px-4 py-10 sm:px-6 lg:px-8 lg:py-12"
+          }
+        >
+          <div
+            className={
+              isHome
+                ? "w-full"
+                : isChatPage
+                  ? "mx-auto h-full w-full max-w-[96vw] xl:max-w-[92vw]"
+                  : isFunnelStart
+                    ? "mx-auto w-full max-w-[96vw] xl:max-w-[92vw]"
+                    : "mx-auto w-full max-w-[var(--marketing-max-w)]"
+            }
+          >
+            {children}
+          </div>
+        </main>
+        {isFunnelStart || isChatPage ? null : <Footer />}
+      </>
+      <FloatingNav />
     </div>
   );
 }
@@ -35,6 +75,7 @@ function ConnectedShell({ children }: { children: ReactNode }) {
       <main id="page-content" className="px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[var(--app-max-w)]">{children}</div>
       </main>
+      <FloatingNav />
     </div>
   );
 }
@@ -42,12 +83,8 @@ function ConnectedShell({ children }: { children: ReactNode }) {
 export default function RouteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/myplanning") || pathname.startsWith("/school")) {
+  if (pathname.startsWith("/entreprise/setup")) {
     return <>{children}</>;
-  }
-
-  if (pathname.startsWith("/chatlaya") || pathname.startsWith("/community/messages")) {
-    return <ConnectedShell>{children}</ConnectedShell>;
   }
 
   return <PublicShell>{children}</PublicShell>;

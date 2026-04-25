@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
+import { CLIENT_INNOVA_API_BASE, DEV_AUTO_LOGIN_ENABLED, SITE_BASE_URL } from "@/lib/env";
 
 type Step = "request" | "verify";
 
@@ -22,12 +22,12 @@ type LoginClientProps = {
 export default function LoginClient({
   defaultRedirect = "/",
   requestedRedirect,
-  heading = "Connexion sécurisée",
-  subtitle = "Rentre ton email, reçois un code OTP et connecte-toi sans mot de passe.",
+  heading = "Connexion securisee",
+  subtitle = "Entrez votre email, recevez un code OTP et connectez-vous sans mot de passe.",
   supportHref = "/account/recover",
   supportLabel = "Support KORYXA",
   signupHref = "/signup",
-  signupLabel = "Créer un compte",
+  signupLabel = "Creer un compte",
 }: LoginClientProps = {}) {
   const router = useRouter();
   const redirect =
@@ -43,21 +43,58 @@ export default function LoginClient({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
-  const isPreviewDomain =
-    typeof window !== "undefined" && window.location.hostname.endsWith("vercel.app");
+  const [clientState, setClientState] = useState({
+    ready: false,
+    isPreviewDomain: false,
+    isLocalHost: false,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hostname = window.location.hostname;
+    setClientState({
+      ready: true,
+      isPreviewDomain: hostname.endsWith("vercel.app"),
+      isLocalHost: hostname === "127.0.0.1" || hostname === "localhost",
+    });
+  }, []);
+
+  const { ready, isPreviewDomain, isLocalHost } = clientState;
 
   useEffect(() => {
     if (!isPreviewDomain) return;
-    const target = `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(redirect)}`;
-    window.location.href = target;
+    window.location.href = `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(redirect)}`;
   }, [isPreviewDomain, redirect]);
 
-  // If already logged in, redirect client-side (avoids server-side fetch failure).
   useEffect(() => {
     if (user?.email) {
       router.replace(redirect);
     }
-  }, [user, redirect, router]);
+  }, [redirect, router, user]);
+
+  async function handleLocalLogin() {
+    setActionLoading(true);
+    setError(null);
+    setInfo("Connexion locale en cours...");
+
+    try {
+      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/dev-login`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(typeof data?.detail === "string" ? data.detail : "Connexion locale indisponible.");
+      }
+
+      await refresh();
+      router.replace(redirect);
+    } catch (err) {
+      setInfo(null);
+      setError(err instanceof Error ? err.message : "Connexion locale impossible.");
+      setActionLoading(false);
+    }
+  }
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,27 +102,31 @@ export default function LoginClient({
     setError(null);
     setInfo(null);
     setDebugCode(null);
+
     try {
-      const resp = await fetch(`${INNOVA_API_BASE}/auth/request-otp`, {
+      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, intent: "login" }),
       });
-      const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) {
-        const msg =
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message =
           typeof data?.detail === "string"
             ? data.detail
             : typeof data?.detail?.detail === "string"
               ? data.detail.detail
               : "Impossible d'envoyer le code.";
-        throw new Error(msg);
+        throw new Error(message);
       }
+
       setStep("verify");
-      setInfo("Code envoyé ! Consulte ta boîte mail (ou le canal configuré).");
-      if (data?.debug_code) setDebugCode(data.debug_code);
+      setInfo("Code envoye. Consultez votre boite mail ou le canal configure.");
+      if (data?.debug_code) {
+        setDebugCode(data.debug_code);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
       setActionLoading(false);
     }
@@ -95,26 +136,25 @@ export default function LoginClient({
     event.preventDefault();
     setActionLoading(true);
     setError(null);
+
     try {
-      const resp = await fetch(`${INNOVA_API_BASE}/auth/login-otp`, {
+      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          email,
-          code: otp,
-        }),
+        body: JSON.stringify({ email, code: otp }),
       });
-      const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) {
-        const msg =
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message =
           typeof data?.detail === "string"
             ? data.detail
             : typeof data?.detail?.detail === "string"
               ? data.detail.detail
               : "Code invalide.";
-        throw new Error(msg);
+        throw new Error(message);
       }
+
       await refresh();
       if (isPreviewDomain) {
         window.location.href = `${SITE_BASE_URL}${redirect}`;
@@ -122,7 +162,7 @@ export default function LoginClient({
       }
       router.replace(redirect);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
       setActionLoading(false);
     }
@@ -132,16 +172,40 @@ export default function LoginClient({
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
         <h1 className="text-2xl font-semibold text-slate-900">{heading}</h1>
-        <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
-        {isPreviewDomain && (
+        <p className="mt-2 text-sm leading-7 text-slate-600">{subtitle}</p>
+
+        {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
+          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            Mode local actif : utilisez la connexion locale rapide pour tester l'acces sans OTP.
+          </div>
+        ) : null}
+
+        {ready && isPreviewDomain ? (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Vous êtes sur un domaine de prévisualisation. Après connexion, vous serez redirigé vers {SITE_BASE_URL} pour
+            Vous etes sur un domaine de previsualisation. Apres connexion, vous serez redirige vers {SITE_BASE_URL} pour
             que la session fonctionne correctement.
           </div>
-        )}
+        ) : null}
 
         {step === "request" ? (
           <form onSubmit={requestOtp} className="mt-6 space-y-4">
+            {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
+              <button
+                type="button"
+                onClick={() => void handleLocalLogin()}
+                className="w-full rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:opacity-60"
+                disabled={actionLoading}
+              >
+                {actionLoading ? "Connexion..." : "Connexion locale rapide"}
+              </button>
+            ) : null}
+
+            {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Ou utilisez le flux OTP ci-dessous si vous voulez tester la vraie connexion.
+              </div>
+            ) : null}
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                 Adresse email
@@ -156,11 +220,9 @@ export default function LoginClient({
               />
             </div>
 
-            {error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+            {error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            ) : null}
 
             <button
               type="submit"
@@ -190,7 +252,7 @@ export default function LoginClient({
                 id="otp"
                 type="text"
                 inputMode="numeric"
-                pattern="\d*"
+                pattern="\\d*"
                 required
                 value={otp}
                 onChange={(event) => setOtp(event.target.value)}
@@ -198,17 +260,15 @@ export default function LoginClient({
               />
             </div>
 
-            {info && <p className="text-sm text-slate-500">{info}</p>}
-            {debugCode && (
+            {info ? <p className="text-sm text-slate-500">{info}</p> : null}
+            {debugCode ? (
               <p className="text-sm font-mono text-slate-500">
                 Code dev : <span className="font-semibold text-slate-900">{debugCode}</span>
               </p>
-            )}
-            {error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+            ) : null}
+            {error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            ) : null}
 
             <button
               type="submit"
@@ -233,7 +293,7 @@ export default function LoginClient({
 
         <div className="mt-6 space-y-2 text-sm text-slate-500">
           <p>
-            Envoyer un message à l&apos;équipe ?{" "}
+            Envoyer un message a l'equipe ?{" "}
             <Link href={supportHref} className="font-semibold text-sky-700 hover:underline">
               {supportLabel}
             </Link>

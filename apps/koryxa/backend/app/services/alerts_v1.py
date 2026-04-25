@@ -119,7 +119,7 @@ def _enqueue_alert_sent_integration_event(cur: RealDictCursor, notification_row:
 
 def _render_email(template: str, payload: dict[str, Any]) -> tuple[str, str, str]:
     base = _frontend_base_url()
-    link = f"{base}/myplanning/app"
+    link = f"{base}/app"
 
     if template in {"task_due_soon", "task_overdue", "task_stale"}:
         title = str(payload.get("title") or "Tâche")
@@ -169,7 +169,7 @@ def _render_email(template: str, payload: dict[str, Any]) -> tuple[str, str, str
 
 def _render_whatsapp(template: str, payload: dict[str, Any]) -> str:
     base = _frontend_base_url()
-    link = f"{base}/myplanning/app"
+    link = f"{base}/app"
 
     if template in {"task_due_soon", "task_overdue", "task_stale"}:
         title = str(payload.get("title") or "Tâche")

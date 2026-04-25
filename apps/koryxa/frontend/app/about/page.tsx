@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 const PLATFORM_BLOCKS = [
   {
     icon: Compass,
-    title: "Blueprint",
+    title: "Formation IA",
     detail: "Clarifie les profils, la trajectoire et le plan d'action des talents.",
     href: "/trajectoire",
   },

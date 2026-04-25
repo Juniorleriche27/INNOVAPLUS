@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { MouseEvent, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { INNOVA_API_BASE } from "@/lib/env";
+import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 
 type LogoutButtonProps = {
   redirectTo?: string;
@@ -32,7 +32,7 @@ export default function LogoutButton({
     setPending(true);
 
     try {
-      await fetch(`${INNOVA_API_BASE}/auth/logout`, {
+      await fetch(`${CLIENT_INNOVA_API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
         cache: "no-store",

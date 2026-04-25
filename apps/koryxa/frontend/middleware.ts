@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PROTECTED_PATHS = [
@@ -13,6 +13,7 @@ const SESSION_COOKIE = "innova_session";
 const SITE_BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://innovaplus.africa").replace(/\/+$/, "");
 const LEGACY_API_HOST = "https://api.innovaplus.africa";
 const DEFAULT_API_BASE = "https://innovaplus.africa";
+const CONNECTED_HOME = "/";
 
 function normalizeApiBase(base: string): string {
   const raw = base.replace(/\/+$/, "");
@@ -23,8 +24,26 @@ function normalizeApiBase(base: string): string {
   return raw;
 }
 
+function alignLoopbackHost(base: string, siteBase: string): string {
+  try {
+    const baseUrl = new URL(base);
+    const siteUrl = new URL(siteBase);
+    const loopbackHosts = new Set(["localhost", "127.0.0.1"]);
+    if (loopbackHosts.has(baseUrl.hostname) && loopbackHosts.has(siteUrl.hostname) && baseUrl.hostname !== siteUrl.hostname) {
+      baseUrl.hostname = siteUrl.hostname;
+      return baseUrl.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // Keep invalid URLs unchanged.
+  }
+  return base;
+}
+
 const AUTH_API_BASE = normalizeApiBase(
-  (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || DEFAULT_API_BASE).replace(/\/+$/, "")
+  alignLoopbackHost(
+    (process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || DEFAULT_API_BASE).replace(/\/+$/, ""),
+    SITE_BASE_URL,
+  ),
 );
 
 function normalizeInnovaBase(base: string) {
@@ -39,19 +58,19 @@ function normalizeInnovaBase(base: string) {
 const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
 
 const PLATFORM_REDIRECTS: Array<{ from: string; to: string }> = [
-  { from: "/platform/trajectoire", to: "/myplanning/app/koryxa" },
-  { from: "/platform/entreprise", to: "/myplanning/app/koryxa-enterprise" },
-  { from: "/platform/chatlaya", to: "/chatlaya" },
-  { from: "/platform/opportunites", to: "/myplanning/opportunities" },
-  { from: "/platform/missions", to: "/myplanning/opportunities" },
-  { from: "/platform/communaute", to: "/communaute" },
-  { from: "/platform/messages", to: "/community/messages" },
-  { from: "/platform/formateurs", to: "/myplanning/formateurs" },
-  { from: "/platform/profil", to: "/myplanning/profile" },
-  { from: "/platform/notifications", to: "/myplanning/app/koryxa-home" },
-  { from: "/platform/parametres", to: "/myplanning/settings" },
-  { from: "/platform/talents", to: "/communaute" },
-  { from: "/platform", to: "/myplanning/app/koryxa-home" },
+  { from: "/platform/trajectoire", to: "/trajectoire" },
+  { from: "/platform/entreprise", to: "/entreprise" },
+  { from: "/platform/chatlaya", to: "/services-ia" },
+  { from: "/platform/opportunites", to: "/opportunites" },
+  { from: "/platform/missions", to: "/opportunites" },
+  { from: "/platform/communaute", to: "/opportunites" },
+  { from: "/platform/messages", to: "/services-ia" },
+  { from: "/platform/formateurs", to: "/" },
+  { from: "/platform/profil", to: "/account/role" },
+  { from: "/platform/notifications", to: "/" },
+  { from: "/platform/parametres", to: "/account/role" },
+  { from: "/platform/talents", to: "/opportunites" },
+  { from: "/platform", to: "/" },
 ];
 
 function mapLegacyPlatformPath(pathname: string): string | null {
@@ -98,17 +117,6 @@ function appendSessionClearHeaders(response: NextResponse) {
 }
 
 const CONNECTED_AUTH_REQUIRED_PREFIXES = [
-  "/chatlaya",
-  "/community/messages",
-  "/myplanning/app",
-  "/myplanning/formateurs",
-  "/myplanning/profile",
-  "/myplanning/settings",
-  "/myplanning/opportunities",
-  "/myplanning/team",
-  "/myplanning/orgs",
-  "/myplanning/enterprise/dashboard",
-  "/myplanning/enterprise/onboarding",
   "/account",
   "/onboarding",
 ];
@@ -120,6 +128,12 @@ function requiresConnectedAuth(pathname: string) {
 function getLoginPath(pathname: string): "/login" {
   void pathname;
   return "/login";
+}
+
+function getSafeRedirectTarget(value: string | null, fallback: string): string {
+  if (!value) return fallback;
+  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
+  return value;
 }
 
 async function hasValidSession(request: NextRequest): Promise<boolean> {
@@ -157,24 +171,11 @@ const V1_HIDDEN_PREFIXES = [
   "/groups",
 ];
 
-const V1_SCHOOL_ALLOWED = [
-  "/school",
-  "/school/fondamentaux",
-  "/school/specialisations",
-  "/school/validations",
-  "/school/parcours",
-  "/school/data-analyst",
-  "/school/data-engineer",
-  "/school/data-science",
-  "/school/machine-learning",
-];
-
 const V1_PUBLIC_PATHS = [
   "/",
   "/login",
   "/signup",
   "/logout",
-  "/school",
   "/trajectoire",
   "/entreprise",
   "/community",
@@ -185,15 +186,13 @@ const V1_PUBLIC_PATHS = [
   "/a-propos",
   "/products",
   "/produits",
-  "/opportunities",
-  "/opportunites",
   "/contact",
+  "/services-ia",
   "/chatlaya",
   "/resources",
   "/privacy",
   "/terms",
   "/bientot",
-  "/myplanning",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -247,11 +246,6 @@ export async function middleware(request: NextRequest) {
         return res;
       }
     }
-    if (pathname.startsWith("/school/") && !V1_SCHOOL_ALLOWED.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/school";
-      return NextResponse.redirect(url);
-    }
     if (V1_HIDDEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
       const url = request.nextUrl.clone();
       url.pathname = "/bientot";
@@ -261,13 +255,28 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/chat-laya" || pathname.startsWith("/chat-laya/")) {
     const url = request.nextUrl.clone();
-    url.pathname = pathname.replace("/chat-laya", "/chatlaya");
+    url.pathname = pathname.replace("/chat-laya", "/services-ia");
     return NextResponse.redirect(url, 308);
   }
-  if (pathname === "/opportunites") {
+  if (
+    pathname === "/community/messages" ||
+    pathname.startsWith("/community/messages/") ||
+    pathname === "/communaute/messages" ||
+    pathname.startsWith("/communaute/messages/")
+  ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/opportunities";
-    return NextResponse.rewrite(url);
+    url.pathname = "/services-ia";
+    return NextResponse.redirect(url, 308);
+  }
+  if (
+    pathname === "/community" ||
+    pathname.startsWith("/community/") ||
+    pathname === "/communaute" ||
+    pathname.startsWith("/communaute/")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/opportunites";
+    return NextResponse.redirect(url, 308);
   }
   if (pathname === "/a-propos") {
     const url = request.nextUrl.clone();
@@ -330,9 +339,7 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/myplanning/login" ||
-    pathname === "/myplanning/signup"
+    pathname === "/signup"
   ) {
     if (!hasSession) {
       return NextResponse.next();
@@ -340,11 +347,10 @@ export async function middleware(request: NextRequest) {
     const ok = await ensureSessionValid();
     if (ok) {
       const redirectUrl = request.nextUrl.clone();
-      if (pathname.startsWith("/myplanning/")) {
-        redirectUrl.pathname = "/myplanning/app";
-      } else {
-        redirectUrl.pathname = "/";
-      }
+      redirectUrl.pathname = getSafeRedirectTarget(
+        searchParams.get("redirect") || searchParams.get("next"),
+        "/",
+      );
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }
@@ -357,7 +363,7 @@ export async function middleware(request: NextRequest) {
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-  const csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; img-src 'self' https: data:; connect-src 'self' https:; frame-ancestors 'self';";
+  const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https:; frame-ancestors 'self'; object-src 'none'; base-uri 'self';";
   res.headers.set("Content-Security-Policy", csp);
   return res;
 }

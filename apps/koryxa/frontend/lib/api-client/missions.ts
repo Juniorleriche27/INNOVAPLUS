@@ -1,55 +1,7 @@
+import { createJsonApi } from "@/lib/api";
 import { INNOVA_API_BASE } from "@/lib/env";
 
-const BASE = `${INNOVA_API_BASE}/missions`;
-
-function extractApiErrorMessage(data: unknown): string {
-  if (!data || typeof data !== "object") return "";
-  const obj = data as Record<string, unknown>;
-
-  const detail = obj.detail;
-  if (typeof detail === "string") return detail;
-  if (detail && typeof detail === "object") {
-    const inner = (detail as Record<string, unknown>).detail;
-    if (typeof inner === "string") return inner;
-  }
-
-  if (typeof obj.message === "string") return obj.message;
-
-  try {
-    return JSON.stringify(obj);
-  } catch {
-    return "";
-  }
-}
-
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${BASE}${path}`, {
-      credentials: "include",
-      headers: { "Content-Type": "application/json", ...(init.headers || {}) },
-      ...init,
-    });
-  } catch {
-    throw new Error("Impossible de contacter l'API (réseau/CORS). Réessayez ou reconnectez-vous.");
-  }
-
-  if (!res.ok) {
-    let message = "";
-    try {
-      const data = (await res.json()) as unknown;
-      message = extractApiErrorMessage(data);
-    } catch {
-      message = await res.text().catch(() => "");
-    }
-    if (res.status === 401) {
-      throw new Error("Connexion requise. Connectez-vous puis relancez le matching.");
-    }
-    throw new Error(message || `HTTP ${res.status}`);
-  }
-
-  return res.json() as Promise<T>;
-}
+const request = createJsonApi(`${INNOVA_API_BASE}/missions`);
 
 export type MissionPayload = {
   title: string;
@@ -74,14 +26,31 @@ export type MissionDetail = {
   deadline?: string;
   budget?: { minimum?: number; maximum?: number; currency?: string };
   offers?: Array<{ offer_id: string; prestataire_id: string; status: string; wave: number; message: string; expires_at?: string; scores?: Record<string, number> }>;
-  messages?: Array<{ id: string; author_id: string; role: string; text: string; created_at: string }>; // truncated for UI
-  milestones?: Array<{ id: string; title: string; status: "todo" | "in_progress" | "delivered" | "validated"; due_date?: string; notes?: string }>; // truncated for UI
+  messages?: Array<{ id: string; author_id: string; role: string; text: string; created_at: string }>;
+  milestones?: Array<{ id: string; title: string; status: "todo" | "in_progress" | "delivered" | "validated"; due_date?: string; notes?: string }>;
   events?: Array<{ type: string; ts: string; payload?: Record<string, unknown> }>;
+};
+
+type MissionMilestonePayload = {
+  title: string;
+  due_date?: string;
+  notes?: string;
+};
+
+type MilestoneUpdatePayload = {
+  status: "todo" | "in_progress" | "delivered" | "validated";
+  notes?: string;
+};
+
+type MissionClosePayload = {
+  rating_demandeur?: number;
+  rating_prestataire?: number;
+  feedback?: string;
 };
 
 export const missionsApi = {
   preview(payload: MissionPayload) {
-    return request<{ summary: Record<string, unknown>; tags: string[] }>(`?simulate=1`, {
+    return request<{ summary: Record<string, unknown>; tags: string[] }>("?simulate=1", {
       method: "POST",
       body: JSON.stringify(payload),
     });
@@ -107,7 +76,7 @@ export const missionsApi = {
   respond(mission_id: string, offer_id: string, action: "accept" | "refuse", comment?: string) {
     return request<{ status: string }>(`/${mission_id}/offers/${offer_id}/respond`, {
       method: "POST",
-      body: JSON.stringify({ action, comment })
+      body: JSON.stringify({ action, comment }),
     });
   },
   confirm(mission_id: string, offer_id: string, notes?: string) {
@@ -153,21 +122,4 @@ export const missionsApi = {
     const search = params?.window_days ? `?window_days=${params.window_days}` : "";
     return request<Record<string, unknown>>(`/dashboard${search}`);
   },
-};
-
-type MissionMilestonePayload = {
-  title: string;
-  due_date?: string;
-  notes?: string;
-};
-
-type MilestoneUpdatePayload = {
-  status: "todo" | "in_progress" | "delivered" | "validated";
-  notes?: string;
-};
-
-type MissionClosePayload = {
-  rating_demandeur?: number;
-  rating_prestataire?: number;
-  feedback?: string;
 };

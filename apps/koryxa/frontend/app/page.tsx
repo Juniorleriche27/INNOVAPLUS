@@ -23,14 +23,14 @@ import AnimatedTicker from "@/components/ui/AnimatedTicker";
 import JsonLd from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "KORYXA | Plateforme IA Orchestration Afrique — Blueprint, Entreprise, ChatLAYA",
+  title: "KORYXA | Plateforme IA Orchestration Afrique — Formation IA, Entreprise, ChatLAYA",
   description:
-    "KORYXA est la premiere plateforme d'orchestration IA en Afrique. Cadrez vos besoins, executez vos projets data et IA, activez vos talents avec Blueprint, Entreprise, Service IA et ChatLAYA.",
+    "KORYXA est la premiere plateforme d'orchestration IA en Afrique. Cadrez vos besoins, executez vos projets data et IA, activez vos talents avec Formation IA, Entreprise, Service IA et ChatLAYA.",
   keywords: [
     "plateforme IA Afrique",
     "orchestration IA",
     "service data intelligence artificielle",
-    "Blueprint talent Afrique",
+    "Formation IA talent Afrique",
     "chatbot entreprise Afrique",
     "cadrage besoin IA",
     "data scientist Afrique",
@@ -58,14 +58,14 @@ const TICKER_ITEMS = [
 ] as const;
 
 const KPI_ITEMS = [
-  { icon: Cpu, label: "Briques connectees", value: 5, suffix: " modules", detail: "Blueprint, Entreprise, Service IA, ChatLAYA" },
+  { icon: Cpu, label: "Briques connectees", value: 5, suffix: " modules", detail: "Formation IA, Entreprise, Service IA, ChatLAYA" },
   { icon: BriefcaseBusiness, label: "Execution Service IA", value: 10, suffix: " offres", detail: "Data, IA, automations, apps et systemes metier" },
   { icon: Target, label: "Qualification rapide", value: 72, suffix: "h", detail: "Premiere qualification et cadrage du besoin" },
   { icon: FolderKanban, label: "Mode delivery", value: 100, suffix: "%", detail: "De la demande au livrable exploitable" },
 ] as const;
 
 const MODULE_ITEMS = [
-  { icon: Compass, title: "Blueprint", description: "Profilage talent, trajectoire claire, plan d'action concret.", href: "/trajectoire", cta: "Lancer Blueprint" },
+  { icon: Compass, title: "Formation IA", description: "Profilage talent, trajectoire claire, plan d'action concret.", href: "/trajectoire", cta: "Démarrer Formation IA" },
   { icon: BriefcaseBusiness, title: "Entreprise", description: "Cadrage intelligent des besoins avant toute execution.", href: "/entreprise", cta: "Cadrer un besoin" },
   { icon: Bot, title: "Service IA", description: "Execution professionnelle: agents IA, modeles, apps, plateformes.", href: "/services-ia", cta: "Demander un service" },
   { icon: ChartNoAxesCombined, title: "Opportunites", description: "Pipeline de missions et activation commerciale sur les besoins qualifies.", href: "/opportunites", cta: "Voir les opportunites" },
@@ -78,7 +78,7 @@ const organizationJsonLd = {
   name: "KORYXA",
   url: "https://koryxa.com",
   logo: "https://koryxa.com/logo.png",
-  description: "Plateforme d'orchestration IA en Afrique — Blueprint, Entreprise, Service IA, ChatLAYA",
+  description: "Plateforme d'orchestration IA en Afrique — Formation IA, Entreprise, Service IA, ChatLAYA",
   areaServed: "Africa",
   knowsAbout: ["Intelligence Artificielle", "Data Science", "Machine Learning", "Automatisation"],
 };
@@ -129,7 +129,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mx-auto mt-6 max-w-4xl text-base leading-8 text-slate-300 sm:text-[1.15rem] sm:leading-9">
-                De l'idee au delivery reel: Blueprint profile les talents, Entreprise cadre les besoins,
+                De l'idee au delivery reel: Formation IA profile les talents, Entreprise cadre les besoins,
                 Service IA execute, et ChatLAYA aide a lancer, structurer et vendre.
               </p>
 

@@ -102,7 +102,7 @@ export default function ServicesIaPage() {
                         <div className="mt-5 flex flex-wrap gap-2">
                           <Link
                             href={`/services-ia/${service.slug}`}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-white/12 bg-white/6 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-sky-400/40 hover:text-sky-300"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-500 bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-sky-400 hover:text-sky-300"
                           >
                             Voir le service
                             <ArrowRight className="h-3.5 w-3.5" />

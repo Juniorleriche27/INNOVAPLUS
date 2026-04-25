@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 ProofType = Literal[
@@ -22,14 +22,27 @@ AccessLevel = Literal["free", "premium"]
 
 class TrajectoryOnboardingPayload(BaseModel):
     name: str | None = Field(default=None, max_length=120)
-    objective: str = Field(..., min_length=8, max_length=280)
+    objective: str = Field(..., min_length=8, max_length=400)
     current_level: str = Field(..., min_length=2, max_length=64)
     domain_interest: str = Field(..., min_length=2, max_length=120)
     weekly_rhythm: str = Field(..., min_length=2, max_length=64)
     target_outcome: str | None = Field(default=None, max_length=180)
-    context: str | None = Field(default=None, max_length=500)
+    context: str | None = Field(default=None, max_length=1200)
     constraints: List[str] = Field(default_factory=list, max_length=8)
-    preferences: List[str] = Field(default_factory=list, max_length=8)
+    preferences: List[str] = Field(default_factory=list, max_length=12)
+    current_status: str | None = Field(default=None, max_length=120)
+    current_role: str | None = Field(default=None, max_length=160)
+    target_roles: List[str] = Field(default_factory=list, max_length=4)
+    existing_skills: List[str] = Field(default_factory=list, max_length=12)
+    portfolio_status: str | None = Field(default=None, max_length=120)
+    target_timeline: str | None = Field(default=None, max_length=80)
+    learning_style: str | None = Field(default=None, max_length=120)
+    support_style: str | None = Field(default=None, max_length=120)
+    language_preference: str | None = Field(default=None, max_length=60)
+    motivation_driver: str | None = Field(default=None, max_length=160)
+    project_topic: str | None = Field(default=None, max_length=280)
+    success_metric: str | None = Field(default=None, max_length=280)
+    exercise_results: List[str] = Field(default_factory=list, max_length=12)
 
 
 class TrajectoryProgressUpdatePayload(BaseModel):
@@ -162,7 +175,6 @@ class TrajectoryCockpitTaskQuery(BaseModel):
 
 
 class TrajectoryCockpitTaskBinding(BaseModel):
-    myplanning_task_id: str | None = None
     stage_key: str
     task_key: str
     title: str
@@ -224,6 +236,22 @@ class TrajectoryDiagnostic(BaseModel):
     readiness: TrajectoryReadiness
 
 
+class TrajectoryFinalRecommendation(BaseModel):
+    headline: str
+    summary: str
+    training_path_title: str
+    training_path_steps: List[str] = Field(default_factory=list)
+    next_steps: List[str] = Field(default_factory=list)
+
+
+class TrajectoryLeadSubmitPayload(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=120)
+    last_name: str = Field(..., min_length=1, max_length=120)
+    email: EmailStr
+    whatsapp_country_code: str = Field(..., min_length=1, max_length=8)
+    whatsapp_number: str = Field(..., min_length=6, max_length=32)
+
+
 class TrajectoryFlowResponse(BaseModel):
     flow_id: str
     guest_id: str
@@ -231,6 +259,8 @@ class TrajectoryFlowResponse(BaseModel):
     onboarding: TrajectoryOnboardingPayload
     diagnostic: TrajectoryDiagnostic | None = None
     progress_plan: TrajectoryProgressPlan | None = None
+    final_recommendation: TrajectoryFinalRecommendation | None = None
+    submitted_to_team: bool = False
     proofs: List[TrajectoryProofItem] = Field(default_factory=list)
     verified_profile: TrajectoryVerifiedProfile | None = None
     opportunity_targets: List[TrajectoryOpportunityTarget] = Field(default_factory=list)

@@ -19,6 +19,12 @@ class QrIssueResult:
     qr_payload: str
     valid_to: datetime
     token_hash: str
+    short_code: str  # 6-digit human-typeable code, same rotation as QR
+
+
+def generate_short_code() -> str:
+    """Generate a 6-digit numeric code, avoiding ambiguous chars."""
+    return "".join(str(secrets.randbelow(10)) for _ in range(6))
 
 
 def _utcnow() -> datetime:
@@ -64,6 +70,7 @@ def issue_qr_token(
 
     token_plain = secrets.token_urlsafe(18)  # 16-24 bytes base64url-ish
     token_hash = sha256_hex(token_plain)
+    short_code = generate_short_code()
 
     payload = {
         "v": 1,
@@ -73,7 +80,7 @@ def issue_qr_token(
         "exp": int(valid_to.timestamp()),
     }
     qr_payload = encode_qr_payload(payload)
-    return QrIssueResult(qr_payload=qr_payload, valid_to=valid_to, token_hash=token_hash)
+    return QrIssueResult(qr_payload=qr_payload, valid_to=valid_to, token_hash=token_hash, short_code=short_code)
 
 
 def render_qr_svg(qr_payload: str, *, scale: int = 6, border: int = 2) -> str:

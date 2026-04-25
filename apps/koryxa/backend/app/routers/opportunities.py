@@ -25,6 +25,30 @@ def oid(val: str) -> ObjectId:
         raise HTTPException(status_code=400, detail="invalid id")
 
 
+def clean_text(value: Any) -> Optional[str]:
+    text = str(value or "").strip()
+    return text or None
+
+
+def clean_float(value: Any) -> Optional[float]:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def clean_int(value: Any, minimum: int = 0, maximum: int = 100) -> Optional[int]:
+    if value in (None, ""):
+        return None
+    try:
+        parsed = int(value)
+    except Exception:
+        return None
+    return max(minimum, min(maximum, parsed))
+
+
 @router.post("/profiles/upsert")
 async def profiles_upsert(payload: Dict[str, Any], db: AsyncIOMotorDatabase = Depends(get_db)):
     user_id = (payload.get("user_id") or "").strip()
@@ -61,17 +85,34 @@ async def create_opportunity(payload: Dict[str, Any], db: AsyncIOMotorDatabase =
     mission_id = payload.get("mission_id")
     source = payload.get("source") or "manual"
     product_slug = payload.get("product_slug")
+    status = clean_text(payload.get("status")) or "open"
+    company = clean_text(payload.get("company"))
+    contact = clean_text(payload.get("contact"))
+    value = clean_float(payload.get("value"))
+    currency = clean_text(payload.get("currency")) or ("EUR" if value is not None else None)
+    stage = clean_text(payload.get("stage"))
+    probability = clean_int(payload.get("probability"))
+    close_date = clean_text(payload.get("close_date"))
+    priority = clean_text(payload.get("priority"))
     doc = {
         "title": title,
         "problem": problem,
         "skills_required": skills_required,
         "tags": tags,
         "country": country,
-        "status": "open",
+        "status": status,
         "created_at": iso_now(),
         "mission_id": mission_id,
         "source": source,
         "product_slug": product_slug,
+        "company": company,
+        "contact": contact,
+        "value": value,
+        "currency": currency,
+        "stage": stage,
+        "probability": probability,
+        "close_date": close_date,
+        "priority": priority,
     }
     res = await db["opportunities"].insert_one(doc)
     return {"opportunity_id": str(res.inserted_id)}
@@ -90,6 +131,14 @@ def _serialize_opp(doc: Dict[str, Any]) -> Dict[str, Any]:
         "mission_id": doc.get("mission_id"),
         "source": doc.get("source"),
         "product_slug": doc.get("product_slug"),
+        "company": doc.get("company"),
+        "contact": doc.get("contact"),
+        "value": doc.get("value"),
+        "currency": doc.get("currency"),
+        "stage": doc.get("stage"),
+        "probability": doc.get("probability"),
+        "close_date": doc.get("close_date"),
+        "priority": doc.get("priority"),
     }
 
 
@@ -100,6 +149,7 @@ async def list_opportunities(
     country: Optional[str] = None,
     source: Optional[str] = None,
     product: Optional[str] = None,
+    stage: Optional[str] = None,
     page: int = 1,
     limit: int = 50,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -110,11 +160,14 @@ async def list_opportunities(
     if country:
         query["country"] = country.upper()
     if search:
-        query["title"] = {"$regex": search, "$options": "i"}
+        pattern = {"$regex": search, "$options": "i"}
+        query["$or"] = [{"title": pattern}, {"company": pattern}, {"contact": pattern}]
     if source:
         query["source"] = source
     if product:
         query["product_slug"] = product
+    if stage:
+        query["stage"] = stage
     skip = max(0, (page - 1) * limit)
     cursor = db["opportunities"].find(query).sort("created_at", -1).skip(skip).limit(limit)
     items: List[Dict[str, Any]] = []
@@ -435,6 +488,14 @@ async def seed_e2e(db: AsyncIOMotorDatabase = Depends(get_db)):
         "tags": ["rag"],
         "status": "open",
         "created_at": iso_now(),
+        "company": "NeedIndex Labs",
+        "contact": "Equipe growth",
+        "value": 42000,
+        "currency": "EUR",
+        "stage": "Qualification",
+        "probability": 35,
+        "close_date": iso_now(),
+        "priority": "medium",
     }
     res = await db["opportunities"].insert_one(opp)
     return {"profiles": [p["user_id"] for p in profiles], "opportunity_id": str(res.inserted_id)}

@@ -13,62 +13,30 @@ export type ProductInfo = {
 };
 
 export const productCatalog: Record<string, ProductInfo> = {
-  "myplanning": {
-    slug: "myplanning",
-    name: "MyPlanningAI",
-    tagline: "Assistant temps & priorités pour équipes africaines.",
+  "service-ia": {
+    slug: "service-ia",
+    name: "Service IA",
+    tagline: "Studio d'execution IA pour les besoins entreprise.",
     summary:
-      "MyPlanning orchestre Eisenhower, MoSCoW, Kanban, Pomodoro et suggestions IA Llama pour aider étudiants, entrepreneurs et équipes à structurer leurs journées.",
-    heroImage:
-      "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1200&q=60",
+      "Service IA transforme un besoin metier en execution complete: cadrage, devis, equipe, production, livrables et suivi.",
+    heroImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=60",
     highlights: [
-      "Kanban 3 colonnes + vues Aujourd'hui / Semaine",
-      "Mode simple vs avancé (objectifs, énergie, Pomodoro, collaborateurs)",
-      "Boutons IA : génération de tâches, plan du jour, replanification express",
-      "Connecté au backend KORYXA (auth, profils, Llama interne)",
+      "10 offres structurees: data, automation, applications, systemes et securite",
+      "Workflow clair: demande, qualification, devis, acceptance, execution, livraison",
+      "Pilotage KORYXA de bout en bout avec suivi client",
+      "Organisation des equipes talent + supervision selon chaque mission",
     ],
     stats: [
-      { label: "Méthodes couvertes", value: "5" },
-      { label: "IA intégrée", value: "Llama" },
-      { label: "Temps de prise en main", value: "<10 min" },
+      { label: "Offres actives", value: "10 services" },
+      { label: "Mode operationnel", value: "Projet pilote" },
+      { label: "Acces", value: "Web + espace client" },
     ],
-    primaryCta: { label: "Ouvrir MyPlanning", href: "/myplanning" },
-    secondaryCta: {
-      label: "Documentation produit",
-      href: "https://github.com/innovaplus/KORYXA/tree/main/products",
-    },
-    contact: "myplanning@koryxa.africa",
+    primaryCta: { label: "Decouvrir Service IA", href: "/services-ia" },
+    contact: "services@koryxa.africa",
     useCases: [
-      "Incubateurs souhaitant coacher leurs cohortes",
-      "Equipes projet cherchant un cockpit frugal",
-      "Entrepreneurs solos voulant ritualiser leurs semaines",
-    ],
-  },
-  "chatlaya": {
-    slug: "chatlaya",
-    name: "ChatLAYA",
-    tagline: "Copilote conversationnel pour cadrer, produire et faire avancer l'exécution.",
-    summary:
-      "ChatLAYA aide à clarifier une demande, structurer une réponse utile, générer des pistes d'action et accompagner l'exécution dans un cadre conversationnel plus lisible.",
-    heroImage:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=60",
-    highlights: [
-      "Clarification rapide d'un besoin, d'une trajectoire ou d'un cas d'usage métier",
-      "Réponses structurées avec résumé, plan d'action, KPIs et points de vigilance",
-      "Accès conversationnel simple pour accompagner orientation, cadrage et exécution",
-      "Intégré à l'écosystème KORYXA pour relier produit, progression et opportunités",
-    ],
-    stats: [
-      { label: "Mode d'interaction", value: "Conversation guidée" },
-      { label: "Usage cible", value: "Clarifier et produire" },
-      { label: "Accès", value: "Web" },
-    ],
-    primaryCta: { label: "Ouvrir ChatLAYA", href: "/chatlaya" },
-    contact: "chatlaya@koryxa.africa",
-    useCases: [
-      "Clarifier un besoin avant de lancer Trajectoire ou Entreprise",
-      "Produire une première réponse structurée sur un sujet métier",
-      "Aider une équipe à transformer une idée floue en plan d'action exploitable",
+      "Structurer une demande entreprise et recevoir une proposition exploitable",
+      "Lancer un projet data, IA, automation ou digital avec equipe dediee",
+      "Suivre avancement, livrables et priorites depuis un espace client",
     ],
   },
 };
@@ -78,7 +46,7 @@ export const productList = Object.values(productCatalog);
 export const removedProductSlugs = new Set(["plusbook", "plusbooks", "koryxa-sante", "sante"]);
 
 export const productSlugAliases: Record<string, string> = {
-  myplanningai: "myplanning",
+  chatlaya: "service-ia",
 };
 
 export function resolveProductSlug(slug: string): string {

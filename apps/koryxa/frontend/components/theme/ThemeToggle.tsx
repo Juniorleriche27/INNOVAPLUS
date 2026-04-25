@@ -13,7 +13,10 @@ function IconSun(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true" {...props}>
       <circle cx="12" cy="12" r="4.5" />
-      <path strokeLinecap="round" d="M12 2.75v2.5M12 18.75v2.5M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2.75 12h2.5M18.75 12h2.5M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77" />
+      <path
+        strokeLinecap="round"
+        d="M12 2.75v2.5M12 18.75v2.5M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2.75 12h2.5M18.75 12h2.5M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"
+      />
     </svg>
   );
 }
@@ -21,7 +24,11 @@ function IconSun(props: React.SVGProps<SVGSVGElement>) {
 function IconMoon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.25A8.25 8.25 0 0 1 9.75 3.75 8.25 8.25 0 1 0 20.25 14.25Z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M20.25 14.25A8.25 8.25 0 0 1 9.75 3.75 8.25 8.25 0 1 0 20.25 14.25Z"
+      />
     </svg>
   );
 }
@@ -73,7 +80,7 @@ export default function ThemeToggle({
       >
         <IconMoon className="h-4 w-4" />
       </span>
-      {showLabel ? <span className="hidden sm:inline whitespace-nowrap">{label}</span> : null}
+      {showLabel ? <span className="hidden whitespace-nowrap sm:inline">{label}</span> : null}
     </button>
   );
 }

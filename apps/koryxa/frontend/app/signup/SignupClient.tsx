@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/AuthProvider";
-import { INNOVA_API_BASE } from "@/lib/env";
+import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 
 type SignupClientProps = {
   successRedirect?: string;
@@ -17,8 +17,8 @@ type SignupClientProps = {
 
 export default function SignupClient({
   successRedirect = "/onboarding",
-  heading = "Créer un compte",
-  subtitle = "Rejoins KORYXA pour accéder aux projets, à la communauté et au copilote CHATLAYA.",
+  heading = "Creer un compte",
+  subtitle = "Rejoignez KORYXA pour acceder aux produits et aux espaces connectes.",
   loginHref = "/login",
   loginLabel = "Se connecter",
 }: SignupClientProps = {}) {
@@ -38,7 +38,7 @@ export default function SignupClient({
     if (!authLoading && user) {
       router.replace(successRedirect);
     }
-  }, [authLoading, user, router, successRedirect]);
+  }, [authLoading, router, successRedirect, user]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +47,7 @@ export default function SignupClient({
     setError(null);
 
     try {
-      const resp = await fetch(`${INNOVA_API_BASE}/auth/register`, {
+      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -61,27 +61,26 @@ export default function SignupClient({
         }),
       });
 
-      type ApiError = { detail?: unknown };
-      const data: ApiError = await resp.json().catch(() => ({} as ApiError));
-      if (!resp.ok) {
-        const s = resp.status;
-        const msg = typeof data.detail === "string" ? data.detail : undefined;
-        if (s === 409 || (msg && /already used|exists|existe/i.test(msg))) {
-          throw new Error("Cet e-mail est déjà utilisé.");
+      const data = await response.json().catch(() => ({} as { detail?: unknown }));
+      if (!response.ok) {
+        const status = response.status;
+        const detail = typeof data.detail === "string" ? data.detail : undefined;
+        if (status === 409 || (detail && /already used|exists|existe/i.test(detail))) {
+          throw new Error("Cet email est deja utilise.");
         }
-        if (s === 400 || s === 422) {
-          throw new Error(msg || "Données invalides (email ou mot de passe)");
+        if (status === 400 || status === 422) {
+          throw new Error(detail || "Donnees invalides.");
         }
-        if (s === 401 || s === 403) {
-          throw new Error("Vous êtes déjà connecté·e.");
+        if (status === 401 || status === 403) {
+          throw new Error("Vous etes deja connecte.");
         }
-        if (s === 429) {
-          throw new Error("Trop de tentatives, réessayez dans 1 minute.");
+        if (status === 429) {
+          throw new Error("Trop de tentatives. Reessayez dans une minute.");
         }
-        throw new Error(msg || "Problème serveur, réessayez.");
+        throw new Error(detail || "Probleme serveur, reessayez.");
       }
 
-      setMessage("Compte créé. Bienvenue !");
+      setMessage("Compte cree. Bienvenue dans KORYXA.");
       await refresh();
       setTimeout(() => router.replace(successRedirect), 300);
       setEmail("");
@@ -90,7 +89,7 @@ export default function SignupClient({
       setLastName("");
       setCountry("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue");
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
       setLoading(false);
     }
@@ -100,13 +99,13 @@ export default function SignupClient({
     <main className="mx-auto w-full max-w-xl px-4 py-10">
       <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
         <h1 className="text-2xl font-semibold text-slate-900">{heading}</h1>
-        <p className="mt-2 text-sm text-slate-600">{subtitle}</p>
+        <p className="mt-2 text-sm leading-7 text-slate-600">{subtitle}</p>
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="first_name" className="block text-sm font-medium text-slate-700">
-                Prénom
+                Prenom
               </label>
               <input
                 id="first_name"
@@ -189,32 +188,30 @@ export default function SignupClient({
               onChange={(event) => setPassword(event.target.value)}
               className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
-            <p className="mt-1 text-xs text-slate-500">8 caractères minimum recommandés.</p>
+            <p className="mt-1 text-xs text-slate-500">8 caracteres minimum recommandes.</p>
           </div>
 
-          {message && (
+          {message ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               {message}
             </div>
-          )}
+          ) : null}
 
-          {error && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          ) : null}
 
           <button
             type="submit"
             className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
             disabled={loading}
           >
-            {loading ? "Création en cours..." : "S'inscrire"}
+            {loading ? "Creation en cours..." : "S'inscrire"}
           </button>
         </form>
 
         <p className="mt-6 text-sm text-slate-500">
-          Déjà un compte ?{" "}
+          Deja un compte ?{" "}
           <Link href={loginHref} className="font-semibold text-sky-700 hover:underline">
             {loginLabel}
           </Link>

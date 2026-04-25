@@ -25,5 +25,10 @@ async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchPar
 export default async function LoginPage({ searchParams }: { searchParams?: SearchParamsInput }) {
   const params = await resolveSearchParams(searchParams);
   const requestedRedirect = one(params?.redirect);
-  return <LoginClient defaultRedirect={KORYXA_PUBLIC_HOME} requestedRedirect={requestedRedirect} />;
+  const successRedirect =
+    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : KORYXA_PUBLIC_HOME;
+  const signupHref = `/signup?redirect=${encodeURIComponent(successRedirect)}`;
+  return <LoginClient defaultRedirect={KORYXA_PUBLIC_HOME} requestedRedirect={requestedRedirect} signupHref={signupHref} />;
 }

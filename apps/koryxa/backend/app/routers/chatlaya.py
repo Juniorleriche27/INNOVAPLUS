@@ -8,6 +8,7 @@ from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ReturnDocument
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.public_access import ensure_guest_id, get_guest_id
@@ -16,11 +17,13 @@ from app.deps.auth import get_current_user_optional
 from app.schemas.chatlaya import (
     ChatMessageItem,
     ChatMessagePayload,
+    ConversationUpdatePayload,
     ConversationListResponse,
     ConversationResponse,
     MessagesResponse,
 )
 from app.services.chatlaya_context import build_chatlaya_product_context
+from app.services.chatlaya_specialist import CHATLAYA_MODE_GENERAL, coerce_assistant_mode
 from app.services.chatlaya_service import generate_chat_reply
 from app.utils.ids import to_object_id
 
@@ -42,6 +45,7 @@ def _serialize_conversation(doc: dict) -> ConversationResponse:
         created_at=doc.get("created_at"),
         updated_at=doc.get("updated_at"),
         archived=bool(doc.get("archived", False)),
+        assistant_mode=coerce_assistant_mode(doc.get("assistant_mode")),
     )
 
 
@@ -91,6 +95,7 @@ async def _ensure_conversation(
         "created_at": now,
         "updated_at": now,
         "archived": False,
+        "assistant_mode": CHATLAYA_MODE_GENERAL,
     }
     if current:
         doc["user_id"] = current["_id"]
@@ -151,6 +156,7 @@ async def create_conversation(
         "created_at": now,
         "updated_at": now,
         "archived": False,
+        "assistant_mode": CHATLAYA_MODE_GENERAL,
     }
     if current:
         doc["user_id"] = current["_id"]
@@ -159,6 +165,31 @@ async def create_conversation(
     res = await db["conversations"].insert_one(doc)
     doc["_id"] = res.inserted_id
     return _serialize_conversation(doc)
+
+
+@router.patch("/conversations/{conversation_id}", response_model=ConversationResponse)
+async def update_conversation(
+    conversation_id: str,
+    payload: ConversationUpdatePayload,
+    request: Request,
+    response: Response,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current: dict | None = Depends(get_current_user_optional),
+):
+    guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
+    conv_oid = to_object_id(conversation_id)
+    updates = {
+        "assistant_mode": coerce_assistant_mode(payload.assistant_mode),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    result = await db["conversations"].find_one_and_update(
+        {"_id": conv_oid, **_owner_filter(current, guest_id)},
+        {"$set": updates},
+        return_document=ReturnDocument.AFTER,
+    )
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
+    return _serialize_conversation(result)
 
 
 @router.post("/conversations/{conversation_id}/archive", status_code=status.HTTP_204_NO_CONTENT)
@@ -260,7 +291,13 @@ async def post_message(
     except Exception as exc:  # noqa: BLE001
         logger.warning("ChatLAYA product context build failed: %s", exc)
         product_context = ""
-    reply, rag_sources = await generate_chat_reply(payload.message, chat_history, product_context=product_context)
+    assistant_mode = coerce_assistant_mode(conversation.get("assistant_mode"))
+    reply, rag_sources = await generate_chat_reply(
+        payload.message,
+        chat_history,
+        product_context=product_context,
+        assistant_mode=assistant_mode,
+    )
     assistant_doc: dict[str, Any] = {
         "conversation_id": conv_oid,
         "role": "assistant",

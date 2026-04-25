@@ -16,6 +16,19 @@ export type TrajectoryFlowResponse = {
     context?: string | null;
     constraints: string[];
     preferences: string[];
+    current_status?: string | null;
+    current_role?: string | null;
+    target_roles: string[];
+    existing_skills: string[];
+    portfolio_status?: string | null;
+    target_timeline?: string | null;
+    learning_style?: string | null;
+    support_style?: string | null;
+    language_preference?: string | null;
+    motivation_driver?: string | null;
+    project_topic?: string | null;
+    success_metric?: string | null;
+    exercise_results: string[];
   };
   diagnostic: {
     profile_summary: string;
@@ -45,35 +58,13 @@ export type TrajectoryFlowResponse = {
       validation_level: ValidationLevel;
     };
   } | null;
-  progress_plan: {
-    title: string;
-    next_actions: string[];
-    progress_score: number;
-    readiness_score: number;
-    validation_level: ValidationLevel;
-  } | null;
-  verified_profile: {
-    profile_status: "not_ready" | "eligible" | "verified";
-    progress_score: number;
-    readiness_score: number;
-    validation_level: ValidationLevel;
-    validated_proof_count: number;
-    minimum_validated_proofs: number;
-    minimum_readiness_score: number;
-    shareable_headline?: string;
-    summary?: string;
-  } | null;
-  opportunity_targets: Array<{
-    label: string;
-    type: "mission" | "stage" | "collaboration" | "project" | "accompagnement";
-    reason: string;
-    visibility_status: "recommended" | "unlocked" | "prioritized";
-  }>;
+  final_recommendation: string | null;
 };
 
-export type TrajectoryCockpitActivationResponse = {
-  status: "ready" | "auth_required";
-  flow_id: string;
-  context_id: string;
-  redirect_url: string;
+export type TrainingContactPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  whatsapp_country_code: string;
+  whatsapp_number: string;
 };

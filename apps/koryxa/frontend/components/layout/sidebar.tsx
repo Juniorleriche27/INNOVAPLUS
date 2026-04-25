@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import clsx from "clsx";
 import Link from "next/link";
@@ -6,137 +6,71 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { IS_V1_SIMPLE } from "@/lib/env";
 
-const ENABLE_SCHOOL = process.env.NEXT_PUBLIC_ENABLE_SCHOOL === "true";
-const IS_V1 = IS_V1_SIMPLE;
-
-function IconTarget(props: React.SVGProps<SVGSVGElement>) {
+function DotIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2M12 22a10 10 0 110-20 10 10 0 010 20z" />
-    </svg>
-  );
-}
-function IconLayers(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 4-8 4-8-4 8-4zm0 8l8 4-8 4-8-4 8-4z" />
-    </svg>
-  );
-}
-function IconUsers(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m14-10a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
-  );
-}
-function IconChip(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <rect x="3" y="7" width="18" height="10" rx="2" />
-      <path d="M7 7V3m10 4V3M7 21v-4m10 4v-4M3 12h18" />
-    </svg>
-  );
-}
-function IconChat(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-function IconStore(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l1.5-3h15L21 7M5 7h14v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" />
-    </svg>
-  );
-}
-function IconBriefcase(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m4 0h-14a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-8a2 2 0 00-2-2z" />
-    </svg>
-  );
-}
-function IconBook(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h9a4 4 0 014 4v10a3 3 0 01-3-3 3 3 0 01-3 3H6a2 2 0 01-2-2V5z" />
-    </svg>
-  );
-}
-function IconChevronLeft(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-function IconChevronRight(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+      <circle cx="12" cy="12" r="8" />
     </svg>
   );
 }
 
-const WORKSPACE_LINKS = [
-  { href: "/opportunities", label: "Opportunités", description: "Pipeline & statut", icon: IconTarget },
-  { href: "/skills", label: "Compétences & secteurs", description: "Cartographie dynamique", icon: IconLayers },
-  { href: "/talents", label: "Talents", description: "Profils et disponibilité", icon: IconUsers },
-  { href: "/engine", label: "Moteur IA", description: "Règles RAG & équité", icon: IconChip },
-  { href: "/meet", label: "KORYXA Meet", description: "Réseau social KORYXA", icon: IconChat },
-  { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: IconBriefcase },
-  { href: "/marketplace", label: "Marketplace", description: "Talents, services, bundles", icon: IconStore },
-  ...(ENABLE_SCHOOL
-    ? [{ href: "/school", label: "Trajectoire", description: "Trajectoires guidées & missions", icon: IconBook } as const]
-    : []),
-];
+function GridIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />
+    </svg>
+  );
+}
 
-const V1_LINKS = [
-  { href: "/trajectoire", label: "Trajectoire", description: "Diagnostic, progression pilotée et validation", icon: IconBook },
-  { href: "/entreprise", label: "Entreprise", description: "Besoin cadré et mission structurée", icon: IconBriefcase },
-  { href: "/products", label: "Produits", description: "Outils de pilotage et d’exécution", icon: IconChip },
-];
+function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path d="M17 20v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m14-10a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
 
-type NavNode = { href: string; label: string; children?: NavNode[] };
+function BriefcaseIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m4 0H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2v-8a2 2 0 00-2-2z" />
+    </svg>
+  );
+}
 
-const V1_SCHOOL_TREE: NavNode[] = [
-  { href: "/school/parcours/fondamental", label: "Trajectoires fondamentales" },
-  {
-    href: "/school/specialisations",
-    label: "Spécialisations",
-  },
-  { href: "/school/validations", label: "Validations" },
-];
+function BookIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" {...props}>
+      <path d="M4 5a2 2 0 012-2h9a4 4 0 014 4v10a3 3 0 01-3-3 3 3 0 01-3 3H6a2 2 0 01-2-2V5z" />
+    </svg>
+  );
+}
+
+const DEFAULT_LINKS = [
+  { href: "/skills", label: "Competences", description: "Secteurs et cartographie", icon: GridIcon },
+  { href: "/talents", label: "Talents", description: "Profils et disponibilite", icon: UsersIcon },
+  { href: "/missions/offers", label: "Mes offres", description: "Suivi et execution", icon: BriefcaseIcon },
+] as const;
+
+const SIMPLE_LINKS = [
+  { href: "/trajectoire", label: "Formation IA", description: "Diagnostic et progression", icon: BookIcon },
+  { href: "/entreprise", label: "Entreprise", description: "Besoin cadre et mission structuree", icon: BriefcaseIcon },
+  { href: "/services-ia", label: "Service IA", description: "10 offres executees de bout en bout", icon: GridIcon },
+] as const;
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
   const pathname = usePathname();
-  const hideForSchool = pathname.startsWith("/school");
-  const hideForMyPlanning = pathname.startsWith("/myplanning");
-  const hideForDiagnosticFlow = pathname.startsWith("/trajectoire/demarrer");
   const [collapsed, setCollapsed] = useState(false);
-  const [schoolOpen, setSchoolOpen] = useState(false);
+  const links = IS_V1_SIMPLE ? SIMPLE_LINKS : DEFAULT_LINKS;
 
   useEffect(() => {
-    if (hideForSchool) return;
     const saved = localStorage.getItem("innova.sidebar.collapsed");
-    if (saved === null) {
-      // Default: collapsed on tablets, expanded on desktop
-      const defaultCollapsed = window.matchMedia("(min-width: 640px) and (max-width: 1023.98px)").matches;
-      setCollapsed(defaultCollapsed);
-      return;
-    }
-    setCollapsed(saved === "1");
-  }, [hideForSchool]);
+    if (saved) setCollapsed(saved === "1");
+  }, []);
 
-  useEffect(() => {
-    if (hideForSchool) return;
-    if (pathname.startsWith("/school")) {
-      setSchoolOpen(true);
-    }
-  }, [hideForSchool, pathname]);
+  if (pathname.startsWith("/trajectoire/demarrer")) {
+    return null;
+  }
 
   function toggle() {
     const next = !collapsed;
@@ -144,156 +78,89 @@ export default function Sidebar({ className, style }: { className?: string; styl
     localStorage.setItem("innova.sidebar.collapsed", next ? "1" : "0");
   }
 
-  const isExpanded = !collapsed;
-
-  if (hideForSchool || hideForMyPlanning || hideForDiagnosticFlow) {
-    return null;
-  }
-
   return (
     <aside
       className={clsx(
-        "z-30 h-full shrink-0 overflow-visible border-r border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,248,252,0.9))] backdrop-blur-2xl",
-        "transition-all duration-300 ease-in-out",
-        collapsed ? "w-[72px]" : "w-[280px]",
-        className
+        "z-30 h-full shrink-0 overflow-hidden border-r border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(244,248,252,0.9))] backdrop-blur-2xl transition-all duration-300",
+        collapsed ? "w-[74px]" : "w-[280px]",
+        className,
       )}
       style={style}
     >
-      <div className="flex h-full flex-col overflow-hidden">
-        <div className="relative border-b border-slate-200/70 px-3 pb-3 pt-4">
+      <div className="flex h-full flex-col">
+        <div className="border-b border-slate-200/70 px-3 py-4">
           <button
+            type="button"
             onClick={toggle}
-            className={clsx(
-              "absolute right-2 top-3 z-[80] rounded-full border border-white/80 bg-white/90 p-2 shadow-sm backdrop-blur transition-colors pointer-events-auto",
-              "text-slate-700 hover:bg-white hover:text-slate-900"
-            )}
-            aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
+            className="rounded-full border border-white/80 bg-white/90 px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm"
+            aria-label={collapsed ? "Deplier la barre laterale" : "Replier la barre laterale"}
           >
-            {collapsed ? <IconChevronRight className="h-4 w-4" /> : <IconChevronLeft className="h-4 w-4" />}
+            {collapsed ? "Ouvrir" : "Reduire"}
           </button>
-
-          {isExpanded && (
-            <div className="rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 pr-12 shadow-sm">
+          {!collapsed ? (
+            <div className="mt-3 rounded-[24px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.7))] p-4 shadow-sm">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Navigation</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
-                {IS_V1 ? "Trajectoire, besoins et outils dans un cadre plus clair." : "Navigation unifiee pour piloter opportunites et execution."}
+                {IS_V1_SIMPLE
+                  ? "Formation IA, Entreprise et Service IA dans un cadre simple et premium."
+                  : "Navigation unifiee pour piloter talents et execution."}
               </p>
             </div>
-          )}
+          ) : null}
         </div>
 
-        <nav className="sidebar-nav flex-1 space-y-2 overflow-y-auto overscroll-contain p-4">
-          {(IS_V1 ? V1_LINKS : WORKSPACE_LINKS).map((link) => {
+        <nav className="flex-1 space-y-2 overflow-y-auto p-4">
+          {links.map((link) => {
             const active = pathname.startsWith(link.href);
             const Icon = link.icon;
-            const isSchoolLink = !IS_V1 && link.href === "/school";
-            const showSchoolSubs = isSchoolLink && isExpanded && schoolOpen;
-            
             return (
-              <div key={link.href} className="space-y-2">
-                <Link
-                  href={link.href}
-                  onClick={() => {
-                    if (isSchoolLink) {
-                      setSchoolOpen((prev) => !prev);
-                    }
-                  }}
-                  className={clsx(
-                    "group relative flex items-center gap-3 rounded-[22px] px-3 py-3 transition-all duration-200",
-                    "hover:-translate-y-0.5 hover:bg-white/88 hover:shadow-[0_10px_22px_rgba(148,163,184,0.16)]",
-                    active
-                      ? "border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(224,242,254,0.92))] text-sky-700 shadow-[0_14px_28px_rgba(14,165,233,0.14)] ring-1 ring-sky-100/70"
-                      : "text-slate-600 hover:text-slate-900",
-                    collapsed && "justify-center px-2"
-                  )}
-                >
-                  <div className={clsx(
-                    "flex h-9 w-9 items-center justify-center rounded-2xl transition-colors",
-                    active 
-                      ? "bg-sky-100 text-sky-600" 
-                      : "bg-white text-slate-500 shadow-sm group-hover:bg-sky-100 group-hover:text-sky-600"
-                  )}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  
-                  {isExpanded && (
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-semibold truncate">{link.label}</span>
-                        <div className="flex items-center gap-2">
-                          {active && <div className="h-2 w-2 rounded-full bg-sky-500" />}
-                          {isSchoolLink && (
-                            <span className="text-[10px] font-semibold text-slate-500">
-                              {schoolOpen ? "−" : "+"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-slate-500 truncate">{link.description}</p>
+              <Link
+                key={link.href}
+                href={link.href}
+                className={clsx(
+                  "group flex items-center gap-3 rounded-[22px] px-3 py-3 transition-all duration-200",
+                  active
+                    ? "border border-sky-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(224,242,254,0.92))] text-sky-700 shadow-[0_14px_28px_rgba(14,165,233,0.14)]"
+                    : "text-slate-600 hover:bg-white/88 hover:text-slate-900 hover:shadow-[0_10px_22px_rgba(148,163,184,0.16)]",
+                  collapsed && "justify-center px-2",
+                )}
+              >
+                <div className={clsx("flex h-9 w-9 items-center justify-center rounded-2xl shadow-sm", active ? "bg-sky-100 text-sky-600" : "bg-white text-slate-500")}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                {!collapsed ? (
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[13px] font-semibold">{link.label}</span>
+                      {active ? <span className="h-2 w-2 rounded-full bg-sky-500" /> : null}
                     </div>
-                  )}
-
-                  {/* Tooltip for collapsed state */}
-                  {collapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {link.label}
-                    </div>
-                  )}
-                </Link>
-
-                {showSchoolSubs ? (
-                  <div className="ml-10 rounded-2xl border border-slate-200/70 bg-white/88 p-2 shadow-sm">
-                    <div className="space-y-1">
-                      {V1_SCHOOL_TREE.map((sub) => {
-                        const subActive = pathname.startsWith(sub.href);
-                        return (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            className={clsx(
-                              "block rounded-lg px-3 py-2 text-[12px] font-semibold transition",
-                              subActive
-                                ? "bg-sky-50 text-sky-700"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                            )}
-                          >
-                            {sub.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
+                    <p className="truncate text-[11px] text-slate-500">{link.description}</p>
                   </div>
                 ) : null}
-              </div>
+              </Link>
             );
           })}
         </nav>
 
         <div className="border-t border-slate-200/70 p-4">
-          {isExpanded ? (
+          {!collapsed ? (
             <div className="space-y-3">
-              {!IS_V1 && (
-                <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50 p-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] font-medium text-slate-700">Système actif</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    IA en temps réel • Matching intelligent
-                  </p>
+              <div className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50 p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  <span className="text-[11px] font-medium text-slate-700">Systeme actif</span>
                 </div>
-              )}
-
+                <p className="text-[11px] text-slate-600">Navigation simplifiee et plus orientee produit</p>
+              </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-500">
                 <span>v2.1.0</span>
                 <span>•</span>
-                <span>{IS_V1 ? "V1 simple active" : "Dernière mise à jour"}</span>
+                <span>{IS_V1_SIMPLE ? "V1 simple active" : "Derniere mise a jour"}</span>
               </div>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
             </div>
           )}
         </div>

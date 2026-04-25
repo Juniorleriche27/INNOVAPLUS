@@ -12,9 +12,29 @@ function normalize(base: string | undefined, fallback: string): string {
   return raw;
 }
 
-export const AUTH_API_BASE = normalize(
-  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL,
-  DEFAULT_API_BASE,
+function alignLoopbackHost(base: string, siteBase: string): string {
+  try {
+    const baseUrl = new URL(base);
+    const siteUrl = new URL(siteBase);
+    const loopbackHosts = new Set(["localhost", "127.0.0.1"]);
+    if (loopbackHosts.has(baseUrl.hostname) && loopbackHosts.has(siteUrl.hostname) && baseUrl.hostname !== siteUrl.hostname) {
+      baseUrl.hostname = siteUrl.hostname;
+      return baseUrl.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    // Keep relative paths or invalid URLs unchanged.
+  }
+  return base;
+}
+
+export const SITE_BASE_URL = normalize(
+  process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL,
+  "https://innovaplus.africa",
+);
+
+export const AUTH_API_BASE = alignLoopbackHost(
+  normalize(process.env.NEXT_PUBLIC_API_URL || process.env.API_URL, DEFAULT_API_BASE),
+  SITE_BASE_URL,
 );
 
 function normalizeInnovaBase(authBase: string): string {
@@ -28,15 +48,15 @@ function normalizeInnovaBase(authBase: string): string {
 }
 
 export const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
+export const CLIENT_INNOVA_API_BASE = "/innova/api";
 
-export const CHATLAYA_API_BASE = normalizeInnovaBase(
-  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL, INNOVA_API_BASE),
+export const CHATLAYA_API_BASE = alignLoopbackHost(
+  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL, "/api"),
+  SITE_BASE_URL,
 );
 
-export const SITE_BASE_URL = normalize(
-  process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL,
-  "https://innovaplus.africa",
-);
+export const DEV_AUTO_LOGIN_ENABLED =
+  (process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN || "").toLowerCase() === "true";
 
 export const IS_V1_SIMPLE =
   (process.env.NEXT_PUBLIC_V1_SIMPLE || "").toLowerCase() === "true" ||

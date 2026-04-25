@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Literal
+from typing import Dict, List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -11,9 +11,11 @@ EnterpriseMissionStatus = Literal["draft", "structured", "ready", "in_progress",
 EnterpriseOpportunityStatus = Literal["published", "closed", "archived"]
 EnterpriseOpportunityType = Literal["mission", "stage", "collaboration", "project", "accompagnement"]
 TaskStatus = Literal["todo", "in_progress", "done"]
+AiConfidence = Literal["high", "medium", "low"]
 
 
 class EnterpriseNeedCreatePayload(BaseModel):
+    company_name: str = Field(..., min_length=2, max_length=120)
     primary_goal: str = Field(..., min_length=2, max_length=120)
     need_type: str = Field(..., min_length=2, max_length=120)
     expected_result: str = Field(..., min_length=2, max_length=180)
@@ -24,9 +26,39 @@ class EnterpriseNeedCreatePayload(BaseModel):
     short_brief: str | None = Field(default=None, max_length=500)
 
 
+class EnterpriseFileAiAnalysisRequest(BaseModel):
+    file_name: str = Field(..., min_length=1, max_length=260)
+    file_type: Literal["csv", "json"]
+    file_size_label: str = Field(..., min_length=1, max_length=32)
+    row_count: int = Field(..., ge=0)
+    column_count: int = Field(..., ge=0)
+    columns: List[str] = Field(default_factory=list)
+    numeric_columns: List[str] = Field(default_factory=list)
+    date_columns: List[str] = Field(default_factory=list)
+    duplicate_headers: List[str] = Field(default_factory=list)
+    empty_cells: int = Field(..., ge=0)
+    completeness_rate: float = Field(..., ge=0, le=100)
+    sample_rows: List[Dict[str, str]] = Field(default_factory=list)
+    anomalies: List[str] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+
+
+class EnterpriseFileAiAnalysisResponse(BaseModel):
+    generated_at: datetime
+    executive_summary: str
+    business_diagnosis: List[str] = Field(default_factory=list)
+    key_risks: List[str] = Field(default_factory=list)
+    suggested_kpis: List[str] = Field(default_factory=list)
+    recommended_visualizations: List[str] = Field(default_factory=list)
+    priority_actions: List[str] = Field(default_factory=list)
+    questions_to_clarify: List[str] = Field(default_factory=list)
+    ai_confidence: AiConfidence = "low"
+
+
 class EnterpriseNeedResponse(BaseModel):
     id: str
     title: str
+    company_name: str
     primary_goal: str
     need_type: str
     expected_result: str
@@ -87,7 +119,6 @@ class EnterpriseCockpitExecutionStep(BaseModel):
     step_key: str
     title: str
     description: str
-    myplanning_task_id: str | None = None
     status: TaskStatus = "todo"
 
 

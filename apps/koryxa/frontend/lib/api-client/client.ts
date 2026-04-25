@@ -1,14 +1,8 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { AUTH_API_BASE } from "@/lib/env";
+import { requestJsonPath } from "@/lib/api";
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
+export const API_URL = AUTH_API_BASE;
+
+export function api<T>(path: string, init?: RequestInit): Promise<T> {
+  return requestJsonPath<T>(API_URL, path, init);
 }

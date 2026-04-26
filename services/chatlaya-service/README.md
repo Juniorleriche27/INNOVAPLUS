@@ -81,6 +81,29 @@ services/chatlaya-service/backend/
     routers/health.py
 ```
 
+## Database migration plan
+
+Le service contient maintenant un brouillon de migration SQL :
+
+- `services/chatlaya-service/migrations/001_create_chatlaya_tables.sql`
+
+Objectif :
+- reproduire proprement la structure actuelle de `app.chatlaya_conversations`
+- reproduire proprement la structure actuelle de `app.chatlaya_messages`
+- preparer le futur passage du bootstrap monolithe vers des migrations explicites
+
+Regles actuelles :
+- cette migration n'est pas executee automatiquement
+- elle ne modifie pas la base active a ce stade
+- `ensure_chatlaya_tables()` reste la source active de creation de tables dans le monolithe
+- toute application future doit etre validee avant execution
+
+Ordre cible plus tard :
+1. valider la migration SQL
+2. comparer avec la base de production
+3. brancher les migrations dans `chatlaya-service`
+4. seulement ensuite retirer la creation implicite du monolithe
+
 ## Statut
 
 - service scaffold seulement

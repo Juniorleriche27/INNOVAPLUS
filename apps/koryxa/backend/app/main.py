@@ -27,6 +27,7 @@ from app.services.postgres_bootstrap import (
     close_pg_pool,
     db_fetchall,
     db_fetchone,
+    ensure_auth_tables,
     ensure_chatlaya_tables,
     ensure_enterprise_leads_table,
     init_pg_pool,
@@ -499,6 +500,10 @@ async def on_startup():
         pass
     
     init_pg_pool()
+    try:
+        ensure_auth_tables()
+    except Exception:
+        logger.exception("Failed to ensure auth postgres tables")
     try:
         ensure_chatlaya_tables()
     except Exception:

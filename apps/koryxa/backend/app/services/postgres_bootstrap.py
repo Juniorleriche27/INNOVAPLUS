@@ -189,10 +189,94 @@ def ensure_enterprise_leads_table() -> None:
     )
 
 
+def ensure_auth_tables() -> None:
+    if not POOL:
+        return
+    db_execute("create extension if not exists pgcrypto;")
+    db_execute("create schema if not exists app;")
+    db_execute(
+        """
+        create or replace function app.set_updated_at()
+        returns trigger
+        language plpgsql
+        as $$
+        begin
+          new.updated_at = timezone('utc', now());
+          return new;
+        end;
+        $$;
+        """
+    )
+    db_execute(
+        """
+        create table if not exists app.auth_users (
+          id uuid primary key default gen_random_uuid(),
+          email text not null unique,
+          password_hash text not null,
+          first_name text not null,
+          last_name text not null,
+          country text null,
+          account_type text null check (account_type in ('learner', 'company', 'organization')),
+          workspace_role text null check (workspace_role in ('demandeur', 'prestataire')),
+          plan text not null default 'free' check (plan in ('free', 'pro', 'team')),
+          roles jsonb not null default '["user"]'::jsonb,
+          password_updated_at timestamptz null,
+          created_at timestamptz not null default timezone('utc', now()),
+          updated_at timestamptz not null default timezone('utc', now())
+        );
+        """
+    )
+    db_execute(
+        "create unique index if not exists auth_users_email_lower_key on app.auth_users ((lower(email)));"
+    )
+    db_execute("drop trigger if exists trg_auth_users_updated_at on app.auth_users;")
+    db_execute(
+        """
+        create trigger trg_auth_users_updated_at
+        before update on app.auth_users
+        for each row execute function app.set_updated_at();
+        """
+    )
+    db_execute(
+        """
+        create table if not exists app.sessions (
+          id uuid primary key default gen_random_uuid(),
+          user_id uuid not null references app.auth_users(id) on delete cascade,
+          token_hash text not null unique,
+          issued_at timestamptz not null default timezone('utc', now()),
+          expires_at timestamptz not null,
+          revoked boolean not null default false,
+          ip text null,
+          ua text null,
+          last_seen_at timestamptz not null default timezone('utc', now())
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists sessions_user_revoked_idx on app.sessions (user_id, revoked, expires_at desc);"
+    )
+    db_execute(
+        """
+        create table if not exists app.login_otps (
+          id uuid primary key default gen_random_uuid(),
+          email text not null,
+          code_hash text not null,
+          intent text not null default 'login',
+          expires_at timestamptz not null,
+          consumed_at timestamptz null,
+          created_at timestamptz not null default timezone('utc', now())
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists login_otps_email_created_idx on app.login_otps (lower(email), created_at desc);"
+    )
+
+
 def ensure_chatlaya_tables() -> None:
     if not POOL:
         return
-    db_execute("create schema if not exists app;")
+    ensure_auth_tables()
     db_execute(
         """
         create table if not exists app.chatlaya_conversations (

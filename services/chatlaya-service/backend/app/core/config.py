@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     COHERE_API_KEY: str | None = os.getenv("COHERE_API_KEY")
     EMBED_MODEL: str | None = os.getenv("EMBED_MODEL")
     EMBED_DIM: int = int(os.getenv("EMBED_DIM", "1024"))
+    RAG_API_URL: str | None = os.getenv("RAG_API_URL")
+    RAG_API_TIMEOUT: float = float(os.getenv("RAG_API_TIMEOUT", "8"))
+    RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))
 
     class Config:
         env_file = ".env"

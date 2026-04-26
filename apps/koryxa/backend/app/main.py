@@ -31,6 +31,7 @@ from app.services.postgres_bootstrap import (
     init_pg_pool,
 )
 from app.routers.auth import router as auth_router
+from app.routers.chatlaya import router as chatlaya_router
 from app.routers.notifications import router as notifications_router
 from app.routers.emailer import router as email_router
 from app.routers.invite import router as invite_router
@@ -961,6 +962,7 @@ async def enterprise_leads_webhook(request: Request):
 # Mount API routes at root; /innova/api prefix is normalized by middleware.
 innova_api = APIRouter(prefix="")
 innova_api.include_router(auth_router)
+innova_api.include_router(chatlaya_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)
 innova_api.include_router(youtube_router)

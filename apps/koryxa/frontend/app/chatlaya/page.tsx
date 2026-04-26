@@ -264,6 +264,10 @@ function ChatlayaContent() {
     if (data?.mode === "guest" || data?.mode === "user") {
       setAccessMode(data.mode);
     }
+    return {
+      conversationId: typeof data?.conversation_id === "string" ? data.conversation_id : null,
+      mode: data?.mode === "guest" || data?.mode === "user" ? data.mode : null,
+    };
   }
 
   async function createConversation() {
@@ -284,6 +288,7 @@ function ChatlayaContent() {
   async function loadConversations(force = false) {
     setConversationsLoading(true);
     try {
+      const session = await ensureSession();
       const response = await fetch(`${API_BASE}/chatlaya/conversations`, {
         cache: "no-store",
         credentials: "include",
@@ -296,8 +301,13 @@ function ChatlayaContent() {
       const data = await response.json().catch(() => ({}));
       const items: Conversation[] = Array.isArray(data?.items) ? data.items.map(normalizeConversation) : [];
 
+      if (!items.length && session.conversationId) {
+        setSelectedConversationId(session.conversationId);
+        setMessages([]);
+        return;
+      }
+
       if (!items.length && !force) {
-        await ensureSession();
         await loadConversations(true);
         return;
       }
@@ -313,6 +323,9 @@ function ChatlayaContent() {
       setConversations(items);
       setSelectedConversationId((current) => {
         if (current && items.some((item) => item.conversation_id === current)) return current;
+        if (session.conversationId && items.some((item) => item.conversation_id === session.conversationId)) {
+          return session.conversationId;
+        }
         return items[0]?.conversation_id ?? null;
       });
     } catch (err) {
@@ -561,11 +574,18 @@ function ChatlayaContent() {
     let convId = selectedConversationId;
     if (!convId) {
       try {
-        const created = await createConversationRequest();
-        setConversations((current) => [created, ...current]);
-        setSelectedConversationId(created.conversation_id);
-        setMessages([]);
-        convId = created.conversation_id;
+        const session = await ensureSession();
+        convId = session.conversationId;
+        if (!convId) {
+          const created = await createConversationRequest();
+          setConversations((current) => [created, ...current]);
+          setSelectedConversationId(created.conversation_id);
+          setMessages([]);
+          convId = created.conversation_id;
+        } else {
+          setSelectedConversationId(convId);
+          setMessages([]);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Impossible de créer la conversation.");
         return;

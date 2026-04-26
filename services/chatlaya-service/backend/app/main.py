@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from app.core.config import settings
+from app.routers.chatlaya import router as chatlaya_router
 from app.routers.health import router as health_router
 
 
@@ -13,6 +14,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(chatlaya_router)
 
 
 @app.get("/", include_in_schema=False)

@@ -212,6 +212,7 @@ def ensure_auth_tables() -> None:
         create table if not exists app.auth_users (
           id uuid primary key default gen_random_uuid(),
           email text not null unique,
+          google_subject text null unique,
           password_hash text not null,
           first_name text not null,
           last_name text not null,
@@ -227,7 +228,13 @@ def ensure_auth_tables() -> None:
         """
     )
     db_execute(
+        "alter table app.auth_users add column if not exists google_subject text;"
+    )
+    db_execute(
         "create unique index if not exists auth_users_email_lower_key on app.auth_users ((lower(email)));"
+    )
+    db_execute(
+        "create unique index if not exists auth_users_google_subject_key on app.auth_users (google_subject) where google_subject is not null;"
     )
     db_execute("drop trigger if exists trg_auth_users_updated_at on app.auth_users;")
     db_execute(

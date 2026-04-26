@@ -5,7 +5,11 @@ from urllib.parse import urlencode, urlparse
 import asyncio
 import logging
 import secrets
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+import hashlib
+import hmac
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import RedirectResponse
 
 from app.core.auth import (
     generate_session_token,
@@ -25,11 +29,13 @@ from app.repositories.auth_pg import (
     delete_otp,
     get_latest_otp,
     get_user_by_email,
+    get_user_by_google_subject,
     mark_reset_token_used,
     replace_otp,
     revoke_session_by_token,
     revoke_sessions_for_user,
     update_user_fields,
+    link_google_subject,
     upsert_dev_user,
     get_valid_reset_token,
 )
@@ -48,6 +54,13 @@ from app.schemas.users import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo"
+GOOGLE_STATE_COOKIE = "koryxa_google_state"
+GOOGLE_REDIRECT_COOKIE = "koryxa_google_redirect"
+
+
 def _generate_otp(length: int | None = None) -> str:
     digits = "0123456789"
     size = length or settings.OTP_CODE_LENGTH
@@ -108,6 +121,69 @@ def _clear_session_cookie(response: Response) -> None:
         path="/",
         domain=_cookie_domain(),
     )
+
+
+def _set_short_lived_cookie(response: Response, *, key: str, value: str, max_age: int = 600) -> None:
+    secure_cookie = True
+    try:
+        secure_cookie = urlparse(settings.FRONTEND_BASE_URL).scheme == "https"
+    except Exception:
+        secure_cookie = True
+    response.set_cookie(
+        key=key,
+        value=value,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=max_age,
+        path="/",
+    )
+
+
+def _clear_short_lived_cookie(response: Response, key: str) -> None:
+    response.delete_cookie(key=key, path="/")
+
+
+def _google_oauth_ready() -> bool:
+    return bool(settings.GOOGLE_OAUTH_CLIENT_ID and settings.GOOGLE_OAUTH_CLIENT_SECRET)
+
+
+def _google_redirect_uri() -> str:
+    explicit = (settings.GOOGLE_OAUTH_REDIRECT_URI or "").strip()
+    if explicit:
+        return explicit
+    return f"{settings.BACKEND_BASE_URL.rstrip('/')}/innova/api/auth/google/callback"
+
+
+def _safe_redirect_target(value: str | None, fallback: str = "/") -> str:
+    if not value:
+        return fallback
+    if not value.startswith("/") or value.startswith("//"):
+        return fallback
+    return value
+
+
+def _build_google_state() -> str:
+    random_part = secrets.token_urlsafe(24)
+    digest = hmac.new(
+        settings.JWT_SECRET.encode("utf-8"),
+        random_part.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return f"{random_part}.{digest}"
+
+
+def _is_valid_google_state(value: str) -> bool:
+    try:
+        token, digest = value.split(".", 1)
+    except ValueError:
+        return False
+    expected = hmac.new(
+        settings.JWT_SECRET.encode("utf-8"),
+        token.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(digest, expected)
 
 
 def _public_user(user: dict) -> UserPublic:
@@ -213,6 +289,15 @@ def _otp_response(expires_at: datetime, code: str) -> dict[str, str]:
     return response
 
 
+def _google_auth_error_redirect(message: str, redirect_to: str | None = None) -> RedirectResponse:
+    target = _safe_redirect_target(redirect_to, "/login")
+    separator = "&" if "?" in target else "?"
+    response = RedirectResponse(url=f"{settings.FRONTEND_BASE_URL.rstrip('/')}{target}{separator}auth_error={message}", status_code=303)
+    _clear_short_lived_cookie(response, GOOGLE_STATE_COOKIE)
+    _clear_short_lived_cookie(response, GOOGLE_REDIRECT_COOKIE)
+    return response
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     payload: UserCreate,
@@ -301,6 +386,123 @@ async def request_otp(
     )
     _send_otp_email(email, code, intent=intent)
     return _otp_response(expires_at, code)
+
+
+@router.get("/google/start")
+async def google_start(
+    redirect: str = Query(default="/", alias="redirect"),
+):
+    if not _google_oauth_ready():
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Google Sign-In n'est pas configure.")
+
+    safe_redirect = _safe_redirect_target(redirect, "/")
+    state = _build_google_state()
+    params = urlencode(
+        {
+            "client_id": settings.GOOGLE_OAUTH_CLIENT_ID or "",
+            "redirect_uri": _google_redirect_uri(),
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "online",
+            "include_granted_scopes": "true",
+            "prompt": "select_account",
+            "state": state,
+        }
+    )
+    response = RedirectResponse(url=f"{GOOGLE_AUTH_URL}?{params}", status_code=302)
+    _set_short_lived_cookie(response, key=GOOGLE_STATE_COOKIE, value=state, max_age=600)
+    _set_short_lived_cookie(response, key=GOOGLE_REDIRECT_COOKIE, value=safe_redirect, max_age=600)
+    return response
+
+
+@router.get("/google/callback")
+async def google_callback(
+    request: Request,
+    response: Response,
+    code: str | None = Query(default=None),
+    state: str | None = Query(default=None),
+    error: str | None = Query(default=None),
+):
+    saved_redirect = _safe_redirect_target(request.cookies.get(GOOGLE_REDIRECT_COOKIE), "/")
+    if error:
+        return _google_auth_error_redirect("google_access_refuse", saved_redirect)
+    if not code or not state:
+        return _google_auth_error_redirect("google_code_manquant", saved_redirect)
+
+    saved_state = request.cookies.get(GOOGLE_STATE_COOKIE) or ""
+    if not saved_state or not _is_valid_google_state(saved_state) or not hmac.compare_digest(saved_state, state):
+        return _google_auth_error_redirect("google_state_invalide", saved_redirect)
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            token_response = await client.post(
+                GOOGLE_TOKEN_URL,
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_OAUTH_CLIENT_ID or "",
+                    "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET or "",
+                    "redirect_uri": _google_redirect_uri(),
+                    "grant_type": "authorization_code",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            token_response.raise_for_status()
+            token_data = token_response.json()
+            access_token = str(token_data.get("access_token") or "")
+            if not access_token:
+                raise ValueError("missing access token")
+
+            profile_response = await client.get(
+                GOOGLE_USERINFO_URL,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            profile_response.raise_for_status()
+            profile = profile_response.json()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Google OAuth exchange failed: %s", exc)
+        return _google_auth_error_redirect("google_auth_echec", saved_redirect)
+
+    google_subject = str(profile.get("sub") or "").strip()
+    email = normalize_email(str(profile.get("email") or "").strip())
+    email_verified = bool(profile.get("email_verified"))
+    first_name = (str(profile.get("given_name") or "").strip() or "Utilisateur")
+    last_name = str(profile.get("family_name") or "").strip() or "Google"
+
+    if not google_subject or not email or not email_verified:
+        return _google_auth_error_redirect("google_profil_invalide", saved_redirect)
+
+    user = get_user_by_google_subject(google_subject)
+    if not user:
+        user = get_user_by_email(email)
+        if user:
+            linked = link_google_subject(str(user["id"]), google_subject)
+            user = linked or user
+        else:
+            user = create_pg_user(
+                email=email,
+                google_subject=google_subject,
+                password_hash=hash_password(generate_session_token()),
+                first_name=first_name,
+                last_name=last_name,
+                country="",
+                account_type="learner",
+            )
+
+    if user and ((not user.get("first_name")) or (not user.get("last_name"))):
+        user = update_user_fields(
+            str(user["id"]),
+            first_name=first_name if not user.get("first_name") else None,
+            last_name=last_name if not user.get("last_name") else None,
+        ) or user
+
+    redirect_response = RedirectResponse(
+        url=f"{settings.FRONTEND_BASE_URL.rstrip('/')}{saved_redirect}",
+        status_code=303,
+    )
+    _issue_session_pg(redirect_response, str(user["id"]), request)
+    _clear_short_lived_cookie(redirect_response, GOOGLE_STATE_COOKIE)
+    _clear_short_lived_cookie(redirect_response, GOOGLE_REDIRECT_COOKIE)
+    return redirect_response
 
 
 async def _verify_otp_flow(

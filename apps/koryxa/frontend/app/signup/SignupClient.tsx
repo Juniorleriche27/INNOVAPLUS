@@ -5,6 +5,7 @@ import { Mail, Sparkles, UserRound } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 
@@ -16,6 +17,7 @@ type SignupClientProps = {
   subtitle?: string;
   loginHref?: string;
   loginLabel?: string;
+  initialError?: string | null;
 };
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -41,6 +43,7 @@ export default function SignupClient({
   subtitle = "Creez votre compte, confirmez votre mot de passe, puis validez l'inscription avec un OTP envoye par KORYXA.",
   loginHref = "/login",
   loginLabel = "Se connecter",
+  initialError = null,
 }: SignupClientProps = {}) {
   const { refresh, user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -56,7 +59,7 @@ export default function SignupClient({
   const [accountType, setAccountType] = useState<"learner" | "company" | "organization">("learner");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [debugCode, setDebugCode] = useState<string | null>(null);
 
   useEffect(() => {
@@ -169,6 +172,15 @@ export default function SignupClient({
               ? "Remplissez vos informations, choisissez un mot de passe, puis confirmez l'inscription avec le code OTP."
               : "Le code OTP valide l'adresse email et finalise la creation du compte."}
           </p>
+        </div>
+
+        <div className="space-y-3">
+          <GoogleAuthButton redirectTo={successRedirect} label="Continuer avec Google" />
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">ou</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
         </div>
 
         {step === "form" ? (

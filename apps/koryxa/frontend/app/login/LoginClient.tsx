@@ -7,6 +7,7 @@ import { KeyRound, Mail, ShieldEllipsis } from "lucide-react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { CLIENT_INNOVA_API_BASE, DEV_AUTO_LOGIN_ENABLED, SITE_BASE_URL } from "@/lib/env";
 
@@ -21,6 +22,7 @@ type LoginClientProps = {
   supportLabel?: string;
   signupHref?: string;
   signupLabel?: string;
+  initialError?: string | null;
 };
 
 async function readErrorMessage(response: Response): Promise<string> {
@@ -49,6 +51,7 @@ export default function LoginClient({
   supportLabel = "Mot de passe oublie",
   signupHref = "/signup",
   signupLabel = "Creer un compte",
+  initialError = null,
 }: LoginClientProps = {}) {
   const router = useRouter();
   const redirect =
@@ -62,7 +65,7 @@ export default function LoginClient({
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<Step>("credentials");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
   const [clientState, setClientState] = useState({
@@ -221,6 +224,15 @@ export default function LoginClient({
             Domaine de previsualisation detecte. Apres connexion, vous serez renvoye vers {SITE_BASE_URL} pour garder une session valide.
           </div>
         ) : null}
+
+        <div className="space-y-3">
+          <GoogleAuthButton redirectTo={redirect} label="Continuer avec Google" />
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">ou</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+        </div>
 
         {step === "credentials" ? (
           <form onSubmit={requestOtp} className="space-y-5">

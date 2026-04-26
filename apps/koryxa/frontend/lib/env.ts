@@ -37,6 +37,11 @@ export const AUTH_API_BASE = alignLoopbackHost(
   SITE_BASE_URL,
 );
 
+export const DIRECT_AUTH_API_BASE = alignLoopbackHost(
+  ((process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "https://api.innovaplus.africa").trim() || "https://api.innovaplus.africa").replace(/\/+$/, ""),
+  SITE_BASE_URL,
+);
+
 function normalizeInnovaBase(authBase: string): string {
   let base = authBase.replace(/\/+$/, "");
   // If the env already contains multiple /innova/api segments, reduce to a single occurrence.
@@ -48,6 +53,7 @@ function normalizeInnovaBase(authBase: string): string {
 }
 
 export const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
+export const DIRECT_INNOVA_API_BASE = normalizeInnovaBase(DIRECT_AUTH_API_BASE);
 export const CLIENT_INNOVA_API_BASE = "/innova/api";
 
 const CHATLAYA_SOURCE_BASE = alignLoopbackHost(

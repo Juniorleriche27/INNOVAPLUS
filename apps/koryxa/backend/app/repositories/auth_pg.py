@@ -32,7 +32,7 @@ def _normalize_user(row: dict[str, Any] | None) -> dict[str, Any] | None:
 def get_user_by_email(email: str) -> dict[str, Any] | None:
     row = db_fetchone(
         """
-        select id, email, password_hash, first_name, last_name, country,
+        select id, email, google_subject, password_hash, first_name, last_name, country,
                account_type, workspace_role, plan, roles, created_at, updated_at
         from app.auth_users
         where lower(email) = lower(%s)
@@ -46,7 +46,7 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
 def get_user_by_id(user_id: str) -> dict[str, Any] | None:
     row = db_fetchone(
         """
-        select id, email, password_hash, first_name, last_name, country,
+        select id, email, google_subject, password_hash, first_name, last_name, country,
                account_type, workspace_role, plan, roles, created_at, updated_at
         from app.auth_users
         where id = %s::uuid
@@ -57,15 +57,29 @@ def get_user_by_id(user_id: str) -> dict[str, Any] | None:
     return _normalize_user(row)
 
 
-def create_user(*, email: str, password_hash: str, first_name: str, last_name: str, country: str, account_type: str) -> dict[str, Any]:
+def get_user_by_google_subject(google_subject: str) -> dict[str, Any] | None:
     row = db_fetchone(
         """
-        insert into app.auth_users(email, password_hash, first_name, last_name, country, account_type, roles, plan)
-        values (%s, %s, %s, %s, %s, %s, '["user"]'::jsonb, 'free')
-        returning id, email, password_hash, first_name, last_name, country,
+        select id, email, google_subject, password_hash, first_name, last_name, country,
+               account_type, workspace_role, plan, roles, created_at, updated_at
+        from app.auth_users
+        where google_subject = %s
+        limit 1;
+        """,
+        (google_subject,),
+    )
+    return _normalize_user(row)
+
+
+def create_user(*, email: str, password_hash: str, first_name: str, last_name: str, country: str, account_type: str, google_subject: str | None = None) -> dict[str, Any]:
+    row = db_fetchone(
+        """
+        insert into app.auth_users(email, google_subject, password_hash, first_name, last_name, country, account_type, roles, plan)
+        values (%s, %s, %s, %s, %s, %s, %s, '["user"]'::jsonb, 'free')
+        returning id, email, google_subject, password_hash, first_name, last_name, country,
                   account_type, workspace_role, plan, roles, created_at, updated_at;
         """,
-        (email, password_hash, first_name, last_name, country, account_type),
+        (email, google_subject, password_hash, first_name, last_name, country, account_type),
     )
     return _normalize_user(row) or {}
 
@@ -94,10 +108,24 @@ def update_user_fields(user_id: str, *, first_name: str | None = None, last_name
         update app.auth_users
         set {", ".join(assignments)}
         where id = %s::uuid
-        returning id, email, password_hash, first_name, last_name, country,
+        returning id, email, google_subject, password_hash, first_name, last_name, country,
                   account_type, workspace_role, plan, roles, created_at, updated_at;
         """,
         tuple(params),
+    )
+    return _normalize_user(row)
+
+
+def link_google_subject(user_id: str, google_subject: str) -> dict[str, Any] | None:
+    row = db_fetchone(
+        """
+        update app.auth_users
+        set google_subject = %s
+        where id = %s::uuid
+        returning id, email, google_subject, password_hash, first_name, last_name, country,
+                  account_type, workspace_role, plan, roles, created_at, updated_at;
+        """,
+        (google_subject, user_id),
     )
     return _normalize_user(row)
 
@@ -116,7 +144,7 @@ def upsert_dev_user(payload: dict[str, Any]) -> dict[str, Any]:
             workspace_role = excluded.workspace_role,
             plan = excluded.plan,
             roles = excluded.roles
-        returning id, email, password_hash, first_name, last_name, country,
+        returning id, email, google_subject, password_hash, first_name, last_name, country,
                   account_type, workspace_role, plan, roles, created_at, updated_at;
         """,
         (

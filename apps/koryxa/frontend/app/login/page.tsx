@@ -25,10 +25,26 @@ async function resolveSearchParams(input?: SearchParamsInput): Promise<SearchPar
 export default async function LoginPage({ searchParams }: { searchParams?: SearchParamsInput }) {
   const params = await resolveSearchParams(searchParams);
   const requestedRedirect = one(params?.redirect);
+  const authError = one(params?.auth_error);
   const successRedirect =
     requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
       ? requestedRedirect
       : KORYXA_PUBLIC_HOME;
   const signupHref = `/signup?redirect=${encodeURIComponent(successRedirect)}`;
-  return <LoginClient defaultRedirect={KORYXA_PUBLIC_HOME} requestedRedirect={requestedRedirect} signupHref={signupHref} />;
+  const initialError =
+    authError === "google_access_refuse"
+      ? "La connexion Google a ete annulee."
+      : authError === "google_profil_invalide"
+        ? "Le profil Google recu est incomplet ou non verifie."
+        : authError
+          ? "La connexion Google a echoue. Reessayez."
+          : null;
+  return (
+    <LoginClient
+      defaultRedirect={KORYXA_PUBLIC_HOME}
+      requestedRedirect={requestedRedirect}
+      signupHref={signupHref}
+      initialError={initialError}
+    />
+  );
 }

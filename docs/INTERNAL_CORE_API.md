@@ -109,3 +109,30 @@ Ne doivent jamais etre retournees :
 
 Dans le monolithe actuel, ces routes sont une preparation d'interface.  
 Elles n'extraient pas encore ChatLAYA, mais elles stabilisent le futur contrat Core ↔ ChatLAYA.
+
+## Client usage for future services
+
+Apres extraction, ChatLAYA ne devra plus lire directement les tables Core.  
+Il utilisera un client HTTP interne dedie pour consommer cette API.
+
+Client prepare :
+
+```text
+apps/koryxa/backend/app/services/core_api_client.py
+```
+
+Principes :
+- lit `CORE_INTERNAL_API_BASE_URL`
+- lit `INTERNAL_API_TOKEN`
+- envoie `X-Internal-Token`
+- applique des timeouts courts
+- remonte des erreurs HTTP explicites
+- retourne des dictionnaires JSON simples
+
+Ce client est volontairement ajoute avant extraction, mais il n'est pas encore branche dans le runtime actif de ChatLAYA.
+
+Ordre prevu :
+1. routes internes Core disponibles
+2. client Core disponible
+3. ChatLAYA service consomme ce client apres extraction
+4. suppression des acces SQL directs legacy au Core

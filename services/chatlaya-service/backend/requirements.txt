@@ -4,3 +4,4 @@ sse-starlette
 pydantic-settings
 httpx
 asyncpg
+cohere

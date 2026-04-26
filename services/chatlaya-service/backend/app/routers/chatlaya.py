@@ -100,7 +100,7 @@ async def _ensure_conversation(
     guest_id: str | None,
 ) -> dict:
     owner = _owner_filter(current, guest_id)
-    existing = get_latest_active_conversation(
+    existing = await get_latest_active_conversation(
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
     )
@@ -108,7 +108,7 @@ async def _ensure_conversation(
         return existing
 
     now = datetime.now(timezone.utc)
-    return create_conversation_pg(
+    return await create_conversation_pg(
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
         title=DEFAULT_CONVERSATION_TITLE,
@@ -139,7 +139,7 @@ async def list_conversations(
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     skip = (page - 1) * limit
     owner = _owner_filter(current, guest_id)
-    rows = list_conversations_pg(
+    rows = await list_conversations_pg(
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
         limit=limit,
@@ -158,7 +158,7 @@ async def create_conversation(
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     now = datetime.now(timezone.utc)
     owner = _owner_filter(current, guest_id)
-    doc = create_conversation_pg(
+    doc = await create_conversation_pg(
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
         title=DEFAULT_CONVERSATION_TITLE,
@@ -179,7 +179,7 @@ async def update_conversation(
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     conv_id = _parse_conversation_id(conversation_id)
     owner = _owner_filter(current, guest_id)
-    result = update_conversation_mode(
+    result = await update_conversation_mode(
         conversation_id=conv_id,
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
@@ -201,7 +201,7 @@ async def archive_conversation(
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     conv_id = _parse_conversation_id(conversation_id)
     owner = _owner_filter(current, guest_id)
-    archived = archive_conversation_pg(
+    archived = await archive_conversation_pg(
         conversation_id=conv_id,
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
@@ -222,7 +222,7 @@ async def list_messages(
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     conv_id = _parse_conversation_id(conversation_id)
     owner = _owner_filter(current, guest_id)
-    conversation = get_conversation(
+    conversation = await get_conversation(
         conversation_id=conv_id,
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
@@ -230,7 +230,9 @@ async def list_messages(
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
 
-    items: List[ChatMessageItem] = [_serialize_message(doc) for doc in list_messages_pg(conversation_id=conv_id)]
+    items: List[ChatMessageItem] = [
+        _serialize_message(doc) for doc in await list_messages_pg(conversation_id=conv_id)
+    ]
     return MessagesResponse(items=items)
 
 
@@ -247,7 +249,7 @@ async def post_message(
 
     conv_id = _parse_conversation_id(payload.conversation_id)
     owner = _owner_filter(current, guest_id)
-    conversation = get_conversation(
+    conversation = await get_conversation(
         conversation_id=conv_id,
         user_id=owner.get("user_id"),
         guest_id=owner.get("guest_id"),
@@ -256,7 +258,7 @@ async def post_message(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
 
     now = datetime.now(timezone.utc)
-    create_message(
+    await create_message(
         conversation_id=conv_id,
         role="user",
         content=payload.message,
@@ -271,9 +273,9 @@ async def post_message(
         snippet = payload.message.strip().replace("\n", " ")
         if snippet:
             title = snippet[:80]
-    touch_conversation(conversation_id=conv_id, title=title, updated_at=now)
+    await touch_conversation(conversation_id=conv_id, title=title, updated_at=now)
 
-    history_docs = list_recent_messages(conversation_id=conv_id, limit=12)
+    history_docs = await list_recent_messages(conversation_id=conv_id, limit=12)
     history_docs = history_docs[-8:]
     chat_history = [
         {"role": doc.get("role", "assistant"), "content": doc.get("content", "")}
@@ -293,7 +295,7 @@ async def post_message(
         assistant_mode=assistant_mode,
     )
     assistant_now = datetime.now(timezone.utc)
-    create_message(
+    await create_message(
         conversation_id=conv_id,
         role="assistant",
         content=reply,
@@ -302,7 +304,7 @@ async def post_message(
         meta={"rag_sources": rag_sources} if rag_sources else {},
         created_at=assistant_now,
     )
-    touch_conversation(
+    await touch_conversation(
         conversation_id=conv_id,
         title=title,
         updated_at=assistant_now,

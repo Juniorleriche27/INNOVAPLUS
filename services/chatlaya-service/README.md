@@ -81,6 +81,79 @@ services/chatlaya-service/backend/
     routers/health.py
 ```
 
+## Execution locale
+
+Ce service peut etre lance localement pour valider le squelette backend, sans aucun branchement a la production.
+
+Port local cible :
+- `8010`
+
+Fichier d'exemple :
+- `services/chatlaya-service/backend/.env.example`
+
+Variables de base :
+- `SERVICE_NAME=chatlaya-service`
+- `SERVICE_PORT=8010`
+- `ENVIRONMENT=local`
+- `DATABASE_URL=`
+- `CORE_INTERNAL_API_BASE_URL=http://127.0.0.1:8000`
+- `INTERNAL_API_TOKEN=`
+- `CHAT_PROVIDER=`
+- `CHAT_MODEL=`
+- `COHERE_API_KEY=`
+- `RAG_API_URL=`
+- `RAG_TOP_K_DEFAULT=5`
+
+Commande de lancement local :
+
+```bash
+cd services/chatlaya-service/backend
+uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload
+```
+
+Healthcheck local :
+
+```bash
+curl http://127.0.0.1:8010/health
+```
+
+Reponse attendue :
+
+```json
+{
+  "status": "ok",
+  "service": "chatlaya-service"
+}
+```
+
+## Limites actuelles du squelette
+
+Le service reste non actif en production.
+
+Dependances encore en TODO :
+- auth Core distante ;
+- acces Core via `core_api_client` ;
+- acces Postgres reel extrait ;
+- RAG reel ;
+- logique specialist complete ;
+- contexte produit reel ;
+- bootstrap/migrations executes par un vrai runtime de service.
+
+Stubs actuels :
+- `app/deps/auth.py`
+- `app/core/public_access.py`
+- `app/services/chatlaya_context.py`
+- `app/services/postgres_bootstrap.py`
+- `app/core/ai.py`
+- `app/core/rag_client.py`
+- `app/services/chatlaya_specialist.py`
+
+Consequences :
+- le service compile et peut demarrer localement ;
+- les routes existent dans le squelette ;
+- le comportement metier n'est pas encore complet ;
+- aucune integration prod n'est faite a ce stade.
+
 ## Database migration plan
 
 Le service contient maintenant un brouillon de migration SQL :
@@ -107,6 +180,7 @@ Ordre cible plus tard :
 ## Statut
 
 - service scaffold seulement
+- executable localement pour validation non-production
 - non branche a Nginx
 - non branche a systemd
 - non branche aux routes publiques existantes

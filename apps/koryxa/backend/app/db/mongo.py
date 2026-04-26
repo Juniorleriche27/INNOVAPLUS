@@ -36,10 +36,6 @@ async def connect_to_mongo() -> None:
 
             # INNOVA core collections
             await _db["conversations"].create_index([("user_id", 1), ("last_activity_at", -1)])
-            await _db["messages_innova"].create_index([("conversation_id", 1), ("created_at", 1)])
-            await _db["feedback"].create_index([("message_id", 1), ("created_at", 1)])
-            await _db["documents"].create_index([("doc_id", 1)], unique=True)
-            await _db["vectors"].create_index([("doc_id", 1), ("chunk_id", 1)])
 
             # Matching/Fairness collections
             await _db["profiles"].create_index("user_id")
@@ -96,29 +92,6 @@ async def connect_to_mongo() -> None:
             await _db["public_products"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("slug", 1)], unique=True)
             await _db["trajectory_partners"].create_index([("status", 1), ("visible", 1), ("type", 1)])
-
-            # Try to create Atlas Vector Search index if supported
-            try:
-                await _db.command({
-                    "createSearchIndexes": "vectors",
-                    "indexes": [
-                        {
-                            "name": "vector_index",
-                            "definition": {
-                                "fields": {
-                                    "embedding": {
-                                        "type": "vector",
-                                        "numDimensions": settings.EMBED_DIM,
-                                        "similarity": "cosine",
-                                    }
-                                }
-                            },
-                        }
-                    ],
-                })
-            except PyMongoError:
-                # Ignore if not supported or already exists
-                pass
         except PyMongoError:
             # Avoid crashing startup; health endpoint will reflect status
             pass

@@ -1,14 +1,14 @@
 KORYXA Backend API
 ==================
 
-API FastAPI connectée à MongoDB pour KORYXA: auth, profils, opportunités, communauté, ChatLAYA, trajectoire, entreprise et MyPlanning.
+API FastAPI connectée à Supabase/Postgres pour KORYXA: auth, ChatLAYA, trajectoire, entreprise, notifications et endpoints publics de la plateforme.
 
 Environment
 -----------
 
 Core variables (fichier `/etc/innovaplus/backend.env` en prod) :
 
-- `MONGO_URI`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS`
+- `DATABASE_URL`, `DB_NAME`, `JWT_SECRET`, `ALLOWED_ORIGINS`
 - `FRONTEND_BASE_URL` (utilisé pour générer les CTA dans les emails/notifications)
 - SMTP : `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`
 - IA via API : `PROVIDER=cohere`, `COHERE_API_KEY=...` (ou `LLM_PROVIDER=cohere`)
@@ -30,7 +30,7 @@ Run locally
    .venv\\Scripts\\activate
    pip install -r requirements.txt
 
-2. Ensure `MONGO_URI` and `DB_NAME` are set in your shell or `.env`.
+2. Ensure `DATABASE_URL` and `DB_NAME` are set in your shell or `.env`.
 
 3. Start the server:
 
@@ -48,9 +48,8 @@ Run locally
 Notes
 -----
 
-- This backend is asynchronous and uses Motor for MongoDB.
-- You can now migrate real domain models/routes as needed.
-- Missions / matching : `POST /innova/api/missions` (création + résumé IA), `POST /missions/{id}/waves` (matching + notifications email/WhatsApp), `GET /missions/dashboard` (KPI + escalades HF).
+- The runtime mounted by `app.main` is expected to run against Supabase/Postgres.
+- Legacy Mongo-only modules may still exist in the repository, but they are not part of the main mounted path.
 - Profils démo : une graine minimale est injectée automatiquement si `workspace_profiles` est vide. Pour forcer une regénération locale :
 
       cd apps/koryxa/backend

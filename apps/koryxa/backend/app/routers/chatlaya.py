@@ -5,15 +5,25 @@ import threading
 import time
 from datetime import datetime, timezone
 from typing import Any, List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
-from motor.motor_asyncio import AsyncIOMotorDatabase
-from pymongo import ReturnDocument
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.public_access import ensure_guest_id, get_guest_id
-from app.db.mongo import get_db
 from app.deps.auth import get_current_user_optional
+from app.repositories.chatlaya_pg import (
+    archive_conversation as archive_conversation_pg,
+    create_conversation as create_conversation_pg,
+    create_message,
+    get_conversation,
+    get_latest_active_conversation,
+    list_conversations as list_conversations_pg,
+    list_messages as list_messages_pg,
+    list_recent_messages,
+    touch_conversation,
+    update_conversation_mode,
+)
 from app.schemas.chatlaya import (
     ChatMessageItem,
     ChatMessagePayload,
@@ -25,7 +35,6 @@ from app.schemas.chatlaya import (
 from app.services.chatlaya_context import build_chatlaya_product_context
 from app.services.chatlaya_specialist import CHATLAYA_MODE_GENERAL, coerce_assistant_mode
 from app.services.chatlaya_service import generate_chat_reply
-from app.utils.ids import to_object_id
 
 
 logger = logging.getLogger(__name__)
@@ -79,42 +88,43 @@ def _apply_guest_rate_limit(guest_id: str) -> None:
         _GUEST_CHAT_BUCKETS[guest_id] = bucket
 
 
+def _parse_conversation_id(value: str) -> str:
+    try:
+        return str(UUID(str(value)))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Conversation invalide") from exc
+
+
 async def _ensure_conversation(
-    db: AsyncIOMotorDatabase,
     current: dict | None,
     guest_id: str | None,
 ) -> dict:
-    query = {**_owner_filter(current, guest_id), "archived": {"$ne": True}}
-    existing: List[dict] = await db["conversations"].find(query).sort("updated_at", -1).limit(1).to_list(1)
+    owner = _owner_filter(current, guest_id)
+    existing = get_latest_active_conversation(
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+    )
     if existing:
-        return existing[0]
+        return existing
 
     now = datetime.now(timezone.utc)
-    doc: dict[str, Any] = {
-        "title": DEFAULT_CONVERSATION_TITLE,
-        "created_at": now,
-        "updated_at": now,
-        "archived": False,
-        "assistant_mode": CHATLAYA_MODE_GENERAL,
-    }
-    if current:
-        doc["user_id"] = current["_id"]
-    else:
-        doc["guest_id"] = guest_id
-    res = await db["conversations"].insert_one(doc)
-    doc["_id"] = res.inserted_id
-    return doc
+    return create_conversation_pg(
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        title=DEFAULT_CONVERSATION_TITLE,
+        assistant_mode=CHATLAYA_MODE_GENERAL,
+        now=now,
+    )
 
 
 @router.post("/session")
 async def start_session(
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
-    conversation = await _ensure_conversation(db, current, guest_id)
+    conversation = await _ensure_conversation(current, guest_id)
     return {"conversation_id": str(conversation["_id"]), "mode": "user" if current else "guest"}
 
 
@@ -124,21 +134,18 @@ async def list_conversations(
     response: Response,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     skip = (page - 1) * limit
-    cursor = (
-        db["conversations"]
-        .find({**_owner_filter(current, guest_id), "archived": {"$ne": True}})
-        .sort("updated_at", -1)
-        .skip(skip)
-        .limit(limit)
+    owner = _owner_filter(current, guest_id)
+    rows = list_conversations_pg(
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        limit=limit,
+        offset=skip,
     )
-    items: List[ConversationResponse] = []
-    async for doc in cursor:
-        items.append(_serialize_conversation(doc))
+    items: List[ConversationResponse] = [_serialize_conversation(doc) for doc in rows]
     return ConversationListResponse(items=items, page=page, limit=limit)
 
 
@@ -146,24 +153,18 @@ async def list_conversations(
 async def create_conversation(
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
     now = datetime.now(timezone.utc)
-    doc: dict[str, Any] = {
-        "title": DEFAULT_CONVERSATION_TITLE,
-        "created_at": now,
-        "updated_at": now,
-        "archived": False,
-        "assistant_mode": CHATLAYA_MODE_GENERAL,
-    }
-    if current:
-        doc["user_id"] = current["_id"]
-    else:
-        doc["guest_id"] = guest_id
-    res = await db["conversations"].insert_one(doc)
-    doc["_id"] = res.inserted_id
+    owner = _owner_filter(current, guest_id)
+    doc = create_conversation_pg(
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        title=DEFAULT_CONVERSATION_TITLE,
+        assistant_mode=CHATLAYA_MODE_GENERAL,
+        now=now,
+    )
     return _serialize_conversation(doc)
 
 
@@ -173,19 +174,17 @@ async def update_conversation(
     payload: ConversationUpdatePayload,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
-    conv_oid = to_object_id(conversation_id)
-    updates = {
-        "assistant_mode": coerce_assistant_mode(payload.assistant_mode),
-        "updated_at": datetime.now(timezone.utc),
-    }
-    result = await db["conversations"].find_one_and_update(
-        {"_id": conv_oid, **_owner_filter(current, guest_id)},
-        {"$set": updates},
-        return_document=ReturnDocument.AFTER,
+    conv_id = _parse_conversation_id(conversation_id)
+    owner = _owner_filter(current, guest_id)
+    result = update_conversation_mode(
+        conversation_id=conv_id,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        assistant_mode=coerce_assistant_mode(payload.assistant_mode),
+        updated_at=datetime.now(timezone.utc),
     )
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
@@ -197,16 +196,18 @@ async def archive_conversation(
     conversation_id: str,
     request: Request,
     response: Response,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
-    conv_oid = to_object_id(conversation_id)
-    result = await db["conversations"].update_one(
-        {"_id": conv_oid, **_owner_filter(current, guest_id)},
-        {"$set": {"archived": True, "updated_at": datetime.now(timezone.utc)}},
+    conv_id = _parse_conversation_id(conversation_id)
+    owner = _owner_filter(current, guest_id)
+    archived = archive_conversation_pg(
+        conversation_id=conv_id,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        updated_at=datetime.now(timezone.utc),
     )
-    if result.matched_count == 0:
+    if not archived:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
     return None
 
@@ -216,19 +217,20 @@ async def list_messages(
     request: Request,
     response: Response,
     conversation_id: str = Query(..., alias="conversation_id"),
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
-    conv_oid = to_object_id(conversation_id)
-    conversation = await db["conversations"].find_one({"_id": conv_oid, **_owner_filter(current, guest_id)})
+    conv_id = _parse_conversation_id(conversation_id)
+    owner = _owner_filter(current, guest_id)
+    conversation = get_conversation(
+        conversation_id=conv_id,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+    )
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
 
-    cursor = db["messages"].find({"conversation_id": conv_oid}).sort("created_at", 1)
-    items: List[ChatMessageItem] = []
-    async for doc in cursor:
-        items.append(_serialize_message(doc))
+    items: List[ChatMessageItem] = [_serialize_message(doc) for doc in list_messages_pg(conversation_id=conv_id)]
     return MessagesResponse(items=items)
 
 
@@ -236,7 +238,6 @@ async def list_messages(
 async def post_message(
     payload: ChatMessagePayload,
     request: Request,
-    db: AsyncIOMotorDatabase = Depends(get_db),
     current: dict | None = Depends(get_current_user_optional),
 ):
     response = Response()
@@ -244,42 +245,35 @@ async def post_message(
     if not current:
         _apply_guest_rate_limit(guest_id)
 
-    conv_oid = to_object_id(payload.conversation_id)
-    conversation = await db["conversations"].find_one({"_id": conv_oid, **_owner_filter(current, guest_id)})
+    conv_id = _parse_conversation_id(payload.conversation_id)
+    owner = _owner_filter(current, guest_id)
+    conversation = get_conversation(
+        conversation_id=conv_id,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+    )
     if not conversation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
 
     now = datetime.now(timezone.utc)
-    user_message: dict[str, Any] = {
-        "conversation_id": conv_oid,
-        "role": "user",
-        "content": payload.message,
-        "created_at": now,
-    }
-    if current:
-        user_message["user_id"] = current["_id"]
-    else:
-        user_message["guest_id"] = guest_id
-    await db["messages"].insert_one(user_message)
+    create_message(
+        conversation_id=conv_id,
+        role="user",
+        content=payload.message,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        meta={},
+        created_at=now,
+    )
 
     title = conversation.get("title") or DEFAULT_CONVERSATION_TITLE
     if title == DEFAULT_CONVERSATION_TITLE:
         snippet = payload.message.strip().replace("\n", " ")
         if snippet:
             title = snippet[:80]
-    await db["conversations"].update_one(
-        {"_id": conv_oid},
-        {"$set": {"updated_at": now, "title": title}},
-    )
+    touch_conversation(conversation_id=conv_id, title=title, updated_at=now)
 
-    history_docs = await (
-        db["messages"]
-        .find({"conversation_id": conv_oid})
-        .sort("created_at", -1)
-        .limit(12)
-        .to_list(length=12)
-    )
-    history_docs.reverse()
+    history_docs = list_recent_messages(conversation_id=conv_id, limit=12)
     history_docs = history_docs[-8:]
     chat_history = [
         {"role": doc.get("role", "assistant"), "content": doc.get("content", "")}
@@ -287,7 +281,7 @@ async def post_message(
     ]
 
     try:
-        product_context = await build_chatlaya_product_context(db, current, guest_id)
+        product_context = await build_chatlaya_product_context(current, guest_id)
     except Exception as exc:  # noqa: BLE001
         logger.warning("ChatLAYA product context build failed: %s", exc)
         product_context = ""
@@ -298,21 +292,20 @@ async def post_message(
         product_context=product_context,
         assistant_mode=assistant_mode,
     )
-    assistant_doc: dict[str, Any] = {
-        "conversation_id": conv_oid,
-        "role": "assistant",
-        "content": reply,
-        "created_at": datetime.now(timezone.utc),
-        "meta": {"rag_sources": rag_sources} if rag_sources else {},
-    }
-    if current:
-        assistant_doc["user_id"] = current["_id"]
-    else:
-        assistant_doc["guest_id"] = guest_id
-    await db["messages"].insert_one(assistant_doc)
-    await db["conversations"].update_one(
-        {"_id": conv_oid},
-        {"$set": {"updated_at": datetime.now(timezone.utc)}},
+    assistant_now = datetime.now(timezone.utc)
+    create_message(
+        conversation_id=conv_id,
+        role="assistant",
+        content=reply,
+        user_id=owner.get("user_id"),
+        guest_id=owner.get("guest_id"),
+        meta={"rag_sources": rag_sources} if rag_sources else {},
+        created_at=assistant_now,
+    )
+    touch_conversation(
+        conversation_id=conv_id,
+        title=title,
+        updated_at=assistant_now,
     )
 
     async def event_generator():

@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from psycopg2 import sql
+
+from app.core.ai import embed_texts
+from app.services.postgres_bootstrap import db_fetchall, db_fetchone, pg_pool_ready
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +321,422 @@ def _chunks_path() -> Path:
     return Path(__file__).resolve().parents[5] / "chatlaya" / "prepared" / "supabase_chunks.jsonl"
 
 
+def _vector_literal(values: list[float]) -> str:
+    return "[" + ",".join(f"{float(value):.8f}" for value in values) + "]"
+
+
+def _normalize_meta(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            return {}
+    return {}
+
+
+def _build_tsquery_expression(query: str) -> str:
+    base_tokens = list(_tokenize(query))
+    expanded_tokens, _, _ = _expand_query(query)
+    ordered_tokens = list(dict.fromkeys([*base_tokens, *sorted(expanded_tokens)]))
+    safe_tokens = [token for token in ordered_tokens if token and "'" not in token]
+    if not safe_tokens:
+        return ""
+    return " | ".join(safe_tokens[:24])
+
+
+def _pick_existing_column(columns: set[str], ordered_names: tuple[str, ...]) -> str | None:
+    for name in ordered_names:
+        if name in columns:
+            return name
+    return None
+
+
+@lru_cache(maxsize=1)
+def _has_match_rag_chunks_function() -> bool:
+    if not pg_pool_ready():
+        return False
+    row = db_fetchone(
+        """
+        select to_regprocedure('app.match_rag_chunks(vector,integer,text)') is not null as exists;
+        """
+    )
+    return bool(row and row.get("exists"))
+
+
+def _retrieve_specialist_chunks_via_match_function(query: str, top_k: int) -> list[dict[str, Any]]:
+    if not pg_pool_ready() or not _has_match_rag_chunks_function():
+        return []
+
+    text_query = query.strip()
+    if not text_query:
+        return []
+
+    try:
+        embedding = embed_texts([text_query])[0]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to embed ChatLAYA specialist query for app.match_rag_chunks: %s", exc)
+        return []
+
+    try:
+        rows = db_fetchall(
+            """
+            select *
+            from app.match_rag_chunks(%s::vector, %s, %s);
+            """,
+            (
+                _vector_literal(embedding),
+                max(1, min(int(top_k), 10)),
+                "launch_structure_sell",
+            ),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("app.match_rag_chunks query failed: %s", exc)
+        return []
+
+    results: list[dict[str, Any]] = []
+    for row in rows:
+        text = str(row.get("content") or "").strip()
+        if not text:
+            continue
+        meta = _normalize_meta(row.get("metadata"))
+        title = str(row.get("title") or meta.get("title") or row.get("document_id") or "").strip()
+        source_file = str(
+            row.get("source_file")
+            or meta.get("source_file")
+            or meta.get("source")
+            or meta.get("path")
+            or ""
+        ).strip()
+        results.append(
+            {
+                "doc_id": row.get("document_id") or meta.get("document_id") or meta.get("doc_id"),
+                "score": round(float(row.get("score") or 0.0), 4),
+                "text": text,
+                "meta": {
+                    "title": title,
+                    "source_file": source_file,
+                    "assistant_mode": CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL,
+                    "retrieval_mode": "supabase_vector_function",
+                },
+            }
+        )
+    return results
+
+
+@lru_cache(maxsize=1)
+def _discover_specialist_vector_store() -> dict[str, str] | None:
+    if not pg_pool_ready():
+        return None
+
+    schema_override = (os.environ.get("CHATLAYA_SPECIALIST_SCHEMA") or "").strip()
+    table_override = (os.environ.get("CHATLAYA_SPECIALIST_TABLE") or "").strip()
+    if schema_override and table_override:
+        columns = db_fetchall(
+            """
+            select column_name
+            from information_schema.columns
+            where table_schema = %s and table_name = %s;
+            """,
+            (schema_override, table_override),
+        )
+        column_set = {str(row.get("column_name") or "") for row in columns}
+        if "embedding" not in column_set:
+            logger.warning(
+                "ChatLAYA specialist table override %s.%s does not expose an embedding column",
+                schema_override,
+                table_override,
+            )
+            return None
+        text_col = _pick_existing_column(column_set, ("content", "text", "chunk_text", "page_content", "body"))
+        if not text_col:
+            logger.warning(
+                "ChatLAYA specialist table override %s.%s does not expose a usable text column",
+                schema_override,
+                table_override,
+            )
+            return None
+        return {
+            "schema": schema_override,
+            "table": table_override,
+            "embedding_col": "embedding",
+            "text_col": text_col,
+            "doc_id_col": _pick_existing_column(column_set, ("document_id", "doc_id", "id")) or "",
+            "title_col": _pick_existing_column(column_set, ("title", "document_title", "name")) or "",
+            "source_col": _pick_existing_column(column_set, ("source_file", "source_path", "file_path", "path", "source")) or "",
+            "meta_col": _pick_existing_column(column_set, ("metadata", "meta")) or "",
+            "filter_col": (os.environ.get("CHATLAYA_SPECIALIST_FILTER_COLUMN") or "").strip(),
+            "filter_value": (os.environ.get("CHATLAYA_SPECIALIST_FILTER_VALUE") or "").strip(),
+        }
+
+    rows = db_fetchall(
+        """
+        select table_schema, table_name, column_name, udt_name
+        from information_schema.columns
+        where table_schema not in ('pg_catalog', 'information_schema')
+        order by table_schema, table_name, ordinal_position;
+        """
+    )
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        key = (str(row.get("table_schema") or ""), str(row.get("table_name") or ""))
+        grouped.setdefault(key, []).append(row)
+
+    best_score = -1
+    best_cfg: dict[str, str] | None = None
+    for (schema_name, table_name), table_rows in grouped.items():
+        columns = {str(row.get("column_name") or "") for row in table_rows}
+        vector_columns = {
+            str(row.get("column_name") or "")
+            for row in table_rows
+            if str(row.get("udt_name") or "") == "vector"
+        }
+        embedding_col = "embedding" if "embedding" in vector_columns else ""
+        if not embedding_col:
+            continue
+
+        text_col = _pick_existing_column(columns, ("content", "text", "chunk_text", "page_content", "body"))
+        if not text_col:
+            continue
+
+        score = 0
+        lowered_table = table_name.lower()
+        lowered_schema = schema_name.lower()
+        if "chatlaya" in lowered_table or "chatlaya" in lowered_schema:
+            score += 80
+        if "special" in lowered_table or "special" in lowered_schema:
+            score += 50
+        if "chunk" in lowered_table:
+            score += 40
+        if "rag" in lowered_table:
+            score += 35
+        if "vector" in lowered_table:
+            score += 25
+        if "document" in lowered_table:
+            score += 15
+        if "source_file" in columns:
+            score += 10
+        if "title" in columns:
+            score += 8
+        if "document_id" in columns or "doc_id" in columns:
+            score += 8
+
+        if score <= best_score:
+            continue
+
+        best_score = score
+        best_cfg = {
+            "schema": schema_name,
+            "table": table_name,
+            "embedding_col": embedding_col,
+            "text_col": text_col,
+            "doc_id_col": _pick_existing_column(columns, ("document_id", "doc_id", "id")) or "",
+            "title_col": _pick_existing_column(columns, ("title", "document_title", "name")) or "",
+            "source_col": _pick_existing_column(columns, ("source_file", "source_path", "file_path", "path", "source")) or "",
+            "meta_col": _pick_existing_column(columns, ("metadata", "meta")) or "",
+            "filter_col": "",
+            "filter_value": "",
+        }
+
+    if best_cfg:
+        logger.info(
+            "ChatLAYA specialist vector store auto-discovered: %s.%s",
+            best_cfg["schema"],
+            best_cfg["table"],
+        )
+    else:
+        logger.warning("No Supabase/Postgres vector store discovered for ChatLAYA specialist mode")
+    return best_cfg
+
+
+def _retrieve_specialist_chunks_from_pg(query: str, top_k: int) -> list[dict[str, Any]]:
+    if not pg_pool_ready():
+        return []
+
+    cfg = _discover_specialist_vector_store()
+    if not cfg:
+        return []
+
+    text_query = query.strip()
+    if not text_query:
+        return []
+
+    try:
+        embedding = embed_texts([text_query])[0]
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to embed ChatLAYA specialist query for vector retrieval: %s", exc)
+        return []
+
+    select_doc_id = (
+        sql.SQL("{}::text as doc_id").format(sql.Identifier(cfg["doc_id_col"]))
+        if cfg.get("doc_id_col")
+        else sql.SQL("null::text as doc_id")
+    )
+    select_title = (
+        sql.SQL("{}::text as title").format(sql.Identifier(cfg["title_col"]))
+        if cfg.get("title_col")
+        else sql.SQL("null::text as title")
+    )
+    select_source = (
+        sql.SQL("{}::text as source_file").format(sql.Identifier(cfg["source_col"]))
+        if cfg.get("source_col")
+        else sql.SQL("null::text as source_file")
+    )
+    select_meta = (
+        sql.SQL("{} as meta").format(sql.Identifier(cfg["meta_col"]))
+        if cfg.get("meta_col")
+        else sql.SQL("null::jsonb as meta")
+    )
+
+    where_parts = [sql.SQL("coalesce({}::text, '') <> ''").format(sql.Identifier(cfg["text_col"]))]
+    params: list[Any] = []
+    filter_col = (cfg.get("filter_col") or "").strip()
+    filter_value = (cfg.get("filter_value") or "").strip()
+    if filter_col and filter_value:
+        where_parts.append(sql.SQL("{}::text = %s").format(sql.Identifier(filter_col)))
+        params.append(filter_value)
+
+    query_sql = sql.SQL(
+        """
+        select
+          {doc_id},
+          {text_col}::text as text,
+          {title},
+          {source},
+          {meta},
+          1 - ({embedding_col} <=> %s::vector) as score
+        from {table_schema}.{table_name}
+        where {where_clause}
+        order by {embedding_col} <=> %s::vector asc
+        limit %s;
+        """
+    ).format(
+        doc_id=select_doc_id,
+        text_col=sql.Identifier(cfg["text_col"]),
+        title=select_title,
+        source=select_source,
+        meta=select_meta,
+        embedding_col=sql.Identifier(cfg["embedding_col"]),
+        table_schema=sql.Identifier(cfg["schema"]),
+        table_name=sql.Identifier(cfg["table"]),
+        where_clause=sql.SQL(" and ").join(where_parts),
+    )
+    vector_literal = _vector_literal(embedding)
+    params = [*params, vector_literal, vector_literal, max(1, min(int(top_k), 10))]
+
+    try:
+        rows = db_fetchall(query_sql, tuple(params))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ChatLAYA specialist vector query failed: %s", exc)
+        return []
+
+    results: list[dict[str, Any]] = []
+    for row in rows:
+        text = str(row.get("text") or "").strip()
+        if not text:
+            continue
+        meta = _normalize_meta(row.get("meta"))
+        title = str(row.get("title") or meta.get("title") or row.get("doc_id") or "").strip()
+        source_file = str(
+            row.get("source_file")
+            or meta.get("source_file")
+            or meta.get("source")
+            or meta.get("path")
+            or ""
+        ).strip()
+        results.append(
+            {
+                "doc_id": row.get("doc_id") or meta.get("document_id") or meta.get("doc_id"),
+                "score": round(float(row.get("score") or 0.0), 4),
+                "text": text,
+                "meta": {
+                    "title": title,
+                    "source_file": source_file,
+                    "assistant_mode": CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL,
+                    "retrieval_mode": "supabase_vector",
+                },
+            }
+        )
+    return results
+
+
+def _retrieve_specialist_chunks_from_rag_tables(query: str, top_k: int) -> list[dict[str, Any]]:
+    if not pg_pool_ready():
+        return []
+
+    tsquery = _build_tsquery_expression(query)
+    if not tsquery:
+        return []
+
+    try:
+        rows = db_fetchall(
+            """
+            with q as (
+              select to_tsquery('simple', %s) as tsq
+            )
+            select
+              d.id::text as doc_id,
+              c.title,
+              c.source_file,
+              c.content as text,
+              c.metadata as meta,
+              ts_rank_cd(
+                setweight(to_tsvector('simple', coalesce(c.title, '')), 'A') ||
+                setweight(to_tsvector('simple', coalesce(c.source_file, '')), 'B') ||
+                setweight(c.content_tsv, 'C'),
+                q.tsq
+              ) as score
+            from app.rag_chunks c
+            join app.rag_documents d on d.id = c.document_id
+            cross join q
+            where coalesce(d.metadata->>'corpus', '') = 'launch_structure_sell'
+              and (
+                setweight(to_tsvector('simple', coalesce(c.title, '')), 'A') ||
+                setweight(to_tsvector('simple', coalesce(c.source_file, '')), 'B') ||
+                setweight(c.content_tsv, 'C')
+              ) @@ q.tsq
+            order by score desc nulls last, c.chunk_index asc
+            limit %s;
+            """,
+            (tsquery, max(1, min(int(top_k), 10))),
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ChatLAYA specialist RAG table query failed: %s", exc)
+        return []
+
+    results: list[dict[str, Any]] = []
+    for row in rows:
+        text = str(row.get("text") or "").strip()
+        if not text:
+            continue
+        meta = _normalize_meta(row.get("meta"))
+        title = str(row.get("title") or meta.get("title") or row.get("doc_id") or "").strip()
+        source_file = str(
+            row.get("source_file")
+            or meta.get("source_file")
+            or meta.get("source")
+            or meta.get("path")
+            or ""
+        ).strip()
+        results.append(
+            {
+                "doc_id": row.get("doc_id"),
+                "score": round(float(row.get("score") or 0.0), 4),
+                "text": text,
+                "meta": {
+                    "title": title,
+                    "source_file": source_file,
+                    "assistant_mode": CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL,
+                    "retrieval_mode": "supabase_rag_fts",
+                },
+            }
+        )
+    return results
+
+
 @lru_cache(maxsize=1)
 def _load_launch_structure_sell_chunks() -> tuple[dict[str, Any], ...]:
     path = _chunks_path()
@@ -362,6 +783,18 @@ def retrieve_specialist_chunks(
 ) -> list[dict[str, Any]]:
     if coerce_assistant_mode(assistant_mode) != CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
         return []
+
+    fn_results = _retrieve_specialist_chunks_via_match_function(query, top_k=top_k)
+    if fn_results:
+        return fn_results
+
+    pg_results = _retrieve_specialist_chunks_from_pg(query, top_k=top_k)
+    if pg_results:
+        return pg_results
+
+    rag_results = _retrieve_specialist_chunks_from_rag_tables(query, top_k=top_k)
+    if rag_results:
+        return rag_results
 
     chunks = _load_launch_structure_sell_chunks()
     if not chunks:

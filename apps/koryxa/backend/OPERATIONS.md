@@ -53,8 +53,8 @@ Chatlaya (copilote)
   - `GET /chatlaya/conversations` : liste paginée des conversations.
   - `GET /chatlaya/messages?conversation_id=...` : messages historiques.
   - `POST /chatlaya/message` : streaming SSE (`event: token`, `event: done`).
-- Messages persistés dans la collection `messages` (`conversation_id`, `user_id`, `role`, `content`, `created_at`).
-- Conversations dans `conversations` (`user_id`, `title`, `created_at`, `updated_at`, `archived`).
+- Messages persistés dans `app.chatlaya_messages` (`conversation_id`, `guest_id|user_id`, `role`, `content`, `meta`, `created_at`).
+- Conversations dans `app.chatlaya_conversations` (`guest_id|user_id`, `title`, `assistant_mode`, `created_at`, `updated_at`, `archived`).
 - Configuration:
   - `PROVIDER=echo` (par défaut) renvoie les messages brut pour les tests.
   - `PROVIDER=cohere` utilise l'API Cohere (`COHERE_API_KEY` requis).
@@ -65,7 +65,7 @@ CI/CD Workflow
 - Fichier GitHub Actions: `.github/workflows/deploy-backend.yml`.
 - Déclenchement: push sur `main` touchant `apps/koryxa/backend/**` ou dispatch manuel.
 - Étapes principales : checkout → clé SSH → rsync du dossier `apps/koryxa/backend/` → bootstrap `.venv` → `pip install -r requirements.txt`
-  → restart `innovaplus-backend.service` → sondage `https://api.innovaplus.africa/health` (attend `status=mongo=ok`).
+  → restart `innovaplus-backend.service` → sondage `https://api.innovaplus.africa/health` (attend `status=ok`).
 - En cas d'échec santé, les 200 dernières lignes `journalctl` sont renvoyées dans les logs du job.
 
 Runbook

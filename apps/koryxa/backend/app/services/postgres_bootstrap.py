@@ -10,6 +10,10 @@ from psycopg2.pool import SimpleConnectionPool
 logger = logging.getLogger(__name__)
 POOL: SimpleConnectionPool | None = None
 
+
+def _resolve_database_url() -> str:
+    return (os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_DATABASE_URL") or "").strip()
+
 def _dsn_with_supabase_defaults(dsn: str) -> str:
     # Supabase requires SSL; add it when omitted.
     if "sslmode=" not in dsn:
@@ -24,9 +28,9 @@ def _dsn_with_supabase_defaults(dsn: str) -> str:
 
 def init_pg_pool() -> None:
     global POOL
-    dsn = (os.environ.get("DATABASE_URL") or "").strip()
+    dsn = _resolve_database_url()
     if not dsn:
-        logger.warning("DATABASE_URL is not set; /mart/app-overview is disabled")
+        logger.warning("DATABASE_URL/SUPABASE_DATABASE_URL is not set; postgres-backed features are disabled")
         return
     dsn = _dsn_with_supabase_defaults(dsn)
     try:
@@ -45,6 +49,10 @@ def close_pg_pool() -> None:
     if POOL:
         POOL.closeall()
         POOL = None
+
+
+def pg_pool_ready() -> bool:
+    return POOL is not None
 
 
 def db_fetchone(sql: str, params: tuple[Any, ...] = ()) -> dict[str, Any] | None:
@@ -181,3 +189,50 @@ def ensure_enterprise_leads_table() -> None:
     )
 
 
+def ensure_chatlaya_tables() -> None:
+    if not POOL:
+        return
+    db_execute("create schema if not exists app;")
+    db_execute(
+        """
+        create table if not exists app.chatlaya_conversations (
+          id uuid primary key,
+          guest_id text,
+          user_id uuid references app.auth_users(id) on delete cascade,
+          title text not null default 'Nouvelle conversation',
+          assistant_mode text not null default 'general',
+          archived boolean not null default false,
+          created_at timestamptz not null default timezone('utc', now()),
+          updated_at timestamptz not null default timezone('utc', now()),
+          constraint chatlaya_conversations_owner_check
+            check (
+              (user_id is not null and guest_id is null)
+              or (user_id is null and guest_id is not null)
+            )
+        );
+        """
+    )
+    db_execute(
+        """
+        create table if not exists app.chatlaya_messages (
+          id uuid primary key,
+          conversation_id uuid not null references app.chatlaya_conversations(id) on delete cascade,
+          guest_id text,
+          user_id uuid references app.auth_users(id) on delete cascade,
+          role text not null,
+          content text not null,
+          meta jsonb not null default '{}'::jsonb,
+          created_at timestamptz not null default timezone('utc', now()),
+          constraint chatlaya_messages_role_check check (role in ('user', 'assistant'))
+        );
+        """
+    )
+    db_execute(
+        "create index if not exists idx_chatlaya_conversations_user_updated_at on app.chatlaya_conversations (user_id, updated_at desc) where archived = false;"
+    )
+    db_execute(
+        "create index if not exists idx_chatlaya_conversations_guest_updated_at on app.chatlaya_conversations (guest_id, updated_at desc) where archived = false;"
+    )
+    db_execute(
+        "create index if not exists idx_chatlaya_messages_conversation_created_at on app.chatlaya_messages (conversation_id, created_at asc);"
+    )

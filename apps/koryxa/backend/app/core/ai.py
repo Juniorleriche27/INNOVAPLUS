@@ -45,7 +45,8 @@ def _get_cohere_client():
 
 def embed_texts(texts: Sequence[str], dim: int | None = None) -> List[List[float]]:
     client = None
-    if (settings.LLM_PROVIDER or "").lower() == "cohere":
+    provider_name = (settings.LLM_PROVIDER or settings.CHAT_PROVIDER or "").lower()
+    if provider_name == "cohere" or (not provider_name and settings.COHERE_API_KEY):
         client = _get_cohere_client()
     if client:
         try:

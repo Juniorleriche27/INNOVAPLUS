@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.services.postgres_bootstrap import db_fetchone
 
 
-def _owner_filter(current: dict | None, guest_id: str | None) -> dict[str, Any]:
+def _owner_where_clause(current: dict | None, guest_id: str | None) -> tuple[str, tuple[Any, ...]]:
     if current:
-        return {"user_id": current["_id"]}
+        return "user_id = %s::uuid", (current["_id"],)
     if guest_id:
-        return {"guest_id": guest_id}
-    return {"_id": None}
+        return "guest_id = %s", (guest_id,)
+    return "1 = 0", ()
 
 
 def _format_trajectory_context(flow: dict[str, Any] | None) -> str:
@@ -53,23 +53,40 @@ def _format_enterprise_context(
 
 
 async def build_chatlaya_product_context(
-    db: AsyncIOMotorDatabase,
     current: dict | None,
     guest_id: str | None,
 ) -> str:
-    owner = _owner_filter(current, guest_id)
-    trajectory_flow = await db["trajectory_flows"].find_one(
-        owner,
-        sort=[("updated_at", -1)],
+    owner_sql, owner_params = _owner_where_clause(current, guest_id)
+    trajectory_flow = db_fetchone(
+        f"""
+        select id::text as id, guest_id, user_id::text as user_id, onboarding, diagnostic, progress_plan, verified_profile, updated_at
+        from app.trajectory_flows
+        where {owner_sql}
+        order by updated_at desc
+        limit 1;
+        """,
+        owner_params,
     )
-    latest_need = await db["enterprise_needs"].find_one(
-        owner,
-        sort=[("created_at", -1)],
+    latest_need = db_fetchone(
+        f"""
+        select id::text as id, guest_id, user_id::text as user_id, title, status, created_at
+        from app.enterprise_needs
+        where {owner_sql}
+        order by created_at desc
+        limit 1;
+        """,
+        owner_params,
     )
     latest_mission = None
     if latest_need:
-        latest_mission = await db["enterprise_missions"].find_one(
-            {"need_id": latest_need["_id"]},
+        latest_mission = db_fetchone(
+            """
+            select id::text as id, need_id::text as need_id, title, status, created_at
+            from app.enterprise_missions
+            where need_id = %s::uuid
+            limit 1;
+            """,
+            (latest_need["id"],),
         )
 
     return (

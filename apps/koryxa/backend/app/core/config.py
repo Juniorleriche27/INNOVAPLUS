@@ -101,6 +101,7 @@ class Settings(BaseSettings):
     YOUTUBE_API_KEY: str | None = os.getenv("YOUTUBE_API_KEY")
     ADMIN_EMAILS: str | None = os.getenv("ADMIN_EMAILS", "seniorlamadokou@gmail.com")
     BACKEND_BASE_URL: str = os.getenv("BACKEND_BASE_URL", "https://api.innovaplus.africa")
+    INTERNAL_API_TOKEN: str | None = os.getenv("INTERNAL_API_TOKEN")
     PAYDUNYA_MODE: str = os.getenv("PAYDUNYA_MODE", "test")
     PAYDUNYA_BASE_URL: str | None = os.getenv("PAYDUNYA_BASE_URL")
     PAYDUNYA_MASTER_KEY: str | None = os.getenv("PAYDUNYA_MASTER_KEY")

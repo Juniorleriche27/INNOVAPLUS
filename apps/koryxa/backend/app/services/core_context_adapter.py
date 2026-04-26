@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.repositories.auth_pg import get_user_by_id
 from app.services.postgres_bootstrap import db_fetchone
 
 
@@ -117,3 +118,41 @@ def get_guest_enterprise_summary(guest_id: str) -> dict[str, Any] | None:
     need = _get_latest_enterprise_need(guest_id=guest_id)
     mission = _get_mission_for_need(need["id"]) if need else None
     return _build_enterprise_summary(need, mission)
+
+
+def get_user_summary(user_id: str) -> dict[str, Any] | None:
+    user = get_user_by_id(user_id)
+    if not user:
+        return None
+    return {
+        "user_id": user["id"],
+        "account_type": user.get("account_type"),
+        "workspace_role": user.get("workspace_role"),
+        "plan": user.get("plan"),
+        "roles": list(user.get("roles") or []),
+        "profile_status": None,
+        "auth_status": "authenticated",
+    }
+
+
+def get_guest_summary(guest_id: str) -> dict[str, Any]:
+    return {
+        "guest_id": guest_id,
+        "auth_status": "guest",
+    }
+
+
+def get_user_chatlaya_entitlement(user_id: str) -> dict[str, Any] | None:
+    user = get_user_by_id(user_id)
+    if not user:
+        return None
+    plan = str(user.get("plan") or "free").lower()
+    if plan not in {"free", "pro", "team"}:
+        plan = "free"
+    return {
+        "user_id": user["id"],
+        "product": "chatlaya",
+        "allowed": True,
+        "plan": plan,
+        "access_mode": "full",
+    }

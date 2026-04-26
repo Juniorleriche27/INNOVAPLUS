@@ -26,6 +26,22 @@ export type ServiceIaQuestion = {
   options?: ServiceIaQuestionOption[];
 };
 
+export type ServiceIaDetailContent = {
+  heroTitle?: string;
+  introduction: string[];
+  scenarioTitle?: string;
+  scenario: string[];
+  scenarioHighlights?: string[];
+  deliveryTitle?: string;
+  delivery: string;
+  deliverablesTitle?: string;
+  deliverables?: string[];
+  resultTitle?: string;
+  result: string;
+  audienceTitle?: string;
+  audience?: string;
+};
+
 export const SERVICE_IA_BLOCKS: Array<{ id: ServiceIaBlock; title: string; subtitle: string }> = [
   {
     id: "revenu",
@@ -133,6 +149,368 @@ export const SERVICE_IA_MARKETING_POINTS: Array<{ label: string; value: string }
   { label: "Mode de delivery", value: "Equipe dediee" },
   { label: "Pilotage", value: "Transparence totale" },
 ];
+
+export const SERVICE_IA_DETAIL_CONTENT: Record<string, ServiceIaDetailContent> = {
+  "maitrisez-vos-chiffres": {
+    heroTitle: "Pilotage Business — Maitrisez vos chiffres en temps reel",
+    introduction: [
+      "Beaucoup d'entreprises prennent encore leurs decisions a partir de cahiers, de fichiers Excel disperses, de messages WhatsApp ou de souvenirs approximatifs.",
+      "Resultat : le dirigeant ne sait pas toujours combien il vend reellement, quels produits rapportent le plus, ou l'argent se perd, ni quelles decisions prendre rapidement.",
+      "Avec le service Pilotage Business, KORYXA transforme vos donnees de vente, de stock, de marge et de depenses en tableaux de bord simples, lisibles et utiles. L'objectif n'est pas seulement d'afficher des chiffres, mais d'aider le dirigeant a decider vite et avec des preuves.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une boutique vend des boissons, des produits alimentaires et des articles divers. Chaque soir, les ventes sont notees dans un cahier ou envoyees par WhatsApp.",
+      "Le proprietaire pense que certains produits marchent bien, mais il ne sait pas precisement lesquels generent la meilleure marge. Il continue donc a acheter beaucoup de produits peu rentables, pendant que les produits les plus demandes sont souvent en rupture.",
+      "KORYXA peut centraliser ces donnees, creer un tableau de bord et montrer clairement ce qui doit etre surveille chaque jour pour mieux piloter l'activite.",
+    ],
+    scenarioHighlights: [
+      "Les produits les plus vendus",
+      "Les produits les plus rentables",
+      "Les periodes ou les ventes montent ou baissent",
+      "Les ruptures frequentes",
+      "Les depenses qui reduisent la marge",
+      "Les alertes importantes a suivre",
+    ],
+    deliveryTitle: "Ce que KORYXA livre",
+    delivery:
+      "Un systeme de pilotage adapte a votre activite : tableau de bord, indicateurs cles, alertes, rapports simples et lecture claire de la performance.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Tableau de bord adapte a votre activite",
+      "Indicateurs cles de vente, marge, stock et depenses",
+      "Alertes utiles pour les decisions prioritaires",
+      "Rapports simples et lisibles",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Le dirigeant sait ou l'entreprise gagne, ou elle perd, quels produits renforcer, quels couts surveiller et quelles decisions prendre en priorite.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Commerces, distributeurs, PME, activites avec ventes, stock, marge ou suivi de depenses a piloter plus finement.",
+  },
+  "vendez-plus-par-prediction": {
+    heroTitle: "Prediction Ventes — Vendez plus en anticipant la demande",
+    introduction: [
+      "Beaucoup d'entreprises vendent sans reellement prevoir. Elles reagissent au lieu d'anticiper. Resultat : ruptures de stock sur les produits qui marchent, surstock sur ceux qui ne partent pas, et pertes de chiffre d'affaires.",
+      "Le service Prediction Ventes permet d'utiliser les donnees passees, comme les ventes, les periodes et les comportements clients, pour estimer ce qui va se passer demain, la semaine prochaine ou le mois prochain.",
+      "L'objectif n'est pas de deviner parfaitement, mais de reduire fortement l'incertitude et de mieux preparer les decisions.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Un vendeur de boissons constate qu'en fin de semaine ou pendant certaines periodes, comme la chaleur, les fetes ou les evenements, la demande explose. Mais comme il n'anticipe pas, il tombe souvent en rupture au moment ou il pourrait vendre le plus.",
+      "A l'inverse, il lui arrive d'acheter trop de produits qui ne se vendent pas rapidement, ce qui immobilise sa tresorerie.",
+      "Avec KORYXA, ses donnees de vente sont analysees pour detecter des tendances utiles a la preparation des achats, du stock et des actions commerciales.",
+    ],
+    scenarioHighlights: [
+      "Quels produits montent a certaines periodes",
+      "Quels jours sont les plus forts",
+      "Quels clients ou segments achetent le plus",
+      "Quelles variations sont recurrentes",
+      "Estimation des ventes a venir",
+      "Recommandation de stock et priorisation des produits a pousser",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA transforme vos donnees historiques en projections exploitables. Il ne s'agit pas seulement d'un graphique, mais d'un outil d'aide a la decision qui oriente vos achats, vos stocks et vos actions commerciales.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Previsions de ventes a court terme et moyen terme",
+      "Recommandations de stock",
+      "Segmentation simple des clients",
+      "Alertes sur les risques de rupture ou de surstock",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Moins de ruptures, moins de gaspillage, meilleure utilisation de la tresorerie et augmentation du chiffre d'affaires grace a une meilleure anticipation.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Commerces, distributeurs, PME, vendeurs en gros ou detail, et toute structure qui gere des produits ou des ventes regulieres.",
+  },
+  "reduisez-vos-couts": {
+    heroTitle: "Optimisation Couts — Reduisez vos pertes, gardez vos marges",
+    introduction: [
+      "Beaucoup d'entreprises perdent de l'argent sans s'en rendre compte. Ce ne sont pas toujours de grosses erreurs, mais une accumulation de petites inefficacites : depenses inutiles, processus mal organises, pertes invisibles.",
+      "Le service Optimisation Couts permet d'identifier ces pertes et de simuler des scenarios pour ameliorer la rentabilite sans forcement augmenter les ventes.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une petite entreprise pense que son probleme est un manque de clients. Pourtant, en analysant ses donnees, on decouvre des depenses regulieres non controlees, des achats mal optimises, du gaspillage de produits et du temps perdu dans des taches inutiles.",
+      "Avant meme de chercher a vendre plus, il est possible d'ameliorer la situation en reduisant ces pertes.",
+      "Avec KORYXA, les flux financiers et operationnels sont analyses pour repondre a des questions concretes sur l'origine des couts et l'impact des decisions.",
+    ],
+    scenarioHighlights: [
+      "Ou part l'argent exactement",
+      "Quelles depenses n'apportent pas de valeur",
+      "Quels processus coutent trop cher",
+      "Que se passe-t-il si on change telle ou telle decision",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA realise un diagnostic des couts et identifie les zones de perte. Ensuite, il propose des scenarios d'optimisation avec estimation d'impact.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Cartographie des couts et des pertes",
+      "Identification des inefficacites",
+      "Scenarios d'optimisation",
+      "Estimation des economies possibles",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Reduction des couts inutiles, amelioration des marges et meilleure gestion des ressources sans necessairement augmenter le volume d'activite.",
+    audienceTitle: "Pour qui",
+    audience:
+      "PME, commerces, structures avec depenses regulieres, entreprises en difficulte de rentabilite ou en phase d'optimisation.",
+  },
+  "assistant-ia-metier": {
+    heroTitle: "Assistant IA — Un assistant qui execute avec vous",
+    introduction: [
+      "Beaucoup d'entreprises perdent du temps sur des taches repetitives : repondre aux clients, traiter des demandes internes, organiser des informations ou suivre des operations simples.",
+      "Ces taches ne sont pas complexes, mais elles consomment enormement de temps humain.",
+      "Le service Assistant IA permet de deleguer une partie de ces actions a un assistant intelligent qui travaille en continu, sans fatigue, avec une logique coherente.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une petite entreprise recoit chaque jour des messages WhatsApp ou des emails : demandes de prix, questions sur les produits, suivi de commandes ou demandes internes.",
+      "Le dirigeant ou l'equipe repond manuellement a tout. Resultat : lenteur, oublis, fatigue et parfois perte de clients.",
+      "Avec KORYXA, un assistant IA est configure pour repondre automatiquement aux questions frequentes, orienter les clients, traiter certaines demandes simples et assister l'equipe dans les taches internes.",
+    ],
+    scenarioHighlights: [
+      "Reponse automatique aux questions frequentes",
+      "Orientation des clients",
+      "Traitement de certaines demandes simples",
+      "Assistance de l'equipe dans les taches internes",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA met en place un assistant adapte a votre activite, connecte a vos informations et capable d'interagir avec vos clients ou votre equipe.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Assistant IA configure",
+      "Base de reponses personnalisees",
+      "Integration avec WhatsApp, web ou outils internes",
+      "Suivi des interactions",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Reduction du temps de reponse, amelioration de la qualite de service et gain de temps pour l'equipe.",
+    audienceTitle: "Pour qui",
+    audience:
+      "PME, services clients, commerces et structures recevant beaucoup de demandes repetitives.",
+  },
+  "robots-automatisation": {
+    heroTitle: "Automatisation — Supprimez le travail mecanique",
+    introduction: [
+      "Dans beaucoup d'entreprises, certaines taches sont encore faites a la main : recopier des donnees, remplir des formulaires, verifier des informations, envoyer des rapports ou synchroniser des fichiers.",
+      "Ces taches n'apportent pas de valeur strategique, mais elles prennent du temps et generent des erreurs.",
+      "Le service Automatisation vise a supprimer ce travail mecanique en mettant en place des processus automatiques.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une entreprise recoit des commandes via plusieurs canaux, comme WhatsApp, email ou formulaire. Ensuite, une personne recopie les informations, met a jour un fichier, informe l'equipe et prepare le suivi.",
+      "Ce processus est lent, repetitif et source d'erreurs.",
+      "Avec KORYXA, ces etapes sont automatisees : les donnees sont captees automatiquement, structurees et stockees, les bonnes personnes sont notifiees et les actions suivantes sont declenchees.",
+    ],
+    scenarioHighlights: [
+      "Capture automatique des donnees",
+      "Structuration et stockage des informations",
+      "Notification des bonnes personnes",
+      "Declenchement automatique des actions suivantes",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA identifie les taches repetitives et met en place des automatisations adaptees a votre flux de travail.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Processus automatises",
+      "Connexions entre outils comme emails, formulaires et fichiers",
+      "Reduction des taches manuelles",
+      "Systeme de declenchement automatique",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Moins d'erreurs, execution plus rapide et liberation du temps humain pour des taches a plus forte valeur.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Entreprises avec beaucoup de taches repetitives, operations administratives ou gestion de flux d'informations.",
+  },
+  "optimisez-vos-process": {
+    heroTitle: "Workflow — Organisez votre flux pour aller plus vite",
+    introduction: [
+      "Meme sans probleme de ventes ou de donnees, beaucoup d'entreprises sont freinees par une mauvaise organisation interne. Les taches ne sont pas claires, les responsabilites sont floues et les processus sont inefficaces.",
+      "Le service Workflow permet de structurer les etapes de travail pour gagner en vitesse, en clarte et en efficacite.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Dans une entreprise, une demande arrive, personne ne sait exactement qui doit la traiter, elle passe de personne en personne, prend du retard et parfois elle est oubliee.",
+      "Ce n'est pas un probleme de competence, mais un probleme d'organisation.",
+      "Avec KORYXA, le flux est repense : chaque etape est definie, chaque role est clair, chaque tache a un responsable et le suivi devient visible.",
+    ],
+    scenarioHighlights: [
+      "Chaque etape est definie",
+      "Chaque role est clair",
+      "Chaque tache a un responsable",
+      "Le suivi est visible",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA analyse votre fonctionnement actuel et restructure vos processus pour eliminer les blocages et les pertes de temps.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Cartographie des processus",
+      "Organisation claire des etapes",
+      "Attribution des roles",
+      "Systeme de suivi des taches",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Reduction des delais, meilleure coordination, moins de confusion et meilleure performance globale.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Entreprises en croissance, equipes desorganisees et structures avec plusieurs intervenants sur les memes taches.",
+  },
+  "site-web-intelligent": {
+    heroTitle: "Site Web Intelligent — Votre presence digitale qui travaille pour vous",
+    introduction: [
+      "Beaucoup d'entreprises ont un site web, mais il ne sert presque a rien. Il est statique, peu visite, ne convertit pas et ne genere pas de clients.",
+      "Le service Site Web Intelligent vise a transformer votre site en un veritable outil commercial actif : capter des prospects, informer efficacement et convertir.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une entreprise a une page Facebook et parfois un site web. Les clients posent des questions en message prive. Il n'y a pas de systeme structure pour presenter clairement les offres, recuperer les contacts et guider le client vers une action.",
+      "Resultat : des opportunites sont perdues.",
+      "Avec KORYXA, le site est concu pour orienter le visiteur, les offres sont structurees et comprehensibles, des mecanismes de capture sont integres, et un assistant peut guider le visiteur.",
+    ],
+    scenarioHighlights: [
+      "Presentation claire des offres",
+      "Parcours visiteur oriente vers l'action",
+      "Formulaires et mecanismes de capture de leads",
+      "Possibilite d'integrer un assistant IA",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA concoit un site oriente resultats, pas juste esthetique. Chaque element a un role : informer, convaincre et convertir.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Site web professionnel et responsive",
+      "Structure orientee conversion",
+      "Integration de formulaires et capture de leads",
+      "Possibilite d'integrer un assistant IA",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Plus de visibilite, plus de credibilite, plus de prospects et plus de clients.",
+    audienceTitle: "Pour qui",
+    audience:
+      "PME, entrepreneurs, commerces et structures sans presence digitale efficace.",
+  },
+  "application-mobile": {
+    heroTitle: "Application Mobile — Votre activite accessible partout",
+    introduction: [
+      "Dans beaucoup de contextes africains, le mobile est le principal outil. Pourtant, peu d'entreprises disposent d'applications adaptees a leurs realites terrain.",
+      "Le service Application Mobile permet de creer des outils simples, utilisables partout, meme avec des contraintes comme une connexion faible, la mobilite ou le travail terrain.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une entreprise gere ses operations via appels, messages et fichiers. Les equipes terrain n'ont pas d'outil structure pour remonter des informations, suivre les activites ou acceder aux donnees importantes.",
+      "Cela cree des pertes d'information et un manque de suivi.",
+      "Avec KORYXA, une application adaptee est developpee, les equipes peuvent travailler depuis le terrain, les donnees sont centralisees et certaines fonctionnalites peuvent fonctionner meme hors ligne.",
+    ],
+    scenarioHighlights: [
+      "Remontee d'informations depuis le terrain",
+      "Suivi des activites en mobilite",
+      "Acces rapide aux donnees importantes",
+      "Fonctionnalites possibles meme hors ligne",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA concoit des applications simples, utiles et adaptees aux usages reels, pas des applications complexes inutiles.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Application Android et/ou iOS",
+      "Interface adaptee aux utilisateurs",
+      "Fonctionnalites metier specifiques",
+      "Synchronisation des donnees",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Meilleure organisation terrain, acces rapide a l'information et reduction des pertes de donnees.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Entreprises avec equipes terrain, ONG, projets et structures mobiles.",
+  },
+  "systeme-entreprise-integre": {
+    heroTitle: "Systeme Integre — Toute votre entreprise dans un seul systeme",
+    introduction: [
+      "Beaucoup d'entreprises utilisent plusieurs outils separes : les ventes d'un cote, le stock ailleurs, la finance dans un autre fichier et le suivi dans WhatsApp.",
+      "Resultat : desorganisation, incoherences et perte d'information.",
+      "Le service Systeme Integre permet de centraliser toutes les operations dans un seul systeme coherent.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une entreprise vend des produits. Les ventes sont notees a part, le stock est suivi dans un autre fichier et la comptabilite est ailleurs.",
+      "Quand le dirigeant veut une vision globale, il doit tout recomposer manuellement.",
+      "Avec KORYXA, les donnees sont centralisees, les informations deviennent coherentes et chaque action impacte le systeme global.",
+    ],
+    scenarioHighlights: [
+      "Donnees centralisees",
+      "Informations coherentes entre les modules",
+      "Impact global de chaque action",
+      "Vision transversale de l'activite",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA construit un systeme unifie qui relie les differentes fonctions de l'entreprise.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Plateforme centralisee",
+      "Modules connectes comme vente, stock et finance",
+      "Donnees unifiees",
+      "Rapports consolides",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Vision globale de l'entreprise, meilleure prise de decision et reduction des erreurs liees a la dispersion.",
+    audienceTitle: "Pour qui",
+    audience:
+      "PME en croissance et entreprises utilisant plusieurs outils non connectes.",
+  },
+  "securite-sauvegarde-donnees": {
+    heroTitle: "Securite Data — Vos donnees protegees et disponibles",
+    introduction: [
+      "Beaucoup d'entreprises sous-estiment les risques lies aux donnees : pertes, acces non autorises, absence de sauvegarde. Pourtant, une perte de donnees peut paralyser toute l'activite.",
+      "Le service Securite Data vise a proteger, sauvegarder et garantir la disponibilite des informations critiques.",
+    ],
+    scenarioTitle: "Mise en situation",
+    scenario: [
+      "Une entreprise garde ses donnees sur un ordinateur ou dans des fichiers non securises. Un probleme survient : panne, suppression accidentelle ou acces non autorise.",
+      "Resultat : perte d'informations importantes, parfois irreversible.",
+      "Avec KORYXA, les donnees sont sauvegardees regulierement, les acces sont controles, les systemes sont surveilles et des mecanismes de reprise sont mis en place.",
+    ],
+    scenarioHighlights: [
+      "Sauvegardes regulieres",
+      "Acces controles",
+      "Surveillance des systemes",
+      "Mecanismes de reprise apres incident",
+    ],
+    deliveryTitle: "Ce que KORYXA fait",
+    delivery:
+      "KORYXA securise votre infrastructure de donnees pour eviter les pertes critiques et garantir la continuite.",
+    deliverablesTitle: "Livrables",
+    deliverables: [
+      "Systeme de sauvegarde",
+      "Gestion des acces",
+      "Surveillance des donnees",
+      "Plan de reprise",
+    ],
+    resultTitle: "Resultat attendu",
+    result:
+      "Donnees protegees, continuite de service et reduction des risques majeurs.",
+    audienceTitle: "Pour qui",
+    audience:
+      "Toute entreprise manipulant des donnees importantes, comme les clients, les ventes ou les finances.",
+  },
+};
 
 const YES_NO_OPTIONS: ServiceIaQuestionOption[] = [
   { value: "oui", label: "Oui" },
@@ -614,6 +992,10 @@ export const SERVICE_IA_QUESTION_SET: Record<string, ServiceIaQuestion[]> = {
 
 export function getServiceIaBySlug(slug: string): ServiceIaItem | undefined {
   return SERVICE_IA_ITEMS.find((item) => item.slug === slug);
+}
+
+export function getServiceIaDetailContent(slug: string): ServiceIaDetailContent | undefined {
+  return SERVICE_IA_DETAIL_CONTENT[slug];
 }
 
 export function getServiceQuestionSet(slug: string): ServiceIaQuestion[] {

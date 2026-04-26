@@ -202,10 +202,10 @@ export default function LoginClient({
       footerHref={signupHref}
       footerLabel={signupLabel}
     >
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Espace membre</div>
-          <h2 className="mt-3 text-3xl font-semibold text-slate-950">Connexion KORYXA</h2>
+          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">Connexion KORYXA</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
             {step === "credentials"
               ? "Commencez par vos identifiants, puis confirmez avec le code OTP envoye par email."
@@ -305,13 +305,13 @@ export default function LoginClient({
           </form>
         ) : (
           <form onSubmit={verifyOtp} className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4 sm:rounded-[28px] sm:p-5">
               <div className="flex items-start gap-3">
                 <ShieldEllipsis className="mt-0.5 h-5 w-5 text-sky-700" />
-                <div>
+                <div className="min-w-0">
                   <div className="text-sm font-semibold text-slate-900">Validation OTP</div>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Le code a ete envoye a <span className="font-medium text-slate-900">{email}</span>.
+                    Le code a ete envoye a <span className="break-all font-medium text-slate-900">{email}</span>.
                   </p>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default function LoginClient({
                 maxLength={8}
                 value={otp}
                 onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.35em] text-slate-900 shadow-sm outline-none transition placeholder:text-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center text-base font-semibold tracking-[0.18em] text-slate-900 shadow-sm outline-none transition placeholder:text-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-100 sm:px-4 sm:text-lg sm:tracking-[0.35em]"
                 placeholder="000000"
               />
               {debugCode ? <p className="mt-2 text-xs text-slate-500">Code debug : {debugCode}</p> : null}

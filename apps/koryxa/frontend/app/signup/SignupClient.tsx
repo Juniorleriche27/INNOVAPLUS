@@ -163,10 +163,10 @@ export default function SignupClient({
       footerHref={loginHref}
       footerLabel={loginLabel}
     >
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Nouveau compte</div>
-          <h2 className="mt-3 text-3xl font-semibold text-slate-950">Acces plateforme KORYXA</h2>
+          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">Acces plateforme KORYXA</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
             {step === "form"
               ? "Remplissez vos informations, choisissez un mot de passe, puis confirmez l'inscription avec le code OTP."
@@ -314,10 +314,10 @@ export default function SignupClient({
           </form>
         ) : (
           <form onSubmit={verifySignupOtp} className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/90 p-4 sm:rounded-[28px] sm:p-5">
               <div className="text-sm font-semibold text-slate-900">Validation de l'inscription</div>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Le compte sera active pour <span className="font-medium text-slate-900">{email}</span> apres verification du code OTP.
+                Le compte sera active pour <span className="break-all font-medium text-slate-900">{email}</span> apres verification du code OTP.
               </p>
             </div>
 
@@ -333,7 +333,7 @@ export default function SignupClient({
                 maxLength={8}
                 value={otp}
                 onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.35em] text-slate-900 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center text-base font-semibold tracking-[0.18em] text-slate-900 shadow-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100 sm:px-4 sm:text-lg sm:tracking-[0.35em]"
                 placeholder="000000"
               />
               {debugCode ? <p className="mt-2 text-xs text-slate-500">Code debug : {debugCode}</p> : null}

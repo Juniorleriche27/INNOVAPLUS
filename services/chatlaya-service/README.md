@@ -126,6 +126,51 @@ Reponse attendue :
 }
 ```
 
+## Boot-only test
+
+Ce premier test isole doit verifier uniquement :
+- que l'application demarre ;
+- que `GET /health` repond ;
+- sans tester les routes metier `/chatlaya/*`.
+
+Preparation :
+
+```bash
+cd services/chatlaya-service/backend
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Lancement :
+
+```bash
+uvicorn app.main:app --host 127.0.0.1 --port 8010
+```
+
+Verification :
+
+```bash
+curl http://127.0.0.1:8010/health
+```
+
+Resultat attendu :
+
+```json
+{
+  "status": "ok",
+  "service": "chatlaya-service"
+}
+```
+
+Limites de ce test :
+- ne valide pas encore l'auth ;
+- ne valide pas encore la base ;
+- ne valide pas encore le RAG ;
+- ne valide pas encore les routes `/chatlaya/*` ;
+- ne cree aucun service systemd ;
+- ne touche pas a la production.
+
 ## Limites actuelles du squelette
 
 Le service reste non actif en production.

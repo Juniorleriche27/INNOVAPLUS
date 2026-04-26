@@ -190,6 +190,29 @@ def _issue_session_pg(response: Response, user_id: str, request: Request) -> dat
     return expires_at
 
 
+def _send_otp_email(email: str, code: str, *, intent: str) -> None:
+    label = "verification" if intent == "register" else "connexion"
+    subject = "Code OTP KORYXA"
+    html_body = f"""
+    <html lang=\"fr\">
+        <body>
+            <p>Bonjour,</p>
+            <p>Voici votre code OTP KORYXA pour la {label} :</p>
+            <p style=\"font-size:24px;font-weight:bold;letter-spacing:4px;\">{code}</p>
+            <p>Il expire dans {settings.OTP_TTL_MIN} minutes.</p>
+        </body>
+    </html>
+    """
+    asyncio.create_task(send_email_async(subject, email, html_body, f"Code OTP: {code}"))
+
+
+def _otp_response(expires_at: datetime, code: str) -> dict[str, str]:
+    response = {"ok": True, "expires_at": expires_at.isoformat()}
+    if settings.ENV != "production" or settings.OTP_DEV_DEBUG:
+        response["debug_code"] = code
+    return response
+
+
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     payload: UserCreate,
@@ -220,28 +243,126 @@ async def request_otp(
     payload: OTPRequestPayload,
 ):
     email = normalize_email(payload.email)
-    if payload.intent == "login":
-        if not get_user_by_email(email):
+    intent = payload.intent or "auto"
+    if intent == "auto":
+        intent = "login"
+
+    meta: dict[str, str] = {}
+    if intent == "login":
+        user = get_user_by_email(email)
+        if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Compte introuvable. Merci de vous inscrire.")
+        if not payload.password:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mot de passe requis.")
+        if not verify_password(payload.password, user.get("password_hash") or ""):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou mot de passe invalide.")
+        meta = {"flow": "login", "user_id": str(user["id"])}
+    elif intent == "register":
+        if get_user_by_email(email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"code": "EMAIL_EXISTS", "detail": "Email deja utilise"},
+            )
+        missing_fields = []
+        if not payload.password:
+            missing_fields.append("password")
+        if not payload.first_name:
+            missing_fields.append("first_name")
+        if not payload.last_name:
+            missing_fields.append("last_name")
+        if not payload.country:
+            missing_fields.append("country")
+        if not payload.account_type:
+            missing_fields.append("account_type")
+        if missing_fields:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Champs requis manquants: {', '.join(missing_fields)}.",
+            )
+        meta = {
+            "flow": "register",
+            "password_hash": hash_password(payload.password),
+            "first_name": payload.first_name.strip(),
+            "last_name": payload.last_name.strip(),
+            "country": payload.country.strip(),
+            "account_type": payload.account_type,
+        }
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Intent OTP invalide.")
+
     expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.OTP_TTL_MIN)
     code = _generate_otp()
-    replace_otp(email=email, code_hash=hash_password(code), expires_at=expires_at, intent=payload.intent or "auto")
-    subject = "Code de connexion KORYXA"
-    html_body = f"""
-    <html lang=\"fr\">
-        <body>
-            <p>Bonjour,</p>
-            <p>Voici votre code de connexion KORYXA :</p>
-            <p style=\"font-size:24px;font-weight:bold;letter-spacing:4px;\">{code}</p>
-            <p>Il expire dans {settings.OTP_TTL_MIN} minutes.</p>
-        </body>
-    </html>
-    """
-    asyncio.create_task(send_email_async(subject, email, html_body, f"Code: {code}"))
-    response = {"ok": True, "expires_at": expires_at.isoformat()}
-    if settings.ENV != "production" or settings.OTP_DEV_DEBUG:
-        response["debug_code"] = code
-    return response
+    replace_otp(
+        email=email,
+        code_hash=hash_password(code),
+        expires_at=expires_at,
+        intent=intent,
+        meta=meta,
+    )
+    _send_otp_email(email, code, intent=intent)
+    return _otp_response(expires_at, code)
+
+
+async def _verify_otp_flow(
+    payload: OTPVerifyPayload,
+    response: Response,
+    request: Request,
+):
+    email = normalize_email(payload.email)
+    expected_intent = payload.intent or "auto"
+    otp_doc = get_latest_otp(email)
+    now = datetime.now(timezone.utc)
+    expires_at = otp_doc.get("expires_at") if otp_doc else None
+    if not otp_doc or not isinstance(expires_at, datetime) or expires_at <= now:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expire. Merci de renvoyer un OTP.")
+    otp_intent = str(otp_doc.get("intent") or "login")
+    if expected_intent != "auto" and otp_intent != expected_intent:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ce code OTP ne correspond pas a cette operation.")
+    if not verify_password(payload.code, otp_doc.get("code_hash") or ""):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code invalide.")
+    meta = otp_doc.get("meta") or {}
+    delete_otp(str(otp_doc["id"]))
+
+    if otp_intent == "register":
+        if get_user_by_email(email):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cet email est deja utilise.")
+        password_hash = str(meta.get("password_hash") or "").strip()
+        first_name = str(meta.get("first_name") or "").strip()
+        last_name = str(meta.get("last_name") or "").strip()
+        country = str(meta.get("country") or "").strip()
+        account_type = str(meta.get("account_type") or "").strip()
+        if not all([password_hash, first_name, last_name, country, account_type]):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Les donnees d'inscription OTP sont incompletes.")
+        user = create_pg_user(
+            email=email,
+            password_hash=password_hash,
+            first_name=first_name,
+            last_name=last_name,
+            country=country,
+            account_type=account_type,
+        )
+    else:
+        user = get_user_by_email(email)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Compte introuvable. Merci de vous inscrire d'abord.")
+        updates: dict[str, str] = {}
+        if payload.first_name and not user.get("first_name"):
+            updates["first_name"] = payload.first_name.strip()
+        if payload.last_name and not user.get("last_name"):
+            updates["last_name"] = payload.last_name.strip()
+        if updates:
+            user = update_user_fields(str(user["id"]), **updates) or user
+    session_expires_at = _issue_session_pg(response, str(user["id"]), request)
+    return {"user": _public_user_pg(user), "session_expires_at": session_expires_at}
+
+
+@router.post("/verify-otp", response_model=AuthResponse)
+async def verify_otp(
+    payload: OTPVerifyPayload,
+    response: Response,
+    request: Request,
+):
+    return await _verify_otp_flow(payload, response, request)
 
 
 @router.post("/login-otp", response_model=AuthResponse)
@@ -250,27 +371,7 @@ async def login_with_otp(
     response: Response,
     request: Request,
 ):
-    email = normalize_email(payload.email)
-    otp_doc = get_latest_otp(email)
-    now = datetime.now(timezone.utc)
-    expires_at = otp_doc.get("expires_at") if otp_doc else None
-    if not otp_doc or not isinstance(expires_at, datetime) or expires_at <= now:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code expire. Merci de renvoyer un OTP.")
-    if not verify_password(payload.code, otp_doc.get("code_hash") or ""):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Code invalide.")
-    delete_otp(str(otp_doc["id"]))
-    user = get_user_by_email(email)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Compte introuvable. Merci de vous inscrire d'abord.")
-    updates: dict[str, str] = {}
-    if payload.first_name and not user.get("first_name"):
-        updates["first_name"] = payload.first_name.strip()
-    if payload.last_name and not user.get("last_name"):
-        updates["last_name"] = payload.last_name.strip()
-    if updates:
-        user = update_user_fields(str(user["id"]), **updates) or user
-    session_expires_at = _issue_session_pg(response, str(user["id"]), request)
-    return {"user": _public_user_pg(user), "session_expires_at": session_expires_at}
+    return await _verify_otp_flow(payload, response, request)
 
 
 @router.post("/login", response_model=AuthResponse)

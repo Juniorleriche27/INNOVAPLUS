@@ -45,12 +45,18 @@ class UserPublic(BaseModel):
 
 class OTPRequestPayload(BaseModel):
     email: EmailStr
-    intent: Optional[str] = Field(default=None, description="login|register|auto")
+    intent: Optional[Literal["login", "register", "auto"]] = Field(default=None, description="login|register|auto")
+    password: Optional[str] = Field(default=None, min_length=8, max_length=256)
+    first_name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    last_name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    country: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    account_type: Optional[Literal["learner", "company", "organization"]] = None
 
 
 class OTPVerifyPayload(BaseModel):
     email: EmailStr
     code: str = Field(..., min_length=4, max_length=8, pattern=r"^\d+$")
+    intent: Optional[Literal["login", "register", "auto"]] = Field(default=None, description="login|register|auto")
     first_name: Optional[str] = Field(None, max_length=120)
     last_name: Optional[str] = Field(None, max_length=120)
 

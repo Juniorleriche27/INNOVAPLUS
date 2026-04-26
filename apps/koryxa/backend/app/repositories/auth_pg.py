@@ -184,27 +184,27 @@ def revoke_sessions_for_user(user_id: str) -> None:
     )
 
 
-def upsert_otp(*, email: str, code_hash: str, expires_at: datetime, intent: str) -> None:
+def upsert_otp(*, email: str, code_hash: str, expires_at: datetime, intent: str, meta: dict[str, Any] | None = None) -> None:
     db_execute(
         """
-        insert into app.login_otps(email, code_hash, expires_at, intent, created_at)
-        values (%s, %s, %s, %s, timezone('utc', now()))
+        insert into app.login_otps(email, code_hash, expires_at, intent, meta, created_at)
+        values (%s, %s, %s, %s, %s::jsonb, timezone('utc', now()))
         on conflict (id) do nothing;
         """,
-        (email, code_hash, expires_at, intent),
+        (email, code_hash, expires_at, intent, json.dumps(meta or {})),
     )
     db_execute("delete from app.login_otps where lower(email) = lower(%s) and expires_at <= timezone('utc', now());", (email,))
 
 
-def replace_otp(*, email: str, code_hash: str, expires_at: datetime, intent: str) -> None:
+def replace_otp(*, email: str, code_hash: str, expires_at: datetime, intent: str, meta: dict[str, Any] | None = None) -> None:
     db_execute("delete from app.login_otps where lower(email) = lower(%s);", (email,))
-    upsert_otp(email=email, code_hash=code_hash, expires_at=expires_at, intent=intent)
+    upsert_otp(email=email, code_hash=code_hash, expires_at=expires_at, intent=intent, meta=meta)
 
 
 def get_latest_otp(email: str) -> dict[str, Any] | None:
-    return db_fetchone(
+    row = db_fetchone(
         """
-        select id, email, code_hash, expires_at, intent, consumed_at, created_at
+        select id, email, code_hash, expires_at, intent, meta, consumed_at, created_at
         from app.login_otps
         where lower(email) = lower(%s)
         order by created_at desc
@@ -212,6 +212,14 @@ def get_latest_otp(email: str) -> dict[str, Any] | None:
         """,
         (email,),
     )
+    if row and isinstance(row.get("meta"), str):
+        try:
+            row["meta"] = json.loads(row["meta"])
+        except Exception:
+            row["meta"] = {}
+    elif row and row.get("meta") is None:
+        row["meta"] = {}
+    return row
 
 
 def delete_otp(otp_id: str) -> None:

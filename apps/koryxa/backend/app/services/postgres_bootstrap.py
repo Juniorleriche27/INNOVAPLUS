@@ -262,11 +262,15 @@ def ensure_auth_tables() -> None:
           email text not null,
           code_hash text not null,
           intent text not null default 'login',
+          meta jsonb not null default '{}'::jsonb,
           expires_at timestamptz not null,
           consumed_at timestamptz null,
           created_at timestamptz not null default timezone('utc', now())
         );
         """
+    )
+    db_execute(
+        "alter table app.login_otps add column if not exists meta jsonb not null default '{}'::jsonb;"
     )
     db_execute(
         "create index if not exists login_otps_email_created_idx on app.login_otps (lower(email), created_at desc);"

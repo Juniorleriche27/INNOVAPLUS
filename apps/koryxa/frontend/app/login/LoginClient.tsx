@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { KeyRound, Mail, ShieldEllipsis } from "lucide-react";
+
 import { useAuth } from "@/components/auth/AuthProvider";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { PasswordField } from "@/components/auth/PasswordField";
 import { CLIENT_INNOVA_API_BASE, DEV_AUTO_LOGIN_ENABLED, SITE_BASE_URL } from "@/lib/env";
 
-type Step = "request" | "verify";
+type Step = "credentials" | "verify";
 
 type LoginClientProps = {
   defaultRedirect?: string;
@@ -29,7 +33,7 @@ async function readErrorMessage(response: Response): Promise<string> {
     if (typeof data?.detail === "string") return data.detail;
     if (typeof data?.detail?.detail === "string") return data.detail.detail;
   } catch {
-    // Keep plain-text or HTML responses readable enough for debugging.
+    // Keep readable fallback below.
   }
 
   const compact = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -39,10 +43,10 @@ async function readErrorMessage(response: Response): Promise<string> {
 export default function LoginClient({
   defaultRedirect = "/",
   requestedRedirect,
-  heading = "Connexion securisee",
-  subtitle = "Entrez votre email, recevez un code OTP et connectez-vous sans mot de passe.",
+  heading = "Connexion a double validation",
+  subtitle = "Entrez votre email et votre mot de passe, puis confirmez la connexion avec le code OTP envoye par KORYXA depuis votre serveur Hetzner.",
   supportHref = "/account/recover",
-  supportLabel = "Support KORYXA",
+  supportLabel = "Mot de passe oublie",
   signupHref = "/signup",
   signupLabel = "Creer un compte",
 }: LoginClientProps = {}) {
@@ -54,9 +58,10 @@ export default function LoginClient({
   const { refresh, user } = useAuth();
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<Step>("request");
-  const [actionLoading, setActionLoading] = useState(false);
+  const [step, setStep] = useState<Step>("credentials");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [debugCode, setDebugCode] = useState<string | null>(null);
@@ -90,7 +95,7 @@ export default function LoginClient({
   }, [redirect, router, user]);
 
   async function handleLocalLogin() {
-    setActionLoading(true);
+    setLoading(true);
     setError(null);
     setInfo("Connexion locale en cours...");
 
@@ -109,13 +114,13 @@ export default function LoginClient({
     } catch (err) {
       setInfo(null);
       setError(err instanceof Error ? err.message : "Connexion locale impossible.");
-      setActionLoading(false);
+      setLoading(false);
     }
   }
 
   async function requestOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setActionLoading(true);
+    setLoading(true);
     setError(null);
     setInfo(null);
     setDebugCode(null);
@@ -124,36 +129,35 @@ export default function LoginClient({
       const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/request-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, intent: "login" }),
+        body: JSON.stringify({ email, password, intent: "login" }),
       });
       if (!response.ok) {
         throw new Error(await readErrorMessage(response));
       }
       const data = await response.json().catch(() => ({}));
-
       setStep("verify");
-      setInfo("Code envoye. Consultez votre boite mail ou le canal configure.");
+      setInfo("Code OTP envoye. Saisissez-le pour terminer la connexion.");
       if (data?.debug_code) {
         setDebugCode(data.debug_code);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
-      setActionLoading(false);
+      setLoading(false);
     }
   }
 
   async function verifyOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setActionLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/login-otp`, {
+      const response = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email, code: otp }),
+        body: JSON.stringify({ email, code: otp, intent: "login" }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -162,7 +166,7 @@ export default function LoginClient({
             ? data.detail
             : typeof data?.detail?.detail === "string"
               ? data.detail.detail
-              : "Code invalide.";
+              : "Code OTP invalide.";
         throw new Error(message);
       }
 
@@ -175,148 +179,183 @@ export default function LoginClient({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
-      setActionLoading(false);
+      setLoading(false);
     }
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-10">
-      <section className="rounded-3xl border border-slate-200/70 bg-white px-6 py-8 shadow-sm shadow-slate-900/5 sm:px-8">
-        <h1 className="text-2xl font-semibold text-slate-900">{heading}</h1>
-        <p className="mt-2 text-sm leading-7 text-slate-600">{subtitle}</p>
+    <AuthShell
+      eyebrow="Connexion"
+      title={heading}
+      subtitle={subtitle}
+      helperTitle="Un acces simple, mais verrouille"
+      helperBody="Le mot de passe valide votre identite, puis l'OTP confirme que c'est bien vous. Le code part du backend KORYXA deploye sur Hetzner."
+      helperPoints={[
+        "Connexion par mot de passe puis confirmation OTP.",
+        "Session securisee par cookie HTTP-only cote serveur.",
+        "Possibilite de tester localement sans OTP en mode developpement.",
+      ]}
+      footerText="Pas encore de compte ?"
+      footerHref={signupHref}
+      footerLabel={signupLabel}
+    >
+      <div className="space-y-6">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Espace membre</div>
+          <h2 className="mt-3 text-3xl font-semibold text-slate-950">Connexion KORYXA</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-600">
+            {step === "credentials"
+              ? "Commencez par vos identifiants, puis confirmez avec le code OTP envoye par email."
+              : "Le code OTP finalise la connexion a votre espace."}
+          </p>
+        </div>
 
         {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            Mode local actif : utilisez la connexion locale rapide pour tester l'acces sans OTP.
+          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+            Mode local actif : la connexion rapide reste disponible pour les tests hors production.
           </div>
         ) : null}
 
         {ready && isPreviewDomain ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Vous etes sur un domaine de previsualisation. Apres connexion, vous serez redirige vers {SITE_BASE_URL} pour
-            que la session fonctionne correctement.
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+            Domaine de previsualisation detecte. Apres connexion, vous serez renvoye vers {SITE_BASE_URL} pour garder une session valide.
           </div>
         ) : null}
 
-        {step === "request" ? (
-          <form onSubmit={requestOtp} className="mt-6 space-y-4">
+        {step === "credentials" ? (
+          <form onSubmit={requestOtp} className="space-y-5">
             {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
               <button
                 type="button"
                 onClick={() => void handleLocalLogin()}
-                className="w-full rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:opacity-60"
-                disabled={actionLoading}
+                className="w-full rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={loading}
               >
-                {actionLoading ? "Connexion..." : "Connexion locale rapide"}
+                {loading ? "Connexion..." : "Connexion locale rapide"}
               </button>
             ) : null}
 
-            {ready && DEV_AUTO_LOGIN_ENABLED && isLocalHost ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Ou utilisez le flux OTP ci-dessous si vous voulez tester la vraie connexion.
-              </div>
-            ) : null}
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="login_email" className="mb-2 block text-sm font-medium text-slate-700">
                 Adresse email
               </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
-              />
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="login_email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  placeholder="vous@entreprise.com"
+                />
+              </div>
             </div>
+
+            <PasswordField
+              id="login_password"
+              label="Mot de passe"
+              autoComplete="current-password"
+              required
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              hint="Apres validation du mot de passe, un OTP sera envoye par email."
+              placeholder="Votre mot de passe"
+            />
 
             {error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+              <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">{error}</div>
             ) : null}
 
-            <button
-              type="submit"
-              className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
-              disabled={actionLoading}
-            >
-              {actionLoading ? "Envoi..." : "Recevoir un code"}
-            </button>
+            {info ? (
+              <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-700">{info}</div>
+            ) : null}
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="submit"
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#0284c7_58%,#38bdf8_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(2,132,199,0.24)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={loading}
+              >
+                <KeyRound className="mr-2 h-4 w-4" />
+                {loading ? "Verification..." : "Envoyer le code OTP"}
+              </button>
+              <Link
+                href={supportHref}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                {supportLabel}
+              </Link>
+            </div>
           </form>
         ) : (
-          <form onSubmit={verifyOtp} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Adresse email</label>
-              <input
-                type="email"
-                value={email}
-                readOnly
-                className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-              />
+          <form onSubmit={verifyOtp} className="space-y-5">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5">
+              <div className="flex items-start gap-3">
+                <ShieldEllipsis className="mt-0.5 h-5 w-5 text-sky-700" />
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">Validation OTP</div>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Le code a ete envoye a <span className="font-medium text-slate-900">{email}</span>.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="login_otp" className="mb-2 block text-sm font-medium text-slate-700">
                 Code OTP
               </label>
               <input
-                id="otp"
-                type="text"
+                id="login_otp"
                 inputMode="numeric"
-                pattern="\\d*"
+                autoComplete="one-time-code"
                 required
+                maxLength={8}
                 value={otp}
-                onChange={(event) => setOtp(event.target.value)}
-                className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:border-sky-200 focus:outline-none focus:ring-2 focus:ring-sky-100"
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.35em] text-slate-900 shadow-sm outline-none transition placeholder:text-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                placeholder="000000"
               />
+              {debugCode ? <p className="mt-2 text-xs text-slate-500">Code debug : {debugCode}</p> : null}
             </div>
 
-            {info ? <p className="text-sm text-slate-500">{info}</p> : null}
-            {debugCode ? (
-              <p className="text-sm font-mono text-slate-500">
-                Code dev : <span className="font-semibold text-slate-900">{debugCode}</span>
-              </p>
-            ) : null}
             {error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+              <div className="rounded-[24px] border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">{error}</div>
             ) : null}
 
-            <button
-              type="submit"
-              className="w-full rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/20 transition hover:bg-sky-700 disabled:opacity-60"
-              disabled={actionLoading}
-            >
-              {actionLoading ? "Connexion..." : "Valider le code"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setStep("request");
-                setOtp("");
-                setInfo(null);
-              }}
-              className="w-full rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
-            >
-              Renvoyer un code
-            </button>
+            {info ? (
+              <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm text-sky-700">{info}</div>
+            ) : null}
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="submit"
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#0284c7_58%,#38bdf8_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(2,132,199,0.24)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={loading}
+              >
+                {loading ? "Connexion..." : "Confirmer la connexion"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("credentials");
+                  setOtp("");
+                  setDebugCode(null);
+                  setError(null);
+                  setInfo(null);
+                }}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Modifier
+              </button>
+            </div>
           </form>
         )}
-
-        <div className="mt-6 space-y-2 text-sm text-slate-500">
-          <p>
-            Envoyer un message a l'equipe ?{" "}
-            <Link href={supportHref} className="font-semibold text-sky-700 hover:underline">
-              {supportLabel}
-            </Link>
-          </p>
-          <p>
-            Pas encore de compte ?{" "}
-            <Link href={signupHref} className="font-semibold text-sky-700 hover:underline">
-              {signupLabel}
-            </Link>
-          </p>
-        </div>
-      </section>
-    </main>
+      </div>
+    </AuthShell>
   );
 }

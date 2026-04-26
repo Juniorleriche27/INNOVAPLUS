@@ -143,23 +143,26 @@ def is_production_env() -> bool:
 def get_allowed_hosts() -> list[str]:
     raw = [host.strip() for host in (settings.ALLOWED_HOSTS or "").split(",") if host.strip()]
     if raw:
-        return raw
+        hosts = list(dict.fromkeys(raw))
+    else:
+        hosts: list[str] = []
+        for candidate in (settings.FRONTEND_BASE_URL, settings.BACKEND_BASE_URL):
+            try:
+                parsed = Path(candidate).name  # noop fallback guard for malformed values
+                del parsed
+            except Exception:
+                pass
+            try:
+                from urllib.parse import urlparse
 
-    hosts: list[str] = []
-    for candidate in (settings.FRONTEND_BASE_URL, settings.BACKEND_BASE_URL):
-        try:
-            parsed = Path(candidate).name  # noop fallback guard for malformed values
-            del parsed
-        except Exception:
-            pass
-        try:
-            from urllib.parse import urlparse
+                hostname = (urlparse(candidate).hostname or "").strip()
+            except Exception:
+                hostname = ""
+            if hostname:
+                hosts.append(hostname)
+                if not hostname.startswith("www."):
+                    hosts.append(f"www.{hostname}")
 
-            hostname = (urlparse(candidate).hostname or "").strip()
-        except Exception:
-            hostname = ""
-        if hostname:
-            hosts.append(hostname)
-            if not hostname.startswith("www."):
-                hosts.append(f"www.{hostname}")
+    # Allow local reverse-proxy and systemd health probes that hit the app over loopback.
+    hosts.extend(["127.0.0.1", "localhost", "::1"])
     return list(dict.fromkeys(hosts))

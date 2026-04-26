@@ -50,10 +50,12 @@ function normalizeInnovaBase(authBase: string): string {
 export const INNOVA_API_BASE = normalizeInnovaBase(AUTH_API_BASE);
 export const CLIENT_INNOVA_API_BASE = "/innova/api";
 
-export const CHATLAYA_API_BASE = alignLoopbackHost(
-  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL, "/api"),
+const CHATLAYA_SOURCE_BASE = alignLoopbackHost(
+  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || process.env.API_URL, DEFAULT_API_BASE),
   SITE_BASE_URL,
 );
+
+export const CHATLAYA_API_BASE = normalizeInnovaBase(CHATLAYA_SOURCE_BASE);
 
 export const DEV_AUTO_LOGIN_ENABLED =
   (process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN || "").toLowerCase() === "true";

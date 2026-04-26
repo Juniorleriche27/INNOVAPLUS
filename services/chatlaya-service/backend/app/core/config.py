@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", os.getenv("ENV", "development"))
     DATABASE_URL: str | None = os.getenv("DATABASE_URL")
     CORE_INTERNAL_API_BASE_URL: str | None = os.getenv("CORE_INTERNAL_API_BASE_URL")
+    CORE_INTERNAL_API_TIMEOUT_S: float = float(os.getenv("CORE_INTERNAL_API_TIMEOUT_S", "5"))
     INTERNAL_API_TOKEN: str | None = os.getenv("INTERNAL_API_TOKEN")
 
     class Config:

@@ -24,6 +24,7 @@ secrets.toml
 /support/
 /scripts/
 /chatlaya/
+.venv/
 __pycache__/
 *.pyc
 /*.png

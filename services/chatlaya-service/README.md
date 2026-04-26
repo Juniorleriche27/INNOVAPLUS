@@ -177,6 +177,35 @@ Ordre cible plus tard :
 3. brancher les migrations dans `chatlaya-service`
 4. seulement ensuite retirer la creation implicite du monolithe
 
+## Deployment templates
+
+Des templates non actifs de deploiement serveur sont prepares dans le repo :
+
+- `infra/systemd/chatlaya-service.example.service`
+- `infra/nginx/chatlaya-service.example.conf`
+
+Ces fichiers ne sont PAS actifs.
+
+Ils ne modifient pas :
+- le systemd reel ;
+- le Nginx reel ;
+- la production actuelle.
+
+Usage plus tard :
+- copier manuellement le template systemd vers `/etc/systemd/system/`
+- copier manuellement le template Nginx vers la configuration serveur cible
+- adapter les chemins, l'utilisateur systeme et l'environnement avant toute activation
+
+Le template systemd vise :
+- le dossier `services/chatlaya-service/backend`
+- une execution Uvicorn sur `127.0.0.1:8010`
+- un fichier d'environnement `/etc/innovaplus/chatlaya-service.env`
+- des logs separes dans `/var/log/koryxa/`
+
+Le template Nginx vise :
+- la route `/api/v1/chatlaya/`
+- un proxy vers `http://127.0.0.1:8010/`
+
 ## Statut
 
 - service scaffold seulement

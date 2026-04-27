@@ -11,6 +11,7 @@ load_dotenv(BASE_DIR / '.env.local')
 load_dotenv(BASE_DIR / '.env')
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routers.chatlaya import router as chatlaya_router
@@ -27,8 +28,25 @@ app = FastAPI(
     description="Non-active backend skeleton for future ChatLAYA service extraction.",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://innovaplus.africa",
+        "https://www.innovaplus.africa",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+)
+
 app.include_router(health_router)
 app.include_router(chatlaya_router)
+
+
+@app.options("/chatlaya/{path:path}", include_in_schema=False)
+async def chatlaya_options(path: str) -> dict[str, bool]:
+    return {"ok": True}
+
 
 
 @app.on_event("startup")

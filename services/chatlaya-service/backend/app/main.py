@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import logging
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 
-load_dotenv('.env.local')
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BASE_DIR / '.env.local')
+load_dotenv(BASE_DIR / '.env')
 
 from fastapi import FastAPI
 

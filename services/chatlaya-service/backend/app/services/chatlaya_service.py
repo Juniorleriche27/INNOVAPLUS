@@ -596,8 +596,8 @@ async def generate_chat_reply(
             asyncio.to_thread(
                 generate_answer,
                 prompt,
-                settings.CHAT_PROVIDER,
-                settings.CHAT_MODEL,
+                settings.CHAT_PROVIDER or settings.LLM_PROVIDER or "cohere",
+                settings.CHAT_MODEL or settings.LLM_MODEL,
                 settings.LLM_TIMEOUT,
                 None,
                 None,

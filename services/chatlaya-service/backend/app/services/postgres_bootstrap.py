@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 import asyncpg
@@ -13,8 +14,18 @@ logger = logging.getLogger(__name__)
 _POOL: asyncpg.Pool | None = None
 
 
+def _mask_dsn(value: str) -> str:
+    if not value:
+        return "<empty>"
+    if "@" not in value:
+        return value[:12] + "***" if len(value) > 12 else "***"
+    prefix, suffix = value.split("@", 1)
+    masked_prefix = prefix[:12] + "***" if len(prefix) > 12 else "***"
+    return f"{masked_prefix}@{suffix}"
+
+
 def _database_url() -> str:
-    return (settings.DATABASE_URL or "").strip()
+    return (os.getenv("DATABASE_URL") or settings.DATABASE_URL or "").strip()
 
 
 def db_configured() -> bool:
@@ -30,7 +41,9 @@ async def init_pool() -> asyncpg.Pool | None:
     if _POOL is not None:
         return _POOL
     dsn = _database_url()
+    logger.info("chatlaya-service DATABASE_URL at startup: %s", _mask_dsn(dsn))
     if not dsn:
+        print("DATABASE_URL is empty at startup")
         logger.info("chatlaya-service Postgres pool skipped: DATABASE_URL not configured")
         return None
     try:

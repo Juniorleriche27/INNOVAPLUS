@@ -259,7 +259,7 @@ async def create_message(
             user_id,
             role,
             content,
-            json.dumps(meta or {}),
+            json.dumps(meta or {}, default=str),
             created_at,
         )
     return _normalize_message(_record_to_dict(row)) or {}

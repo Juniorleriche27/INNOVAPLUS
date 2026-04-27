@@ -57,11 +57,16 @@ export const DIRECT_INNOVA_API_BASE = normalizeInnovaBase(DIRECT_AUTH_API_BASE);
 export const CLIENT_INNOVA_API_BASE = "/innova/api";
 
 const CHATLAYA_SOURCE_BASE = alignLoopbackHost(
-  normalize(process.env.NEXT_PUBLIC_CHATLAYA_URL || process.env.NEXT_PUBLIC_API_URL || process.env.API_URL, DEFAULT_API_BASE),
+  normalize(
+    process.env.NEXT_PUBLIC_CHATLAYA_URL ||
+      process.env.NEXT_PUBLIC_CHATLAYA_API_URL ||
+      "https://api.innovaplus.africa/api",
+    "https://api.innovaplus.africa/api",
+  ),
   SITE_BASE_URL,
 );
 
-export const CHATLAYA_API_BASE = normalizeInnovaBase(CHATLAYA_SOURCE_BASE);
+export const CHATLAYA_API_BASE = CHATLAYA_SOURCE_BASE.replace(/\/+$/, "");
 
 export const DEV_AUTO_LOGIN_ENABLED =
   (process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN || "").toLowerCase() === "true";

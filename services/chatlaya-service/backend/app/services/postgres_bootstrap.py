@@ -39,6 +39,7 @@ async def init_pool() -> asyncpg.Pool | None:
             min_size=1,
             max_size=5,
             command_timeout=10,
+            statement_cache_size=0,
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("chatlaya-service Postgres pool init failed: %s", exc)

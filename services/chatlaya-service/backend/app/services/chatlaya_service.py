@@ -567,7 +567,7 @@ async def generate_chat_reply(
     rag_results: list[dict[str, Any]] = []
     rag_context = ""
     if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
-        rag_results = retrieve_specialist_chunks(
+        rag_results = await retrieve_specialist_chunks(
             message,
             assistant_mode=assistant_mode,
             top_k=settings.RAG_TOP_K_DEFAULT,

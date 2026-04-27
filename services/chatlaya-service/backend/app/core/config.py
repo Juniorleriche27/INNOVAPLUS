@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     RAG_API_URL: str | None = os.getenv("RAG_API_URL")
     RAG_API_TIMEOUT: float = float(os.getenv("RAG_API_TIMEOUT", "8"))
     RAG_TOP_K_DEFAULT: int = int(os.getenv("RAG_TOP_K_DEFAULT", "5"))
+    RAG_MAX_CONTEXT_TOKENS: int = int(os.getenv("RAG_MAX_CONTEXT_TOKENS", "900"))
+    CHATLAYA_SPECIALIST_SCHEMA: str | None = os.getenv("CHATLAYA_SPECIALIST_SCHEMA")
+    CHATLAYA_SPECIALIST_TABLE: str | None = os.getenv("CHATLAYA_SPECIALIST_TABLE")
+    CHATLAYA_SPECIALIST_FILTER_COLUMN: str | None = os.getenv("CHATLAYA_SPECIALIST_FILTER_COLUMN")
+    CHATLAYA_SPECIALIST_FILTER_VALUE: str | None = os.getenv("CHATLAYA_SPECIALIST_FILTER_VALUE")
 
     class Config:
         env_file = ".env"

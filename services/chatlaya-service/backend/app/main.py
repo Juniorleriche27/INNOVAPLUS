@@ -2,6 +2,11 @@ from __future__ import annotations
 
 import logging
 
+from dotenv import load_dotenv
+
+load_dotenv('.env.local')
+load_dotenv()
+
 from fastapi import FastAPI
 
 from app.core.config import settings

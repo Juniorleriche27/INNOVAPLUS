@@ -121,7 +121,7 @@ def _call_ollama_generate(
         "options": {
             "temperature": 0.4,
             "top_p": 0.9,
-            "num_predict": max_new_tokens or 350,
+            "num_predict": max_new_tokens or 180,
         },
     }
 

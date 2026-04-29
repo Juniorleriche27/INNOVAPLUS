@@ -590,7 +590,7 @@ async def generate_chat_reply(
         kind=message_kind,
         assistant_mode=assistant_mode,
     )
-    generation_timeout_s = max(12, min(int(settings.LLM_TIMEOUT or 30), 40))
+    generation_timeout_s = max(12, min(int(settings.LLM_TIMEOUT or 30), 120))
     try:
         response_text = await asyncio.wait_for(
             asyncio.to_thread(

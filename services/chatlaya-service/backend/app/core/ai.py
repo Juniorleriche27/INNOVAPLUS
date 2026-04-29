@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
+import urllib.request
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from app.core.config import settings
@@ -67,6 +69,79 @@ def embed_texts(texts: Sequence[str], dim: int | None = None) -> List[List[float
     return vectors
 
 
+
+def _build_ollama_prompt(
+    effective_prompt: str,
+    history: Optional[List[dict[str, str]]] = None,
+    context: str | None = None,
+) -> str:
+    parts: List[str] = [SYSTEM_PROMPT]
+
+    if context:
+        parts.append(
+            "Contexte disponible. Utilise-le seulement s'il est pertinent. "
+            "Si le contexte ne suffit pas, dis clairement que l'information manque.\n\n"
+            f"{context.strip()}"
+        )
+
+    if history:
+        compact_history: List[str] = []
+        for msg in history[-6:]:
+            role = (msg.get("role") or "").strip().lower()
+            content = (msg.get("content") or "").strip()
+            if not content:
+                continue
+            if role == "assistant":
+                compact_history.append(f"Assistant: {content}")
+            elif role == "user":
+                compact_history.append(f"Utilisateur: {content}")
+        if compact_history:
+            parts.append("Historique récent:\n" + "\n".join(compact_history))
+
+    parts.append("Demande utilisateur:\n" + effective_prompt.strip())
+
+    user_content = "\n\n".join(part for part in parts if part.strip())
+    return f"<start_of_turn>user\n{user_content}<end_of_turn>\n<start_of_turn>model\n"
+
+
+def _call_ollama_generate(
+    prompt: str,
+    model: str,
+    timeout: int,
+    max_new_tokens: int | None = None,
+) -> str:
+    base_url = (settings.OLLAMA_BASE_URL or "http://127.0.0.1:11434").rstrip("/")
+    url = f"{base_url}/api/generate"
+
+    payload = {
+        "model": model,
+        "raw": True,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.4,
+            "top_p": 0.9,
+            "num_predict": max_new_tokens or 350,
+        },
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        body = response.read().decode("utf-8")
+
+    parsed = json.loads(body)
+    text = (parsed.get("response") or "").strip()
+    if not text:
+        raise RuntimeError(f"Ollama returned an empty response: {body[:500]}")
+    return text
+
 def generate_answer(
     prompt: str,
     provider: str | None = None,
@@ -90,6 +165,30 @@ def generate_answer(
 
     if provider_name in {"local", "smollm", "chatlaya"}:
         provider_name = "cohere" if settings.COHERE_API_KEY else "echo"
+
+
+    if provider_name == "ollama":
+        try:
+            mdl = model or settings.CHAT_MODEL or settings.LLM_MODEL or "chatlaya-gemma4-e4b"
+            last_user = effective_prompt
+            if history:
+                last_user = next(
+                    (msg["content"] for msg in reversed(history) if msg.get("role") == "user"),
+                    effective_prompt,
+                )
+            ollama_prompt = _build_ollama_prompt(last_user, history=history, context=context)
+            text = _call_ollama_generate(
+                prompt=ollama_prompt,
+                model=mdl,
+                timeout=timeout or settings.LLM_TIMEOUT,
+                max_new_tokens=max_new_tokens,
+            )
+            if text and on_token:
+                on_token(text)
+            return text
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Ollama chat failed, returning explicit error: %s", exc)
+            raise RuntimeError(f"Ollama failed: {exc}") from exc
 
     if provider_name == "cohere":
         client = _get_cohere_client()

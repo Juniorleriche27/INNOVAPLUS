@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str | None = None
     LLM_MODEL: str | None = None
     LLM_TIMEOUT: int = 30
+    OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
     COHERE_API_KEY: str | None = None
     EMBED_MODEL: str | None = None
     EMBED_DIM: int = 1024

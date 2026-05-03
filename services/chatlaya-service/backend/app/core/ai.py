@@ -41,15 +41,18 @@ def _get_cohere_client():
     return _cohere_client
 
 
-def embed_texts(texts: Sequence[str], dim: int | None = None) -> List[List[float]]:
+def embed_texts(texts: Sequence[str], dim: int | None = None, input_type: str = "search_query") -> List[List[float]]:
     client = None
-    provider_name = (settings.LLM_PROVIDER or settings.CHAT_PROVIDER or "").lower()
-    if provider_name == "cohere" or (not provider_name and settings.COHERE_API_KEY):
+
+    # ChatLAYA peut utiliser Ollama/Gemma pour répondre,
+    # mais les embeddings RAG doivent utiliser Cohere si la clé est disponible.
+    # Sinon, on tombe sur le fallback déterministe local.
+    if settings.COHERE_API_KEY:
         client = _get_cohere_client()
     if client:
         try:
             model = settings.EMBED_MODEL or "embed-multilingual-v3.0"
-            resp = client.embed(texts=list(texts), model=model, input_type="search_query")
+            resp = client.embed(texts=list(texts), model=model, input_type=input_type)
             return [list(map(float, vector)) for vector in resp.embeddings]
         except Exception as exc:  # noqa: BLE001
             logger.warning("Cohere embed failed, falling back to stub: %s", exc)
@@ -121,7 +124,7 @@ def _call_ollama_generate(
         "options": {
             "temperature": 0.4,
             "top_p": 0.9,
-            "num_predict": max_new_tokens or 180,
+            "num_predict": max_new_tokens or settings.LLM_MAX_NEW_TOKENS,
         },
     }
 
@@ -141,6 +144,74 @@ def _call_ollama_generate(
     if not text:
         raise RuntimeError(f"Ollama returned an empty response: {body[:500]}")
     return text
+
+def _call_ai_gateway_chat(
+    prompt: str,
+    timeout: int | None = None,
+    max_new_tokens: int | None = None,
+) -> str:
+    base_url = (settings.AI_GATEWAY_BASE_URL or "").rstrip("/")
+    api_key = settings.AI_GATEWAY_API_KEY
+
+    if not base_url:
+        raise RuntimeError("AI_GATEWAY_BASE_URL is not configured")
+    if not api_key:
+        raise RuntimeError("AI_GATEWAY_API_KEY is not configured")
+
+    payload = {
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        "temperature": 0.4,
+        "max_tokens": max_new_tokens or settings.LLM_MAX_NEW_TOKENS,
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+
+    req = urllib.request.Request(
+        f"{base_url}/v1/chat",
+        data=data,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "X-API-Key": api_key,
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(
+            req,
+            timeout=timeout or settings.AI_GATEWAY_TIMEOUT_SECONDS,
+        ) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"AI gateway HTTP {exc.code}: {body[:500]}") from exc
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return raw.strip()
+
+    response = (
+        parsed.get("response")
+        or parsed.get("text")
+        or parsed.get("content")
+        or ""
+    )
+
+    if not response and isinstance(parsed.get("choices"), list) and parsed["choices"]:
+        choice = parsed["choices"][0]
+        if isinstance(choice, dict):
+            message = choice.get("message") or {}
+            response = message.get("content") or choice.get("text") or ""
+
+    return str(response).strip()
+
 
 def generate_answer(
     prompt: str,
@@ -166,6 +237,13 @@ def generate_answer(
     if provider_name in {"local", "smollm", "chatlaya"}:
         provider_name = "cohere" if settings.COHERE_API_KEY else "echo"
 
+
+    if provider_name in {"ai_gateway", "gateway", "koryxa_gateway"}:
+        return _call_ai_gateway_chat(
+            prompt=prompt,
+            timeout=timeout or settings.AI_GATEWAY_TIMEOUT_SECONDS,
+            max_new_tokens=max_new_tokens,
+        )
 
     if provider_name == "ollama":
         try:

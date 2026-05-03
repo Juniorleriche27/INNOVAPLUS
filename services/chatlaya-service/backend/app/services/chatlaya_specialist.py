@@ -598,43 +598,36 @@ async def _retrieve_specialist_chunks_from_rag_tables(query: str, top_k: int) ->
         return []
 
     corpus_filter = settings.CHATLAYA_SPECIALIST_FILTER_VALUE or CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL
+
     try:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
                 with q as (
-                  select to_tsquery('simple', $1) as tsq
+                    select to_tsquery('simple', $1) as tsq
                 )
                 select
-                  d.id::text as doc_id,
-                  c.title,
-                  c.source_file,
-                  c.content as text,
-                  c.metadata as meta,
-                  ts_rank_cd(
-                    setweight(to_tsvector('simple', coalesce(c.title, '')), 'A') ||
-                    setweight(to_tsvector('simple', coalesce(c.source_file, '')), 'B') ||
-                    setweight(c.content_tsv, 'C'),
-                    q.tsq
-                  ) as score
+                    c.document_id::text as doc_id,
+                    c.content::text as text,
+                    c.title::text as title,
+                    c.source_file::text as source_file,
+                    c.metadata as metadata,
+                    ts_rank_cd(setweight(c.content_tsv, 'C'), q.tsq) as score
                 from app.rag_chunks c
                 join app.rag_documents d on d.id = c.document_id
                 cross join q
                 where coalesce(d.metadata->>'corpus', '') = $2
-                  and (
-                    setweight(to_tsvector('simple', coalesce(c.title, '')), 'A') ||
-                    setweight(to_tsvector('simple', coalesce(c.source_file, '')), 'B') ||
-                    setweight(c.content_tsv, 'C')
-                  ) @@ q.tsq
-                order by score desc nulls last, c.chunk_index asc
-                limit $3;
+                  and c.content_tsv is not null
+                  and setweight(c.content_tsv, 'C') @@ q.tsq
+                order by score desc, c.chunk_index asc
+                limit $3
                 """,
                 tsquery,
                 corpus_filter,
                 max(1, min(int(top_k), 10)),
             )
     except Exception as exc:  # noqa: BLE001
-        logger.warning("ChatLAYA specialist RAG table query failed: %s", exc)
+        logger.warning("ChatLAYA specialist RAG table query failed: %r", exc)
         return []
 
     results: list[dict[str, Any]] = []
@@ -643,7 +636,8 @@ async def _retrieve_specialist_chunks_from_rag_tables(query: str, top_k: int) ->
         text = str(row_dict.get("text") or "").strip()
         if not text:
             continue
-        meta = _normalize_meta(row_dict.get("meta"))
+
+        meta = _normalize_meta(row_dict.get("metadata"))
         title = str(row_dict.get("title") or meta.get("title") or row_dict.get("doc_id") or "").strip()
         source_file = str(
             row_dict.get("source_file")
@@ -652,19 +646,21 @@ async def _retrieve_specialist_chunks_from_rag_tables(query: str, top_k: int) ->
             or meta.get("path")
             or ""
         ).strip()
+
         results.append(
             {
-                "doc_id": row_dict.get("doc_id"),
+                "doc_id": row_dict.get("doc_id") or meta.get("document_id") or meta.get("doc_id"),
                 "score": round(float(row_dict.get("score") or 0.0), 4),
                 "text": text,
                 "meta": {
                     "title": title,
                     "source_file": source_file,
                     "assistant_mode": CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL,
-                    "retrieval_mode": "supabase_rag_fts",
+                    "retrieval_mode": "supabase_text_rag_tables",
                 },
             }
         )
+
     return results
 
 
@@ -716,14 +712,9 @@ async def retrieve_specialist_chunks(
         return []
 
     if _db_ready():
-        fn_results = await _retrieve_specialist_chunks_via_match_function(query, top_k=top_k)
-        if fn_results:
-            return fn_results
-
-        pg_results = await _retrieve_specialist_chunks_from_pg(query, top_k=top_k)
-        if pg_results:
-            return pg_results
-
+        # Cohere désactivé dans le runtime ChatLAYA.
+        # On évite les recherches vectorielles live car elles appellent embed_texts().
+        # Le mode LSV utilise donc la recherche textuelle PostgreSQL content_tsv.
         rag_results = await _retrieve_specialist_chunks_from_rag_tables(query, top_k=top_k)
         if rag_results:
             return rag_results

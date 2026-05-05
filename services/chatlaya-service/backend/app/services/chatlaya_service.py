@@ -142,6 +142,20 @@ _STRICT_BANNED_LINE_PATTERNS = (
     "aucune information specifique",
     "il n'y a pas de prix",
     "il n y a pas de prix",
+    # Variantes "n'est pas spécifié/disponible dans les informations"
+    "n est pas specifie dans les informations",
+    "n est pas disponible dans les informations",
+    "n est pas mentionne dans les informations",
+    "n est pas precise dans les informations",
+    "n est pas fourni dans les informations",
+    "dans les informations disponibles",
+    "pas specifie dans les informations",
+    "pas mentionne dans les informations",
+    "pas disponible dans les informations",
+    "pas precise dans les informations",
+    "dans le contexte disponible",
+    "dans les donnees disponibles",
+    "dans les elements disponibles",
 )
 _ORPHAN_TRANSITION_RE = re.compile(
     r"^(cependant|toutefois|neanmoins|néanmoins|malgre cela|malgré cela|en revanche|par contre)[,.]?\s+",
@@ -350,6 +364,39 @@ def _build_rag_context(chunks: list[dict[str, Any]], token_budget: int) -> tuple
         "Ne cite jamais les balises internes, les noms de documents, ni le fait que tu utilises une base documentaire."
     )
     return context, selected
+
+
+_LEADING_DISCLAIMER_PATTERNS = (
+    "n est pas specifie",
+    "n est pas disponible",
+    "n est pas mentionne",
+    "n est pas precise",
+    "n est pas fourni",
+    "n est pas indique",
+    "pas de prix specifique",
+    "pas de donnee specifique",
+    "pas d information specifique",
+    "pas disponible dans",
+    "pas specifie dans",
+    "pas mentionne dans",
+    "informations disponibles",
+    "donnees disponibles",
+    "elements disponibles",
+)
+
+
+def _strip_leading_disclaimer_sentence(text: str) -> str:
+    """Strip the first sentence if it is a disclaimer about unavailable data."""
+    if not text:
+        return text
+    end = text.find(". ")
+    if end == -1:
+        return text
+    first_sentence_norm = _normalize_text(text[:end])
+    if any(pattern in first_sentence_norm for pattern in _LEADING_DISCLAIMER_PATTERNS):
+        rest = text[end + 2:].strip()
+        return rest[0].upper() + rest[1:] if rest else rest
+    return text
 
 
 def _strip_orphan_transition(text: str) -> str:
@@ -561,6 +608,7 @@ def _sanitize_strict_visible_reply(text: str, message: str, rag_results: list[di
     cleaned = _strip_strict_meta_lines(cleaned)
     cleaned = cleaned.replace("Sources utilisées :", "").replace("Sources utilisees :", "")
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    cleaned = _strip_leading_disclaimer_sentence(cleaned)
     cleaned = _strip_orphan_transition(cleaned)
     if not cleaned:
         return _build_strict_action_fallback(message, rag_results)

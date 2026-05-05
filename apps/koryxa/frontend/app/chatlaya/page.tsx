@@ -73,8 +73,8 @@ const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint:
   },
   {
     value: "launch_structure_sell",
-    label: "Lancer, Structurer, Vendre",
-    hint: "ChatLAYA repond uniquement avec le corpus dedie a cette fonctionnalite.",
+    label: "Mode Fondateur",
+    hint: "Corpus dédié aux porteurs de projet : lancer, structurer, vendre.",
   },
 ];
 
@@ -476,6 +476,34 @@ function ChatlayaContent() {
     }
   }
 
+  async function switchToFounderMode() {
+    if (assistantModeSaving || streaming) return;
+    setError(null);
+    setAssistantModeSaving(true);
+    try {
+      streamAbortRef.current?.abort();
+      resetTypewriterQueue();
+      setStreaming(false);
+      const created = await createConversationRequest();
+      const response = await fetch(`${API_BASE}/chatlaya/conversations/${created.conversation_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ assistant_mode: "launch_structure_sell" }),
+      });
+      const finalConv = response.ok
+        ? normalizeConversation((await response.json()) as Conversation)
+        : { ...created, assistant_mode: "launch_structure_sell" as AssistantMode };
+      setConversations((current) => [finalConv, ...current.filter((c) => c.conversation_id !== finalConv.conversation_id)]);
+      setSelectedConversationId(finalConv.conversation_id);
+      setMessages([]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    } finally {
+      setAssistantModeSaving(false);
+    }
+  }
+
   function applyStarterPrompt(prompt: string) {
     setError(null);
     setInput(prompt);
@@ -649,7 +677,7 @@ function ChatlayaContent() {
             <h2 className="text-sm font-semibold text-slate-900">Conversations</h2>
             {activeConversation ? (
               <span className="rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
-                {activeAssistantMode === "launch_structure_sell" ? "LSV" : "Général"}
+                {activeAssistantMode === "launch_structure_sell" ? "Fondateur" : "Général"}
               </span>
             ) : null}
           </div>
@@ -771,8 +799,8 @@ function ChatlayaContent() {
                   <button
                     key={option.value}
                     type="button"
-                    disabled={!selectedConversationId || assistantModeSaving || streaming}
-                    onClick={() => void updateConversationMode(option.value)}
+                    disabled={assistantModeSaving || streaming || (option.value === "general" && !selectedConversationId)}
+                    onClick={() => void (option.value === "launch_structure_sell" ? switchToFounderMode() : updateConversationMode(option.value))}
                     title={option.hint}
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                       active

@@ -122,10 +122,30 @@ _STRICT_BANNED_LINE_PATTERNS = (
     "d apres le corpus",
     "dans cette base",
     "les elements les plus proches",
-    "les éléments les plus proches",
+    "les elements les plus proches",
     "je reste volontairement",
     "je reste strictement",
     "entrepreneurship openstax",
+    # Disclaimers sur les limites du contexte — interdits en réponse visible
+    "le contexte fourni ne",
+    "le contexte fourni n",
+    "le contexte ne contient",
+    "le contexte ne precise",
+    "le contexte ne mentionne",
+    "les informations fournies ne",
+    "les donnees fournies ne",
+    "je ne dispose pas de donnees",
+    "je ne dispose pas d information",
+    "aucune donnee specifique",
+    "aucun prix specifique",
+    "aucun element specifique",
+    "aucune information specifique",
+    "il n'y a pas de prix",
+    "il n y a pas de prix",
+)
+_ORPHAN_TRANSITION_RE = re.compile(
+    r"^(cependant|toutefois|neanmoins|néanmoins|malgre cela|malgré cela|en revanche|par contre)[,.]?\s+",
+    re.IGNORECASE,
 )
 _DEFINITION_PATTERNS = (
     "c est quoi",
@@ -332,6 +352,15 @@ def _build_rag_context(chunks: list[dict[str, Any]], token_budget: int) -> tuple
     return context, selected
 
 
+def _strip_orphan_transition(text: str) -> str:
+    """Remove a leading transition word left orphaned after stripping a context-disclaimer sentence."""
+    match = _ORPHAN_TRANSITION_RE.match(text)
+    if not match:
+        return text
+    rest = text[match.end():]
+    return rest[0].upper() + rest[1:] if rest else rest
+
+
 def _strip_dummy_sources(text: str) -> str:
     if not text:
         return text
@@ -532,6 +561,7 @@ def _sanitize_strict_visible_reply(text: str, message: str, rag_results: list[di
     cleaned = _strip_strict_meta_lines(cleaned)
     cleaned = cleaned.replace("Sources utilisées :", "").replace("Sources utilisees :", "")
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    cleaned = _strip_orphan_transition(cleaned)
     if not cleaned:
         return _build_strict_action_fallback(message, rag_results)
     return cleaned
@@ -789,6 +819,7 @@ def _build_generation_prompt(
             "Ton role est d'aider a lancer une activite, structurer une offre, construire un business model, fixer un prix, vendre et ameliorer la relation client.",
             "Tu dois utiliser les extraits fournis comme contexte metier prioritaire.",
             "Ne dis jamais qu'aucun contexte n'est fourni lorsque des extraits sont presents.",
+            "INTERDIT ABSOLU : ne commence JAMAIS la reponse par une phrase mentionnant les limites ou lacunes du contexte ('Le contexte fourni ne...', 'Je ne dispose pas...', 'Aucun prix specifique...', 'Aucune donnee...', 'Les informations fournies ne...'). Commence DIRECTEMENT par la reponse utile.",
             "Regle absolue : donne TOUJOURS une reponse utile et directe en premier, meme si les informations sont incompletes ou generales. Ne commence jamais par demander des precisions. Si une clarification est vraiment necessaire, pose une seule question courte APRES avoir repondu, jamais avant.",
             "Si le contexte ne couvre pas exactement la question, reponds avec ce que tu sais sur le sujet en mode conseil business, puis propose d'affiner si besoin.",
             "Reponds en francais clair, professionnel, concret et directement applicable.",

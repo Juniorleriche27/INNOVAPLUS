@@ -152,14 +152,32 @@ function parseMdBlocks(content: string): MdBlock[] {
 
     if (/^\d+\.\s/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^\d+\.\s/.test(lines[i])) { items.push(lines[i].replace(/^\d+\.\s+/, "")); i++; }
+      while (i < lines.length) {
+        if (/^\d+\.\s/.test(lines[i])) {
+          items.push(lines[i].replace(/^\d+\.\s+/, ""));
+          i++;
+        } else if (!lines[i].trim()) {
+          let j = i + 1;
+          while (j < lines.length && !lines[j].trim()) j++;
+          if (j < lines.length && /^\d+\.\s/.test(lines[j])) { i = j; } else { break; }
+        } else { break; }
+      }
       blocks.push({ type: "ordered-list", items });
       continue;
     }
 
     if (/^[-•*]\s/.test(line)) {
       const items: string[] = [];
-      while (i < lines.length && /^[-•*]\s/.test(lines[i])) { items.push(lines[i].replace(/^[-•*]\s+/, "")); i++; }
+      while (i < lines.length) {
+        if (/^[-•*]\s/.test(lines[i])) {
+          items.push(lines[i].replace(/^[-•*]\s+/, ""));
+          i++;
+        } else if (!lines[i].trim()) {
+          let j = i + 1;
+          while (j < lines.length && !lines[j].trim()) j++;
+          if (j < lines.length && /^[-•*]\s/.test(lines[j])) { i = j; } else { break; }
+        } else { break; }
+      }
       blocks.push({ type: "unordered-list", items });
       continue;
     }

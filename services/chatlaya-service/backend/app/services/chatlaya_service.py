@@ -16,6 +16,7 @@ from app.services.chatlaya_specialist import (
     is_strict_assistant_mode,
     retrieve_specialist_chunks,
 )
+from app.services.web_search import format_web_context, search_web
 logger = logging.getLogger(__name__)
 CHATLAYA_SPECIALIST_EMPTY_REPLY = (
     "Je n'ai pas assez d'elements exploitables pour repondre correctement dans ce mode. "
@@ -712,6 +713,7 @@ def _build_generation_prompt(
     product_context: str,
     kind: str,
     assistant_mode: str = CHATLAYA_MODE_GENERAL,
+    web_context: str = "",
 ) -> str:
     trimmed_history = _trim_history(message, history)
     if is_strict_assistant_mode(assistant_mode):
@@ -740,6 +742,11 @@ def _build_generation_prompt(
         sections.append(f"Contexte produit KORYXA :\n{product_context}")
     if history_block:
         sections.append(f"Historique recent :\n{history_block}")
+    if web_context and is_strict_assistant_mode(assistant_mode):
+        sections.append(
+            "Informations web recentes (complement factuel, a croiser avec le contexte metier) :\n"
+            f"{web_context}"
+        )
     if rag_context:
         if is_strict_assistant_mode(assistant_mode):
             sections.append(
@@ -829,6 +836,14 @@ async def generate_chat_reply(
         except Exception as exc:  # noqa: BLE001
             logger.warning("ChatLAYA RAG retrieval failed: %s", exc)
 
+    web_context = ""
+    if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL and len(retrieval_message.strip()) > 15:
+        try:
+            web_results = await search_web(retrieval_message)
+            web_context = format_web_context(web_results)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("ChatLAYA web search failed: %s", exc)
+
     prompt = _build_generation_prompt(
         message=message,
         history=history,
@@ -836,6 +851,7 @@ async def generate_chat_reply(
         product_context=product_context,
         kind=message_kind,
         assistant_mode=assistant_mode,
+        web_context=web_context,
     )
     generation_timeout_s = max(12, min(int(settings.LLM_TIMEOUT or 30), 120))
 

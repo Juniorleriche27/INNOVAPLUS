@@ -839,10 +839,21 @@ function ChatlayaContent() {
                 <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 shadow-sm">
                   <span className="text-sm font-bold text-white">L</span>
                 </div>
-                <p className="text-base font-semibold text-slate-800">Partez d'une question simple.</p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  ChatLAYA vous aide à clarifier, cadrer et décider avant d'ouvrir la bonne suite dans KORYXA.
-                </p>
+                {activeAssistantMode === "launch_structure_sell" ? (
+                  <>
+                    <p className="text-base font-semibold text-slate-800">Lancez. Structurez. Vendez.</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                      Mode Fondateur est votre espace dédié aux porteurs de projet. Posez vos questions sur votre offre, votre marché ou votre stratégie commerciale — ChatLAYA répond avec son corpus spécialisé.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-semibold text-slate-800">Partez d'une question simple.</p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                      ChatLAYA vous aide à clarifier, cadrer et décider avant d'ouvrir la bonne suite dans KORYXA.
+                    </p>
+                  </>
+                )}
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {starterPrompts.map((item) => (
                     <button

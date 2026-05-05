@@ -120,8 +120,144 @@ function normalizeStreamError(text: string, status?: number, contentType?: strin
   return raw || "Échec de la réponse.";
 }
 
+type MdBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "heading"; level: 1 | 2 | 3; text: string }
+  | { type: "ordered-list"; items: string[] }
+  | { type: "unordered-list"; items: string[] }
+  | { type: "code-block"; text: string };
+
+function parseMdBlocks(content: string): MdBlock[] {
+  const lines = content.split("\n");
+  const blocks: MdBlock[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (!line.trim()) { i++; continue; }
+
+    if (line.startsWith("```")) {
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith("```")) { codeLines.push(lines[i]); i++; }
+      i++;
+      blocks.push({ type: "code-block", text: codeLines.join("\n") });
+      continue;
+    }
+
+    if (line.startsWith("### ")) { blocks.push({ type: "heading", level: 3, text: line.slice(4) }); i++; continue; }
+    if (line.startsWith("## ")) { blocks.push({ type: "heading", level: 2, text: line.slice(3) }); i++; continue; }
+    if (line.startsWith("# ")) { blocks.push({ type: "heading", level: 1, text: line.slice(2) }); i++; continue; }
+
+    if (/^\d+\.\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) { items.push(lines[i].replace(/^\d+\.\s+/, "")); i++; }
+      blocks.push({ type: "ordered-list", items });
+      continue;
+    }
+
+    if (/^[-•*]\s/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-•*]\s/.test(lines[i])) { items.push(lines[i].replace(/^[-•*]\s+/, "")); i++; }
+      blocks.push({ type: "unordered-list", items });
+      continue;
+    }
+
+    const paraLines: string[] = [];
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].startsWith("#") &&
+      !/^\d+\.\s/.test(lines[i]) &&
+      !/^[-•*]\s/.test(lines[i]) &&
+      !lines[i].startsWith("```")
+    ) { paraLines.push(lines[i]); i++; }
+    if (paraLines.length) blocks.push({ type: "paragraph", text: paraLines.join(" ") });
+  }
+
+  return blocks;
+}
+
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**"))
+          return <strong key={i} className="font-semibold text-slate-900">{part.slice(2, -2)}</strong>;
+        if (part.startsWith("*") && part.endsWith("*"))
+          return <em key={i} className="italic text-slate-700">{part.slice(1, -1)}</em>;
+        if (part.startsWith("`") && part.endsWith("`"))
+          return <code key={i} className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-sky-700">{part.slice(1, -1)}</code>;
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 function AssistantContent({ content }: { content: string }) {
-  return <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-800">{content}</div>;
+  const blocks = parseMdBlocks(content);
+
+  return (
+    <div className="break-words space-y-3">
+      {blocks.map((block, idx) => {
+        if (block.type === "heading") {
+          const cls =
+            block.level === 1
+              ? "text-base font-bold text-slate-900"
+              : block.level === 2
+                ? "text-sm font-bold text-slate-900"
+                : "text-sm font-semibold text-slate-800";
+          if (block.level === 1) return <h1 key={idx} className={cls}>{renderInline(block.text)}</h1>;
+          if (block.level === 2) return <h2 key={idx} className={cls}>{renderInline(block.text)}</h2>;
+          return <h3 key={idx} className={cls}>{renderInline(block.text)}</h3>;
+        }
+
+        if (block.type === "ordered-list") {
+          return (
+            <ol key={idx} className="space-y-2.5">
+              {block.items.map((item, li) => (
+                <li key={li} className="flex gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-bold text-sky-600 ring-1 ring-sky-100">
+                    {li + 1}
+                  </span>
+                  <span className="flex-1 text-sm leading-6 text-slate-700">{renderInline(item)}</span>
+                </li>
+              ))}
+            </ol>
+          );
+        }
+
+        if (block.type === "unordered-list") {
+          return (
+            <ul key={idx} className="space-y-2">
+              {block.items.map((item, li) => (
+                <li key={li} className="flex gap-2.5">
+                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+                  <span className="flex-1 text-sm leading-7 text-slate-700">{renderInline(item)}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (block.type === "code-block") {
+          return (
+            <pre key={idx} className="overflow-x-auto rounded-xl bg-slate-900 px-4 py-3 text-[12px] leading-5 text-slate-200">
+              <code>{block.text}</code>
+            </pre>
+          );
+        }
+
+        return (
+          <p key={idx} className="text-sm leading-7 text-slate-700">
+            {renderInline(block.text)}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 function ChatlayaContent() {

@@ -33,7 +33,6 @@ class Settings(BaseSettings):
     CHATLAYA_SPECIALIST_FILTER_COLUMN: str | None = None
     CHATLAYA_SPECIALIST_FILTER_VALUE: str | None = None
     TAVILY_API_KEY: str | None = None
-    SERPER_API_KEY: str | None = None
     WEB_SEARCH_ENABLED: bool = True
     WEB_SEARCH_MAX_RESULTS: int = 4
 

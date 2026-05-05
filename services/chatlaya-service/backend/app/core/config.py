@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     EMBED_DIM: int = 1024
     RAG_API_URL: str | None = None
     RAG_API_TIMEOUT: float = 8.0
-    RAG_TOP_K_DEFAULT: int = 5
-    RAG_MAX_CONTEXT_TOKENS: int = 600
+    RAG_TOP_K_DEFAULT: int = 10
+    RAG_MAX_CONTEXT_TOKENS: int = 1800
     CHATLAYA_SPECIALIST_SCHEMA: str | None = None
     CHATLAYA_SPECIALIST_TABLE: str | None = None
     CHATLAYA_SPECIALIST_FILTER_COLUMN: str | None = None

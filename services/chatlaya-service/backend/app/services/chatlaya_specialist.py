@@ -799,7 +799,7 @@ async def retrieve_specialist_chunks(
         )
 
     ranked.sort(key=lambda item: item[0], reverse=True)
-    limit = max(1, min(top_k, 5))
+    limit = max(1, min(top_k, 12))
     selected: list[dict[str, Any]] = []
     doc_counts: dict[str, int] = {}
     for _, item in ranked:

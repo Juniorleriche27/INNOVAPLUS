@@ -425,6 +425,10 @@ function ChatlayaContent() {
   }
 
   async function createConversation() {
+    if (activeAssistantMode === "launch_structure_sell") {
+      await switchToFounderMode();
+      return;
+    }
     setError(null);
     try {
       streamAbortRef.current?.abort();

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, MessageSquarePlus } from "lucide-react";
@@ -258,7 +258,7 @@ function ChatlayaContent() {
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data?.detail || "Impossible d’ouvrir la session ChatLAYA.");
+      throw new Error(data?.detail || "Impossible d'ouvrir la session ChatLAYA.");
     }
     const data = await response.json().catch(() => ({}));
     if (data?.mode === "guest" || data?.mode === "user") {
@@ -415,7 +415,7 @@ function ChatlayaContent() {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible d’archiver la conversation.");
+        throw new Error(data?.detail || "Impossible d'archiver la conversation.");
       }
       setConversations((current) => {
         const remaining = current.filter((item) => item.conversation_id !== conversationId);
@@ -637,253 +637,267 @@ function ChatlayaContent() {
     activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
 
   return (
-    <main onWheelCapture={forwardWheelToChatLayout} className="flex h-full min-h-0 flex-col gap-3 overflow-hidden bg-slate-50/60">
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
-        <aside
-          ref={conversationsViewportRef}
-          className="grid content-start gap-4 overflow-y-auto overscroll-y-contain touch-pan-y [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] lg:min-h-0 lg:pr-1"
-        >
-          <section className="rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Historique</p>
-              <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-950 sm:text-xl">Conversations</h2>
-              {activeConversation ? (
-                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                  {activeAssistantMode === "launch_structure_sell" ? "Lancer, Structurer, Vendre" : "Mode general"}
-                </p>
-              ) : null}
-            </div>
-
-            {accessMode ? (
-              <p className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                {accessMode === "guest" ? "Mode invité" : "Mode connecté"}
-              </p>
+    <main
+      onWheelCapture={forwardWheelToChatLayout}
+      className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)]"
+    >
+      {/* ─── Sidebar ─── */}
+      <aside className="hidden min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] lg:flex">
+        {/* Header */}
+        <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-slate-900">Conversations</h2>
+            {activeConversation ? (
+              <span className="rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
+                {activeAssistantMode === "launch_structure_sell" ? "LSV" : "Général"}
+              </span>
             ) : null}
+          </div>
+          {accessMode ? (
+            <p className="mt-1 text-[10px] font-medium text-slate-400">
+              {accessMode === "guest" ? "Mode invité" : "Mode connecté"}
+            </p>
+          ) : null}
+        </div>
 
-            <div className="mt-4 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Conversation active</p>
-              <p className="mt-2 truncate text-sm font-semibold text-slate-950">{normalizeTitle(activeConversation?.title)}</p>
-              <p className="mt-1 text-xs leading-6 text-slate-500">
-                {activeConversation?.updated_at
-                  ? `Dernière activité : ${formatDate(activeConversation.updated_at)}`
-                  : "Posez votre première question pour démarrer."}
-              </p>
+        {/* Action buttons */}
+        <div className="shrink-0 border-b border-slate-100 px-3 py-2.5">
+          <button
+            type="button"
+            onClick={() => void createConversation()}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-sky-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98]"
+          >
+            <MessageSquarePlus className="h-3.5 w-3.5" />
+            Nouvelle conversation
+          </button>
+          {activeConversation ? (
+            <button
+              type="button"
+              onClick={() => void archiveConversation(activeConversation.conversation_id)}
+              disabled={streaming}
+              className="mt-1.5 w-full rounded-xl px-3 py-1.5 text-[11px] font-medium text-slate-400 transition hover:text-slate-600 disabled:opacity-40"
+            >
+              Archiver
+            </button>
+          ) : null}
+        </div>
+
+        {/* Conversation list – scrollable */}
+        <div
+          ref={conversationsViewportRef}
+          className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y px-2 py-2 [-webkit-overflow-scrolling:touch]"
+        >
+          {conversationsLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="mb-1.5 h-[52px] animate-pulse rounded-xl bg-slate-100" />
+            ))
+          ) : conversations.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-xs text-slate-400">
+              Aucune conversation pour le moment.
             </div>
+          ) : (
+            conversations.map((conversation) => {
+              const active = conversation.conversation_id === selectedConversationId;
+              return (
+                <button
+                  key={conversation.conversation_id}
+                  type="button"
+                  onClick={() => {
+                    streamAbortRef.current?.abort();
+                    resetTypewriterQueue();
+                    setStreaming(false);
+                    setError(null);
+                    setMessages([]);
+                    setSelectedConversationId(conversation.conversation_id);
+                  }}
+                  className={`mb-0.5 w-full rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    active
+                      ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]"
+                      : "hover:bg-slate-50"
+                  }`}
+                >
+                  <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-sky-700" : "text-slate-800"}`}>
+                    {normalizeTitle(conversation.title)}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-slate-400">
+                    {formatDate(conversation.updated_at) || "Nouvelle conversation"}
+                  </p>
+                </button>
+              );
+            })
+          )}
+        </div>
 
-            <div className="mt-4 grid gap-2">
+        {/* Starter prompts */}
+        <div className="shrink-0 border-t border-slate-100 px-3 py-3">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            Démarrage rapide
+          </p>
+          <div className="grid gap-0.5">
+            {starterPrompts.map((item) => (
               <button
+                key={item.label}
                 type="button"
-                onClick={() => void createConversation()}
-                className="inline-flex items-center justify-center gap-2 rounded-[20px] bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(2,132,199,0.22)] transition hover:bg-sky-700"
+                onClick={() => applyStarterPrompt(item.prompt)}
+                className="rounded-lg px-2 py-1.5 text-left text-[11px] font-medium text-slate-500 transition hover:bg-sky-50 hover:text-sky-700"
               >
-                <MessageSquarePlus className="h-4 w-4" />
-                Nouvelle conversation
+                {item.label}
               </button>
-              {activeConversation ? (
-                <button
-                  type="button"
-                  onClick={() => void archiveConversation(activeConversation.conversation_id)}
-                  disabled={streaming}
-                  className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-sky-400 hover:text-sky-700 disabled:opacity-50"
-                >
-                  Archiver
-                </button>
-              ) : null}
-            </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
-            <div className="mt-4 grid gap-2">
-              {conversationsLoading ? (
-                Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-[22px] bg-slate-100" />
-                ))
-              ) : conversations.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm leading-7 text-slate-500">
-                  Aucune conversation pour le moment.
-                </div>
-              ) : (
-                conversations.map((conversation) => {
-                  const active = conversation.conversation_id === selectedConversationId;
-                  return (
-                    <button
-                      key={conversation.conversation_id}
-                      type="button"
-                      onClick={() => {
-                        streamAbortRef.current?.abort();
-                        resetTypewriterQueue();
-                        setStreaming(false);
-                        setError(null);
-                        setMessages([]);
-                        setSelectedConversationId(conversation.conversation_id);
-                      }}
-                      className={`rounded-[22px] border px-4 py-4 text-left transition ${
-                        active
-                          ? "border-sky-300 bg-sky-50 shadow-[0_14px_30px_rgba(14,165,233,0.10)]"
-                          : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50"
-                      }`}
-                    >
-                      <p className="truncate text-sm font-semibold text-slate-950">{normalizeTitle(conversation.title)}</p>
-                      <p className="mt-2 text-xs leading-6 text-slate-500">
-                        {formatDate(conversation.updated_at) || "Nouvelle conversation"}
-                      </p>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </section>
+      {/* ─── Main chat area ─── */}
+      <section
+        onWheelCapture={(event) => forwardWheelToViewport(event, messagesViewportRef)}
+        className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]"
+      >
+        {/* Error banner */}
+        {error ? (
+          <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">
+            {error}
+          </div>
+        ) : null}
 
-          <section className="rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[28px]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Démarrage rapide</p>
-            <div className="mt-4 grid gap-2">
-              {starterPrompts.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => applyStarterPrompt(item.prompt)}
-                  className="rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
-                >
-                  {item.label}
-                </button>
+        {/* Mode bar – compact */}
+        <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Mode</span>
+            <div className="flex gap-1.5">
+              {ASSISTANT_MODE_OPTIONS.map((option) => {
+                const active = option.value === activeAssistantMode;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={!selectedConversationId || assistantModeSaving || streaming}
+                    onClick={() => void updateConversationMode(option.value)}
+                    title={option.hint}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      active
+                        ? "bg-sky-600 text-white shadow-sm"
+                        : "border border-slate-200 bg-white text-slate-500 hover:border-sky-300 hover:text-sky-600"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            {assistantModeSaving ? (
+              <span className="ml-auto text-[10px] text-slate-400">Enregistrement…</span>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Messages viewport */}
+        <div
+          ref={messagesViewportRef}
+          className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-5 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
+        >
+          {messagesLoading ? (
+            <div className="grid gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-16 animate-pulse rounded-2xl bg-slate-100 ${index % 2 === 0 ? "ml-auto w-[60%]" : "w-[72%]"}`}
+                />
               ))}
             </div>
-          </section>
-        </aside>
-
-        <section
-          onWheelCapture={(event) => forwardWheelToViewport(event, messagesViewportRef)}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-slate-200/80 bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-5"
-        >
-          {error ? (
-            <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          ) : null}
-
-          <div className={`${error ? "mt-3" : ""} shrink-0 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4`}>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Mode assistant</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">
-                  {activeAssistantMode === "launch_structure_sell" ? "Lancer, Structurer, Vendre" : "Mode general KORYXA"}
+          ) : messages.length === 0 ? (
+            <div className="flex h-full min-h-[200px] items-center justify-center">
+              <div className="w-full max-w-md text-center">
+                <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 shadow-sm">
+                  <span className="text-sm font-bold text-white">L</span>
+                </div>
+                <p className="text-base font-semibold text-slate-800">Partez d'une question simple.</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  ChatLAYA vous aide à clarifier, cadrer et décider avant d'ouvrir la bonne suite dans KORYXA.
                 </p>
-                <p className="mt-1 text-xs leading-6 text-slate-500">
-                  {activeAssistantMode === "launch_structure_sell"
-                    ? "Reponses limitees au corpus dedie a cette fonctionnalite."
-                    : "Reponses avec le contexte produit habituel de ChatLAYA."}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {ASSISTANT_MODE_OPTIONS.map((option) => {
-                  const active = option.value === activeAssistantMode;
-                  return (
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {starterPrompts.map((item) => (
                     <button
-                      key={option.value}
+                      key={item.label}
                       type="button"
-                      disabled={!selectedConversationId || assistantModeSaving || streaming}
-                      onClick={() => void updateConversationMode(option.value)}
-                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                        active
-                          ? "border-sky-400 bg-sky-50 text-sky-700"
-                          : "border-slate-300 bg-white text-slate-600 hover:border-sky-400 hover:text-sky-600"
-                      } disabled:cursor-not-allowed disabled:opacity-60`}
-                      title={option.hint}
+                      onClick={() => applyStarterPrompt(item.prompt)}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
                     >
-                      {option.label}
+                      {item.label}
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={messagesViewportRef}
-            className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y rounded-[26px] border border-slate-200 bg-slate-50/60 px-4 py-4 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
-          >
-            {messagesLoading ? (
-              <div className="grid gap-3">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-[22px] bg-white/8" />
-                ))}
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex h-full min-h-[220px] items-center justify-center">
-                <div className="w-full max-w-xl rounded-[26px] border border-dashed border-slate-300 bg-white px-6 py-8 text-center shadow-sm">
-                  <p className="text-xl font-semibold text-slate-950">Partez d’une question simple.</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    ChatLAYA vous aide à clarifier, cadrer et décider avant d’ouvrir la bonne suite dans KORYXA.
-                  </p>
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    {starterPrompts.map((item) => (
-                      <button
-                        key={item.label}
-                        type="button"
-                        onClick={() => applyStarterPrompt(item.prompt)}
-                        className="rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
-            ) : (
-              <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-                {messages.map((message) => {
-                  const isUser = message.role === "user";
-                  return (
-                    <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`w-full rounded-[26px] border px-5 py-4 shadow-sm ${
-                          isUser
-                            ? "max-w-2xl border-slate-200 bg-[#edf2f7]"
-                            : "max-w-3xl border-slate-200 bg-slate-50"
-                        }`}
-                      >
-                        {message.pending && !message.content ? (
-                          <span className="inline-flex items-center gap-2 text-sm text-slate-400">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                            ChatLAYA est en train de répondre...
-                          </span>
-                        ) : isUser ? (
-                          <div className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-900">{message.content}</div>
-                        ) : (
-                          <AssistantContent content={message.content} />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={onSubmit} className="mt-3 shrink-0 rounded-[20px] border border-slate-200 bg-white px-3 py-3 sm:rounded-[24px] sm:px-4">
-            <div className="flex items-end gap-3 rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-3 sm:rounded-[22px] sm:px-4">
-              <textarea
-                ref={composerRef}
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={onComposerKeyDown}
-                placeholder={streaming ? "Patientez pendant la réponse..." : "Posez votre question à ChatLAYA"}
-                rows={1}
-                aria-label="Message pour ChatLAYA"
-                className="min-h-[48px] w-full resize-none bg-transparent text-sm leading-7 text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                disabled={streaming}
-              />
-              <button
-                type="submit"
-                disabled={streaming || !input.trim()}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-              >
-                <span className="sr-only">Envoyer</span>
-                <ArrowUp className="h-4 w-4" />
-              </button>
             </div>
-            <p className="mt-2 text-left text-xs text-slate-400 sm:text-right">Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne</p>
-          </form>
-        </section>
-      </div>
+          ) : (
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+              {messages.map((message) => {
+                const isUser = message.role === "user";
+                return (
+                  <div key={message.id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
+                    {!isUser ? (
+                      <div className="mb-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-600 shadow-sm">
+                        <span className="text-[9px] font-bold leading-none text-white">L</span>
+                      </div>
+                    ) : null}
+                    <div
+                      className={`max-w-[78%] rounded-2xl px-4 py-3 ${
+                        isUser
+                          ? "rounded-br-sm border border-sky-100 bg-sky-50"
+                          : "rounded-bl-sm border border-slate-100 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.06)]"
+                      }`}
+                    >
+                      {message.pending && !message.content ? (
+                        <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+                          ChatLAYA est en train de répondre…
+                        </span>
+                      ) : isUser ? (
+                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
+                          {message.content}
+                        </div>
+                      ) : (
+                        <AssistantContent content={message.content} />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <form
+          onSubmit={onSubmit}
+          className="shrink-0 border-t border-slate-100 bg-white px-3 py-3 sm:px-4"
+        >
+          <div className="flex items-end gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 transition-colors focus-within:border-sky-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.07)]">
+            <textarea
+              ref={composerRef}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={onComposerKeyDown}
+              placeholder={streaming ? "Patientez pendant la réponse..." : "Posez votre question à ChatLAYA"}
+              rows={1}
+              aria-label="Message pour ChatLAYA"
+              className="min-h-[40px] w-full resize-none bg-transparent text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 focus:outline-none"
+              disabled={streaming}
+            />
+            <button
+              type="submit"
+              disabled={streaming || !input.trim()}
+              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+            >
+              <span className="sr-only">Envoyer</span>
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="mt-1.5 text-right text-[10px] text-slate-400">
+            Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne
+          </p>
+        </form>
+      </section>
     </main>
   );
 }

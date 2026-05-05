@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, Check, Copy, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
 type AssistantMode = "general" | "launch_structure_sell";
@@ -289,6 +289,7 @@ function ChatlayaContent() {
   const [error, setError] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -668,6 +669,21 @@ function ChatlayaContent() {
     focusComposer(true);
   }
 
+  function copyMessage(id: string, content: string) {
+    const plain = content
+      .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+      .replace(/\*([^*\n]+)\*/g, "$1")
+      .replace(/`([^`\n]+)`/g, "$1")
+      .replace(/^#{1,3}\s+/gm, "")
+      .replace(/^```[\w]*\n?/gm, "")
+      .replace(/^```$/gm, "")
+      .trim();
+    navigator.clipboard.writeText(plain).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 2000);
+    }).catch(() => {});
+  }
+
   async function streamAssistant(conversationId: string, prompt: string) {
     const controller = new AbortController();
     streamAbortRef.current = controller;
@@ -1030,32 +1046,50 @@ function ChatlayaContent() {
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
               {messages.map((message) => {
                 const isUser = message.role === "user";
+                const isCopied = copiedId === message.id;
                 return (
-                  <div key={message.id} className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
+                  <div key={message.id} className={`group flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
                     {!isUser ? (
                       <div className="mb-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-600 shadow-sm">
                         <span className="text-[9px] font-bold leading-none text-white">L</span>
                       </div>
                     ) : null}
-                    <div
-                      className={`max-w-[78%] rounded-2xl px-4 py-3 ${
-                        isUser
-                          ? "rounded-br-sm border border-sky-100 bg-sky-50"
-                          : "rounded-bl-sm border border-slate-100 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.06)]"
-                      }`}
-                    >
-                      {message.pending && !message.content ? (
-                        <span className="inline-flex items-center gap-2 text-xs text-slate-400">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
-                          ChatLAYA est en train de répondre…
-                        </span>
-                      ) : isUser ? (
-                        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
-                          {message.content}
-                        </div>
-                      ) : (
-                        <AssistantContent content={message.content} />
-                      )}
+                    <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          isUser
+                            ? "rounded-br-sm border border-sky-100 bg-sky-50"
+                            : "rounded-bl-sm border border-slate-100 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.06)]"
+                        }`}
+                      >
+                        {message.pending && !message.content ? (
+                          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+                            ChatLAYA est en train de répondre…
+                          </span>
+                        ) : isUser ? (
+                          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
+                            {message.content}
+                          </div>
+                        ) : (
+                          <AssistantContent content={message.content} />
+                        )}
+                      </div>
+                      {!isUser && !message.pending && message.content ? (
+                        <button
+                          type="button"
+                          onClick={() => copyMessage(message.id, message.content)}
+                          className="mt-1 flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[10px] text-slate-400 opacity-0 transition-all hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
+                          title="Copier la réponse"
+                        >
+                          {isCopied ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          {isCopied ? "Copié !" : "Copier"}
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 );

@@ -727,6 +727,7 @@ def _build_generation_prompt(
             "Ne dis jamais qu'aucun contexte n'est fourni lorsque des extraits sont presents.",
             "Ne demande pas de precision avant d'avoir donne une reponse utile fondee sur les extraits disponibles.",
             "Reponds en francais clair, professionnel, concret et directement applicable.",
+            "Priorite des sources : appuie-toi en priorite sur le contexte metier fourni (corpus RAG). Utilise les informations web uniquement pour completer avec des donnees factuelles recentes absentes du corpus. N'utilise tes connaissances generales que pour combler les lacunes quand ni le corpus ni le web ne repondent a la question.",
             _mode_instruction(kind, assistant_mode=assistant_mode),
         ]
     else:

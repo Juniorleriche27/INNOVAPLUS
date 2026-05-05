@@ -36,6 +36,43 @@ GREETING_PHRASES = {
     "hello",
     "hey",
 }
+COURTESY_PHRASES = {
+    "merci",
+    "merci beaucoup",
+    "merci bien",
+    "merci chatlaya",
+    "super",
+    "super merci",
+    "ok",
+    "ok merci",
+    "okay",
+    "okay merci",
+    "parfait",
+    "parfait merci",
+    "tres bien",
+    "tres bien merci",
+    "bien",
+    "bien merci",
+    "compris",
+    "compris merci",
+    "entendu",
+    "entendu merci",
+    "d accord",
+    "d accord merci",
+    "noté",
+    "note",
+    "c est bon",
+    "c est clair",
+    "c est parfait",
+    "c est super",
+    "excellent",
+    "bonne continuation",
+    "au revoir",
+    "a bientot",
+    "a plus",
+    "bonne journee",
+    "bonne soiree",
+}
 IDENTITY_PHRASES = {
     "qui es tu",
     "qui es-tu",
@@ -180,9 +217,14 @@ def _classify_message_kind(message: str) -> str:
         return "greeting"
     if stripped in IDENTITY_PHRASES:
         return "identity"
+    if stripped in COURTESY_PHRASES:
+        return "courtesy"
     for phrase in GREETING_PHRASES:
         if stripped.startswith(phrase) and len(stripped) <= len(phrase) + 12:
             return "greeting"
+    for phrase in COURTESY_PHRASES:
+        if stripped == phrase or (stripped.startswith(phrase) and len(stripped) <= len(phrase) + 8):
+            return "courtesy"
     for phrase in IDENTITY_PHRASES:
         if stripped.startswith(phrase):
             return "identity"
@@ -198,16 +240,18 @@ def _classify_message_kind(message: str) -> str:
 
 
 def _build_direct_reply(kind: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) -> str:
+    if kind == "courtesy":
+        return "De rien ! N'hésitez pas si vous avez d'autres questions."
     if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
         if kind == "greeting":
             return (
-                "Mode Lancer, Structurer, Vendre actif. Posez une question sur le lancement, "
+                "Mode Fondateur actif. Posez une question sur le lancement, "
                 "la structuration d'offre, le business plan ou la vente, et je vous repondrai "
                 "de facon directe et exploitable."
             )
         if kind == "identity":
             return (
-                "Je suis ChatLAYA en mode Lancer, Structurer, Vendre. Je vous aide a transformer "
+                "Je suis ChatLAYA en Mode Fondateur. Je vous aide a transformer "
                 "une question business en reponse claire, utile et orientee action."
             )
         return ""

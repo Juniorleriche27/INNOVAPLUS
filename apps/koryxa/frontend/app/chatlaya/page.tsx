@@ -428,19 +428,8 @@ function ChatlayaContent() {
   async function createConversation() {
     if (activeAssistantMode === "launch_structure_sell") {
       await switchToFounderMode();
-      return;
-    }
-    setError(null);
-    try {
-      streamAbortRef.current?.abort();
-      resetTypewriterQueue();
-      setStreaming(false);
-      const created = await createConversationRequest();
-      setConversations((current) => [created, ...current.filter((item) => item.conversation_id !== created.conversation_id)]);
-      setSelectedConversationId(created.conversation_id);
-      setMessages([]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    } else {
+      await switchToGeneralMode();
     }
   }
 
@@ -629,6 +618,25 @@ function ChatlayaContent() {
             : item,
         ),
       );
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+    } finally {
+      setAssistantModeSaving(false);
+    }
+  }
+
+  async function switchToGeneralMode() {
+    if (assistantModeSaving || streaming) return;
+    setError(null);
+    setAssistantModeSaving(true);
+    try {
+      streamAbortRef.current?.abort();
+      resetTypewriterQueue();
+      setStreaming(false);
+      const created = await createConversationRequest();
+      setConversations((current) => [created, ...current.filter((c) => c.conversation_id !== created.conversation_id)]);
+      setSelectedConversationId(created.conversation_id);
+      setMessages([]);
+    } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
       setAssistantModeSaving(false);
@@ -974,7 +982,7 @@ function ChatlayaContent() {
                     key={option.value}
                     type="button"
                     disabled={assistantModeSaving || streaming || (option.value === "general" && !selectedConversationId)}
-                    onClick={() => void (option.value === "launch_structure_sell" ? switchToFounderMode() : updateConversationMode(option.value))}
+                    onClick={() => void (option.value === "launch_structure_sell" ? switchToFounderMode() : switchToGeneralMode())}
                     title={option.hint}
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                       active

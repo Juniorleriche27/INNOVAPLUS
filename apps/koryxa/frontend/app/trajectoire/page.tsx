@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from "next";
+import Link from "next/link";
 import { BarChart3, BrainCircuit, Database } from "lucide-react";
 import { PublishedGradientBand, PublishedHero, PublishedSectionHeading } from "@/components/marketing/PublishedSiteSections";
 
@@ -14,6 +15,7 @@ const TRACKS = [
     description: "Analyse, visualisation, insights et recommandations métier.",
     skills: ["Python", "SQL", "Power BI", "Excel avancé", "Statistiques"],
     gradient: "from-sky-500 to-sky-700",
+    href: "/trajectoire/data-analyst",
   },
   {
     icon: <Database className="h-7 w-7 text-white" />,
@@ -58,25 +60,42 @@ export default function TrajectoirePage() {
             description="Choisissez votre voie après un diagnostic personnalisé."
           />
           <div className="grid gap-8 md:grid-cols-3">
-            {TRACKS.map((track) => (
-              <article key={track.title} className="overflow-hidden rounded-[30px] kx-glow-card">
-                <div className={`h-32 bg-gradient-to-br ${track.gradient}`} />
-                <div className="p-6">
-                  <div className="-mt-14 mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-lg">
-                    {track.icon}
+            {TRACKS.map((track) => {
+              const card = (
+                <>
+                  <div className={`h-32 bg-gradient-to-br ${track.gradient}`} />
+                  <div className="p-6">
+                    <div className="-mt-14 mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-lg">
+                      {track.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{track.title}</h3>
+                    <p className="mt-3 text-sm text-slate-400">{track.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {track.skills.map((skill) => (
+                        <span key={skill} className="rounded-full bg-white/8 px-2.5 py-1 text-xs font-medium text-slate-300">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    {track.href ? (
+                      <p className="mt-5 text-sm font-semibold text-sky-300">Voir le parcours →</p>
+                    ) : (
+                      <p className="mt-5 text-sm font-semibold text-slate-500">Bientôt disponible</p>
+                    )}
                   </div>
-                  <h3 className="text-2xl font-bold text-white">{track.title}</h3>
-                  <p className="mt-3 text-sm text-slate-400">{track.description}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {track.skills.map((skill) => (
-                      <span key={skill} className="rounded-full bg-white/8 px-2.5 py-1 text-xs font-medium text-slate-300">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </article>
-            ))}
+                </>
+              );
+
+              return track.href ? (
+                <Link key={track.title} href={track.href} className="group block overflow-hidden rounded-[30px] kx-glow-card transition hover:-translate-y-1">
+                  {card}
+                </Link>
+              ) : (
+                <article key={track.title} className="overflow-hidden rounded-[30px] kx-glow-card opacity-80">
+                  {card}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>

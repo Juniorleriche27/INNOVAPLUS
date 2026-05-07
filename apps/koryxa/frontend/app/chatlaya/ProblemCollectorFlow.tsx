@@ -48,7 +48,30 @@ type StepDef = {
   placeholder?: string;
 };
 
-// ─── Fallback categories (mirror backend constants) ───────────────────────────
+// ─── Validation rules ─────────────────────────────────────────────────────────
+
+const FIELD_MIN_LENGTHS: Partial<Record<keyof Answers, number>> = {
+  country: 2,
+  city: 2,
+  problem_description: 120,
+  affected_population: 10,
+  perceived_cause: 50,
+  proposed_solution: 80,
+};
+
+const FIELD_HELP: Partial<Record<keyof Answers, string>> = {
+  problem_description:
+    "Décrivez le problème avec plus de détails : qui est concerné, ce qui se passe, où cela se passe, et pourquoi c'est important. Minimum 120 caractères.",
+  perceived_cause:
+    "Expliquez la cause selon vous en quelques phrases. Minimum 50 caractères.",
+  proposed_solution:
+    "Proposez une piste de solution concrète, même simple. Minimum 80 caractères.",
+};
+
+// V1 : photo/document exclus (pas d'upload disponible)
+const EVIDENCE_TYPES_V1 = ["observation", "community_testimony", "estimate", "none"];
+
+// ─── Fallback categories ──────────────────────────────────────────────────────
 
 const FALLBACK_CATEGORIES: Categories = {
   domains: [
@@ -94,8 +117,6 @@ const FALLBACK_CATEGORIES: Categories = {
   evidence_types: [
     { id: "observation", label: "Observation personnelle" },
     { id: "community_testimony", label: "Témoignage communautaire" },
-    { id: "photo", label: "Photo" },
-    { id: "document", label: "Document" },
     { id: "estimate", label: "Estimation personnelle" },
     { id: "none", label: "Aucune preuve pour le moment" },
   ],
@@ -133,13 +154,13 @@ const STEPS: StepDef[] = [
     field: "problem_description",
     question: "Expliquez ce problème avec vos propres mots. Qu'est-ce qui se passe exactement ?",
     type: "textarea",
-    placeholder: "Décrivez la situation en quelques phrases (20 caractères minimum)…",
+    placeholder: "Décrivez la situation : qui est concerné, ce qui se passe, où cela se passe…",
   },
   {
     field: "affected_population",
     question: "Qui est le plus touché par ce problème ?",
     type: "text",
-    placeholder: "Ex : Les jeunes, les femmes, les agriculteurs…",
+    placeholder: "Ex : Les jeunes sans emploi, les femmes du quartier, les agriculteurs…",
   },
   {
     field: "severity",
@@ -164,12 +185,12 @@ const STEPS: StepDef[] = [
     field: "proposed_solution",
     question: "Selon vous, comment peut-on commencer à résoudre ce problème, même avec peu de moyens ?",
     type: "textarea",
-    placeholder: "Votre idée ou suggestion…",
+    placeholder: "Votre idée ou suggestion concrète…",
   },
   {
     field: "evidence_type",
     question:
-      "Avez-vous une preuve ou un exemple concret ? Observation personnelle, témoignage communautaire, photo, document, estimation personnelle, ou aucune preuve pour le moment ?",
+      "Avez-vous une preuve ou un exemple concret ? Observation personnelle, témoignage communautaire, estimation personnelle, ou aucune preuve pour le moment ?",
     type: "chips",
     chipsKey: "evidence_types",
   },
@@ -183,7 +204,7 @@ const STEPS: StepDef[] = [
 
 const TOTAL_STEPS = STEPS.length;
 
-// ─── Initial state ─────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const INITIAL_ANSWERS: Answers = {
   country: "",
@@ -199,6 +220,26 @@ const INITIAL_ANSWERS: Answers = {
   evidence_type: "",
   consent_anonymized: null,
 };
+
+function minForField(field: keyof Answers): number {
+  return FIELD_MIN_LENGTHS[field] ?? 1;
+}
+
+function validateTextField(field: keyof Answers, value: string): boolean {
+  return value.trim().length >= minForField(field);
+}
+
+function findFirstInvalidStep(finalAnswers: Answers): number | null {
+  for (let i = 0; i < STEPS.length; i++) {
+    const s = STEPS[i];
+    if (s.type === "text" || s.type === "textarea") {
+      if (!validateTextField(s.field, (finalAnswers[s.field] as string) || "")) return i;
+    } else if (s.type === "chips") {
+      if (!finalAnswers[s.field]) return i;
+    }
+  }
+  return null;
+}
 
 function buildInitialConvo(): ConvoMessage[] {
   return [
@@ -228,7 +269,6 @@ export default function ProblemCollectorFlow() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const finalAnswersRef = useRef<Answers | null>(null);
 
@@ -342,13 +382,19 @@ export default function ProblemCollectorFlow() {
       });
 
       if (!response.ok) {
+        if (process.env.NODE_ENV === "development") {
+          const body = await response.clone().text().catch(() => "");
+          console.error(
+            `[ProblemCollectorFlow] POST /problem-reports failed: status=${response.status}, body=${body}`,
+          );
+        }
         throw new Error();
       }
 
       setSubmitted(true);
     } catch {
       setSubmitError(
-        "Nous n'avons pas pu enregistrer votre contribution pour le moment. Veuillez réessayer dans quelques instants.",
+        "Nous n'avons pas pu enregistrer votre contribution pour le moment. Vérifiez vos réponses ou réessayez dans quelques instants.",
       );
     } finally {
       setSubmitting(false);
@@ -357,8 +403,8 @@ export default function ProblemCollectorFlow() {
 
   function handleTextSubmit() {
     const value = input.trim();
-    if (!value) return;
     const field = STEPS[step].field;
+    if (!validateTextField(field, value)) return;
     const updatedAnswers = { ...answers, [field]: value };
     setAnswers(updatedAnswers);
     advanceToNextStep(step, value, updatedAnswers);
@@ -373,6 +419,26 @@ export default function ProblemCollectorFlow() {
 
   function handleConsentSelect(value: boolean) {
     const updatedAnswers = { ...answers, consent_anonymized: value };
+
+    // Garde-fou pré-soumission : revérifier tous les champs texte/textarea
+    const invalidIdx = findFirstInvalidStep(updatedAnswers);
+    if (invalidIdx !== null) {
+      const invalidField = STEPS[invalidIdx].field;
+      const min = minForField(invalidField);
+      const currentVal = (updatedAnswers[invalidField] as string) || "";
+      setConvo((prev) => [
+        ...prev,
+        {
+          id: `prevalidation-${Date.now()}`,
+          role: "bot",
+          text: `Oups ! Une réponse précédente est trop courte (${currentVal.trim().length}/${min} caractères minimum). Pouvez-vous la compléter ?`,
+        },
+      ]);
+      setStep(invalidIdx);
+      setInput(currentVal);
+      return;
+    }
+
     setAnswers(updatedAnswers);
     advanceToNextStep(step, value, updatedAnswers);
   }
@@ -388,23 +454,38 @@ export default function ProblemCollectorFlow() {
   }
 
   const currentStepDef = step < TOTAL_STEPS ? STEPS[step] : null;
-  const chips: CategoryItem[] =
-    currentStepDef?.chipsKey ? (categories[currentStepDef.chipsKey] as CategoryItem[]) : [];
+  const currentField = currentStepDef?.field ?? null;
 
-  const isDescriptionStep = currentStepDef?.field === "problem_description";
-  const descTooShort = isDescriptionStep && input.trim().length > 0 && input.trim().length < 20;
-  const canSubmitText = input.trim().length > 0 && !descTooShort;
+  // Filtre evidence_types V1 (pas d'upload)
+  const chips: CategoryItem[] =
+    currentStepDef?.chipsKey
+      ? (categories[currentStepDef.chipsKey] as CategoryItem[]).filter(
+          (item) =>
+            currentStepDef.chipsKey !== "evidence_types" || EVIDENCE_TYPES_V1.includes(item.id),
+        )
+      : [];
+
+  // Calcul validation pour text / textarea
+  const minLength = currentField ? minForField(currentField) : 1;
+  const inputLen = input.trim().length;
+  const tooShort = inputLen > 0 && inputLen < minLength;
+  const canSubmitText = inputLen >= minLength;
+  const helpText = currentField ? (FIELD_HELP[currentField] ?? null) : null;
+  const showCounter =
+    currentStepDef?.type === "textarea" &&
+    currentField !== null &&
+    FIELD_MIN_LENGTHS[currentField] !== undefined;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Progress indicator */}
+      {/* Barre de progression */}
       {step < TOTAL_STEPS && (
         <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-4 py-2">
           <div className="flex items-center gap-3">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full bg-sky-500 transition-all duration-500"
-                style={{ width: `${Math.round(((step) / TOTAL_STEPS) * 100)}%` }}
+                style={{ width: `${Math.round((step / TOTAL_STEPS) * 100)}%` }}
               />
             </div>
             <span className="shrink-0 text-[10px] font-medium text-slate-400">
@@ -414,7 +495,7 @@ export default function ProblemCollectorFlow() {
         </div>
       )}
 
-      {/* Messages area */}
+      {/* Zone de messages */}
       <div className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-5 [-webkit-overflow-scrolling:touch] sm:px-6">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
           {convo.map((msg) => {
@@ -447,7 +528,7 @@ export default function ProblemCollectorFlow() {
           })}
 
           {submitting && (
-            <div className="flex items-end gap-2 justify-start">
+            <div className="flex items-end justify-start gap-2">
               <div className="mb-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-600 shadow-sm">
                 <span className="text-[9px] font-bold leading-none text-white">L</span>
               </div>
@@ -461,15 +542,16 @@ export default function ProblemCollectorFlow() {
           )}
 
           {submitted && (
-            <div className="flex items-end gap-2 justify-start">
+            <div className="flex items-end justify-start gap-2">
               <div className="mb-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 shadow-sm">
                 <span className="text-[9px] font-bold leading-none text-white">L</span>
               </div>
               <div className="max-w-[82%] rounded-2xl rounded-bl-sm border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-7 text-emerald-800">
                 <p className="font-semibold">Merci pour votre contribution.</p>
                 <p className="mt-1">
-                  Votre retour aide KORYXA à mieux comprendre les réalités du terrain africain. Il sera utilisé de
-                  manière responsable et anonymisée pour améliorer nos futures solutions.
+                  Votre retour aide KORYXA à mieux comprendre les réalités du terrain africain. Il
+                  sera utilisé de manière responsable et anonymisée pour améliorer nos futures
+                  solutions.
                 </p>
               </div>
             </div>
@@ -485,7 +567,7 @@ export default function ProblemCollectorFlow() {
         </div>
       </div>
 
-      {/* Input zone */}
+      {/* Zone de saisie */}
       {!submitted && !submitting && currentStepDef && (
         <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-3 sm:px-4">
           {currentStepDef.type === "chips" && chips.length > 0 ? (
@@ -544,21 +626,33 @@ export default function ProblemCollectorFlow() {
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
               </div>
-              {descTooShort ? (
-                <p className="mt-1 text-[10px] text-rose-500">
-                  Veuillez décrire le problème en quelques phrases (20 caractères minimum).
+              <div className="mt-1 flex items-start justify-between gap-3">
+                <p
+                  className={`text-[10px] leading-4 ${
+                    tooShort ? "text-rose-500" : "text-slate-400"
+                  }`}
+                >
+                  {helpText ?? ""}
                 </p>
-              ) : (
-                <p className="mt-1.5 text-right text-[10px] text-slate-400">
-                  Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne
-                </p>
-              )}
+                {showCounter && (
+                  <p
+                    className={`shrink-0 tabular-nums text-[10px] ${
+                      canSubmitText
+                        ? "text-emerald-500"
+                        : tooShort
+                          ? "text-rose-400"
+                          : "text-slate-400"
+                    }`}
+                  >
+                    {inputLen} / {minLength} caractères
+                  </p>
+                )}
+              </div>
             </>
           ) : currentStepDef.type === "text" ? (
             <>
               <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 transition-colors focus-within:border-sky-300 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(14,165,233,0.07)]">
                 <input
-                  ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -580,13 +674,19 @@ export default function ProblemCollectorFlow() {
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <p className="mt-1.5 text-right text-[10px] text-slate-400">Entrée pour envoyer</p>
+              {tooShort ? (
+                <p className="mt-1 text-[10px] text-rose-500">
+                  Minimum {minLength} caractères requis ({inputLen}/{minLength}).
+                </p>
+              ) : (
+                <p className="mt-1.5 text-right text-[10px] text-slate-400">Entrée pour envoyer</p>
+              )}
             </>
           ) : null}
         </div>
       )}
 
-      {/* Post-submission actions */}
+      {/* Actions post-soumission */}
       {(submitted || submitError) && !submitting && (
         <div className="shrink-0 border-t border-slate-100 bg-white px-3 py-3 sm:px-4">
           <div className="flex flex-col gap-2 sm:flex-row">

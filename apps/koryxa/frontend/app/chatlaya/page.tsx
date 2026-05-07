@@ -70,8 +70,8 @@ const SPECIALIST_STARTER_PROMPTS = [
 const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint: string }> = [
   {
     value: "general",
-    label: "Mode general",
-    hint: "ChatLAYA repond avec son contexte produit habituel.",
+    label: "Mode général",
+    hint: "ChatLAYA répond avec son contexte produit habituel.",
   },
   {
     value: "launch_structure_sell",

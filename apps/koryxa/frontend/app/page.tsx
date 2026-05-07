@@ -23,9 +23,9 @@ import AnimatedTicker from "@/components/ui/AnimatedTicker";
 import JsonLd from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "KORYXA | Plateforme IA Orchestration Afrique — Formation IA, Entreprise, ChatLAYA",
+  title: "KORYXA | Plateforme d'orchestration IA en Afrique — Formation IA, Entreprise, ChatLAYA",
   description:
-    "KORYXA est la premiere plateforme d'orchestration IA en Afrique. Cadrez vos besoins, executez vos projets data et IA, activez vos talents avec Formation IA, Entreprise, Service IA et ChatLAYA.",
+    "KORYXA est la première plateforme d'orchestration IA en Afrique. Cadrez vos besoins, exécutez vos projets data et IA, activez vos talents avec Formation IA, Entreprise, Service IA et ChatLAYA.",
   keywords: [
     "plateforme IA Afrique",
     "orchestration IA",
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     "data scientist Afrique",
   ],
   openGraph: {
-    title: "KORYXA | L'IA qui transforme vos besoins en execution",
+    title: "KORYXA | L'IA qui transforme vos besoins en exécution",
     description:
-      "La premiere plateforme d'orchestration IA orientee execution en Afrique: cadrage, build et delivery pour entreprises et talents.",
+      "La première plateforme d'orchestration IA orientée exécution en Afrique : cadrage, conception et livraison pour les entreprises et les talents.",
     url: "/",
     type: "website",
   },
@@ -59,16 +59,16 @@ const TICKER_ITEMS = [
 
 const KPI_ITEMS = [
   { icon: Cpu, label: "Briques connectees", value: 5, suffix: " modules", detail: "Formation IA, Entreprise, Service IA, ChatLAYA" },
-  { icon: BriefcaseBusiness, label: "Execution Service IA", value: 10, suffix: " offres", detail: "Data, IA, automations, apps et systemes metier" },
+  { icon: BriefcaseBusiness, label: "Exécution Service IA", value: 10, suffix: " offres", detail: "Data, IA, automatisations, applications et systèmes métier" },
   { icon: Target, label: "Qualification rapide", value: 72, suffix: "h", detail: "Premiere qualification et cadrage du besoin" },
-  { icon: FolderKanban, label: "Mode delivery", value: 100, suffix: "%", detail: "De la demande au livrable exploitable" },
+  { icon: FolderKanban, label: "Mode livraison", value: 100, suffix: "%", detail: "De la demande au livrable exploitable" },
 ] as const;
 
 const MODULE_ITEMS = [
   { icon: Compass, title: "Formation IA", description: "Profilage talent, trajectoire claire, plan d'action concret.", href: "/trajectoire", cta: "Démarrer Formation IA" },
-  { icon: BriefcaseBusiness, title: "Entreprise", description: "Cadrage intelligent des besoins avant toute execution.", href: "/entreprise", cta: "Cadrer un besoin" },
-  { icon: Bot, title: "Service IA", description: "Execution professionnelle: agents IA, modeles, apps, plateformes.", href: "/services-ia", cta: "Demander un service" },
-  { icon: ChartNoAxesCombined, title: "Opportunites", description: "Pipeline de missions et activation commerciale sur les besoins qualifies.", href: "/opportunites", cta: "Voir les opportunites" },
+  { icon: BriefcaseBusiness, title: "Entreprise", description: "Cadrage intelligent des besoins avant toute exécution.", href: "/entreprise", cta: "Cadrer un besoin" },
+  { icon: Bot, title: "Service IA", description: "Exécution professionnelle : agents IA, modèles, applications et plateformes.", href: "/services-ia", cta: "Demander un service" },
+  { icon: ChartNoAxesCombined, title: "Opportunités", description: "Pipeline de missions et activation commerciale sur les besoins qualifiés.", href: "/opportunites", cta: "Voir les opportunités" },
   { icon: Sparkles, title: "ChatLAYA", description: "Assistant de travail pour lancer, structurer et vendre un projet.", href: "/chatlaya", cta: "Ouvrir ChatLAYA" },
 ] as const;
 
@@ -120,17 +120,17 @@ export default function HomePage() {
             <div className="mx-auto w-full max-w-5xl text-center">
               <div className="kx-hero-badge-pulse kx-reveal-up inline-flex items-center gap-2 rounded-full border border-sky-300/25 bg-sky-500/8 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
                 <Sparkles className="h-4 w-4 text-sky-300" />
-                IA Orchestration Platform — Afrique
+                Plateforme d'orchestration IA en Afrique
               </div>
 
               <h1 className="mt-8 text-[2.5rem] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-[4.2rem] lg:text-[5.3rem]">
                 <span className="kx-title-gradient-loop kx-display block">KORYXA</span>
-                <span className="mt-2 block text-white/90">la premiere plateforme d'orchestration IA en Afrique.</span>
+                <span className="mt-2 block text-white/90">la première plateforme d'orchestration IA en Afrique.</span>
               </h1>
 
               <p className="mx-auto mt-6 max-w-4xl text-base leading-8 text-slate-300 sm:text-[1.15rem] sm:leading-9">
-                De l'idee au delivery reel: Formation IA profile les talents, Entreprise cadre les besoins,
-                Service IA execute, et ChatLAYA aide a lancer, structurer et vendre.
+                De l'idée à la livraison concrète : Formation IA révèle les talents, Entreprise cadre les besoins,
+                Service IA exécute, et ChatLAYA aide à lancer, structurer et vendre.
               </p>
 
               <div className="mt-6 text-sm font-semibold text-sky-200 sm:text-base">
@@ -197,9 +197,9 @@ export default function HomePage() {
           <div className="mx-auto max-w-[var(--marketing-max-w)]">
             <ScrollReveal>
               <div className="mb-8 max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Execution Metrics</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Indicateurs d'exécution</p>
                 <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.06em] text-white sm:text-[2.8rem]">
-                  Un systeme pense pour livrer, pas pour afficher.
+                  Un système pensé pour livrer, pas pour impressionner.
                 </h2>
               </div>
             </ScrollReveal>
@@ -233,9 +233,9 @@ export default function HomePage() {
           <div className="mx-auto max-w-[var(--marketing-max-w)]">
             <ScrollReveal>
               <div className="mb-8 max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Product Stack</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Écosystème produit</p>
                 <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.06em] text-white sm:text-[2.8rem]">
-                  Chaque module a un role clair dans la chaine de valeur.
+                  Chaque module a un rôle clair dans la chaîne de valeur.
                 </h2>
               </div>
             </ScrollReveal>
@@ -268,12 +268,12 @@ export default function HomePage() {
           <div className="mx-auto grid max-w-[var(--marketing-max-w)] gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <ScrollReveal direction="left">
               <GlowCard as="article" className="rounded-[30px]">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Live Pulse</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Activité en direct</p>
                 <h2 className="kx-display mt-3 text-[1.9rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.5rem]">
-                  Pipeline operationnel en mouvement.
+                  Un pipeline opérationnel en mouvement.
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-400">
-                  Le rythme de production suit un cycle clair: cadrage, audit, build, tests, delivery.
+                  Le rythme de production suit un cycle clair : cadrage, audit, conception, tests et livraison.
                 </p>
                 <div className="mt-6">
                   <LiveSignalBars />
@@ -283,15 +283,15 @@ export default function HomePage() {
 
             <ScrollReveal direction="right">
               <GlowCard as="article" className="rounded-[30px]">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Methode</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Méthode</p>
                 <h2 className="kx-display mt-3 text-[1.9rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.5rem]">
                   Ce que KORYXA apporte en pratique.
                 </h2>
                 <div className="mt-6 space-y-3">
                   {[
-                    "Une entree claire selon votre besoin reel",
-                    "Un cadrage metier avant le choix technique",
-                    "Une execution pilotee avec livrables concrets",
+                    "Une entrée claire selon votre besoin réel",
+                    "Un cadrage métier avant le choix technique",
+                    "Une exécution pilotée avec des livrables concrets",
                     "Un interlocuteur unique jusqu'a la mise en production",
                   ].map((item, i) => (
                     <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/6 bg-white/3 px-4 py-3">
@@ -313,11 +313,11 @@ export default function HomePage() {
             <ScrollReveal>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-200">
                 <Zap className="h-4 w-4 text-sky-300" />
-                Start now
+                Commencer maintenant
               </div>
               <h2 className="kx-display mx-auto mt-6 max-w-4xl text-[2.15rem] font-semibold leading-[0.95] tracking-[-0.07em] sm:text-[3.2rem]">
                 Vous avez un besoin data ou IA ?<br />
-                On le transforme en execution.
+                Nous le transformons en exécution.
               </h2>
             </ScrollReveal>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">

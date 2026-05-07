@@ -47,15 +47,15 @@ function BookIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const DEFAULT_LINKS = [
-  { href: "/skills", label: "Competences", description: "Secteurs et cartographie", icon: GridIcon },
-  { href: "/talents", label: "Talents", description: "Profils et disponibilite", icon: UsersIcon },
-  { href: "/missions/offers", label: "Mes offres", description: "Suivi et execution", icon: BriefcaseIcon },
+  { href: "/skills", label: "Compétences", description: "Secteurs et cartographie", icon: GridIcon },
+  { href: "/talents", label: "Talents", description: "Profils et disponibilités", icon: UsersIcon },
+  { href: "/missions/offers", label: "Mes offres", description: "Suivi et exécution", icon: BriefcaseIcon },
 ] as const;
 
 const SIMPLE_LINKS = [
   { href: "/trajectoire", label: "Formation IA", description: "Diagnostic et progression", icon: BookIcon },
-  { href: "/entreprise", label: "Entreprise", description: "Besoin cadre et mission structuree", icon: BriefcaseIcon },
-  { href: "/services-ia", label: "Service IA", description: "10 offres executees de bout en bout", icon: GridIcon },
+  { href: "/entreprise", label: "Entreprise", description: "Besoin cadré et mission structurée", icon: BriefcaseIcon },
+  { href: "/services-ia", label: "Service IA", description: "10 offres exécutées de bout en bout", icon: GridIcon },
 ] as const;
 
 export default function Sidebar({ className, style }: { className?: string; style?: React.CSSProperties }) {
@@ -102,8 +102,8 @@ export default function Sidebar({ className, style }: { className?: string; styl
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-sky-700">Navigation</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-900">
                 {IS_V1_SIMPLE
-                  ? "Formation IA, Entreprise et Service IA dans un cadre simple et premium."
-                  : "Navigation unifiee pour piloter talents et execution."}
+                  ? "Formation IA, Entreprise et Service IA dans une expérience simple et premium."
+                  : "Navigation unifiée pour piloter les talents et l'exécution."}
               </p>
             </div>
           ) : null}

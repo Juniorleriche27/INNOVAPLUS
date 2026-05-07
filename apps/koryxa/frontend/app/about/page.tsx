@@ -15,9 +15,9 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import JsonLd from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "A propos | KORYXA",
+  title: "À propos | KORYXA",
   description:
-    "KORYXA est la premiere plateforme d'orchestration IA en Afrique. Un systeme complet qui relie cadrage, analyse, execution et delivery pour les entreprises et les talents.",
+    "KORYXA est la première plateforme d'orchestration IA en Afrique. Un système complet qui relie cadrage, analyse, exécution et livraison pour les entreprises et les talents.",
   keywords: [
     "plateforme IA Afrique",
     "orchestration IA",
@@ -37,19 +37,19 @@ const PLATFORM_BLOCKS = [
   {
     icon: BriefcaseBusiness,
     title: "Entreprise",
-    detail: "Cadre un besoin reel avant execution, avec un parcours structure.",
+    detail: "Cadre un besoin réel avant l'exécution, avec un parcours structuré.",
     href: "/entreprise",
   },
   {
     icon: Bot,
     title: "Service IA",
-    detail: "Prend en charge l'execution: data, IA, automatisation, applications.",
+    detail: "Prend en charge l'exécution : data, IA, automatisation et applications.",
     href: "/services-ia",
   },
   {
     icon: Sparkles,
     title: "ChatLAYA",
-    detail: "Assistant pour lancer, structurer et vendre un projet de maniere claire.",
+    detail: "Assistant pour lancer, structurer et vendre un projet de manière claire.",
     href: "/chatlaya",
   },
 ] as const;
@@ -57,8 +57,8 @@ const PLATFORM_BLOCKS = [
 const aboutJsonLd = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
-  name: "A propos de KORYXA",
-  description: "KORYXA est la premiere plateforme d'orchestration IA en Afrique.",
+  name: "À propos de KORYXA",
+  description: "KORYXA est la première plateforme d'orchestration IA en Afrique.",
   url: "https://koryxa.com/about",
 };
 
@@ -77,15 +77,15 @@ export default function AboutPage() {
           <div className="mx-auto max-w-4xl text-center">
             <div className="kx-hero-badge-pulse inline-flex items-center gap-2 rounded-full border border-sky-300/30 bg-sky-500/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-100">
               <Cpu className="h-4 w-4 text-sky-300" />
-              A propos de KORYXA
+              À propos de KORYXA
             </div>
             <h1 className="kx-display mt-7 text-[2.4rem] font-semibold leading-[0.95] tracking-[-0.07em] sm:text-[4rem] lg:text-[4.8rem]">
               Nous transformons des besoins flous
-              <span className="kx-title-gradient-loop mt-2 block">en execution metier claire.</span>
+              <span className="kx-title-gradient-loop mt-2 block">en exécution métier claire.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-200 sm:text-[1.12rem] sm:leading-9">
-              KORYXA n'est pas un outil isole. C'est un systeme complet qui relie cadrage, analyse,
-              execution et delivery pour les entreprises et les talents.
+              KORYXA n'est pas un outil isolé. C'est un système complet qui relie cadrage, analyse,
+              exécution et livraison pour les entreprises et les talents.
             </p>
           </div>
         </div>
@@ -98,18 +98,18 @@ export default function AboutPage() {
               {[
                 {
                   icon: Target,
-                  title: "Notre probleme cible",
-                  text: "Les projets echouent souvent avant le build: besoin mal cadre, priorites floues, execution non pilotee.",
+                  title: "Notre problème cible",
+                  text: "Les projets échouent souvent avant même la réalisation : besoin mal cadré, priorités floues, exécution non pilotée.",
                 },
                 {
                   icon: Sparkles,
-                  title: "Notre reponse",
-                  text: "Un parcours guide qui capte le contexte reel, structure les decisions et active le bon module KORYXA.",
+                  title: "Notre réponse",
+                  text: "Un parcours guidé qui capte le contexte réel, structure les décisions et active le bon module KORYXA.",
                 },
                 {
                   icon: Zap,
                   title: "Notre promesse",
-                  text: "Passer d'une intention a un livrable utile, mesurable et exploitable par le business.",
+                  text: "Passer d'une intention à un livrable utile, mesurable et exploitable pour l'activité.",
                 },
               ].map((item, index) => {
                 const Icon = item.icon;
@@ -167,16 +167,16 @@ export default function AboutPage() {
         <div aria-hidden className="kx-animated-grid absolute inset-0 opacity-15" />
         <div className="mx-auto grid max-w-[var(--marketing-max-w)] gap-6 lg:grid-cols-[1.02fr_0.98fr]">
           <article className="kx-soft-float rounded-[30px] border border-slate-700 bg-slate-900/80 p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Notre methode</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Notre méthode</p>
             <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.6rem]">
-              4 etapes pour livrer proprement.
+              4 étapes pour livrer proprement.
             </h2>
             <div className="mt-6 space-y-3">
               {[
-                "1. Cadrer le besoin et les objectifs de decision",
-                "2. Structurer les donnees, le scope et le plan d'execution",
-                "3. Produire le livrable (analyse, systeme, application, agent)",
-                "4. Accompagner l'adoption et les iterations",
+                "1. Cadrer le besoin et les objectifs de décision",
+                "2. Structurer les données, le périmètre et le plan d'exécution",
+                "3. Produire le livrable (analyse, système, application, agent)",
+                "4. Accompagner l'adoption et les itérations",
               ].map((item, index) => (
                 <div key={item} className="flex items-start gap-3 rounded-2xl border border-slate-700 bg-slate-800/70 px-4 py-3">
                   <CheckCircle2 className="kx-check-loop mt-0.5 h-5 w-5 shrink-0 text-emerald-400" style={{ animationDelay: `${index * 0.2}s` }} />
@@ -189,19 +189,19 @@ export default function AboutPage() {
           <article className="kx-soft-float rounded-[30px] border border-slate-700 bg-slate-900/80 p-6 sm:p-8" style={{ animationDelay: "0.4s" }}>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Positionnement</p>
             <h2 className="kx-display mt-3 text-[2rem] font-semibold tracking-[-0.05em] text-white sm:text-[2.6rem]">
-              Startup IA orientee impact business.
+              Une startup IA orientée impact métier.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Nous ne vendons pas "de la techno". Nous vendons une execution qui aide une entreprise
-              a mieux decider, mieux operer et mieux grandir.
+              Nous ne vendons pas "de la techno". Nous proposons une exécution qui aide une entreprise
+              à mieux décider, mieux opérer et mieux grandir.
             </p>
             <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-800/70 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ce que vous obtenez</p>
               <ul className="mt-3 space-y-2">
                 {[
-                  "Un interlocuteur clair de la demande a la livraison",
+                  "Un interlocuteur clair, de la demande à la livraison",
                   "Un plan de travail transparent",
-                  "Des livrables operationnels et pas cosmetiques",
+                  "Des livrables opérationnels, pas cosmétiques",
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2 text-sm leading-7 text-slate-200">
                     <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-sky-300" />
@@ -242,4 +242,3 @@ export default function AboutPage() {
     </>
   );
 }
-

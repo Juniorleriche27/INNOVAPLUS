@@ -34,6 +34,44 @@ GREETING_PHRASES = {
     "bonsoir",
     "hello",
     "hey",
+    "coucou",
+    "bjr",
+    "slt",
+}
+THANKS_PHRASES = {
+    "merci",
+    "merci beaucoup",
+    "ok merci",
+    "okay merci",
+    "d accord merci",
+    "daccord merci",
+    "merci chatlaya",
+    "merci bien",
+}
+FAREWELL_PHRASES = {
+    "a bientot",
+    "a plus",
+    "au revoir",
+    "bonne nuit",
+    "a la prochaine",
+    "a tres bientot",
+    "bonne journee",
+    "bonne soiree",
+}
+HOW_ARE_YOU_PHRASES = {
+    "ca va",
+    "comment tu vas",
+    "comment vas tu",
+    "tu vas bien",
+    "vous allez bien",
+}
+POLITENESS_CORRECTION_PHRASES = {
+    "mais je te dis bonjour",
+    "je t ai dit bonjour",
+    "je t ai dis bonjour",
+    "reponds juste a mon bonjour",
+    "repond juste a mon bonjour",
+    "mais je dis bonjour",
 }
 IDENTITY_PHRASES = {
     "qui es tu",
@@ -196,26 +234,70 @@ def _classify_message_kind(message: str) -> str:
     return "default"
 
 
+def detect_politeness_intent(message: str) -> str | None:
+    normalized = _normalize_text(message)
+    stripped = normalized.rstrip("!?.,;: ")
+    if not stripped:
+        return "empty_or_too_short"
+
+    token_count = len(stripped.split())
+    if stripped in POLITENESS_CORRECTION_PHRASES:
+        return "politeness_correction"
+    if stripped in HOW_ARE_YOU_PHRASES:
+        return "how_are_you"
+    if stripped in THANKS_PHRASES:
+        return "thanks"
+    if stripped in FAREWELL_PHRASES:
+        return "farewell"
+    if stripped in GREETING_PHRASES:
+        return "greeting"
+
+    if any(stripped.startswith(phrase) for phrase in POLITENESS_CORRECTION_PHRASES):
+        return "politeness_correction"
+    if any(stripped.startswith(phrase) for phrase in HOW_ARE_YOU_PHRASES) and token_count <= 5:
+        return "how_are_you"
+    if any(stripped.startswith(phrase) for phrase in THANKS_PHRASES) and token_count <= 5:
+        return "thanks"
+    if any(stripped.startswith(phrase) for phrase in FAREWELL_PHRASES) and token_count <= 5:
+        return "farewell"
+    if any(stripped.startswith(phrase) for phrase in GREETING_PHRASES) and token_count <= 4:
+        return "greeting"
+
+    if token_count <= 1 and stripped in {"ok", "okay", "hmm", "hein"}:
+        return "empty_or_too_short"
+    if len(stripped) <= 2:
+        return "empty_or_too_short"
+    return None
+
+
+def _build_politeness_reply(intent: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) -> str:
+    if intent == "greeting":
+        if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
+            return (
+                "Bonjour 👋 Je vous écoute. Parlez-moi de votre projet, de votre offre, "
+                "de votre business plan ou de votre difficulté de vente."
+            )
+        return "Bonjour 👋 Je vous écoute. Comment puis-je vous aider aujourd’hui ?"
+    if intent == "how_are_you":
+        return "Je vais bien, merci. Et vous ? Comment puis-je vous aider aujourd’hui ?"
+    if intent == "thanks":
+        return "Avec plaisir. Je reste disponible si vous voulez continuer."
+    if intent == "farewell":
+        return "Merci pour l’échange. À bientôt."
+    if intent == "politeness_correction":
+        return "Vous avez raison. Bonjour à vous 👋 Je vous écoute."
+    if intent == "empty_or_too_short":
+        return "Je vous écoute. Pouvez-vous préciser ce que vous voulez faire ?"
+    return ""
+
+
 def _build_direct_reply(kind: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) -> str:
-    if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
-        if kind == "greeting":
-            return (
-                "Mode Lancer, Structurer, Vendre actif. Posez une question sur le lancement, "
-                "la structuration d'offre, le business plan ou la vente, et je vous repondrai "
-                "de facon directe et exploitable."
-            )
-        if kind == "identity":
-            return (
-                "Je suis ChatLAYA en mode Lancer, Structurer, Vendre. Je vous aide a transformer "
-                "une question business en reponse claire, utile et orientee action."
-            )
-        return ""
-    if kind == "greeting":
-        return (
-            "Bonjour, comment allez-vous ? Je suis ChatLAYA, le copilote conversationnel de KORYXA. "
-            "Décrivez-moi un besoin, un problème local ou une idée et je vous aiderai à le clarifier."
-        )
     if kind == "identity":
+        if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
+            return (
+                "Je suis ChatLAYA en mode Fondateur. Je vous aide à clarifier un projet, structurer une offre, "
+                "préparer un business plan ou améliorer une démarche commerciale."
+            )
         return (
             "Je suis ChatLAYA, le copilote IA de KORYXA. Je peux vous aider à clarifier un besoin, structurer un brief "
             "ou transformer une idée en prochaines actions plus lisibles dans Trajectoire, Entreprise et les produits KORYXA."
@@ -519,6 +601,16 @@ def _build_generation_prompt(
         "N'invente ni produit, ni partenaire, ni statut, ni opportunite absente du contexte fourni.",
         "Si une information manque, dis-le explicitement et pose au maximum une question de clarification.",
         "Reponds en francais clair, concis et utile. Evite les longs developpements inutiles.",
+        (
+            "RÈGLES DE POLITESSE ET DE CONVERSATION :\n"
+            "- Si l’utilisateur commence par une salutation simple, réponds d’abord à la salutation, sans donner de conseil métier.\n"
+            "- Ne transforme jamais « Bonjour », « Salut », « Bonsoir », « Merci » ou « Ça va ? » en demande de business, de vente, de projet ou de stratégie.\n"
+            "- Si le message est uniquement une formule sociale, réponds en une phrase courte et invite l’utilisateur à préciser son besoin.\n"
+            "- Si l’utilisateur te corrige sur la politesse, reconnais simplement et réponds avec respect.\n"
+            "- Ne donne pas de liste, de plan d’action ou de conseils si l’utilisateur n’a pas encore posé une vraie question.\n"
+            "- Reste naturel, direct et humain.\n"
+            "- Une réponse de politesse doit faire moins de 35 mots."
+        ),
         _mode_instruction(kind, assistant_mode=assistant_mode),
     ]
     if product_context and not is_strict_assistant_mode(assistant_mode):
@@ -559,6 +651,10 @@ async def generate_chat_reply(
     assistant_mode: str = CHATLAYA_MODE_GENERAL,
 ) -> tuple[str, list[dict[str, Any]]]:
     assistant_mode = coerce_assistant_mode(assistant_mode)
+    politeness_intent = detect_politeness_intent(message)
+    if politeness_intent:
+        return _build_politeness_reply(politeness_intent, assistant_mode=assistant_mode), []
+
     message_kind = _classify_message_kind(message)
     direct_reply = _build_direct_reply(message_kind, assistant_mode=assistant_mode)
     if direct_reply:

@@ -6,6 +6,7 @@ import Footer from "@/components/layout/footer";
 import PublicHeader from "@/components/layout/PublicHeader";
 import ConnectedHeader from "@/components/layout/ConnectedHeader";
 import FloatingNav from "@/components/layout/FloatingNav";
+import SignalementButton from "@/components/layout/SignalementButton";
 
 function PublicShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -63,6 +64,7 @@ function PublicShell({ children }: { children: ReactNode }) {
         </main>
         {isFunnelStart || isChatPage ? null : <Footer />}
       </>
+      <SignalementButton />
       <FloatingNav />
     </div>
   );

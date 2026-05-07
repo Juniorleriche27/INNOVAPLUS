@@ -14,6 +14,7 @@ import {
   Home,
   Info,
   LayoutDashboard,
+  MessageCircleWarning,
   Sparkles,
   TrendingUp,
   X,
@@ -225,6 +226,19 @@ export default function FloatingNav() {
           })}
         </nav>
       </div>
+
+      {/* Bouton collecte terrain — masqué sur /chatlaya */}
+      {!pathname.startsWith("/chatlaya") && (
+        <Link
+          href="/chatlaya?intent=problem_collector"
+          className="flex items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-[0_4px_20px_rgba(5,150,105,0.32)] transition hover:scale-105 hover:bg-emerald-700 hover:shadow-[0_6px_24px_rgba(5,150,105,0.42)]"
+          aria-label="Partager un problème autour de vous"
+        >
+          <MessageCircleWarning className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Un problème autour de vous ?</span>
+          <span className="sm:hidden">Un problème ?</span>
+        </Link>
+      )}
 
       <button
         type="button"

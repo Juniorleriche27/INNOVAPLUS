@@ -160,6 +160,34 @@ export default function HomePage() {
               <div className="mt-12">
                 <AnimatedTicker items={TICKER_ITEMS} />
               </div>
+
+              {/* ── Bloc collecte terrain ── */}
+              <div className="mt-14 border-t border-white/10 pt-10">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-400">Terrain africain</p>
+                <h2 className="mt-3 text-xl font-semibold text-white sm:text-2xl lg:text-3xl">
+                  Aidez KORYXA à comprendre les vrais problèmes du terrain africain.
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base sm:leading-8">
+                  Parlez-nous d'un problème réel observé dans votre pays, votre ville, votre quartier ou votre secteur.
+                  Chaque contribution aide KORYXA à mieux comprendre les réalités locales et à construire demain des
+                  solutions plus utiles.
+                </p>
+                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Link
+                    href="/chatlaya?intent=problem_collector"
+                    className="kx-cta-glow inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#0ea5e9_0%,#0284c7_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_40px_rgba(2,132,199,0.25)] sm:w-auto sm:min-w-[16rem]"
+                  >
+                    Partager un problème réel
+                    <ArrowRight className="kx-arrow-bounce h-4 w-4" />
+                  </Link>
+                  <a
+                    href="#modules-section"
+                    className="inline-flex w-full items-center justify-center rounded-2xl border border-white/12 bg-white/6 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10 sm:w-auto sm:min-w-[16rem]"
+                  >
+                    Voir pourquoi c'est utile
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -201,7 +229,7 @@ export default function HomePage() {
         </section>
 
         {/* Modules */}
-        <section className="bg-[#020617] px-4 py-16 sm:px-6 lg:px-8">
+        <section id="modules-section" className="bg-[#020617] px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[var(--marketing-max-w)]">
             <ScrollReveal>
               <div className="mb-8 max-w-3xl">

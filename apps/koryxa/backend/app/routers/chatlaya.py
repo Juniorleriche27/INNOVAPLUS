@@ -16,8 +16,10 @@ from app.repositories.chatlaya_pg import (
     archive_conversation as archive_conversation_pg,
     create_conversation as create_conversation_pg,
     create_message,
+    create_problem_report as create_problem_report_pg,
     get_conversation,
     get_latest_active_conversation,
+    get_message,
     list_conversations as list_conversations_pg,
     list_messages as list_messages_pg,
     list_recent_messages,
@@ -31,6 +33,15 @@ from app.schemas.chatlaya import (
     ConversationListResponse,
     ConversationResponse,
     MessagesResponse,
+    ProblemReportCategoriesResponse,
+    ProblemReportCategoryItem,
+    ProblemReportCreatePayload,
+    ProblemReportResponse,
+    PROBLEM_REPORT_DOMAINS,
+    PROBLEM_REPORT_EVIDENCE_TYPES,
+    PROBLEM_REPORT_FREQUENCIES,
+    PROBLEM_REPORT_SEVERITIES,
+    PROBLEM_REPORT_ZONE_TYPES,
 )
 from app.services.chatlaya_context import build_chatlaya_product_context
 from app.services.chatlaya_specialist import CHATLAYA_MODE_GENERAL, coerce_assistant_mode
@@ -93,6 +104,25 @@ def _parse_conversation_id(value: str) -> str:
         return str(UUID(str(value)))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Conversation invalide") from exc
+
+
+def _parse_optional_uuid(value: str | None, field_label: str) -> str | None:
+    if value is None:
+        return None
+    try:
+        return str(UUID(str(value)))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{field_label} invalide") from exc
+
+
+def _problem_report_categories() -> ProblemReportCategoriesResponse:
+    return ProblemReportCategoriesResponse(
+        domains=[ProblemReportCategoryItem(**item) for item in PROBLEM_REPORT_DOMAINS],
+        zone_types=[ProblemReportCategoryItem(**item) for item in PROBLEM_REPORT_ZONE_TYPES],
+        severities=[ProblemReportCategoryItem(**item) for item in PROBLEM_REPORT_SEVERITIES],
+        frequencies=[ProblemReportCategoryItem(**item) for item in PROBLEM_REPORT_FREQUENCIES],
+        evidence_types=[ProblemReportCategoryItem(**item) for item in PROBLEM_REPORT_EVIDENCE_TYPES],
+    )
 
 
 async def _ensure_conversation(
@@ -232,6 +262,78 @@ async def list_messages(
 
     items: List[ChatMessageItem] = [_serialize_message(doc) for doc in list_messages_pg(conversation_id=conv_id)]
     return MessagesResponse(items=items)
+
+
+@router.get("/problem-report-categories", response_model=ProblemReportCategoriesResponse)
+async def get_problem_report_categories():
+    return _problem_report_categories()
+
+
+@router.post("/problem-reports", response_model=ProblemReportResponse, status_code=status.HTTP_201_CREATED)
+async def create_problem_report(
+    payload: ProblemReportCreatePayload,
+    request: Request,
+    response: Response,
+    current: dict | None = Depends(get_current_user_optional),
+):
+    guest_id = get_guest_id(request) if current else ensure_guest_id(request, response)
+    owner = _owner_filter(current, guest_id)
+
+    conversation_id = _parse_optional_uuid(payload.conversation_id, "conversation_id")
+    message_id = _parse_optional_uuid(payload.message_id, "message_id")
+
+    conversation = None
+    if conversation_id is not None:
+        conversation = get_conversation(
+            conversation_id=conversation_id,
+            user_id=owner.get("user_id"),
+            guest_id=owner.get("guest_id"),
+        )
+        if not conversation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation introuvable")
+
+    message = None
+    if message_id is not None:
+        message = get_message(
+            message_id=message_id,
+            user_id=owner.get("user_id"),
+            guest_id=owner.get("guest_id"),
+        )
+        if not message:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
+
+        if conversation_id is not None and message.get("conversation_id") != conversation_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="message_id n'appartient pas à la conversation fournie",
+            )
+        if conversation_id is None:
+            conversation_id = str(message.get("conversation_id") or "")
+
+    report = create_problem_report_pg(
+        user_id=owner.get("user_id"),
+        conversation_id=conversation_id,
+        message_id=message_id,
+        country=payload.country,
+        region=payload.region,
+        city=payload.city,
+        commune=payload.commune,
+        zone_type=payload.zone_type,
+        domain=payload.domain,
+        sector=payload.sector,
+        problem_title=payload.problem_title,
+        problem_description=payload.problem_description,
+        affected_population=payload.affected_population,
+        severity=payload.severity,
+        frequency=payload.frequency,
+        perceived_cause=payload.perceived_cause,
+        proposed_solution=payload.proposed_solution,
+        evidence_type=payload.evidence_type,
+        consent_anonymized=payload.consent_anonymized,
+        source_channel=payload.source_channel,
+        raw_payload=payload.raw_payload,
+    )
+    return ProblemReportResponse(**report)
 
 
 @router.post("/message")

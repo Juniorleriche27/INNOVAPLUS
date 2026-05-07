@@ -40,6 +40,23 @@ def _normalize_message(row: dict[str, Any] | None) -> dict[str, Any] | None:
     return row
 
 
+def _normalize_problem_report(row: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    for key in ("id", "conversation_id", "message_id", "user_id"):
+        if row.get(key) is not None:
+            row[key] = str(row[key])
+    raw_payload = row.get("raw_payload")
+    if isinstance(raw_payload, str):
+        try:
+            row["raw_payload"] = json.loads(raw_payload)
+        except Exception:
+            row["raw_payload"] = {}
+    elif raw_payload is None:
+        row["raw_payload"] = {}
+    return row
+
+
 def get_latest_active_conversation(*, user_id: str | None, guest_id: str | None) -> dict[str, Any] | None:
     where_sql, params = _owner_where_clause(user_id=user_id, guest_id=guest_id)
     row = db_fetchone(
@@ -118,6 +135,26 @@ def get_conversation(
         (conversation_id, *params),
     )
     return _normalize_conversation(row)
+
+
+def get_message(
+    *,
+    message_id: str,
+    user_id: str | None,
+    guest_id: str | None,
+) -> dict[str, Any] | None:
+    where_sql, params = _owner_where_clause(user_id=user_id, guest_id=guest_id)
+    row = db_fetchone(
+        f"""
+        select id::text as id, conversation_id::text as conversation_id, guest_id, user_id::text as user_id, role, content, meta, created_at
+        from app.chatlaya_messages
+        where id = %s::uuid
+          and {where_sql}
+        limit 1;
+        """,
+        (message_id, *params),
+    )
+    return _normalize_message(row)
 
 
 def update_conversation_mode(
@@ -232,3 +269,129 @@ def list_recent_messages(*, conversation_id: str, limit: int) -> list[dict[str, 
     )
     rows.reverse()
     return [_normalize_message(row) for row in rows if row]
+
+
+def create_problem_report(
+    *,
+    user_id: str | None,
+    conversation_id: str | None,
+    message_id: str | None,
+    country: str,
+    region: str | None,
+    city: str | None,
+    commune: str | None,
+    zone_type: str | None,
+    domain: str,
+    sector: str | None,
+    problem_title: str | None,
+    problem_description: str,
+    affected_population: str | None,
+    severity: str | None,
+    frequency: str | None,
+    perceived_cause: str | None,
+    proposed_solution: str | None,
+    evidence_type: str | None,
+    consent_anonymized: bool,
+    source_channel: str,
+    raw_payload: dict[str, Any],
+) -> dict[str, Any]:
+    row = db_fetchone(
+        """
+        insert into app.problem_reports(
+          user_id,
+          conversation_id,
+          message_id,
+          country,
+          region,
+          city,
+          commune,
+          zone_type,
+          domain,
+          sector,
+          problem_title,
+          problem_description,
+          affected_population,
+          severity,
+          frequency,
+          perceived_cause,
+          proposed_solution,
+          evidence_type,
+          consent_anonymized,
+          source_channel,
+          raw_payload
+        )
+        values (
+          %s::uuid,
+          %s::uuid,
+          %s::uuid,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s,
+          %s::jsonb
+        )
+        returning
+          id::text as id,
+          conversation_id::text as conversation_id,
+          message_id::text as message_id,
+          user_id::text as user_id,
+          country,
+          region,
+          city,
+          commune,
+          zone_type,
+          domain,
+          sector,
+          problem_title,
+          problem_description,
+          affected_population,
+          severity,
+          frequency,
+          perceived_cause,
+          proposed_solution,
+          evidence_type,
+          consent_anonymized,
+          source_channel,
+          raw_payload,
+          status,
+          created_at,
+          updated_at;
+        """,
+        (
+            user_id,
+            conversation_id,
+            message_id,
+            country,
+            region,
+            city,
+            commune,
+            zone_type,
+            domain,
+            sector,
+            problem_title,
+            problem_description,
+            affected_population,
+            severity,
+            frequency,
+            perceived_cause,
+            proposed_solution,
+            evidence_type,
+            consent_anonymized,
+            source_channel,
+            json.dumps(raw_payload or {}),
+        ),
+    )
+    return _normalize_problem_report(row) or {}

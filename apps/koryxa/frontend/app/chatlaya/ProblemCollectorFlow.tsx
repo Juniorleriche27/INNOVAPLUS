@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, RefreshCw } from "lucide-react";
-import { DIRECT_INNOVA_API_BASE } from "@/lib/env";
+import { CHATLAYA_API_BASE } from "@/lib/env";
 
-const API_BASE = DIRECT_INNOVA_API_BASE.replace(/\/$/, "");
+const API_BASE = CHATLAYA_API_BASE.replace(/\/$/, "");
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

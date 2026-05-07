@@ -1,6 +1,23 @@
 KORYXA Backend API
 ==================
 
+Important
+---------
+
+Ce backend n'est pas l'unique backend actif de KORYXA.
+
+Avant de modifier une route, lire `docs/LIVE_SERVICE_OWNERSHIP.md`.
+
+Règle actuelle de production :
+
+- `apps/koryxa/backend` est le backend core exposé derrière `/innova/*` et `/innova/api/*`
+- `services/chatlaya-service/backend` est le backend propriétaire du trafic ChatLAYA exposé derrière `/api/chatlaya/*`
+
+Conséquence :
+
+- ne pas corriger ChatLAYA dans ce backend si la route live est servie par `chatlaya.service`
+- ne pas ajouter de nouvelles responsabilités ChatLAYA ici sans décision explicite d'architecture
+
 API FastAPI connectée à Supabase/Postgres pour KORYXA: auth, ChatLAYA, trajectoire, entreprise, notifications et endpoints publics de la plateforme.
 
 Environment

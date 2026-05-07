@@ -1,10 +1,10 @@
 # chatlaya-service
 
-Status: non actif en production.
+Status: actif en production pour le trafic ChatLAYA live.
 
 ## Role du service
 
-`chatlaya-service` est le futur service metier dedie a ChatLAYA.
+`chatlaya-service` est le service metier dedie a ChatLAYA.
 
 Il portera a terme :
 - l'assistant IA ;
@@ -15,11 +15,38 @@ Il portera a terme :
 - l'orchestration du contexte de reponse ;
 - l'historique conversationnel.
 
-## Port cible
+## Port live actuel
 
-- `8010`
+- `8012`
 
-## Endpoint present dans ce squelette
+## Propriete live actuelle
+
+Ce service est actuellement le proprietaire du trafic ChatLAYA expose via :
+
+- `https://api.innovaplus.africa/api/chatlaya/*`
+- le trafic web ChatLAYA proxifie depuis `https://innovaplus.africa/chatlaya/*`
+
+Avant toute modification de route ou de comportement ChatLAYA, lire aussi :
+
+- `docs/LIVE_SERVICE_OWNERSHIP.md`
+
+## Endpoints live principaux
+
+Le service ne sert plus seulement un squelette.
+
+Routes ChatLAYA actives :
+
+- `POST /chatlaya/session`
+- `GET /chatlaya/conversations`
+- `POST /chatlaya/conversations`
+- `PATCH /chatlaya/conversations/{conversation_id}`
+- `POST /chatlaya/conversations/{conversation_id}/archive`
+- `GET /chatlaya/messages`
+- `POST /chatlaya/message`
+- `GET /chatlaya/problem-report-categories`
+- `POST /chatlaya/problem-reports`
+
+## Endpoint health
 
 - `GET /health`
 
@@ -32,17 +59,29 @@ Reponse :
 }
 ```
 
-## Endpoints prevus plus tard
+## Cible d'architecture plus tard
 
 - `/api/v1/chatlaya/session`
 - `/api/v1/chatlaya/conversations`
 - `/api/v1/chatlaya/messages`
 - `/api/v1/chatlaya/message`
 
-Le prefix final sera routé plus tard par la gateway/API gateway.  
-Ce squelette n'est pas branche a la production actuelle.
+Le prefix final sera routé plus tard par la gateway/API gateway.
 
-## Ce qui sera migre plus tard
+Important :
+
+- la cible versionnee est encore future
+- mais le service lui-meme est deja branche a la production actuelle
+
+## Historique important
+
+Une partie de la logique ChatLAYA a historiquement existe dans `apps/koryxa/backend`.
+
+Ne pas conclure pour autant que le core backend est le proprietaire live de ChatLAYA.
+
+Pour la production actuelle, le proprietaire live est `services/chatlaya-service/backend`.
+
+## Ce qui pourra encore etre migre ou nettoye plus tard
 
 Sources candidates actuelles :
 - `apps/koryxa/backend/app/routers/chatlaya.py`
@@ -85,8 +124,8 @@ services/chatlaya-service/backend/
 
 Ce service peut etre lance localement pour valider le squelette backend, sans aucun branchement a la production.
 
-Port local cible :
-- `8010`
+Port local par defaut du service actuel :
+- `8012`
 
 Fichier d'exemple :
 - `services/chatlaya-service/backend/.env.example`
@@ -108,13 +147,13 @@ Commande de lancement local :
 
 ```bash
 cd services/chatlaya-service/backend
-uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload
+uvicorn app.main:app --host 127.0.0.1 --port 8012 --reload
 ```
 
 Healthcheck local :
 
 ```bash
-curl http://127.0.0.1:8010/health
+curl http://127.0.0.1:8012/health
 ```
 
 Reponse attendue :
@@ -173,7 +212,7 @@ Limites de ce test :
 
 ## Limites actuelles du squelette
 
-Le service reste non actif en production.
+Le service est actif en production, mais la convergence d'architecture n'est pas terminee.
 
 Dependances encore en TODO :
 - auth Core distante ;

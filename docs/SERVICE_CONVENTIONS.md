@@ -4,6 +4,12 @@
 
 These conventions define how every service in the future KORYXA architecture must be structured and operated.
 
+Important:
+
+- this file describes the target service model
+- current production ownership may temporarily differ during migration
+- before changing a live backend route, read `docs/LIVE_SERVICE_OWNERSHIP.md`
+
 ## Standard service layout
 
 For user-facing services:

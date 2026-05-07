@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="ChatLAYA Service",
     version="0.1.0",
-    description="Non-active backend skeleton for future ChatLAYA service extraction.",
+    description="Live ChatLAYA backend service for sessions, conversations, messages and assistant behavior.",
 )
 
 app.add_middleware(

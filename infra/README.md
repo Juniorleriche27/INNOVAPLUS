@@ -19,6 +19,12 @@ Nothing in `infra/` changes the current Hetzner runtime by itself.
 
 The live stack currently continues to rely on the existing active deployment outside this preparation work.
 
+Important:
+
+- the target model described here is not identical to the current live routing
+- before editing a live route owner, read `docs/LIVE_SERVICE_OWNERSHIP.md`
+- do not infer current production ownership only from future infra templates
+
 ## Target gateway routing
 
 Planned public API mapping:

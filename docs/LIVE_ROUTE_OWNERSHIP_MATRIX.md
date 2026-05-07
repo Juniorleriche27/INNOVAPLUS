@@ -14,6 +14,7 @@ Read this file together with:
 - `legacy-duplicate` = live route exists in a second backend and should be cleaned later
 - `to-migrate-to-chatlaya-service` = currently owned by core but should move to ChatLAYA service
 - `internal-core` = intentionally owned by core for cross-service support
+- `removed-from-core` = route family has been removed from core code and now belongs only to its dedicated service
 
 ## Matrix
 
@@ -38,29 +39,31 @@ Read this file together with:
 | `/chatlaya/conversations*` on `innovaplus.africa` | ChatLAYA | `services/chatlaya-service/backend` | `correct` | Site-domain proxy compatibility for frontend traffic. |
 | `/chatlaya/messages` on `innovaplus.africa` | ChatLAYA | `services/chatlaya-service/backend` | `correct` | Site-domain proxy compatibility for frontend traffic. |
 | `/chatlaya/message` on `innovaplus.africa` | ChatLAYA | `services/chatlaya-service/backend` | `correct` | Site-domain proxy compatibility for frontend traffic. |
-| `/innova/api/chatlaya/session` | core | `apps/koryxa/backend` | `legacy-duplicate` | Duplicate ChatLAYA API still mounted in core. Should be deprecated after ChatLAYA service fully owns all ChatLAYA endpoints. |
-| `/innova/api/chatlaya/conversations*` | core | `apps/koryxa/backend` | `legacy-duplicate` | Duplicate of live ChatLAYA service responsibility. |
-| `/innova/api/chatlaya/messages` | core | `apps/koryxa/backend` | `legacy-duplicate` | Duplicate of live ChatLAYA service responsibility. |
-| `/innova/api/chatlaya/message` | core | `apps/koryxa/backend` | `legacy-duplicate` | Duplicate of live ChatLAYA service responsibility. |
-| `/innova/api/chatlaya/problem-report-categories` | core | `apps/koryxa/backend` | `legacy-duplicate` | Collector route now also exists in `chatlaya-service`. Remove from core after traffic cutoff. |
-| `/innova/api/chatlaya/problem-reports` | core | `apps/koryxa/backend` | `legacy-duplicate` | Collector route now also exists in `chatlaya-service`. Remove from core after traffic cutoff. |
+| `/innova/api/chatlaya/session` | none | none | `removed-from-core` | Removed from core code. ChatLAYA traffic should use `/api/chatlaya/*`. |
+| `/innova/api/chatlaya/conversations*` | none | none | `removed-from-core` | Removed from core code. ChatLAYA traffic should use `/api/chatlaya/*`. |
+| `/innova/api/chatlaya/messages` | none | none | `removed-from-core` | Removed from core code. ChatLAYA traffic should use `/api/chatlaya/*`. |
+| `/innova/api/chatlaya/message` | none | none | `removed-from-core` | Removed from core code. ChatLAYA traffic should use `/api/chatlaya/*`. |
+| `/innova/api/chatlaya/problem-report-categories` | none | none | `removed-from-core` | Removed from core code. Collector traffic should use `/api/chatlaya/*`. |
+| `/innova/api/chatlaya/problem-reports` | none | none | `removed-from-core` | Removed from core code. Collector traffic should use `/api/chatlaya/*`. |
 
 ## Current conclusion
 
 The main ownership disorder is not “too many backends”.
 
-The main disorder is:
+The main disorder that existed was:
 
-- ChatLAYA live traffic is correctly served by `chatlaya-service`;
-- but core still exposes a second ChatLAYA router under `/innova/api/chatlaya/*`;
-- and the new `problem_reports` endpoints were added to core even though their natural owner is ChatLAYA service.
+- ChatLAYA live traffic was correctly served by `chatlaya-service`;
+- but core also exposed a second ChatLAYA router under `/innova/api/chatlaya/*`;
+- and `problem_reports` had been added to core even though their natural owner is ChatLAYA service.
+
+This cleanup removes that duplicated core router ownership.
 
 ## Recommended cleanup order
 
-1. Switch all live problem collector traffic to the ChatLAYA-owned public prefix.
+1. Deploy the frontend with `NEXT_PUBLIC_CHATLAYA_URL` pointed to `/api/chatlaya/*`.
 2. Verify DB writes and guest compatibility in `chatlaya-service`.
-3. Deprecate `/innova/api/chatlaya/*` routes from core.
-4. Remove duplicated ChatLAYA router ownership from `apps/koryxa/backend`.
+3. Confirm `/innova/api/chatlaya/*` returns `404` after core deploy.
+4. Continue dead-code cleanup inside the core repo if desired.
 
 ## Rule for future changes
 

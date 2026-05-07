@@ -18,7 +18,7 @@ Conséquence :
 - ne pas corriger ChatLAYA dans ce backend si la route live est servie par `chatlaya.service`
 - ne pas ajouter de nouvelles responsabilités ChatLAYA ici sans décision explicite d'architecture
 
-API FastAPI connectée à Supabase/Postgres pour KORYXA: auth, ChatLAYA, trajectoire, entreprise, notifications et endpoints publics de la plateforme.
+API FastAPI connectée à Supabase/Postgres pour KORYXA: auth, trajectoire, entreprise, notifications et endpoints publics core de la plateforme.
 
 Environment
 -----------

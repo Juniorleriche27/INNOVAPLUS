@@ -33,7 +33,6 @@ from app.services.postgres_bootstrap import (
     init_pg_pool,
 )
 from app.routers.auth import router as auth_router
-from app.routers.chatlaya import router as chatlaya_router
 from app.routers.internal_core import router as internal_core_router
 from app.routers.notifications import router as notifications_router
 from app.routers.emailer import router as email_router
@@ -56,7 +55,6 @@ app = FastAPI(
     description=(
         "API principale de la plateforme KORYXA.\n\n"
         "## Modules disponibles\n\n"
-        "- **ChatLAYA** — Interface conversationnelle d'aide et d'orientation.\n"
         "- **Blueprint** — Clarification de trajectoire et de profil utilisateur.\n"
         "- **Entreprise** — Structuration de besoins et gestion d'organisation.\n\n"
         "## Authentification\n\n"
@@ -68,7 +66,6 @@ app = FastAPI(
     root_path=API_PROXY_PREFIX,
     openapi_tags=[
         {"name": "auth", "description": "Authentification et gestion de session."},
-        {"name": "chatlaya", "description": "ChatLAYA — Interface conversationnelle."},
         {"name": "innova", "description": "Gestion des opportunites et du matching."},
     ],
 )
@@ -973,7 +970,6 @@ async def enterprise_leads_webhook(request: Request):
 # Mount API routes at root; /innova/api prefix is normalized by middleware.
 innova_api = APIRouter(prefix="")
 innova_api.include_router(auth_router)
-innova_api.include_router(chatlaya_router)
 innova_api.include_router(internal_core_router)
 innova_api.include_router(email_router)
 innova_api.include_router(invite_router)

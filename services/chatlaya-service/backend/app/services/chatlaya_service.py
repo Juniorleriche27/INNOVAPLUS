@@ -52,6 +52,41 @@ GREETING_PHRASES = {
     "salam", "salam chatlaya",
     "assalamu alaikum", "salam alaikum",
 }
+THANKS_PHRASES = {
+    "merci",
+    "merci beaucoup",
+    "ok merci",
+    "okay merci",
+    "d accord merci",
+    "daccord merci",
+    "merci chatlaya",
+    "merci bien",
+}
+FAREWELL_PHRASES = {
+    "a bientot",
+    "a plus",
+    "au revoir",
+    "bonne nuit",
+    "a la prochaine",
+    "a tres bientot",
+    "bonne journee",
+    "bonne soiree",
+}
+HOW_ARE_YOU_PHRASES = {
+    "ca va",
+    "comment tu vas",
+    "comment vas tu",
+    "tu vas bien",
+    "vous allez bien",
+}
+POLITENESS_CORRECTION_PHRASES = {
+    "mais je te dis bonjour",
+    "je t ai dit bonjour",
+    "je t ai dis bonjour",
+    "reponds juste a mon bonjour",
+    "repond juste a mon bonjour",
+    "mais je dis bonjour",
+}
 COURTESY_PHRASES = {
     # Remerciements
     "merci", "merci beaucoup", "merci bien", "merci chatlaya",
@@ -240,6 +275,17 @@ PRODUCT_KEYWORDS = (
     "produit",
     "chatlaya",
 )
+SITE_EXPERT_KEYWORDS = (
+    "site",
+    "page",
+    "module",
+    "formation ia",
+    "service ia",
+    "entreprise",
+    "a propos",
+    "a propos de koryxa",
+    "voix du terrain africain",
+)
 NEXT_STEPS_KEYWORDS = (
     "prochaine etape",
     "prochaines etapes",
@@ -293,32 +339,124 @@ def _classify_message_kind(message: str) -> str:
     return "default"
 
 
+def detect_politeness_intent(message: str) -> str | None:
+    normalized = _normalize_text(message)
+    stripped = normalized.rstrip("!?.,;: ")
+    if not stripped:
+        return "empty_or_too_short"
+
+    token_count = len(stripped.split())
+    if stripped in POLITENESS_CORRECTION_PHRASES:
+        return "politeness_correction"
+    if stripped in HOW_ARE_YOU_PHRASES:
+        return "how_are_you"
+    if stripped in THANKS_PHRASES:
+        return "thanks"
+    if stripped in FAREWELL_PHRASES:
+        return "farewell"
+    if stripped in GREETING_PHRASES:
+        return "greeting"
+
+    if any(stripped.startswith(phrase) for phrase in POLITENESS_CORRECTION_PHRASES):
+        return "politeness_correction"
+    if any(stripped.startswith(phrase) for phrase in HOW_ARE_YOU_PHRASES) and token_count <= 5:
+        return "how_are_you"
+    if any(stripped.startswith(phrase) for phrase in THANKS_PHRASES) and token_count <= 5:
+        return "thanks"
+    if any(stripped.startswith(phrase) for phrase in FAREWELL_PHRASES) and token_count <= 5:
+        return "farewell"
+    if any(stripped.startswith(phrase) for phrase in GREETING_PHRASES) and token_count <= 4:
+        return "greeting"
+
+    if token_count <= 1 and stripped in {"ok", "okay", "hmm", "hein"}:
+        return "empty_or_too_short"
+    if len(stripped) <= 2:
+        return "empty_or_too_short"
+    return None
+
+
+def _build_politeness_reply(intent: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) -> str:
+    if intent == "greeting":
+        if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
+            return (
+                "Bonjour 👋 Je vous écoute. Parlez-moi de votre projet, de votre offre, "
+                "de votre business plan ou de votre difficulté de vente."
+            )
+        return "Bonjour 👋 Je maîtrise KORYXA et je peux vous guider sur le site, ses modules et la meilleure entrée selon votre besoin."
+    if intent == "how_are_you":
+        return "Je vais bien, merci. Et vous ? Comment puis-je vous aider aujourd’hui ?"
+    if intent == "thanks":
+        return "Avec plaisir. Je reste disponible si vous voulez continuer."
+    if intent == "farewell":
+        return "Merci pour l’échange. À bientôt."
+    if intent == "politeness_correction":
+        return "Vous avez raison. Bonjour à vous 👋 Je vous écoute."
+    if intent == "empty_or_too_short":
+        return "Je vous écoute. Pouvez-vous préciser ce que vous voulez faire ?"
+    return ""
+
+
 def _build_direct_reply(kind: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) -> str:
-    if kind == "courtesy":
-        return "De rien ! N'hésitez pas si vous avez d'autres questions."
-    if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
-        if kind == "greeting":
-            return (
-                "Mode Fondateur actif. Posez une question sur le lancement, "
-                "la structuration d'offre, le business plan ou la vente, et je vous repondrai "
-                "de facon directe et exploitable."
-            )
-        if kind == "identity":
-            return (
-                "Je suis ChatLAYA en Mode Fondateur. Je vous aide a transformer "
-                "une question business en reponse claire, utile et orientee action."
-            )
-        return ""
-    if kind == "greeting":
-        return (
-            "Bonjour, comment allez-vous ? Je suis ChatLAYA, le copilote conversationnel de KORYXA. "
-            "Décrivez-moi un besoin, un problème local ou une idée et je vous aiderai à le clarifier."
-        )
     if kind == "identity":
+        if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL:
+            return (
+                "Je suis ChatLAYA en mode Fondateur. Je vous aide à clarifier un projet, structurer une offre, "
+                "préparer un business plan ou améliorer une démarche commerciale."
+            )
         return (
-            "Je suis ChatLAYA, le copilote IA de KORYXA. Je peux vous aider à clarifier un besoin, structurer un brief "
-            "ou transformer une idée en prochaines actions plus lisibles dans Trajectoire, Entreprise et les produits KORYXA."
+            "Je suis ChatLAYA, l’assistant expert de KORYXA. Je connais les pages, les modules, les parcours et les usages du site, "
+            "et je peux vous orienter rapidement vers la bonne entrée, le bon service ou la bonne prochaine étape."
         )
+    return ""
+
+
+def _build_general_site_expert_reply(message: str) -> str:
+    normalized = _normalize_text(message)
+
+    if any(phrase in normalized for phrase in ("que fait koryxa", "c est quoi koryxa", "presente koryxa", "explique koryxa")):
+        return (
+            "KORYXA est une plateforme d’orchestration IA en Afrique. Le site s’organise autour de Formation IA, "
+            "Entreprise, Service IA, ChatLAYA, À propos et Voix du terrain africain, avec chaque entrée pensée pour un usage précis."
+        )
+
+    if "formation ia" in normalized and "service ia" in normalized and any(token in normalized for token in ("difference", "differe", "différence", "versus", "ou")):
+        return (
+            "Formation IA aide les talents à clarifier leur profil, leur trajectoire et leurs prochaines étapes. "
+            "Service IA sert à demander une exécution concrète : automatisation, data, IA, application ou déploiement métier."
+        )
+
+    if "entreprise" in normalized and "service ia" in normalized and any(token in normalized for token in ("difference", "differe", "différence", "versus", "ou")):
+        return (
+            "Entreprise sert à cadrer un besoin, clarifier le contexte et structurer une mission. "
+            "Service IA intervient ensuite pour exécuter et livrer la solution demandée."
+        )
+
+    if any(phrase in normalized for phrase in ("quelle page choisir", "quelle page me convient", "ou aller sur le site", "je ne sais pas quelle page choisir", "quelle entree choisir", "quelle section choisir")):
+        return (
+            "Si vous cherchez à vous orienter comme talent, allez vers Formation IA. "
+            "Si vous avez un besoin métier à cadrer, entrez par Entreprise. "
+            "Si vous voulez une exécution IA concrète, ouvrez Service IA. "
+            "Si vous voulez être guidé, restez dans ChatLAYA."
+        )
+
+    if "voix du terrain africain" in normalized or ("terrain" in normalized and "africain" in normalized):
+        return (
+            "Voix du terrain africain est le parcours de collecte structurée des problèmes réels observés sur le terrain. "
+            "Il sert à faire remonter des besoins concrets depuis les pays, villes, quartiers et secteurs."
+        )
+
+    if "chatlaya" in normalized and any(token in normalized for token in ("sert", "fait", "role", "rôle", "utilite", "utilité")):
+        return (
+            "ChatLAYA est l’assistant expert de KORYXA. Il explique le site, compare les modules, oriente l’utilisateur "
+            "vers la bonne entrée et aide à comprendre rapidement quoi faire ensuite."
+        )
+
+    if any(keyword in normalized for keyword in SITE_EXPERT_KEYWORDS) and "difference" not in normalized and "differe" not in normalized:
+        return (
+            "Je peux vous guider précisément sur KORYXA : expliquer un module, comparer deux sections, "
+            "vous orienter vers la bonne page ou vous dire quelle entrée utiliser selon votre besoin."
+        )
+
     return ""
 
 
@@ -843,7 +981,9 @@ def _mode_instruction(kind: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) ->
             "Mode Prochaines etapes : utilise d'abord le contexte produit recent pour proposer 2 a 4 actions prioritaires, dans un ordre logique et court."
         )
     return (
-        "Mode General KORYXA : recentre la reponse sur l'orientation, le cadrage et l'execution. "
+        "Mode General KORYXA : tu es l'assistant expert du site KORYXA. "
+        "Tu dois maitriser ses pages, ses modules, ses parcours, ses promesses, ses cas d'usage et la meilleure entree selon le besoin de l'utilisateur. "
+        "Ta priorite est d'expliquer clairement le site, de comparer les modules, de recommander la bonne section et de repondre comme quelqu'un qui connait KORYXA dans le detail. "
         "Si la demande est trop vague, pose une seule question de clarification."
     )
 
@@ -877,10 +1017,22 @@ def _build_generation_prompt(
     else:
         sections = [
             "Tu es ChatLAYA, le copilote d'orientation, de cadrage et d'execution de KORYXA.",
-            "Tu n'es pas un chatbot generique. Tu aides a comprendre Trajectoire, Entreprise, Produits, progression, preuves, score, validation et prochaines etapes.",
+            "Tu n'es pas un chatbot generique. Tu es d'abord l'expert conversationnel du site KORYXA et de son fonctionnement.",
+            "Tu aides a comprendre les pages, les modules, les parcours, la logique produit, les differences entre les sections et les prochaines etapes pertinentes.",
             "N'invente ni produit, ni partenaire, ni statut, ni opportunite absente du contexte fourni.",
             "Si une information manque, dis-le explicitement et pose au maximum une question de clarification.",
             "Reponds en francais clair, concis et utile. Evite les longs developpements inutiles.",
+            "Quand l'utilisateur parle du site, d'un module, d'une page, d'un parcours ou d'une entree KORYXA, reponds comme un expert produit et un guide du site.",
+            (
+                "RÈGLES DE POLITESSE ET DE CONVERSATION :\n"
+                "- Si l’utilisateur commence par une salutation simple, réponds d’abord à la salutation, sans donner de conseil métier.\n"
+                "- Ne transforme jamais « Bonjour », « Salut », « Bonsoir », « Merci » ou « Ça va ? » en demande de business, de vente, de projet ou de stratégie.\n"
+                "- Si le message est uniquement une formule sociale, réponds en une phrase courte et invite l’utilisateur à préciser son besoin.\n"
+                "- Si l’utilisateur te corrige sur la politesse, reconnais simplement et réponds avec respect.\n"
+                "- Ne donne pas de liste, de plan d’action ou de conseils si l’utilisateur n’a pas encore posé une vraie question.\n"
+                "- Reste naturel, direct et humain.\n"
+                "- Une réponse de politesse doit faire moins de 35 mots."
+            ),
             _mode_instruction(kind, assistant_mode=assistant_mode),
         ]
     if product_context and not is_strict_assistant_mode(assistant_mode):
@@ -935,7 +1087,8 @@ def _build_generation_prompt(
     else:
         sections.append(
             "Format de reponse attendu :\n"
-            "- une reponse courte et directe\n"
+            "- une reponse courte, directe et experte sur KORYXA\n"
+            "- si utile, explique clairement quel module ou quelle page du site correspond le mieux au besoin\n"
             "- puis 2 a 4 prochaines actions ou points concrets si cela aide vraiment"
         )
     sections.append(f"Message utilisateur :\n{message}")
@@ -949,6 +1102,15 @@ async def generate_chat_reply(
     assistant_mode: str = CHATLAYA_MODE_GENERAL,
 ) -> tuple[str, list[dict[str, Any]]]:
     assistant_mode = coerce_assistant_mode(assistant_mode)
+    politeness_intent = detect_politeness_intent(message)
+    if politeness_intent:
+        return _build_politeness_reply(politeness_intent, assistant_mode=assistant_mode), []
+
+    if assistant_mode == CHATLAYA_MODE_GENERAL:
+        site_reply = _build_general_site_expert_reply(message)
+        if site_reply:
+            return site_reply, []
+
     message_kind = _classify_message_kind(message)
     direct_reply = _build_direct_reply(message_kind, assistant_mode=assistant_mode)
     if direct_reply:

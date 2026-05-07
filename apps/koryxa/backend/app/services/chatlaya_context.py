@@ -65,10 +65,15 @@ async def build_chatlaya_product_context(
 
     return (
         "Reperes produit KORYXA :\n"
-        "- Blueprint = parcours d'orientation, diagnostic, progression et prochaines etapes.\n"
+        "- Accueil = vue d'ensemble de KORYXA, de ses modules et des grandes entrees du site.\n"
+        "- Formation IA = parcours d'orientation, diagnostic, progression et prochaines etapes pour les talents.\n"
         "- Entreprise = cadrage d'un besoin, structuration d'une mission et lecture exploitable du contexte entreprise.\n"
         "- Service IA = studio d'execution pour construire et livrer des projets IA de bout en bout.\n"
-        "- ChatLAYA = copilote conversationnel pour clarifier, cadrer et orienter l'utilisateur dans KORYXA.\n\n"
+        "- ChatLAYA = assistant expert du site KORYXA pour expliquer les modules, orienter l'utilisateur et recommander la bonne entree.\n"
+        "- A propos = vision, positionnement et logique d'execution de KORYXA.\n"
+        "- Voix du terrain africain = collecte structuree de problemes reels observes sur le terrain.\n\n"
+        "Regle de guidage :\n"
+        "- si l'utilisateur hesite, recommander d'abord la bonne page ou le bon module KORYXA avant de donner des conseils generiques.\n\n"
         "Contexte Blueprint le plus recent :\n"
         f"{_format_trajectory_context(trajectory_summary)}\n\n"
         "Contexte entreprise le plus recent :\n"

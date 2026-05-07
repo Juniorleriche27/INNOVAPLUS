@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, RefreshCw } from "lucide-react";
-import { CHATLAYA_API_BASE } from "@/lib/env";
+import { DIRECT_INNOVA_API_BASE } from "@/lib/env";
+
+const API_BASE = DIRECT_INNOVA_API_BASE.replace(/\/$/, "");
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -273,7 +275,7 @@ export default function ProblemCollectorFlow() {
   const finalAnswersRef = useRef<Answers | null>(null);
 
   useEffect(() => {
-    fetch(`${CHATLAYA_API_BASE}/chatlaya/problem-report-categories`, {
+    fetch(`${API_BASE}/chatlaya/problem-report-categories`, {
       credentials: "include",
     })
       .then((res) => {
@@ -374,7 +376,11 @@ export default function ProblemCollectorFlow() {
         },
       };
 
-      const response = await fetch(`${CHATLAYA_API_BASE}/chatlaya/problem-reports`, {
+      const postUrl = `${API_BASE}/chatlaya/problem-reports`;
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[ProblemCollectorFlow] POST", postUrl);
+      }
+      const response = await fetch(postUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

@@ -2,7 +2,7 @@
 
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowUp, Check, Copy, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, Check, Copy, MapPin, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 
@@ -878,12 +878,13 @@ function ChatlayaContent() {
         {/* Main area — problem collector flow */}
         <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
           <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-4 py-2.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Mode</span>
-              <span className="rounded-full bg-sky-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
-                Mode général
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-orange-500">
+                <MapPin className="h-3 w-3 text-white" />
               </span>
-              <span className="ml-1 text-[11px] text-slate-400">— Collecte terrain africain</span>
+              <span className="text-sm font-semibold text-slate-800">Voix du terrain africain</span>
+              <span className="text-slate-300">·</span>
+              <span className="truncate text-xs text-slate-400">Partagez un problème réel observé autour de vous</span>
             </div>
           </div>
           <ProblemCollectorFlow />

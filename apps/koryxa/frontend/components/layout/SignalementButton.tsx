@@ -10,7 +10,7 @@ export default function SignalementButton() {
   if (pathname.startsWith("/chatlaya")) return null;
 
   return (
-    <div className="fixed left-4 top-32 z-40 sm:left-6">
+    <div className="fixed left-4 top-20 z-40 sm:left-6 sm:top-32">
       {/* Ring ping autour du bouton */}
       <span className="absolute inset-0 animate-ping rounded-full bg-orange-400/40" />
       <Link

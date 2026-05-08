@@ -1,4 +1,5 @@
 import SignupClient from "./SignupClient";
+import { resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type SearchParamsInput = SearchParams | Promise<SearchParams>;
@@ -22,10 +23,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Sear
   const params = await resolveSearchParams(searchParams);
   const requestedRedirect = one(params?.redirect);
   const authError = one(params?.auth_error);
-  const successRedirect =
-    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
-      ? requestedRedirect
-      : KORYXA_PUBLIC_HOME;
+  const successRedirect = resolveSafeAuthRedirectTarget(requestedRedirect, KORYXA_PUBLIC_HOME);
   const loginHref = `/login?redirect=${encodeURIComponent(successRedirect)}`;
   const initialError =
     authError === "google_access_refuse"

@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { isAbsoluteRedirectTarget, resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 import { CLIENT_INNOVA_API_BASE, DEV_AUTO_LOGIN_ENABLED, SITE_BASE_URL } from "@/lib/env";
 
 type Step = "credentials" | "verify";
@@ -54,10 +55,7 @@ export default function LoginClient({
   initialError = null,
 }: LoginClientProps = {}) {
   const router = useRouter();
-  const redirect =
-    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
-      ? requestedRedirect
-      : defaultRedirect;
+  const redirect = resolveSafeAuthRedirectTarget(requestedRedirect, defaultRedirect);
   const { refresh, user } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -93,6 +91,10 @@ export default function LoginClient({
 
   useEffect(() => {
     if (user?.email) {
+      if (isAbsoluteRedirectTarget(redirect)) {
+        window.location.assign(redirect);
+        return;
+      }
       router.replace(redirect);
     }
   }, [redirect, router, user]);
@@ -113,6 +115,10 @@ export default function LoginClient({
       }
 
       await refresh();
+      if (isAbsoluteRedirectTarget(redirect)) {
+        window.location.assign(redirect);
+        return;
+      }
       router.replace(redirect);
     } catch (err) {
       setInfo(null);
@@ -174,6 +180,10 @@ export default function LoginClient({
       }
 
       await refresh();
+      if (isAbsoluteRedirectTarget(redirect)) {
+        window.location.assign(redirect);
+        return;
+      }
       if (isPreviewDomain) {
         window.location.href = `${SITE_BASE_URL}${redirect}`;
         return;

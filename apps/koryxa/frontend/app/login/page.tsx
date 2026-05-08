@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 export const revalidate = 0;
 
 import LoginClient from "./LoginClient";
+import { resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 
 const KORYXA_PUBLIC_HOME = "/";
 
@@ -26,10 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Searc
   const params = await resolveSearchParams(searchParams);
   const requestedRedirect = one(params?.redirect);
   const authError = one(params?.auth_error);
-  const successRedirect =
-    requestedRedirect && requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//")
-      ? requestedRedirect
-      : KORYXA_PUBLIC_HOME;
+  const successRedirect = resolveSafeAuthRedirectTarget(requestedRedirect, KORYXA_PUBLIC_HOME);
   const signupHref = `/signup?redirect=${encodeURIComponent(successRedirect)}`;
   const initialError =
     authError === "google_access_refuse"

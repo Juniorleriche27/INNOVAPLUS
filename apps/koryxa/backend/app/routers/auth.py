@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, urlunparse
 import asyncio
 import logging
 import secrets
@@ -158,9 +158,56 @@ def _google_redirect_uri() -> str:
 def _safe_redirect_target(value: str | None, fallback: str = "/") -> str:
     if not value:
         return fallback
-    if not value.startswith("/") or value.startswith("//"):
+    if value.startswith("/") and not value.startswith("//"):
+        return value
+
+    try:
+        parsed = urlparse(value)
+    except Exception:
         return fallback
-    return value
+
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return fallback
+
+    hostname = (parsed.hostname or "").strip().lower()
+    if not hostname:
+        return fallback
+
+    allowed_hosts = set()
+    explicit = [
+        origin.strip()
+        for origin in (settings.ALLOWED_AUTH_REDIRECT_ORIGINS or "").split(",")
+        if origin.strip()
+    ]
+    for origin in explicit:
+        try:
+            allowed_hostname = (urlparse(origin).hostname or "").strip().lower()
+        except Exception:
+            allowed_hostname = ""
+        if allowed_hostname:
+            allowed_hosts.add(allowed_hostname)
+
+    try:
+        frontend_host = (urlparse(settings.FRONTEND_BASE_URL).hostname or "").strip().lower()
+    except Exception:
+        frontend_host = ""
+    if frontend_host:
+        allowed_hosts.add(frontend_host)
+        base_parts = frontend_host.split(".")
+        if len(base_parts) >= 2:
+            allowed_hosts.add(".".join(base_parts[-2:]))
+
+    if hostname not in allowed_hosts and not any(hostname.endswith(f".{allowed}") for allowed in allowed_hosts):
+        return fallback
+
+    sanitized = parsed._replace(fragment="")
+    return urlunparse(sanitized)
+
+
+def _resolve_frontend_redirect_url(target: str) -> str:
+    if target.startswith("/"):
+        return f"{settings.FRONTEND_BASE_URL.rstrip('/')}{target}"
+    return target
 
 
 def _build_google_state() -> str:
@@ -292,7 +339,7 @@ def _otp_response(expires_at: datetime, code: str) -> dict[str, str]:
 def _google_auth_error_redirect(message: str, redirect_to: str | None = None) -> RedirectResponse:
     target = _safe_redirect_target(redirect_to, "/login")
     separator = "&" if "?" in target else "?"
-    response = RedirectResponse(url=f"{settings.FRONTEND_BASE_URL.rstrip('/')}{target}{separator}auth_error={message}", status_code=303)
+    response = RedirectResponse(url=f"{_resolve_frontend_redirect_url(target)}{separator}auth_error={message}", status_code=303)
     _clear_short_lived_cookie(response, GOOGLE_STATE_COOKIE)
     _clear_short_lived_cookie(response, GOOGLE_REDIRECT_COOKIE)
     return response
@@ -496,7 +543,7 @@ async def google_callback(
         ) or user
 
     redirect_response = RedirectResponse(
-        url=f"{settings.FRONTEND_BASE_URL.rstrip('/')}{saved_redirect}",
+        url=_resolve_frontend_redirect_url(saved_redirect),
         status_code=303,
     )
     _issue_session_pg(redirect_response, str(user["id"]), request)

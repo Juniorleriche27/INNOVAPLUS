@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { PasswordField } from "@/components/auth/PasswordField";
+import { isAbsoluteRedirectTarget, resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
 
 type SignupStep = "form" | "verify";
@@ -47,6 +48,7 @@ export default function SignupClient({
 }: SignupClientProps = {}) {
   const { refresh, user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const redirectTarget = resolveSafeAuthRedirectTarget(successRedirect, "/onboarding");
 
   const [step, setStep] = useState<SignupStep>("form");
   const [email, setEmail] = useState("");
@@ -64,9 +66,13 @@ export default function SignupClient({
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace(successRedirect);
+      if (isAbsoluteRedirectTarget(redirectTarget)) {
+        window.location.assign(redirectTarget);
+        return;
+      }
+      router.replace(redirectTarget);
     }
-  }, [authLoading, router, successRedirect, user]);
+  }, [authLoading, redirectTarget, router, user]);
 
   async function requestSignupOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,7 +145,13 @@ export default function SignupClient({
 
       setMessage("Compte cree. Bienvenue dans KORYXA.");
       await refresh();
-      setTimeout(() => router.replace(successRedirect), 300);
+      setTimeout(() => {
+        if (isAbsoluteRedirectTarget(redirectTarget)) {
+          window.location.assign(redirectTarget);
+          return;
+        }
+        router.replace(redirectTarget);
+      }, 300);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
@@ -175,7 +187,7 @@ export default function SignupClient({
         </div>
 
         <div className="space-y-3">
-          <GoogleAuthButton redirectTo={successRedirect} label="Continuer avec Google" />
+          <GoogleAuthButton redirectTo={redirectTarget} label="Continuer avec Google" />
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
             <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">ou</span>

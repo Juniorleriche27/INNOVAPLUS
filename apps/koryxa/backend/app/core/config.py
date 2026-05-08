@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     SESSION_TTL_DAYS: int = int(os.getenv("SESSION_TTL_DAYS", "7"))
     RESET_TOKEN_TTL_MIN: int = int(os.getenv("RESET_TOKEN_TTL_MIN", "30"))
     FRONTEND_BASE_URL: str = os.getenv("FRONTEND_BASE_URL", "https://innovaplus.africa")
+    ALLOWED_AUTH_REDIRECT_ORIGINS: str | None = os.getenv("ALLOWED_AUTH_REDIRECT_ORIGINS")
     GOOGLE_OAUTH_CLIENT_ID: str | None = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
     GOOGLE_OAUTH_CLIENT_SECRET: str | None = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
     GOOGLE_OAUTH_REDIRECT_URI: str | None = os.getenv("GOOGLE_OAUTH_REDIRECT_URI")

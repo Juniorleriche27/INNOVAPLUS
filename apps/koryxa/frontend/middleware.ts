@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 
 const PROTECTED_PATHS = [
   "/analytics",
@@ -131,9 +132,7 @@ function getLoginPath(pathname: string): "/login" {
 }
 
 function getSafeRedirectTarget(value: string | null, fallback: string): string {
-  if (!value) return fallback;
-  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
-  return value;
+  return resolveSafeAuthRedirectTarget(value, fallback);
 }
 
 async function hasValidSession(request: NextRequest): Promise<boolean> {
@@ -346,12 +345,17 @@ export async function middleware(request: NextRequest) {
     }
     const ok = await ensureSessionValid();
     if (ok) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = getSafeRedirectTarget(
+      const redirectTarget = getSafeRedirectTarget(
         searchParams.get("redirect") || searchParams.get("next"),
         "/",
       );
-      redirectUrl.search = "";
+      const redirectUrl = redirectTarget.startsWith("http://") || redirectTarget.startsWith("https://")
+        ? new URL(redirectTarget)
+        : request.nextUrl.clone();
+      if (!redirectTarget.startsWith("http://") && !redirectTarget.startsWith("https://")) {
+        redirectUrl.pathname = redirectTarget;
+        redirectUrl.search = "";
+      }
       return NextResponse.redirect(redirectUrl);
     }
     const res = NextResponse.next();

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveSafeAuthRedirectTarget } from "@/lib/auth-redirect";
 import { INNOVA_API_BASE, SITE_BASE_URL } from "@/lib/env";
 
 const SESSION_COOKIE = "innova_session";
@@ -37,9 +38,7 @@ function clearCookieHeaders() {
 }
 
 function safeRedirectTarget(value: string | null): string {
-  if (!value) return "/login";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/login";
-  return value;
+  return resolveSafeAuthRedirectTarget(value, "/login");
 }
 
 export const runtime = "nodejs";
@@ -57,7 +56,10 @@ export async function GET(request: Request) {
   }
 
   const sourceUrl = new URL(request.url);
-  const url = new URL(safeRedirectTarget(sourceUrl.searchParams.get("redirect")), request.url);
+  const redirectTarget = safeRedirectTarget(sourceUrl.searchParams.get("redirect"));
+  const url = redirectTarget.startsWith("http://") || redirectTarget.startsWith("https://")
+    ? new URL(redirectTarget)
+    : new URL(redirectTarget, request.url);
   const response = NextResponse.redirect(url);
   for (const header of clearCookieHeaders()) {
     response.headers.append("Set-Cookie", header);

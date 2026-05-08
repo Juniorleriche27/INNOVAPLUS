@@ -97,6 +97,107 @@ CREATE TABLE IF NOT EXISTS public.resources (
 );
 
 CREATE INDEX IF NOT EXISTS idx_resources_module ON public.resources(module_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_resources_module_title ON public.resources(module_id, title);
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Support d''introduction et installation',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_0_Introduction_Installation.docx',
+       'article',
+       'Guide d''installation et de démarrage du parcours Data Analyst.',
+       1
+FROM public.modules
+WHERE order_index = 0
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook Python pour la Data',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_1_Bases_Python_Data.ipynb',
+       'notebook',
+       'Notebook complet sur les bases de Python appliquées à la data.',
+       1
+FROM public.modules
+WHERE order_index = 1
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook NumPy',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_2_NumPy_Calcul_Numerique.ipynb',
+       'notebook',
+       'Notebook complet sur le calcul numérique avec NumPy.',
+       1
+FROM public.modules
+WHERE order_index = 2
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook Pandas',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_3_Pandas_Manipulation_Donnees.ipynb',
+       'notebook',
+       'Notebook complet de manipulation de données avec Pandas.',
+       1
+FROM public.modules
+WHERE order_index = 3
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook Nettoyage de Données',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_4_Nettoyage_Donnees.ipynb',
+       'notebook',
+       'Notebook complet de nettoyage et préparation des données.',
+       1
+FROM public.modules
+WHERE order_index = 4
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook Visualisation',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_5_Visualisation_Donnees.ipynb',
+       'notebook',
+       'Notebook complet de visualisation avec Matplotlib et Seaborn.',
+       1
+FROM public.modules
+WHERE order_index = 5
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook EDA',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_6_Analyse_Exploratoire_EDA.ipynb',
+       'notebook',
+       'Notebook d''analyse exploratoire de données.',
+       1
+FROM public.modules
+WHERE order_index = 6
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Notebook Projet Final',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/MODULE_7_Projet_Final_Professionnel.ipynb',
+       'notebook',
+       'Notebook du projet final portfolio-ready.',
+       1
+FROM public.modules
+WHERE order_index = 7
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Dataset ventes KORYXA',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/ventes_koryxa.csv',
+       'dataset',
+       'Jeu de données principal pour le projet final.',
+       2
+FROM public.modules
+WHERE order_index = 7
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.resources (module_id, title, url, type, description, order_index)
+SELECT id, 'Dataset ventes KORYXA propre',
+       'https://raw.githubusercontent.com/Juniorleriche27/koryxa_formation/main/content/ventes_koryxa_propre.csv',
+       'dataset',
+       'Version nettoyée du dataset de ventes.',
+       3
+FROM public.modules
+WHERE order_index = 7
+ON CONFLICT DO NOTHING;
 
 
 -- ============================================================

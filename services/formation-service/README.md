@@ -13,3 +13,10 @@ Règle d'architecture :
 
 - l'authentification centrale reste gérée par KORYXA core ;
 - la logique métier formation doit vivre dans ce service, pas dans `apps/koryxa/backend`.
+
+Déploiement serveur attendu :
+
+- service systemd : `formation.service`
+- port local : `127.0.0.1:8013`
+- proxy public : `https://api.innovaplus.africa/api/formation/*`
+- frontend public : `https://formation.innovaplus.africa`

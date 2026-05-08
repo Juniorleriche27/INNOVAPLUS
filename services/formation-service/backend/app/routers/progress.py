@@ -6,10 +6,17 @@ from datetime import datetime, timezone
 
 router = APIRouter()
 
+def _get_progress(user_id: str):
+    response = supabase.table("progress").select("*").eq("user_id", user_id).execute()
+    return response.data
+
 @router.get("/")
 def get_my_progress(user=Depends(get_current_user)):
-    response = supabase.table("progress").select("*").eq("user_id", user.id).execute()
-    return response.data
+    return _get_progress(user.id)
+
+@router.get("")
+def get_my_progress_no_slash(user=Depends(get_current_user)):
+    return _get_progress(user.id)
 
 @router.get("/completion")
 def get_completion(user=Depends(get_current_user)):
@@ -26,3 +33,7 @@ def update_progress(data: ProgressUpdate, user=Depends(get_current_user)):
     }
     response = supabase.table("progress").upsert(payload, on_conflict="user_id,module_id").execute()
     return response.data
+
+@router.post("")
+def update_progress_no_slash(data: ProgressUpdate, user=Depends(get_current_user)):
+    return update_progress(data, user)

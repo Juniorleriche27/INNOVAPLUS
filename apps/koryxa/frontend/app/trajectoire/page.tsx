@@ -15,8 +15,7 @@ const TRACKS = [
     description: "Analyse, visualisation, insights et recommandations métier.",
     skills: ["Python", "SQL", "Power BI", "Excel avancé", "Statistiques"],
     gradient: "from-sky-500 to-sky-700",
-    href: "/trajectoire/data-analyst",
-    cta: "Ouvrir le projet",
+    cta: "Ouvrir le site de formation",
   },
   {
     icon: <Database className="h-7 w-7 text-white" />,
@@ -24,8 +23,7 @@ const TRACKS = [
     description: "Structuration, pipelines, infrastructure et qualité des données.",
     skills: ["Python", "SQL", "ETL", "Cloud", "Data warehousing"],
     gradient: "from-emerald-500 to-emerald-700",
-    href: "/trajectoire/data-analyst",
-    cta: "Ouvrir la page dédiée",
+    cta: "Ouvrir le site de formation",
   },
   {
     icon: <BrainCircuit className="h-7 w-7 text-white" />,
@@ -33,8 +31,7 @@ const TRACKS = [
     description: "Modèles prédictifs, explicatifs, automatisation et IA opérationnelle.",
     skills: ["Python", "Machine Learning", "Deep Learning", "MLOps", "NLP"],
     gradient: "from-amber-500 to-amber-700",
-    href: "/trajectoire/data-analyst",
-    cta: "Ouvrir la page dédiée",
+    cta: "Ouvrir le site de formation",
   },
 ];
 
@@ -50,14 +47,16 @@ const FLOW = [
 ];
 
 export default function TrajectoirePage() {
+  const formationUrl = (process.env.NEXT_PUBLIC_FORMATION_DATA_ANALYST_URL || "").trim() || "/trajectoire/demarrer";
+
   return (
     <main>
       <PublishedHero
         title="Montez en compétence vers les métiers IA"
         description="KORYXA vous accompagne avec diagnostic, formateurs partenaires, validation par preuves et accès aux opportunités."
         actions={[
-          { href: "/trajectoire/demarrer", label: "Démarrer le diagnostic" },
-          { href: "/trajectoire/data-analyst", label: "Voir Data Analyst", variant: "secondary" },
+          { href: formationUrl, label: "Accéder aux formations" },
+          { href: formationUrl, label: "Voir le site de formation", variant: "secondary" },
         ]}
       />
 
@@ -69,7 +68,7 @@ export default function TrajectoirePage() {
           />
           <div className="grid gap-8 md:grid-cols-3">
             {TRACKS.map((track) => (
-              <Link key={track.title} href={track.href} className="block">
+              <Link key={track.title} href={formationUrl} className="block">
                 <article className="overflow-hidden rounded-[30px] kx-glow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(8,145,178,0.24)]">
                   <div className={`h-32 bg-gradient-to-br ${track.gradient}`} />
                   <div className="p-6">
@@ -114,9 +113,9 @@ export default function TrajectoirePage() {
 
       <PublishedGradientBand
         title="Prêt à démarrer votre trajectoire IA ?"
-        description="Un diagnostic de 5 minutes pour identifier la meilleure voie pour vous."
-        actionHref="/trajectoire/demarrer"
-        actionLabel="Lancer le diagnostic"
+        description="Accédez directement au site des formations KORYXA actuellement déployé sur Vercel."
+        actionHref={formationUrl}
+        actionLabel="Ouvrir le site de formation"
       />
     </main>
   );

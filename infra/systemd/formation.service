@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=innova
 WorkingDirectory=/opt/innovaplus/KORYXA/services/formation-service/backend
+EnvironmentFile=-/etc/innovaplus/backend.env
 EnvironmentFile=/etc/innovaplus/formation.env
 ExecStart=/opt/innovaplus/KORYXA/services/formation-service/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8013
 Restart=always

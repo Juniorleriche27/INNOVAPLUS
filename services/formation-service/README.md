@@ -20,3 +20,12 @@ Déploiement serveur attendu :
 - port local : `127.0.0.1:8013`
 - proxy public : `https://api.innovaplus.africa/api/formation/*`
 - frontend public : `https://formation.innovaplus.africa`
+
+Configuration IA attendue :
+
+- `formation.service` hérite aussi de `/etc/innovaplus/backend.env`
+- le provider recommandé est `CHAT_PROVIDER=ai_gateway`
+- le service consomme alors les mêmes variables que KORYXA central :
+  - `AI_GATEWAY_BASE_URL`
+  - `AI_GATEWAY_API_KEY`
+  - `AI_GATEWAY_TIMEOUT_SECONDS`

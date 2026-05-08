@@ -3,11 +3,10 @@ import os
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-import cohere
 
-from app.config import settings
 from app.database import supabase
 from app.middleware.auth import get_current_user
+from app.services.llm import generate_text
 
 router = APIRouter()
 
@@ -18,12 +17,6 @@ Tu aides des étudiants débutants à comprendre Python, NumPy, Pandas, Matplotl
 Réponds toujours en français, de façon claire, simple et encourageante.
 Utilise des exemples concrets. Si tu donnes du code, garde-le minimal et commenté.
 Ne réponds qu'aux questions liées à la formation ou à la data science."""
-
-
-def get_cohere_client() -> cohere.Client:
-    if not settings.COHERE_API_KEY:
-        raise HTTPException(status_code=503, detail="Clé API Cohere non configurée.")
-    return cohere.Client(settings.COHERE_API_KEY)
 
 
 def load_notebook_text(module_id: str, max_chars: int = 8000) -> str:
@@ -57,27 +50,24 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 def chat(req: ChatRequest, user=Depends(get_current_user)):
-    co = get_cohere_client()
     context = load_notebook_text(req.module_id)
 
     system = SYSTEM_PROMPT
     if context:
         system += f"\n\nContenu du module actuel (utilise-le comme référence):\n---\n{context}\n---"
 
-    history = [
-        {"role": msg.role, "message": msg.message}
-        for msg in req.history[-10:]  # max 10 messages d'historique
-    ]
+    history_lines = []
+    for msg in req.history[-10:]:
+        role = "Assistant" if msg.role == "assistant" else "Utilisateur"
+        history_lines.append(f"{role}: {msg.message}")
 
-    response = co.chat(
-        model="command-r",
-        preamble=system,
-        chat_history=history,
-        message=req.question,
-        temperature=0.4,
-    )
+    prompt = system
+    if history_lines:
+        prompt += "\n\nHistorique récent:\n" + "\n".join(history_lines)
+    prompt += f"\n\nQuestion actuelle:\n{req.question}\n\nRéponse pédagogique:"
 
-    return {"answer": response.text}
+    answer = generate_text(prompt, max_tokens=500, temperature=0.4)
+    return {"answer": answer}
 
 
 # ── B. EXPLICATION DE CODE ──────────────────────────────────────────────────
@@ -88,8 +78,6 @@ class ExplainRequest(BaseModel):
 
 @router.post("/explain")
 def explain_code(req: ExplainRequest, user=Depends(get_current_user)):
-    co = get_cohere_client()
-
     prompt = f"""Tu es un professeur Python bienveillant. Explique le code suivant à un débutant complet, en français.
 Sois simple, clair, et explique chaque ligne importante. Maximum 200 mots.
 {f"Contexte : ce code vient du module '{req.module_title}'." if req.module_title else ""}
@@ -101,14 +89,8 @@ Code à expliquer:
 
 Explication:"""
 
-    response = co.generate(
-        model="command-r",
-        prompt=prompt,
-        max_tokens=400,
-        temperature=0.3,
-    )
-
-    return {"explanation": response.generations[0].text.strip()}
+    explanation = generate_text(prompt, max_tokens=400, temperature=0.3)
+    return {"explanation": explanation}
 
 
 # ── C. QUIZ GÉNÉRATIF ───────────────────────────────────────────────────────
@@ -118,7 +100,6 @@ class QuizRequest(BaseModel):
 
 @router.post("/quiz")
 def generate_quiz(req: QuizRequest, user=Depends(get_current_user)):
-    co = get_cohere_client()
     context = load_notebook_text(req.module_id, max_chars=6000)
 
     if not context:
@@ -145,14 +126,7 @@ Génère un JSON valide UNIQUEMENT, sans texte avant ou après, avec ce format e
 Les questions doivent tester la compréhension réelle. La bonne réponse doit être dans "answer" (A, B, C ou D).
 JSON:"""
 
-    response = co.generate(
-        model="command-r",
-        prompt=prompt,
-        max_tokens=1200,
-        temperature=0.2,
-    )
-
-    raw = response.generations[0].text.strip()
+    raw = generate_text(prompt, max_tokens=1200, temperature=0.2)
     # Extraire le JSON même si du texte parasite est présent
     start = raw.find("{")
     end   = raw.rfind("}") + 1

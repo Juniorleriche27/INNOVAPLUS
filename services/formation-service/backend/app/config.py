@@ -9,6 +9,14 @@ class Settings(BaseSettings):
     CORE_AUTH_ME_URL: str = "http://127.0.0.1:8000/innova/api/auth/me"
     CORE_AUTH_TIMEOUT_S: float = 5.0
     KORYXA_SESSION_COOKIE_NAME: str = "innova_session"
+    CHAT_PROVIDER: str = "cohere"
+    CHAT_MODEL: str = ""
+    LLM_PROVIDER: str = ""
+    LLM_MODEL: str = ""
+    LLM_MAX_NEW_TOKENS: int = 400
+    AI_GATEWAY_BASE_URL: str = ""
+    AI_GATEWAY_API_KEY: str = ""
+    AI_GATEWAY_TIMEOUT_SECONDS: int = 120
     COHERE_API_KEY: str = ""
 
     class Config:

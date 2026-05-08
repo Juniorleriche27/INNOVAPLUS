@@ -55,8 +55,8 @@ export default function TrajectoirePage() {
         title="Montez en compétence vers les métiers IA"
         description="KORYXA vous accompagne avec diagnostic, formateurs partenaires, validation par preuves et accès aux opportunités."
         actions={[
-          { href: formationUrl, label: "Accéder aux formations" },
-          { href: formationUrl, label: "Voir le site de formation", variant: "secondary" },
+          { href: "/trajectoire/demarrer", label: "Démarrer le diagnostic" },
+          { href: formationUrl, label: "Accéder aux formations", variant: "secondary" },
         ]}
       />
 

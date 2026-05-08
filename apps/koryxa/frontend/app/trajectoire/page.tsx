@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, BrainCircuit, Database } from "lucide-react";
 import { PublishedGradientBand, PublishedHero, PublishedSectionHeading } from "@/components/marketing/PublishedSiteSections";
+import { FORMATION_DATA_ANALYST_URL } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Trajectoire | KORYXA",
@@ -47,7 +48,7 @@ const FLOW = [
 ];
 
 export default function TrajectoirePage() {
-  const formationUrl = (process.env.NEXT_PUBLIC_FORMATION_DATA_ANALYST_URL || "").trim() || "/trajectoire/demarrer";
+  const formationUrl = FORMATION_DATA_ANALYST_URL;
 
   return (
     <main>
@@ -113,9 +114,9 @@ export default function TrajectoirePage() {
 
       <PublishedGradientBand
         title="Prêt à démarrer votre trajectoire IA ?"
-        description="Accédez directement au site des formations KORYXA actuellement déployé sur Vercel."
+        description="Accédez directement à la plateforme Formation IA de KORYXA."
         actionHref={formationUrl}
-        actionLabel="Ouvrir le site de formation"
+        actionLabel="Accéder aux formations"
       />
     </main>
   );

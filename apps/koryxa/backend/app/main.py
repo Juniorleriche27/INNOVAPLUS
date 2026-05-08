@@ -30,6 +30,7 @@ from app.services.postgres_bootstrap import (
     ensure_auth_tables,
     ensure_chatlaya_tables,
     ensure_enterprise_leads_table,
+    ensure_formation_tables,
     init_pg_pool,
 )
 from app.routers.auth import router as auth_router
@@ -40,6 +41,7 @@ from app.routers.invite import router as invite_router
 from app.routers.youtube import router as youtube_router
 from app.routers.billing import router as billing_router
 from app.routers.trajectoire import router as trajectoire_router
+from app.routers.formation import router as formation_router
 from app.routers.public_enterprise import router as public_enterprise_router
 from app.routers.public_products import router as public_products_router
 from app.core.ai import detect_embed_dim
@@ -510,6 +512,10 @@ async def on_startup():
         ensure_enterprise_leads_table()
     except Exception:
         logger.exception("Failed to ensure enterprise_leads table")
+    try:
+        ensure_formation_tables()
+    except Exception:
+        logger.exception("Failed to ensure Formation IA tables")
     init_cohere_client()
 
 
@@ -976,6 +982,7 @@ innova_api.include_router(invite_router)
 innova_api.include_router(youtube_router)
 innova_api.include_router(billing_router)
 innova_api.include_router(trajectoire_router)
+innova_api.include_router(formation_router)
 innova_api.include_router(public_enterprise_router)
 innova_api.include_router(public_products_router)
 innova_api.include_router(notifications_router)

@@ -29,6 +29,12 @@ Detailed route-family matrix:
 - bind: `127.0.0.1:8000`
 - role: core KORYXA backend
 
+Service identity note:
+
+- logical service name: `koryxa-core-service`
+- current implementation location is still `apps/koryxa/backend`
+- this is a transitional code-location detail, not a sign that core should remain a monolith forever
+
 Live ownership:
 
 - `/health`
@@ -104,6 +110,11 @@ That means:
 - ChatLAYA should remain a dedicated service boundary.
 - The core backend should remain the owner of core platform APIs.
 - Future cleanup should clarify ownership, not blur it.
+
+Tracked future cleanup still pending:
+
+- relocate the core service implementation from `apps/koryxa/backend` to `services/koryxa-core-service/backend`
+- keep treating that move as a dedicated migration project, not as an ad hoc refactor during feature work
 
 ## When adding a new endpoint
 

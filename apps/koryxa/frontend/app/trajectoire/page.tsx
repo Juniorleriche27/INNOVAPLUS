@@ -1,4 +1,5 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
+import Link from "next/link";
 import { BarChart3, BrainCircuit, Database } from "lucide-react";
 import { PublishedGradientBand, PublishedHero, PublishedSectionHeading } from "@/components/marketing/PublishedSiteSections";
 
@@ -14,6 +15,8 @@ const TRACKS = [
     description: "Analyse, visualisation, insights et recommandations métier.",
     skills: ["Python", "SQL", "Power BI", "Excel avancé", "Statistiques"],
     gradient: "from-sky-500 to-sky-700",
+    href: "/trajectoire/data-analyst",
+    cta: "Ouvrir le projet",
   },
   {
     icon: <Database className="h-7 w-7 text-white" />,
@@ -21,6 +24,8 @@ const TRACKS = [
     description: "Structuration, pipelines, infrastructure et qualité des données.",
     skills: ["Python", "SQL", "ETL", "Cloud", "Data warehousing"],
     gradient: "from-emerald-500 to-emerald-700",
+    href: "/trajectoire/data-analyst",
+    cta: "Ouvrir la page dédiée",
   },
   {
     icon: <BrainCircuit className="h-7 w-7 text-white" />,
@@ -28,6 +33,8 @@ const TRACKS = [
     description: "Modèles prédictifs, explicatifs, automatisation et IA opérationnelle.",
     skills: ["Python", "Machine Learning", "Deep Learning", "MLOps", "NLP"],
     gradient: "from-amber-500 to-amber-700",
+    href: "/trajectoire/data-analyst",
+    cta: "Ouvrir la page dédiée",
   },
 ];
 
@@ -48,7 +55,10 @@ export default function TrajectoirePage() {
       <PublishedHero
         title="Montez en compétence vers les métiers IA"
         description="KORYXA vous accompagne avec diagnostic, formateurs partenaires, validation par preuves et accès aux opportunités."
-        actions={[{ href: "/trajectoire/demarrer", label: "Démarrer le diagnostic" }]}
+        actions={[
+          { href: "/trajectoire/demarrer", label: "Démarrer le diagnostic" },
+          { href: "/trajectoire/data-analyst", label: "Voir Data Analyst", variant: "secondary" },
+        ]}
       />
 
       <section className="bg-[#020617] px-4 py-20 sm:px-6 lg:px-8">
@@ -59,23 +69,28 @@ export default function TrajectoirePage() {
           />
           <div className="grid gap-8 md:grid-cols-3">
             {TRACKS.map((track) => (
-              <article key={track.title} className="overflow-hidden rounded-[30px] kx-glow-card">
-                <div className={`h-32 bg-gradient-to-br ${track.gradient}`} />
-                <div className="p-6">
-                  <div className="-mt-14 mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-lg">
-                    {track.icon}
+              <Link key={track.title} href={track.href} className="block">
+                <article className="overflow-hidden rounded-[30px] kx-glow-card transition duration-200 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(8,145,178,0.24)]">
+                  <div className={`h-32 bg-gradient-to-br ${track.gradient}`} />
+                  <div className="p-6">
+                    <div className="-mt-14 mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-lg">
+                      {track.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-white">{track.title}</h3>
+                    <p className="mt-3 text-sm text-slate-400">{track.description}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {track.skills.map((skill) => (
+                        <span key={skill} className="rounded-full bg-white/8 px-2.5 py-1 text-xs font-medium text-slate-300">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-5 inline-flex rounded-xl border border-sky-400/28 bg-sky-400/10 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:bg-sky-400/16">
+                      {track.cta}
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white">{track.title}</h3>
-                  <p className="mt-3 text-sm text-slate-400">{track.description}</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {track.skills.map((skill) => (
-                      <span key={skill} className="rounded-full bg-white/8 px-2.5 py-1 text-xs font-medium text-slate-300">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </article>
+                </article>
+              </Link>
             ))}
           </div>
         </div>

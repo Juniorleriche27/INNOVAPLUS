@@ -68,6 +68,8 @@ const CHATLAYA_SOURCE_BASE = alignLoopbackHost(
 
 export const CHATLAYA_API_BASE = CHATLAYA_SOURCE_BASE.replace(/\/+$/, "");
 
+export const FORMATION_DATA_ANALYST_URL = (process.env.NEXT_PUBLIC_FORMATION_DATA_ANALYST_URL || "").trim();
+
 export const DEV_AUTO_LOGIN_ENABLED =
   (process.env.NEXT_PUBLIC_DEV_AUTO_LOGIN || "").toLowerCase() === "true";
 

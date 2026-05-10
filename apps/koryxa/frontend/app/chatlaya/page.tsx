@@ -2,7 +2,8 @@
 
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowUp, Check, Copy, MapPin, MessageSquarePlus } from "lucide-react";
+import Link from "next/link";
+import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 
@@ -293,6 +294,7 @@ function ChatlayaContent() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
+  const [founderAuthRequired, setFounderAuthRequired] = useState(false);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -496,11 +498,20 @@ function ChatlayaContent() {
         { cache: "no-store", credentials: "include" },
       );
       if (!response.ok) {
+        if (response.status === 401) {
+          const conv = conversations.find((c) => c.conversation_id === conversationId);
+          if (!conv || conv.assistant_mode === "launch_structure_sell") {
+            setFounderAuthRequired(true);
+            setMessages([]);
+            return;
+          }
+        }
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.detail || "Impossible de récupérer les messages.");
       }
       const data = await response.json().catch(() => ({}));
       resetTypewriterQueue();
+      setFounderAuthRequired(false);
       setMessages(Array.isArray(data?.items) ? data.items : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
@@ -631,6 +642,7 @@ function ChatlayaContent() {
 
   async function switchToGeneralMode() {
     if (assistantModeSaving || streaming) return;
+    setFounderAuthRequired(false);
     setError(null);
     setAssistantModeSaving(true);
     try {
@@ -650,6 +662,11 @@ function ChatlayaContent() {
 
   async function switchToFounderMode() {
     if (assistantModeSaving || streaming) return;
+    if (accessMode === "guest") {
+      setFounderAuthRequired(true);
+      return;
+    }
+    setFounderAuthRequired(false);
     setError(null);
     setAssistantModeSaving(true);
     try {
@@ -663,9 +680,15 @@ function ChatlayaContent() {
         credentials: "include",
         body: JSON.stringify({ assistant_mode: "launch_structure_sell" }),
       });
-      const finalConv = response.ok
-        ? normalizeConversation((await response.json()) as Conversation)
-        : { ...created, assistant_mode: "launch_structure_sell" as AssistantMode };
+      if (!response.ok) {
+        if (response.status === 401) {
+          setFounderAuthRequired(true);
+          return;
+        }
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.detail || "Impossible de changer le mode assistant.");
+      }
+      const finalConv = normalizeConversation((await response.json()) as Conversation);
       setConversations((current) => [finalConv, ...current.filter((c) => c.conversation_id !== finalConv.conversation_id)]);
       setSelectedConversationId(finalConv.conversation_id);
       setMessages([]);
@@ -721,7 +744,9 @@ function ChatlayaContent() {
     const isEventStream = (contentType || "").includes("text/event-stream");
     if (!response.ok || !response.body || !isEventStream) {
       const text = await response.text().catch(() => "");
-      throw new Error(normalizeStreamError(text, response.status, contentType));
+      const err = new Error(normalizeStreamError(text, response.status, contentType));
+      if (response.status === 401) Object.assign(err, { status: 401 });
+      throw err;
     }
 
     const reader = response.body.getReader();
@@ -823,7 +848,11 @@ function ChatlayaContent() {
       await loadMessages(convId);
       await loadConversations(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur pendant la génération.");
+      if (err instanceof Error && (err as Error & { status?: number }).status === 401) {
+        setFounderAuthRequired(true);
+      } else {
+        setError(err instanceof Error ? err.message : "Erreur pendant la génération.");
+      }
       setMessages((current) => current.filter((item) => !item.pending));
     } finally {
       setStreaming(false);
@@ -1024,19 +1053,23 @@ function ChatlayaContent() {
             <div className="flex gap-1.5">
               {ASSISTANT_MODE_OPTIONS.map((option) => {
                 const active = option.value === activeAssistantMode;
+                const isFounderLocked = option.value === "launch_structure_sell" && accessMode === "guest";
                 return (
                   <button
                     key={option.value}
                     type="button"
                     disabled={assistantModeSaving || streaming || (option.value === "general" && !selectedConversationId)}
                     onClick={() => void (option.value === "launch_structure_sell" ? switchToFounderMode() : switchToGeneralMode())}
-                    title={option.hint}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    title={isFounderLocked ? "Connexion requise pour accéder au Mode Fondateur" : option.hint}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
                       active
                         ? "bg-sky-600 text-white shadow-sm"
-                        : "border border-slate-200 bg-white text-slate-500 hover:border-sky-300 hover:text-sky-600"
+                        : isFounderLocked
+                          ? "border border-slate-200 bg-white text-slate-400 hover:border-amber-300 hover:text-amber-600"
+                          : "border border-slate-200 bg-white text-slate-500 hover:border-sky-300 hover:text-sky-600"
                     } disabled:cursor-not-allowed disabled:opacity-50`}
                   >
+                    {isFounderLocked && <Lock className="h-3 w-3" />}
                     {option.label}
                   </button>
                 );
@@ -1053,7 +1086,34 @@ function ChatlayaContent() {
           ref={messagesViewportRef}
           className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain touch-pan-y px-4 py-5 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:px-5"
         >
-          {messagesLoading ? (
+          {founderAuthRequired ? (
+            <div className="flex h-full min-h-[200px] items-center justify-center">
+              <div className="w-full max-w-sm text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100">
+                  <Lock className="h-5 w-5 text-amber-500" />
+                </div>
+                <p className="text-base font-semibold text-slate-800">Mode Fondateur — Accès réservé</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Le Mode Fondateur est réservé aux utilisateurs connectés. Connectez-vous pour accéder au corpus spécialisé&nbsp;: lancer, structurer, vendre.
+                </p>
+                <div className="mt-5 flex flex-col items-center gap-3">
+                  <Link
+                    href="/login?redirect=/chatlaya"
+                    className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+                  >
+                    Se connecter
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => { setFounderAuthRequired(false); void switchToGeneralMode(); }}
+                    className="text-xs text-slate-400 transition hover:text-slate-600"
+                  >
+                    Rester en Mode général
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : messagesLoading ? (
             <div className="grid gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div

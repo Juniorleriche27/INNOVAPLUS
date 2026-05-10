@@ -259,7 +259,6 @@ TRAJECTOIRE_KEYWORDS = (
     "opportunites",
 )
 ENTERPRISE_KEYWORDS = (
-    "entreprise",
     "besoin entreprise",
     "organisation",
     "brief",
@@ -268,6 +267,8 @@ ENTERPRISE_KEYWORDS = (
     "urgence",
     "cadrer",
     "qualifier",
+    "cadrage entreprise",
+    "mission entreprise",
 )
 PRODUCT_KEYWORDS = (
     "koryxa",
@@ -412,6 +413,13 @@ def _build_direct_reply(kind: str, assistant_mode: str = CHATLAYA_MODE_GENERAL) 
 
 def _build_general_site_expert_reply(message: str) -> str:
     normalized = _normalize_text(message)
+
+    if any(token in normalized for token in ("prix", "tarif", "tarification")):
+        return (
+            "Pour fixer le prix d’un produit, partez de 4 repères simples : vos coûts réels, la valeur perçue par le client, "
+            "les prix du marché et la marge minimale que vous devez protéger. "
+            "Si vous voulez, je peux ensuite vous guider plus précisément dans KORYXA vers l’entrée la plus adaptée pour cadrer ce sujet."
+        )
 
     if any(phrase in normalized for phrase in ("que fait koryxa", "c est quoi koryxa", "presente koryxa", "explique koryxa")):
         return (

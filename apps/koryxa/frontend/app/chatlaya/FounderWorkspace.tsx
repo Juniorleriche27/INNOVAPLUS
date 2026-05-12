@@ -2,21 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Users,
-  Target,
-  Package,
-  DollarSign,
-  BarChart2,
-  MessageCircle,
-  FileText,
-  Check,
-  RotateCcw,
-  ArrowRight,
-  X,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
+  Users, Target, Package, DollarSign, BarChart2, MessageCircle, FileText,
+  Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
+  Copy, Download, PenLine, BookOpen,
 } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
@@ -50,6 +38,7 @@ type ModuleState = {
   inputs: Record<string, string>;
   output: string | null;
   status: ModuleStatus;
+  retention?: string;
 };
 
 type WorkspaceData = Record<string, ModuleState>;
@@ -62,23 +51,20 @@ const MODULES: ModuleDef[] = [
     step: 1,
     label: "Client cible",
     tagline: "À qui vous adressez-vous ?",
-    description:
-      "Définissez précisément votre client idéal — qui il est, ce qui le motive, comment le trouver.",
+    description: "Définissez précisément votre client idéal — qui il est, ce qui le motive, comment le trouver.",
     icon: Users,
     inputs: [
       {
         id: "activite",
         label: "Décrivez votre activité en 1-2 phrases",
-        placeholder:
-          "Ex : Je propose des formations pour apprendre à créer des vêtements africains modernes depuis chez soi…",
+        placeholder: "Ex : Je propose des formations pour apprendre à créer des vêtements africains modernes depuis chez soi…",
         type: "textarea",
         rows: 2,
       },
       {
         id: "client_idee",
         label: "À qui vendez-vous selon vous ? (soyez précis)",
-        placeholder:
-          "Ex : Femmes de 25-45 ans qui veulent créer leur propre marque de mode africaine mais ne savent pas coudre…",
+        placeholder: "Ex : Femmes de 25-45 ans qui veulent créer leur propre marque de mode africaine mais ne savent pas coudre…",
         type: "textarea",
         rows: 2,
       },
@@ -89,15 +75,13 @@ const MODULES: ModuleDef[] = [
     step: 2,
     label: "Problème",
     tagline: "Quel problème résolvez-vous ?",
-    description:
-      "Formulez clairement la douleur de votre client — ce qu'il perd sans votre solution.",
+    description: "Formulez clairement la douleur de votre client — ce qu'il perd sans votre solution.",
     icon: Target,
     inputs: [
       {
         id: "probleme_idee",
         label: "Quel est le problème principal de votre client ?",
-        placeholder:
-          "Ex : Ils veulent se lancer dans la couture africaine mais les formations classiques sont trop chères et éloignées…",
+        placeholder: "Ex : Ils veulent se lancer dans la couture africaine mais les formations classiques sont trop chères et éloignées…",
         type: "textarea",
         rows: 3,
       },
@@ -108,23 +92,20 @@ const MODULES: ModuleDef[] = [
     step: 3,
     label: "Offre & Valeur",
     tagline: "Que proposez-vous exactement ?",
-    description:
-      "Structurez votre offre et formulez ce que le client gagne ou évite grâce à vous.",
+    description: "Structurez votre offre et formulez ce que le client gagne ou évite grâce à vous.",
     icon: Package,
     inputs: [
       {
         id: "offre_detail",
         label: "Qu'est-ce que vous proposez exactement ?",
-        placeholder:
-          "Ex : Une formation vidéo de 6h + 3 séances live/mois + un kit de démarrage…",
+        placeholder: "Ex : Une formation vidéo de 6h + 3 séances live/mois + un kit de démarrage…",
         type: "textarea",
         rows: 2,
       },
       {
         id: "gain_client",
         label: "Que gagne ou évite le client grâce à vous ?",
-        placeholder:
-          "Ex : Il crée ses premières tenues en 30 jours sans machine hors de prix et sans se déplacer…",
+        placeholder: "Ex : Il crée ses premières tenues en 30 jours sans machine hors de prix et sans se déplacer…",
         type: "textarea",
         rows: 2,
       },
@@ -135,15 +116,13 @@ const MODULES: ModuleDef[] = [
     step: 4,
     label: "Prix",
     tagline: "Combien et comment facturer ?",
-    description:
-      "Validez votre stratégie tarifaire et apprenez à tester votre prix rapidement.",
+    description: "Validez votre stratégie tarifaire et apprenez à tester votre prix rapidement.",
     icon: DollarSign,
     inputs: [
       {
         id: "modele_prix",
         label: "Comment comptez-vous facturer ?",
-        placeholder:
-          "Ex : Paiement unique, abonnement mensuel, à la séance, accès à vie…",
+        placeholder: "Ex : Paiement unique, abonnement mensuel, à la séance, accès à vie…",
         type: "textarea",
         rows: 2,
       },
@@ -160,15 +139,13 @@ const MODULES: ModuleDef[] = [
     step: 5,
     label: "Business model",
     tagline: "Comment votre activité génère-t-elle de la valeur ?",
-    description:
-      "Structurez vos flux de revenus, anticipez vos coûts clés et renforcez la solidité de votre modèle.",
+    description: "Structurez vos flux de revenus, anticipez vos coûts clés et renforcez la solidité de votre modèle.",
     icon: BarChart2,
     inputs: [
       {
         id: "revenus",
         label: "Comment gagnez-vous de l'argent concrètement ?",
-        placeholder:
-          "Ex : Vente de formations, coaching individuel payant, vente de kits couture, affiliation…",
+        placeholder: "Ex : Vente de formations, coaching individuel payant, vente de kits couture, affiliation…",
         type: "textarea",
         rows: 3,
       },
@@ -179,15 +156,13 @@ const MODULES: ModuleDef[] = [
     step: 6,
     label: "Message de vente",
     tagline: "Comment convaincre et déclencher l'achat ?",
-    description:
-      "Rédigez des messages de vente courts, directs et adaptés à vos canaux.",
+    description: "Rédigez des messages de vente courts, directs et adaptés à vos canaux.",
     icon: MessageCircle,
     inputs: [
       {
         id: "canal",
         label: "Où vendez-vous ou comptez-vous vendre ?",
-        placeholder:
-          "Ex : WhatsApp, Instagram, bouche-à-oreille, marché physique, TikTok…",
+        placeholder: "Ex : WhatsApp, Instagram, bouche-à-oreille, marché physique, TikTok…",
         type: "text",
       },
     ],
@@ -197,8 +172,7 @@ const MODULES: ModuleDef[] = [
     step: 7,
     label: "Business plan",
     tagline: "Votre plan complet sur 12 mois",
-    description:
-      "Synthèse structurée de votre projet — vision, marché, modèle, plan d'action et indicateurs clés.",
+    description: "Synthèse structurée de votre projet — vision, marché, modèle, plan d'action et indicateurs clés.",
     icon: FileText,
     optional: true,
     inputs: [
@@ -212,8 +186,7 @@ const MODULES: ModuleDef[] = [
       {
         id: "objectifs",
         label: "Vos objectifs principaux",
-        placeholder:
-          "Ex : Atteindre 20 clients payants, générer 200 000 FCFA/mois…",
+        placeholder: "Ex : Atteindre 20 clients payants, générer 200 000 FCFA/mois…",
         type: "textarea",
         rows: 2,
         optional: true,
@@ -248,14 +221,12 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Mon client cible selon moi est : ${inputs.client_idee || "(non précisé)"}. ` +
         `Aide-moi à définir clairement mon client cible : qui il est vraiment, ses caractéristiques principales, ce qui le motive à acheter, et comment le trouver concrètement. Sois précis et actionnable.`
       );
-
     case "probleme":
       return (
         `Mon client cible est : ${client || "(non défini)"}. ` +
         `Je pense résoudre ce problème : ${inputs.probleme_idee || "(non précisé)"}. ` +
         `Aide-moi à formuler clairement ce problème : en quoi c'est douloureux pour le client, ce qu'il perd ou rate sans solution, et pourquoi ce problème vaut la peine d'être résolu. Sois concret.`
       );
-
     case "offre":
       return (
         `Mon client ${client ? `est : ${short(client)}` : "(défini à l'étape précédente)"}. ` +
@@ -264,7 +235,6 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Le client gagne ou évite : ${inputs.gain_client || "(non précisé)"}. ` +
         `Aide-moi à structurer une proposition de valeur claire et percutante : ce que je propose, pour qui, pourquoi c'est différent, et le bénéfice concret. En 3 à 5 points actionnables.`
       );
-
     case "prix":
       return (
         `${offre ? `Mon offre : ${short(offre)}. ` : ""}` +
@@ -273,7 +243,6 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `${inputs.niveau_prix ? `, avec un niveau de prix de : ${inputs.niveau_prix}` : ""}. ` +
         `Aide-moi à valider ma stratégie de prix : est-ce cohérent avec la valeur apportée, quelles questions je dois me poser, et comment tester mon prix rapidement.`
       );
-
     case "business_model":
       return (
         `${offre ? `Mon offre : ${short(offre)}. ` : ""}` +
@@ -282,7 +251,6 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Je génère des revenus via : ${inputs.revenus || "(non précisé)"}. ` +
         `Aide-moi à structurer mon business model : flux de revenus principaux, coûts clés à anticiper, et comment le rendre plus solide ou scalable.`
       );
-
     case "vente":
       return (
         `${offre ? `Mon offre : ${short(offre, 120)}. ` : ""}` +
@@ -292,7 +260,6 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Rédige un message de vente court, direct et convaincant adapté à ${inputs.canal || "ce canal"}. ` +
         `Il doit capter l'attention, montrer la valeur et appeler à l'action. Donne 2 à 3 variantes courtes.`
       );
-
     case "business_plan":
       return (
         `Voici le résumé de mon projet :\n` +
@@ -305,13 +272,12 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `${inputs.objectifs ? ` avec ces objectifs : ${inputs.objectifs}` : ""}. ` +
         `Garde-le pratique, pas académique : vision, marché cible, offre et valeur, modèle économique, plan d'action prioritaire, indicateurs clés.`
       );
-
     default:
       return "Aide-moi sur cette étape de mon projet.";
   }
 }
 
-// ─── Markdown renderer ──────────────────────────────────────────────────────
+// ─── Markdown parser ─────────────────────────────────────────────────────────
 
 type MdBlock =
   | { type: "paragraph"; text: string }
@@ -390,21 +356,32 @@ function renderInline(text: string): React.ReactNode {
   );
 }
 
+// ─── FounderOutput (enhanced) ────────────────────────────────────────────────
+
 function FounderOutput({ content }: { content: string }) {
   const blocks = parseMd(content);
   return (
     <div className="space-y-3 break-words">
       {blocks.map((block, idx) => {
         if (block.type === "heading") {
-          const cls =
-            block.level === 1
-              ? "text-base font-bold text-slate-900"
-              : block.level === 2
-                ? "text-sm font-bold text-slate-900"
-                : "text-sm font-semibold text-slate-800";
-          if (block.level === 1) return <h1 key={idx} className={cls}>{renderInline(block.text)}</h1>;
-          if (block.level === 2) return <h2 key={idx} className={cls}>{renderInline(block.text)}</h2>;
-          return <h3 key={idx} className={cls}>{renderInline(block.text)}</h3>;
+          if (block.level === 1)
+            return (
+              <h1 key={idx} className="text-base font-bold text-slate-900 pt-1">
+                {renderInline(block.text)}
+              </h1>
+            );
+          if (block.level === 2)
+            return (
+              <h2 key={idx} className="flex items-center gap-2.5 text-sm font-bold text-slate-800 pt-2">
+                <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-sky-400" />
+                {renderInline(block.text)}
+              </h2>
+            );
+          return (
+            <h3 key={idx} className="text-sm font-semibold text-slate-700 pt-1">
+              {renderInline(block.text)}
+            </h3>
+          );
         }
 
         if (block.type === "ordered-list") {
@@ -443,7 +420,29 @@ function FounderOutput({ content }: { content: string }) {
   );
 }
 
-// ─── localStorage helpers ───────────────────────────────────────────────────
+// ─── RetentionBlock ──────────────────────────────────────────────────────────
+
+function RetentionBlock({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <PenLine className="h-3.5 w-3.5 text-emerald-600" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+          Ce que je retiens
+        </span>
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Décision validée, point encore flou, ce qui guidera l'étape suivante…"
+        rows={3}
+        className="w-full resize-none bg-transparent text-sm leading-relaxed text-emerald-900 placeholder:text-emerald-400/70 focus:outline-none"
+      />
+    </div>
+  );
+}
+
+// ─── localStorage helpers ────────────────────────────────────────────────────
 
 function storageKey(cid: string) {
   return `kx-founder-ws-${cid}`;
@@ -463,8 +462,6 @@ function saveWs(cid: string, data: WorkspaceData) {
   } catch {}
 }
 
-// ─── Default module state ───────────────────────────────────────────────────
-
 function defaultMs(): ModuleState {
   return { inputs: {}, output: null, status: "empty" };
 }
@@ -473,7 +470,7 @@ function getMs(ws: WorkspaceData, id: string): ModuleState {
   return ws[id] ?? defaultMs();
 }
 
-// ─── GeneratingAnimation ────────────────────────────────────────────────────
+// ─── GeneratingCard ──────────────────────────────────────────────────────────
 
 const GENERATING_MSGS = [
   "Je mobilise le corpus Fondateur…",
@@ -513,7 +510,7 @@ function GeneratingCard({ firstName }: { firstName?: string }) {
         </span>
       </div>
       <p key={phase} className="kx-thinking-msg text-sm leading-relaxed text-slate-600">
-        {firstName ? GENERATING_MSGS[phase].replace("votre", `votre`) : GENERATING_MSGS[phase]}
+        {firstName ? GENERATING_MSGS[phase] : GENERATING_MSGS[phase]}
       </p>
       <div className="h-[3px] w-full overflow-hidden rounded-full bg-slate-100">
         <div className="kx-thinking-scan h-full w-1/3 rounded-full bg-gradient-to-r from-sky-400 via-violet-400 to-sky-400" />
@@ -522,7 +519,317 @@ function GeneratingCard({ firstName }: { firstName?: string }) {
   );
 }
 
-// ─── FounderWorkspace ────────────────────────────────────────────────────────
+// ─── HTML export ─────────────────────────────────────────────────────────────
+
+function inlineToHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>");
+}
+
+function mdToHtmlString(content: string): string {
+  const blocks = parseMd(content);
+  return blocks
+    .map((block) => {
+      switch (block.type) {
+        case "heading":
+          return `<h${block.level}>${inlineToHtml(block.text)}</h${block.level}>`;
+        case "paragraph":
+          return `<p>${inlineToHtml(block.text)}</p>`;
+        case "ordered-list":
+          return `<ol>${block.items.map((item) => `<li>${inlineToHtml(item)}</li>`).join("")}</ol>`;
+        case "unordered-list":
+          return `<ul>${block.items.map((item) => `<li>${inlineToHtml(item)}</li>`).join("")}</ul>`;
+        default:
+          return "";
+      }
+    })
+    .join("\n");
+}
+
+function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?: string): string {
+  const date = new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" });
+  const completedModules = modules.filter((m) => getMs(ws, m.id).status === "completed");
+  const requiredDone = modules.filter((m) => !m.optional && getMs(ws, m.id).status === "completed").length;
+  const requiredTotal = modules.filter((m) => !m.optional).length;
+
+  const modulesSections = completedModules
+    .map((mod) => {
+      const mws = getMs(ws, mod.id);
+      const contentHtml = mws.output ? mdToHtmlString(mws.output) : "";
+      const retentionHtml = mws.retention?.trim()
+        ? `<div class="retention">
+            <div class="retention-label">Ce que j'ai retenu</div>
+            <div class="retention-text">${mws.retention.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>
+          </div>`
+        : "";
+      return `
+        <div class="module">
+          <div class="module-header">
+            <div class="module-step">${mod.step}</div>
+            <div>
+              <div class="module-step-label">Étape ${mod.step}${mod.optional ? " · Optionnelle" : ""}</div>
+              <div class="module-title">${mod.label}</div>
+              <div class="module-tagline">${mod.tagline}</div>
+            </div>
+          </div>
+          <div class="module-content">${contentHtml}</div>
+          ${retentionHtml}
+        </div>`;
+    })
+    .join('<hr class="module-divider">');
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Projet Fondateur — KORYXA${firstName ? ` · ${firstName}` : ""}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      color: #1e293b; background: #fff; margin: 0; padding: 0;
+      font-size: 14px; line-height: 1.7;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .doc { max-width: 780px; margin: 0 auto; padding: 48px 40px; }
+
+    /* Print button */
+    .print-btn {
+      position: fixed; top: 20px; right: 20px;
+      background: #0ea5e9; color: white; border: none; border-radius: 8px;
+      padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(14,165,233,0.3); z-index: 100;
+      font-family: inherit;
+    }
+    .print-btn:hover { background: #0284c7; }
+
+    /* Header */
+    .doc-header {
+      margin-bottom: 52px; padding-bottom: 36px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      flex-wrap: wrap; gap: 24px;
+    }
+    .doc-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #0ea5e9; margin-bottom: 8px; }
+    .doc-title { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 4px; }
+    .doc-subtitle { font-size: 14px; color: #64748b; }
+    .doc-meta { text-align: right; font-size: 12px; color: #94a3b8; line-height: 1.8; }
+    .doc-progress {
+      margin-top: 8px; display: inline-block;
+      background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+      border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 600;
+    }
+
+    /* Modules */
+    .module { margin-bottom: 40px; }
+    .module-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+    .module-step {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: white;
+      background: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%);
+    }
+    .module-step-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+    .module-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 1px; }
+    .module-tagline { font-size: 12px; color: #64748b; }
+
+    .module-content { border-left: 3px solid #e0f2fe; padding-left: 20px; margin-left: 50px; }
+    .module-content h1 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 16px 0 8px; }
+    .module-content h2 { font-size: 14px; font-weight: 700; color: #0f172a; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #f1f5f9; }
+    .module-content h3 { font-size: 13px; font-weight: 600; color: #334155; margin: 12px 0 4px; }
+    .module-content p { margin: 8px 0; color: #374151; font-size: 13.5px; line-height: 1.75; }
+    .module-content ul { margin: 8px 0; padding-left: 0; list-style: none; }
+    .module-content ul li { position: relative; padding-left: 16px; margin: 5px 0; color: #374151; font-size: 13.5px; line-height: 1.7; }
+    .module-content ul li::before { content: '•'; position: absolute; left: 0; color: #0ea5e9; font-weight: 700; }
+    .module-content ol { margin: 8px 0; padding-left: 28px; color: #374151; font-size: 13.5px; }
+    .module-content ol li { margin: 5px 0; line-height: 1.7; }
+    .module-content strong { font-weight: 600; color: #0f172a; }
+    .module-content em { font-style: italic; color: #475569; }
+    .module-content code { background: #f1f5f9; color: #0284c7; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+    /* Retention */
+    .retention {
+      margin-top: 14px; margin-left: 50px;
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #22c55e;
+      border-radius: 8px; padding: 12px 16px;
+    }
+    .retention-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #15803d; margin-bottom: 6px; }
+    .retention-text { font-size: 13px; color: #166534; line-height: 1.65; }
+
+    /* Divider */
+    .module-divider { border: none; border-top: 1px solid #f1f5f9; margin: 40px 0; }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 60px; padding-top: 24px; border-top: 1px solid #e2e8f0;
+      display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8;
+    }
+
+    @media print {
+      .print-btn { display: none !important; }
+      .doc { padding: 24px 28px; }
+      body { font-size: 12px; }
+      .module-content h1 { font-size: 14px; }
+      .module-content h2 { font-size: 13px; }
+      .module-content p, .module-content li { font-size: 12.5px; }
+      .module { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">Imprimer / Sauvegarder PDF</button>
+  <div class="doc">
+    <div class="doc-header">
+      <div>
+        <div class="doc-brand">KORYXA · Mode Fondateur</div>
+        <div class="doc-title">${firstName ? `Projet de ${firstName}` : "Mon Projet Fondateur"}</div>
+        <div class="doc-subtitle">Synthèse complète — Parcours Fondateur ChatLAYA</div>
+      </div>
+      <div class="doc-meta">
+        <div>${date}</div>
+        <div class="doc-progress">${requiredDone}/${requiredTotal} étapes validées</div>
+      </div>
+    </div>
+    ${modulesSections}
+    <div class="doc-footer">
+      <span>Document confidentiel — KORYXA Founder · ChatLAYA</span>
+      <span>${date}</span>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+// ─── SynthesisView ────────────────────────────────────────────────────────────
+
+interface SynthesisViewProps {
+  ws: WorkspaceData;
+  modules: ModuleDef[];
+  firstName?: string;
+  onBack: () => void;
+  onExport: () => void;
+}
+
+function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisViewProps) {
+  const completedModules = modules.filter((m) => getMs(ws, m.id).status === "completed");
+
+  return (
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
+      {/* Header */}
+      <div className="shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50/80 to-violet-50/80 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-white/80 hover:text-slate-700"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Retour
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Synthèse finale</p>
+            <p className="text-sm font-bold text-slate-800">
+              {firstName ? `Projet de ${firstName}` : "Votre projet consolidé"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onExport}
+            className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98]"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exporter PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
+        <div className="mx-auto max-w-2xl">
+          {/* Intro banner */}
+          <div className="mb-8 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 px-5 py-5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-sky-600">
+              Parcours Fondateur — Synthèse complète
+            </p>
+            <p className="text-sm leading-relaxed text-slate-600">
+              {completedModules.length} étape{completedModules.length > 1 ? "s" : ""} validée{completedModules.length > 1 ? "s" : ""}.{" "}
+              Ce document consolide l'ensemble des décisions de votre parcours Fondateur.
+              Cliquez sur <strong className="font-semibold text-sky-700">Exporter PDF</strong> pour générer le document final.
+            </p>
+          </div>
+
+          {/* Module sections */}
+          <div className="space-y-10">
+            {completedModules.map((mod, modIdx) => {
+              const mws = getMs(ws, mod.id);
+              const Icon = mod.icon;
+              return (
+                <div key={mod.id}>
+                  {modIdx > 0 && <div className="mb-10 border-t border-slate-100" />}
+
+                  {/* Module header */}
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-white">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                        Étape {mod.step}{mod.optional ? " · Optionnelle" : ""}
+                      </p>
+                      <p className="text-sm font-bold text-slate-800">{mod.label}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                      <Check className="h-3 w-3" />
+                      Validée
+                    </div>
+                  </div>
+
+                  {/* AI output */}
+                  <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-5">
+                    <FounderOutput content={mws.output!} />
+                  </div>
+
+                  {/* Retention note */}
+                  {mws.retention?.trim() ? (
+                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                        Ce que j'ai retenu
+                      </p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-emerald-900">
+                        {mws.retention}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={onExport}
+              className="flex items-center gap-2 rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 active:scale-[0.98]"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger le document HTML · Imprimer en PDF
+            </button>
+          </div>
+
+          <div className="h-8" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── FounderWorkspace ─────────────────────────────────────────────────────────
 
 interface FounderWorkspaceProps {
   conversationId: string | null;
@@ -540,15 +847,14 @@ export default function FounderWorkspace({
   const [generating, setGenerating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedOutput, setCopiedOutput] = useState<string | null>(null);
+  const [showSynthesis, setShowSynthesis] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
-  // Load from localStorage on mount / conversation change
   useEffect(() => {
     if (!conversationId) return;
     const stored = loadWs(conversationId);
     setWs(stored);
-    // Start on first non-completed module
     const firstIncomplete = MODULES.find((m) => {
       const s = stored[m.id];
       return !s || s.status !== "completed";
@@ -556,18 +862,15 @@ export default function FounderWorkspace({
     setActiveId(firstIncomplete?.id ?? MODULES[0].id);
   }, [conversationId]);
 
-  // Persist on every state change
   useEffect(() => {
     if (!conversationId) return;
     saveWs(conversationId, ws);
   }, [conversationId, ws]);
 
-  // Scroll to top of content area when switching modules
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeId]);
 
-  // Cleanup on unmount
   useEffect(() => () => { streamAbortRef.current?.abort(); }, []);
 
   const updateMs = useCallback((id: string, patch: Partial<ModuleState>) => {
@@ -585,6 +888,13 @@ export default function FounderWorkspace({
       const status: ModuleStatus =
         cur.status === "completed" ? "completed" : hasAnyInput ? "in_progress" : "empty";
       return { ...prev, [moduleId]: { ...cur, inputs, status } };
+    });
+  }
+
+  function updateRetention(moduleId: string, value: string) {
+    setWs((prev) => {
+      const cur = prev[moduleId] ?? defaultMs();
+      return { ...prev, [moduleId]: { ...cur, retention: value } };
     });
   }
 
@@ -689,6 +999,22 @@ export default function FounderWorkspace({
     }).catch(() => {});
   }
 
+  function exportToHtml() {
+    const html = generateHtmlExport(ws, MODULES, firstName);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, "_blank");
+    if (w) {
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `founder-koryxa-${new Date().toISOString().slice(0, 10)}.html`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    }
+  }
+
   const activeModule = MODULES.find((m) => m.id === activeId) ?? MODULES[0];
   const activeMs = getMs(ws, activeId);
   const isGenerating = generating === activeId;
@@ -700,13 +1026,27 @@ export default function FounderWorkspace({
   const prevModule = activeIdx > 0 ? MODULES[activeIdx - 1] : null;
   const nextModule = activeIdx < MODULES.length - 1 ? MODULES[activeIdx + 1] : null;
 
+  // ── Synthesis view (full-width, replaces grid) ───────────────────────────
+  if (showSynthesis) {
+    return (
+      <main className="h-full min-h-0 overflow-hidden">
+        <SynthesisView
+          ws={ws}
+          modules={MODULES}
+          firstName={firstName}
+          onBack={() => setShowSynthesis(false)}
+          onExport={exportToHtml}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
 
-      {/* ── Module navigator (sidebar) ─────────────────────────────────────── */}
+      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       <aside className="hidden min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] lg:flex">
 
-        {/* Header */}
         <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -725,7 +1065,6 @@ export default function FounderWorkspace({
             </button>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between">
               <span className="text-[10px] font-medium text-slate-400">
@@ -744,7 +1083,6 @@ export default function FounderWorkspace({
           </div>
         </div>
 
-        {/* Module list */}
         <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {MODULES.map((mod) => {
             const mws = getMs(ws, mod.id);
@@ -762,7 +1100,6 @@ export default function FounderWorkspace({
                   isActive ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "hover:bg-slate-50"
                 }`}
               >
-                {/* Step indicator */}
                 <div
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
                     isCompleted
@@ -776,7 +1113,6 @@ export default function FounderWorkspace({
                 >
                   {isCompleted ? <Check className="h-3 w-3" /> : mod.step}
                 </div>
-
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
                     <p
@@ -805,8 +1141,17 @@ export default function FounderWorkspace({
           })}
         </div>
 
-        {/* Exit */}
-        <div className="shrink-0 border-t border-slate-100 px-3 py-3">
+        <div className="shrink-0 space-y-2 border-t border-slate-100 px-3 py-3">
+          {allDone ? (
+            <button
+              type="button"
+              onClick={() => setShowSynthesis(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-violet-600 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:opacity-90"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Voir la synthèse finale
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onExit}
@@ -817,10 +1162,9 @@ export default function FounderWorkspace({
         </div>
       </aside>
 
-      {/* ── Main content area ─────────────────────────────────────────────── */}
+      {/* ── Main content ──────────────────────────────────────────────────── */}
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
 
-        {/* Error banner */}
         {error ? (
           <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">
             {error}
@@ -830,7 +1174,6 @@ export default function FounderWorkspace({
         {/* Module header */}
         <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
           <div className="flex items-center gap-3">
-            {/* Mobile: step dots */}
             <button
               type="button"
               onClick={() => { if (prevModule) setActiveId(prevModule.id); }}
@@ -840,19 +1183,17 @@ export default function FounderWorkspace({
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white`}>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
             </div>
 
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-                Étape {activeModule.step}
-                {activeModule.optional ? " · Optionnelle" : ""}
+                Étape {activeModule.step}{activeModule.optional ? " · Optionnelle" : ""}
               </p>
               <p className="text-sm font-bold text-slate-800">{activeModule.label}</p>
             </div>
 
-            {/* Mobile nav arrow */}
             <button
               type="button"
               onClick={() => { if (nextModule) setActiveId(nextModule.id); }}
@@ -862,7 +1203,6 @@ export default function FounderWorkspace({
               <ChevronRight className="h-4 w-4" />
             </button>
 
-            {/* Status badge */}
             {activeMs.status === "completed" ? (
               <div className="ml-auto hidden shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:flex">
                 <Check className="h-3 w-3" />
@@ -872,7 +1212,6 @@ export default function FounderWorkspace({
           </div>
           <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{activeModule.description}</p>
 
-          {/* Mobile step dots */}
           <div className="mt-2 flex justify-center gap-1 lg:hidden">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);
@@ -903,26 +1242,34 @@ export default function FounderWorkspace({
         >
           <div className="mx-auto max-w-2xl space-y-5">
 
-            {/* ── Completion banner ── */}
+            {/* Completion banner */}
             {allDone ? (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+              <div className="rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-violet-50 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                     <Check className="h-4 w-4" />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-emerald-800">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800">
                       {firstName ? `Bravo ${firstName} !` : "Félicitations !"}
                     </p>
-                    <p className="text-xs text-emerald-700">
-                      Les 6 étapes clés sont validées. Vous pouvez générer le business plan ou réviser n'importe quelle étape.
+                    <p className="text-xs text-slate-600">
+                      Les 6 étapes clés sont validées.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSynthesis(true)}
+                    className="flex shrink-0 items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Synthèse finale
+                  </button>
                 </div>
               </div>
             ) : null}
 
-            {/* ── Input section ── */}
+            {/* Input fields */}
             <div className="space-y-4">
               {activeModule.inputs.map((field) => (
                 <div key={field.id}>
@@ -955,7 +1302,7 @@ export default function FounderWorkspace({
               ))}
             </div>
 
-            {/* ── Generate button ── */}
+            {/* Generate button */}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -988,15 +1335,14 @@ export default function FounderWorkspace({
               ) : null}
             </div>
 
-            {/* ── Generating animation ── */}
+            {/* Generating animation */}
             {isGenerating && !activeMs.output ? (
               <GeneratingCard firstName={firstName} />
             ) : null}
 
-            {/* ── AI Output ── */}
+            {/* AI output */}
             {activeMs.output ? (
               <div className="group relative rounded-2xl border border-sky-100 bg-white p-5 shadow-[0_4px_24px_rgba(14,165,233,0.07)]">
-                {/* Output header */}
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-600">
                     <span className="text-[8px] font-bold text-white">L</span>
@@ -1005,7 +1351,7 @@ export default function FounderWorkspace({
                     Réponse ChatLAYA
                   </span>
                   {isGenerating ? (
-                    <span className="ml-auto text-[10px] text-slate-400 animate-pulse">En cours…</span>
+                    <span className="ml-auto animate-pulse text-[10px] text-slate-400">En cours…</span>
                   ) : (
                     <button
                       type="button"
@@ -1022,12 +1368,11 @@ export default function FounderWorkspace({
                     </button>
                   )}
                 </div>
-
                 <FounderOutput content={activeMs.output} />
               </div>
             ) : null}
 
-            {/* ── Actions bar ── */}
+            {/* Actions bar */}
             {activeMs.output && !isGenerating ? (
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 {activeMs.status !== "completed" ? (
@@ -1057,7 +1402,6 @@ export default function FounderWorkspace({
                   </button>
                 ) : null}
 
-                {/* Next step button */}
                 {nextModule ? (
                   <button
                     type="button"
@@ -1074,7 +1418,15 @@ export default function FounderWorkspace({
               </div>
             ) : null}
 
-            {/* ── Empty state (no inputs yet) ── */}
+            {/* Retention block — shown only after validation */}
+            {activeMs.status === "completed" && activeMs.output && !isGenerating ? (
+              <RetentionBlock
+                value={activeMs.retention ?? ""}
+                onChange={(v) => updateRetention(activeId, v)}
+              />
+            ) : null}
+
+            {/* Empty state */}
             {!activeMs.output && !isGenerating && !Object.values(activeMs.inputs).some(Boolean) ? (
               <div className="rounded-2xl border border-dashed border-slate-200 px-5 py-6 text-center">
                 <p className="text-sm font-semibold text-slate-600">{activeModule.tagline}</p>
@@ -1085,7 +1437,6 @@ export default function FounderWorkspace({
               </div>
             ) : null}
 
-            {/* Bottom breathing room */}
             <div className="h-6" />
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
+import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 
 type AssistantMode = "general" | "launch_structure_sell";
@@ -281,9 +282,74 @@ function AssistantContent({ content }: { content: string }) {
   );
 }
 
+const THINKING_MSGS_GENERAL = (name?: string) => [
+  name ? `Je lis attentivement votre message, ${name}…` : "Je lis attentivement votre message…",
+  "J'analyse chaque dimension de votre demande…",
+  name ? `Je construis une réponse sur mesure pour vous, ${name}…` : "Je construis une réponse structurée pour vous…",
+  "Je mobilise tout mon corpus pour vous donner le meilleur…",
+  "Je peaufine les détails pour que ce soit vraiment utile…",
+  "Presque terminé — je finalise ma réponse…",
+];
+
+const THINKING_MSGS_FOUNDER = (name?: string) => [
+  name ? `Je lis votre projet avec attention, ${name}…` : "Je lis votre projet avec attention…",
+  "J'analyse votre situation sous tous les angles…",
+  "Je consulte le corpus Fondateur pour vous…",
+  name ? `Je structure une stratégie adaptée pour vous, ${name}…` : "Je structure une stratégie adaptée à votre situation…",
+  "Je peaufine les recommandations pour que vous puissiez agir…",
+  "Presque là — je finalise pour vous…",
+];
+
+function ThinkingIndicator({ firstName, mode }: { firstName?: string; mode: AssistantMode }) {
+  const [phase, setPhase] = useState(0);
+  const messages = mode === "launch_structure_sell"
+    ? THINKING_MSGS_FOUNDER(firstName)
+    : THINKING_MSGS_GENERAL(firstName);
+
+  useEffect(() => {
+    setPhase(0);
+    const id = setInterval(() => setPhase((p) => (p + 1) % messages.length), 2800);
+    return () => clearInterval(id);
+  }, [messages.length]);
+
+  return (
+    <div className="flex max-w-[78%] flex-col gap-3 rounded-2xl rounded-bl-sm border border-sky-100 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(14,165,233,0.10)]">
+      {/* Dots wave + label */}
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-end gap-[5px]">
+          {[0, 1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className="kx-thinking-dot inline-block rounded-full bg-sky-500"
+              style={{
+                width: i === 1 || i === 2 ? "7px" : "5px",
+                height: i === 1 || i === 2 ? "7px" : "5px",
+                animationDelay: `${i * 0.13}s`,
+              }}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">
+          ChatLAYA réfléchit
+        </span>
+      </div>
+      {/* Rotating message */}
+      <p key={phase} className="kx-thinking-msg text-sm leading-relaxed text-slate-600">
+        {messages[phase]}
+      </p>
+      {/* Scan bar */}
+      <div className="h-[3px] w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="kx-thinking-scan h-full w-1/3 rounded-full bg-gradient-to-r from-sky-400 via-violet-400 to-sky-400" />
+      </div>
+    </div>
+  );
+}
+
 function ChatlayaContent() {
   const searchParams = useSearchParams();
   const isProblemCollector = searchParams.get("intent") === "problem_collector";
+  const { user } = useAuth();
+  const firstName = user?.first_name || undefined;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -1170,26 +1236,25 @@ function ChatlayaContent() {
                       </div>
                     ) : null}
                     <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
-                      <div
-                        className={`rounded-2xl px-4 py-3 ${
-                          isUser
-                            ? "rounded-br-sm border border-sky-100 bg-sky-50"
-                            : "rounded-bl-sm border border-slate-100 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.06)]"
-                        }`}
-                      >
-                        {message.pending && !message.content ? (
-                          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
-                            ChatLAYA est en train de répondre…
-                          </span>
-                        ) : isUser ? (
-                          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
-                            {message.content}
-                          </div>
-                        ) : (
-                          <AssistantContent content={message.content} />
-                        )}
-                      </div>
+                      {message.pending && !message.content ? (
+                        <ThinkingIndicator firstName={firstName} mode={activeAssistantMode} />
+                      ) : (
+                        <div
+                          className={`rounded-2xl px-4 py-3 ${
+                            isUser
+                              ? "rounded-br-sm border border-sky-100 bg-sky-50"
+                              : "rounded-bl-sm border border-slate-100 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.06)]"
+                          }`}
+                        >
+                          {isUser ? (
+                            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-800">
+                              {message.content}
+                            </div>
+                          ) : (
+                            <AssistantContent content={message.content} />
+                          )}
+                        </div>
+                      )}
                       {!isUser && !message.pending && message.content ? (
                         <button
                           type="button"

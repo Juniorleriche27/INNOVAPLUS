@@ -362,6 +362,7 @@ function ChatlayaContent() {
   const [error, setError] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
   const [founderAuthRequired, setFounderAuthRequired] = useState(false);
+  const [founderWorkspaceVisible, setFounderWorkspaceVisible] = useState(false);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -710,6 +711,7 @@ function ChatlayaContent() {
   async function switchToGeneralMode() {
     if (assistantModeSaving || streaming) return;
     setFounderAuthRequired(false);
+    setFounderWorkspaceVisible(false);
     setError(null);
     setAssistantModeSaving(true);
     try {
@@ -759,6 +761,7 @@ function ChatlayaContent() {
       setConversations((current) => [finalConv, ...current.filter((c) => c.conversation_id !== finalConv.conversation_id)]);
       setSelectedConversationId(finalConv.conversation_id);
       setMessages([]);
+      setFounderWorkspaceVisible(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
     } finally {
@@ -947,7 +950,7 @@ function ChatlayaContent() {
   const starterPrompts =
     activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
 
-  if (!isProblemCollector && activeAssistantMode === "launch_structure_sell" && user && !founderAuthRequired) {
+  if (!isProblemCollector && founderWorkspaceVisible && user && !founderAuthRequired) {
     return (
       <FounderWorkspace
         conversationId={selectedConversationId}

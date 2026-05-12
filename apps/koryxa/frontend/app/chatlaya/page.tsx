@@ -7,6 +7,7 @@ import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-re
 import { CHATLAYA_API_BASE } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
+import FounderWorkspace from "./FounderWorkspace";
 
 type AssistantMode = "general" | "launch_structure_sell";
 
@@ -945,6 +946,16 @@ function ChatlayaContent() {
   const activeAssistantMode = activeConversation?.assistant_mode ?? "general";
   const starterPrompts =
     activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
+
+  if (!isProblemCollector && activeAssistantMode === "launch_structure_sell" && user && !founderAuthRequired) {
+    return (
+      <FounderWorkspace
+        conversationId={selectedConversationId}
+        firstName={firstName}
+        onExit={() => void switchToGeneralMode()}
+      />
+    );
+  }
 
   if (isProblemCollector) {
     return (

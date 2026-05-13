@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Users, Target, Package, DollarSign, BarChart2, MessageCircle, FileText,
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
-  Copy, Download, PenLine, BookOpen,
+  Copy, Download, BookOpen, PenLine, AlertCircle,
 } from "lucide-react";
 import { CHATLAYA_API_BASE } from "@/lib/env";
 
@@ -37,6 +37,7 @@ type ModuleDef = {
 type ModuleState = {
   inputs: Record<string, string>;
   output: string | null;
+  previousOutput?: string | null;
   status: ModuleStatus;
   retention?: string;
 };
@@ -197,6 +198,17 @@ const MODULES: ModuleDef[] = [
 
 const REQUIRED_MODULES = MODULES.filter((m) => !m.optional);
 
+// Document-appropriate labels for the final deliverable
+const DOC_LABELS: Record<string, { title: string; tagline: string }> = {
+  client:         { title: "Client idéal",                    tagline: "À qui s'adresse ce projet" },
+  probleme:       { title: "Problème central",                tagline: "Ce que nous résolvons" },
+  offre:          { title: "Offre & proposition de valeur",   tagline: "Ce que nous apportons" },
+  prix:           { title: "Stratégie de prix",               tagline: "Notre modèle tarifaire" },
+  business_model: { title: "Modèle économique",               tagline: "Comment nous générons de la valeur" },
+  vente:          { title: "Message de vente",                tagline: "Notre discours commercial" },
+  business_plan:  { title: "Plan d'action",                   tagline: "Feuille de route et priorités" },
+};
+
 // ─── Prompt builders ────────────────────────────────────────────────────────
 
 function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: WorkspaceData): string {
@@ -356,7 +368,7 @@ function renderInline(text: string): React.ReactNode {
   );
 }
 
-// ─── FounderOutput (enhanced) ────────────────────────────────────────────────
+// ─── FounderOutput ───────────────────────────────────────────────────────────
 
 function FounderOutput({ content }: { content: string }) {
   const blocks = parseMd(content);
@@ -365,11 +377,7 @@ function FounderOutput({ content }: { content: string }) {
       {blocks.map((block, idx) => {
         if (block.type === "heading") {
           if (block.level === 1)
-            return (
-              <h1 key={idx} className="text-base font-bold text-slate-900 pt-1">
-                {renderInline(block.text)}
-              </h1>
-            );
+            return <h1 key={idx} className="text-base font-bold text-slate-900 pt-1">{renderInline(block.text)}</h1>;
           if (block.level === 2)
             return (
               <h2 key={idx} className="flex items-center gap-2.5 text-sm font-bold text-slate-800 pt-2">
@@ -377,29 +385,20 @@ function FounderOutput({ content }: { content: string }) {
                 {renderInline(block.text)}
               </h2>
             );
-          return (
-            <h3 key={idx} className="text-sm font-semibold text-slate-700 pt-1">
-              {renderInline(block.text)}
-            </h3>
-          );
+          return <h3 key={idx} className="text-sm font-semibold text-slate-700 pt-1">{renderInline(block.text)}</h3>;
         }
-
-        if (block.type === "ordered-list") {
+        if (block.type === "ordered-list")
           return (
             <ol key={idx} className="space-y-2">
               {block.items.map((item, li) => (
                 <li key={li} className="flex gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-bold text-sky-600 ring-1 ring-sky-100">
-                    {li + 1}
-                  </span>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-bold text-sky-600 ring-1 ring-sky-100">{li + 1}</span>
                   <span className="flex-1 text-sm leading-6 text-slate-700">{renderInline(item)}</span>
                 </li>
               ))}
             </ol>
           );
-        }
-
-        if (block.type === "unordered-list") {
+        if (block.type === "unordered-list")
           return (
             <ul key={idx} className="space-y-2">
               {block.items.map((item, li) => (
@@ -410,67 +409,56 @@ function FounderOutput({ content }: { content: string }) {
               ))}
             </ul>
           );
-        }
-
-        return (
-          <p key={idx} className="text-sm leading-7 text-slate-700">{renderInline(block.text)}</p>
-        );
+        return <p key={idx} className="text-sm leading-7 text-slate-700">{renderInline(block.text)}</p>;
       })}
     </div>
   );
 }
 
-// ─── RetentionBlock ──────────────────────────────────────────────────────────
+// ─── RetentionBlock (AXE 2 — livrable final) ─────────────────────────────────
 
 function RetentionBlock({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4">
-      <div className="mb-2 flex items-center gap-2">
-        <PenLine className="h-3.5 w-3.5 text-emerald-600" />
-        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
-          Ce que je retiens
+    <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <PenLine className="h-3.5 w-3.5 text-violet-600" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700">
+            Ma formulation pour le dossier
+          </span>
+        </div>
+        <span className="text-[9px] font-medium text-violet-400 italic">
+          apparaît dans le livrable final
         </span>
       </div>
+      <p className="mb-2.5 text-[11px] leading-relaxed text-violet-500">
+        Rédigez ici comme si vous présentiez ce point à un partenaire ou investisseur — sans jargon de coaching.
+      </p>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Décision validée, point encore flou, ce qui guidera l'étape suivante…"
-        rows={3}
-        className="w-full resize-none bg-transparent text-sm leading-relaxed text-emerald-900 placeholder:text-emerald-400/70 focus:outline-none"
+        placeholder="Ex : Ma cible principale sont les femmes entrepreneures de 28-42 ans qui veulent lancer une activité en ligne sans avoir de compétences techniques…"
+        rows={4}
+        className="w-full resize-none bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
       />
     </div>
   );
 }
 
-// ─── localStorage helpers ────────────────────────────────────────────────────
+// ─── localStorage ─────────────────────────────────────────────────────────────
 
-function storageKey(cid: string) {
-  return `kx-founder-ws-${cid}`;
-}
-
+function storageKey(cid: string) { return `kx-founder-ws-${cid}`; }
 function loadWs(cid: string): WorkspaceData {
-  try {
-    const raw = localStorage.getItem(storageKey(cid));
-    if (raw) return JSON.parse(raw) as WorkspaceData;
-  } catch {}
+  try { const raw = localStorage.getItem(storageKey(cid)); if (raw) return JSON.parse(raw) as WorkspaceData; } catch {}
   return {};
 }
-
 function saveWs(cid: string, data: WorkspaceData) {
-  try {
-    localStorage.setItem(storageKey(cid), JSON.stringify(data));
-  } catch {}
+  try { localStorage.setItem(storageKey(cid), JSON.stringify(data)); } catch {}
 }
+function defaultMs(): ModuleState { return { inputs: {}, output: null, status: "empty" }; }
+function getMs(ws: WorkspaceData, id: string): ModuleState { return ws[id] ?? defaultMs(); }
 
-function defaultMs(): ModuleState {
-  return { inputs: {}, output: null, status: "empty" };
-}
-
-function getMs(ws: WorkspaceData, id: string): ModuleState {
-  return ws[id] ?? defaultMs();
-}
-
-// ─── GeneratingCard ──────────────────────────────────────────────────────────
+// ─── GeneratingCard ───────────────────────────────────────────────────────────
 
 const GENERATING_MSGS = [
   "Je mobilise le corpus Fondateur…",
@@ -482,32 +470,22 @@ const GENERATING_MSGS = [
 
 function GeneratingCard({ firstName }: { firstName?: string }) {
   const [phase, setPhase] = useState(0);
-
   useEffect(() => {
     setPhase(0);
     const id = setInterval(() => setPhase((p) => (p + 1) % GENERATING_MSGS.length), 2800);
     return () => clearInterval(id);
   }, []);
-
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(14,165,233,0.08)]">
       <div className="flex items-center gap-2.5">
         <div className="flex items-end gap-[5px]">
           {[0, 1, 2, 3].map((i) => (
-            <span
-              key={i}
-              className="kx-thinking-dot inline-block rounded-full bg-sky-500"
-              style={{
-                width: i === 1 || i === 2 ? "7px" : "5px",
-                height: i === 1 || i === 2 ? "7px" : "5px",
-                animationDelay: `${i * 0.13}s`,
-              }}
+            <span key={i} className="kx-thinking-dot inline-block rounded-full bg-sky-500"
+              style={{ width: i === 1 || i === 2 ? "7px" : "5px", height: i === 1 || i === 2 ? "7px" : "5px", animationDelay: `${i * 0.13}s` }}
             />
           ))}
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">
-          ChatLAYA réfléchit
-        </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">ChatLAYA réfléchit</span>
       </div>
       <p key={phase} className="kx-thinking-msg text-sm leading-relaxed text-slate-600">
         {firstName ? GENERATING_MSGS[phase] : GENERATING_MSGS[phase]}
@@ -519,189 +497,374 @@ function GeneratingCard({ firstName }: { firstName?: string }) {
   );
 }
 
-// ─── HTML export ─────────────────────────────────────────────────────────────
+// ─── HTML Export (AXE 3 — premium document) ───────────────────────────────────
 
 function inlineToHtml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
     .replace(/`([^`\n]+)`/g, "<code>$1</code>");
 }
 
 function mdToHtmlString(content: string): string {
-  const blocks = parseMd(content);
-  return blocks
-    .map((block) => {
-      switch (block.type) {
-        case "heading":
-          return `<h${block.level}>${inlineToHtml(block.text)}</h${block.level}>`;
-        case "paragraph":
-          return `<p>${inlineToHtml(block.text)}</p>`;
-        case "ordered-list":
-          return `<ol>${block.items.map((item) => `<li>${inlineToHtml(item)}</li>`).join("")}</ol>`;
-        case "unordered-list":
-          return `<ul>${block.items.map((item) => `<li>${inlineToHtml(item)}</li>`).join("")}</ul>`;
-        default:
-          return "";
-      }
-    })
-    .join("\n");
+  return parseMd(content).map((block) => {
+    switch (block.type) {
+      case "heading":    return `<h${block.level}>${inlineToHtml(block.text)}</h${block.level}>`;
+      case "paragraph":  return `<p>${inlineToHtml(block.text)}</p>`;
+      case "ordered-list":   return `<ol>${block.items.map((i) => `<li>${inlineToHtml(i)}</li>`).join("")}</ol>`;
+      case "unordered-list": return `<ul>${block.items.map((i) => `<li>${inlineToHtml(i)}</li>`).join("")}</ul>`;
+      default: return "";
+    }
+  }).join("\n");
+}
+
+function getProjectContent(mws: ModuleState): string {
+  // Priority: user's formulation > AI coaching output
+  if (mws.retention?.trim()) return mws.retention.trim();
+  return mws.output?.trim() ?? "";
+}
+
+function extractShortSummary(mws: ModuleState, max = 110): string {
+  const content = getProjectContent(mws);
+  if (!content) return "";
+  const clean = content.replace(/^#{1,3}\s+/gm, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/`/g, "").trim();
+  const sentence = clean.split(/\.\s/)[0].replace(/\n/g, " ");
+  return sentence.length > max ? sentence.slice(0, max) + "…" : sentence;
 }
 
 function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?: string): string {
   const date = new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" });
-  const completedModules = modules.filter((m) => getMs(ws, m.id).status === "completed");
+  const completed = modules.filter((m) => getMs(ws, m.id).status === "completed");
   const requiredDone = modules.filter((m) => !m.optional && getMs(ws, m.id).status === "completed").length;
   const requiredTotal = modules.filter((m) => !m.optional).length;
 
-  const modulesSections = completedModules
-    .map((mod) => {
-      const mws = getMs(ws, mod.id);
-      const contentHtml = mws.output ? mdToHtmlString(mws.output) : "";
-      const retentionHtml = mws.retention?.trim()
-        ? `<div class="retention">
-            <div class="retention-label">Ce que j'ai retenu</div>
-            <div class="retention-text">${mws.retention.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>
-          </div>`
-        : "";
-      return `
-        <div class="module">
-          <div class="module-header">
-            <div class="module-step">${mod.step}</div>
-            <div>
-              <div class="module-step-label">Étape ${mod.step}${mod.optional ? " · Optionnelle" : ""}</div>
-              <div class="module-title">${mod.label}</div>
-              <div class="module-tagline">${mod.tagline}</div>
-            </div>
-          </div>
-          <div class="module-content">${contentHtml}</div>
-          ${retentionHtml}
-        </div>`;
-    })
-    .join('<hr class="module-divider">');
+  // Summary cards — client, offre, prix (top 3 if completed)
+  const summaryIds = ["client", "offre", "prix"];
+  const summaryCards = summaryIds.map((id) => {
+    const mws = getMs(ws, id);
+    if (mws.status !== "completed") return "";
+    const label = DOC_LABELS[id];
+    const summary = extractShortSummary(mws);
+    if (!summary) return "";
+    return `<div class="card">
+      <div class="card-label">${label.title}</div>
+      <div class="card-value">${inlineToHtml(summary)}</div>
+    </div>`;
+  }).filter(Boolean).join("");
+
+  // Section bodies
+  const sections = completed.map((mod, idx) => {
+    const mws = getMs(ws, mod.id);
+    const docLabel = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
+    const projectContent = getProjectContent(mws);
+    const hasRetention = !!mws.retention?.trim();
+
+    // If using retention note: render as clean text; if AI output: render as markdown
+    const contentHtml = hasRetention
+      ? `<div class="prose-text">${mws.retention!.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>")}</div>`
+      : mdToHtmlString(projectContent);
+
+    return `
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">0${mod.step}</div>
+        <div class="section-info">
+          <div class="section-bar"></div>
+          <div class="section-title">${docLabel.title}</div>
+          <div class="section-tagline">${docLabel.tagline}</div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="content">${contentHtml}</div>
+      </div>
+    </div>
+    ${idx < completed.length - 1 ? '<hr class="rule">' : ""}`;
+  }).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Projet Fondateur — KORYXA${firstName ? ` · ${firstName}` : ""}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      color: #1e293b; background: #fff; margin: 0; padding: 0;
-      font-size: 14px; line-height: 1.7;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
-    .doc { max-width: 780px; margin: 0 auto; padding: 48px 40px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dossier Projet${firstName ? ` · ${firstName}` : ""} — KORYXA Founder</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Print button */
-    .print-btn {
-      position: fixed; top: 20px; right: 20px;
-      background: #0ea5e9; color: white; border: none; border-radius: 8px;
-      padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
-      box-shadow: 0 4px 12px rgba(14,165,233,0.3); z-index: 100;
-      font-family: inherit;
-    }
-    .print-btn:hover { background: #0284c7; }
+  :root {
+    --blue:        #0ea5e9;
+    --blue-dk:     #0284c7;
+    --violet:      #7c3aed;
+    --ink:         #0f172a;
+    --ink-mid:     #334155;
+    --ink-light:   #64748b;
+    --ink-faint:   #94a3b8;
+    --surface:     #f8fafc;
+    --border:      #e2e8f0;
+    --border-lite: #f1f5f9;
+    --green:       #16a34a;
+    --green-bg:    #f0fdf4;
+    --green-bd:    #bbf7d0;
+  }
 
-    /* Header */
-    .doc-header {
-      margin-bottom: 52px; padding-bottom: 36px;
-      border-bottom: 2px solid #e2e8f0;
-      display: flex; align-items: flex-end; justify-content: space-between;
-      flex-wrap: wrap; gap: 24px;
-    }
-    .doc-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #0ea5e9; margin-bottom: 8px; }
-    .doc-title { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 4px; }
-    .doc-subtitle { font-size: 14px; color: #64748b; }
-    .doc-meta { text-align: right; font-size: 12px; color: #94a3b8; line-height: 1.8; }
-    .doc-progress {
-      margin-top: 8px; display: inline-block;
-      background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
-      border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 600;
-    }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+    background: #fff;
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 
-    /* Modules */
-    .module { margin-bottom: 40px; }
-    .module-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
-    .module-step {
-      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; color: white;
-      background: linear-gradient(135deg, #0ea5e9 0%, #7c3aed 100%);
-    }
-    .module-step-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
-    .module-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 1px; }
-    .module-tagline { font-size: 12px; color: #64748b; }
+  /* ─ Sticky print bar ─ */
+  .print-bar {
+    background: var(--ink);
+    color: #fff;
+    padding: 11px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    font-size: 12px;
+  }
+  .print-bar-label {
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+  .print-btn {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+  }
+  .print-btn:hover { background: var(--blue-dk); }
 
-    .module-content { border-left: 3px solid #e0f2fe; padding-left: 20px; margin-left: 50px; }
-    .module-content h1 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 16px 0 8px; }
-    .module-content h2 { font-size: 14px; font-weight: 700; color: #0f172a; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #f1f5f9; }
-    .module-content h3 { font-size: 13px; font-weight: 600; color: #334155; margin: 12px 0 4px; }
-    .module-content p { margin: 8px 0; color: #374151; font-size: 13.5px; line-height: 1.75; }
-    .module-content ul { margin: 8px 0; padding-left: 0; list-style: none; }
-    .module-content ul li { position: relative; padding-left: 16px; margin: 5px 0; color: #374151; font-size: 13.5px; line-height: 1.7; }
-    .module-content ul li::before { content: '•'; position: absolute; left: 0; color: #0ea5e9; font-weight: 700; }
-    .module-content ol { margin: 8px 0; padding-left: 28px; color: #374151; font-size: 13.5px; }
-    .module-content ol li { margin: 5px 0; line-height: 1.7; }
-    .module-content strong { font-weight: 600; color: #0f172a; }
-    .module-content em { font-style: italic; color: #475569; }
-    .module-content code { background: #f1f5f9; color: #0284c7; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  /* ─ Document wrapper ─ */
+  .doc { max-width: 820px; margin: 0 auto; padding: 64px 56px 80px; }
 
-    /* Retention */
-    .retention {
-      margin-top: 14px; margin-left: 50px;
-      background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #22c55e;
-      border-radius: 8px; padding: 12px 16px;
-    }
-    .retention-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #15803d; margin-bottom: 6px; }
-    .retention-text { font-size: 13px; color: #166534; line-height: 1.65; }
+  /* ─ Cover ─ */
+  .cover { margin-bottom: 56px; padding-bottom: 48px; border-bottom: 1px solid var(--border); }
+  .cover-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 28px;
+  }
+  .cover-eyebrow::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
+    max-width: 300px;
+  }
+  .cover-main { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+  .cover-left {}
+  .cover-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .cover-subtitle { font-size: 15px; color: var(--ink-light); }
+  .cover-right { text-align: right; }
+  .cover-meta { font-size: 12px; color: var(--ink-faint); line-height: 2; }
+  .cover-meta strong { color: var(--ink-mid); font-weight: 600; }
+  .cover-badge {
+    display: inline-block;
+    margin-top: 6px;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid var(--green-bd);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
 
-    /* Divider */
-    .module-divider { border: none; border-top: 1px solid #f1f5f9; margin: 40px 0; }
+  /* ─ Summary cards ─ */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 60px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--ink-faint);
+    margin-bottom: 8px;
+  }
+  .card-value { font-size: 13px; font-weight: 500; color: var(--ink-mid); line-height: 1.55; }
 
-    /* Footer */
-    .doc-footer {
-      margin-top: 60px; padding-top: 24px; border-top: 1px solid #e2e8f0;
-      display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8;
-    }
+  /* ─ Sections ─ */
+  .section { margin-bottom: 48px; }
+  .section-head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
+  .section-num {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--border);
+    line-height: 1;
+    padding-top: 2px;
+    min-width: 36px;
+    font-variant-numeric: tabular-nums;
+  }
+  .section-info { flex: 1; }
+  .section-bar {
+    width: 32px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--violet) 100%);
+    border-radius: 1px;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+    line-height: 1.2;
+  }
+  .section-tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.01em; }
 
-    @media print {
-      .print-btn { display: none !important; }
-      .doc { padding: 24px 28px; }
-      body { font-size: 12px; }
-      .module-content h1 { font-size: 14px; }
-      .module-content h2 { font-size: 13px; }
-      .module-content p, .module-content li { font-size: 12.5px; }
-      .module { page-break-inside: avoid; }
-    }
-  </style>
+  /* ─ Content ─ */
+  .section-body { padding-left: 56px; }
+  .content h1 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 18px 0 8px; }
+  .content h2 {
+    font-size: 13px; font-weight: 700; color: var(--ink-mid);
+    margin: 16px 0 8px;
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-lite);
+  }
+  .content h2::before {
+    content: '';
+    width: 3px; height: 13px;
+    background: var(--blue);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .content h3 { font-size: 12.5px; font-weight: 600; color: var(--ink-mid); margin: 12px 0 5px; }
+  .content p  { font-size: 13.5px; line-height: 1.8; color: #374151; margin: 8px 0; }
+  .content ul { margin: 10px 0; padding: 0; list-style: none; }
+  .content ul li {
+    position: relative; padding: 5px 0 5px 18px;
+    font-size: 13.5px; color: #374151; line-height: 1.72;
+  }
+  .content ul li + li { border-top: 1px solid var(--border-lite); }
+  .content ul li::before {
+    content: ''; position: absolute; left: 0; top: 13px;
+    width: 6px; height: 6px;
+    background: var(--blue); border-radius: 50%;
+  }
+  .content ol { margin: 10px 0; padding: 0; list-style: none; counter-reset: li; }
+  .content ol li {
+    position: relative; padding: 6px 0 6px 36px;
+    font-size: 13.5px; color: #374151; line-height: 1.72;
+    counter-increment: li;
+  }
+  .content ol li + li { border-top: 1px solid var(--border-lite); }
+  .content ol li::before {
+    content: counter(li);
+    position: absolute; left: 0; top: 7px;
+    width: 22px; height: 22px;
+    background: #e0f2fe; color: var(--blue);
+    font-size: 10px; font-weight: 700;
+    border-radius: 50%; text-align: center; line-height: 22px;
+  }
+  .content strong { font-weight: 600; color: var(--ink); }
+  .content em     { font-style: italic; color: var(--ink-mid); }
+  .content code   { background: #f1f5f9; color: var(--blue-dk); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+  /* User-written formulation (retention) — rendered as plain text */
+  .prose-text p { font-size: 13.5px; line-height: 1.8; color: #374151; margin: 6px 0; }
+
+  /* ─ Divider ─ */
+  .rule { border: none; border-top: 1px solid var(--border-lite); margin: 48px 0; }
+
+  /* ─ Footer ─ */
+  .footer {
+    margin-top: 72px; padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--ink-faint);
+  }
+  .footer-brand { font-weight: 700; color: var(--ink-mid); letter-spacing: 0.04em; }
+
+  /* ─ Print ─ */
+  @media print {
+    .print-bar { display: none !important; }
+    .doc { padding: 28px 32px 40px; }
+    .cover-title { font-size: 28px; }
+    body { font-size: 12px; }
+    .content p, .content li { font-size: 12px; }
+    .section { page-break-inside: avoid; }
+    .cards { page-break-inside: avoid; }
+  }
+</style>
 </head>
 <body>
-  <button class="print-btn" onclick="window.print()">Imprimer / Sauvegarder PDF</button>
-  <div class="doc">
-    <div class="doc-header">
-      <div>
-        <div class="doc-brand">KORYXA · Mode Fondateur</div>
-        <div class="doc-title">${firstName ? `Projet de ${firstName}` : "Mon Projet Fondateur"}</div>
-        <div class="doc-subtitle">Synthèse complète — Parcours Fondateur ChatLAYA</div>
+<div class="print-bar">
+  <span class="print-bar-label">KORYXA · Dossier Fondateur</span>
+  <button class="print-btn" onclick="window.print()">Imprimer · Sauvegarder en PDF</button>
+</div>
+<div class="doc">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-eyebrow">KORYXA · Mode Fondateur</div>
+    <div class="cover-main">
+      <div class="cover-left">
+        <div class="cover-title">Dossier Projet${firstName ? `<br><span style="color:#0ea5e9">${firstName}</span>` : ""}</div>
+        <div class="cover-subtitle">Synthèse de cadrage business · ChatLAYA Founder</div>
       </div>
-      <div class="doc-meta">
-        <div>${date}</div>
-        <div class="doc-progress">${requiredDone}/${requiredTotal} étapes validées</div>
+      <div class="cover-right">
+        <div class="cover-meta">
+          <div><strong>Date</strong> · ${date}</div>
+          <div><strong>Sections</strong> · ${requiredDone} / ${requiredTotal} validées</div>
+          <div><strong>Outil</strong> · ChatLAYA Founder</div>
+        </div>
+        <div class="cover-badge">${requiredDone === requiredTotal ? "Parcours complet" : "En cours"}</div>
       </div>
-    </div>
-    ${modulesSections}
-    <div class="doc-footer">
-      <span>Document confidentiel — KORYXA Founder · ChatLAYA</span>
-      <span>${date}</span>
     </div>
   </div>
+
+  ${summaryCards ? `<!-- Summary cards -->\n  <div class="cards">${summaryCards}</div>` : ""}
+
+  <!-- Sections -->
+  ${sections}
+
+  <!-- Footer -->
+  <div class="footer">
+    <div><span class="footer-brand">KORYXA</span> &mdash; Document confidentiel &mdash; ChatLAYA Founder</div>
+    <div>${date}</div>
+  </div>
+
+</div>
 </body>
 </html>`;
 }
@@ -717,12 +880,13 @@ interface SynthesisViewProps {
 }
 
 function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisViewProps) {
-  const completedModules = modules.filter((m) => getMs(ws, m.id).status === "completed");
+  const completed = modules.filter((m) => getMs(ws, m.id).status === "completed");
+  const withoutFormulation = completed.filter((m) => !getMs(ws, m.id).retention?.trim());
 
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
       {/* Header */}
-      <div className="shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50/80 to-violet-50/80 px-5 py-4">
+      <div className="shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50/60 to-violet-50/60 px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -733,9 +897,9 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
             Retour
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Synthèse finale</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dossier projet final</p>
             <p className="text-sm font-bold text-slate-800">
-              {firstName ? `Projet de ${firstName}` : "Votre projet consolidé"}
+              {firstName ? `Projet de ${firstName}` : "Votre dossier consolidé"}
             </p>
           </div>
           <button
@@ -752,28 +916,46 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
         <div className="mx-auto max-w-2xl">
-          {/* Intro banner */}
-          <div className="mb-8 rounded-2xl bg-gradient-to-br from-sky-50 to-violet-50 px-5 py-5">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-sky-600">
-              Parcours Fondateur — Synthèse complète
-            </p>
+
+          {/* Missing formulation hint */}
+          {withoutFormulation.length > 0 ? (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-800">
+                    {withoutFormulation.length} section{withoutFormulation.length > 1 ? "s" : ""} sans formulation finale
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
+                    <span className="font-medium">{withoutFormulation.map((m) => m.label).join(", ")}</span>
+                    {" "}— le dossier utilisera les réponses de coaching par défaut pour ces sections.
+                    Retournez dans chaque étape pour rédiger votre formulation propre.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Intro */}
+          <div className="mb-8 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-violet-50 px-5 py-5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-sky-600">Dossier Projet — Synthèse complète</p>
             <p className="text-sm leading-relaxed text-slate-600">
-              {completedModules.length} étape{completedModules.length > 1 ? "s" : ""} validée{completedModules.length > 1 ? "s" : ""}.{" "}
-              Ce document consolide l'ensemble des décisions de votre parcours Fondateur.
-              Cliquez sur <strong className="font-semibold text-sky-700">Exporter PDF</strong> pour générer le document final.
+              {completed.length} section{completed.length > 1 ? "s" : ""} validée{completed.length > 1 ? "s" : ""}.{" "}
+              Ce document présente votre projet cadré. Cliquez <strong className="font-semibold text-sky-700">Exporter PDF</strong> pour générer le dossier premium.
             </p>
           </div>
 
-          {/* Module sections */}
-          <div className="space-y-10">
-            {completedModules.map((mod, modIdx) => {
+          {/* Sections */}
+          <div className="space-y-8">
+            {completed.map((mod, modIdx) => {
               const mws = getMs(ws, mod.id);
               const Icon = mod.icon;
+              const docLabel = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
+              const hasRetention = !!mws.retention?.trim();
               return (
                 <div key={mod.id}>
-                  {modIdx > 0 && <div className="mb-10 border-t border-slate-100" />}
+                  {modIdx > 0 && <div className="mb-8 border-t border-slate-100" />}
 
-                  {/* Module header */}
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-white">
                       <Icon className="h-4 w-4" />
@@ -782,7 +964,7 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
                       <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                         Étape {mod.step}{mod.optional ? " · Optionnelle" : ""}
                       </p>
-                      <p className="text-sm font-bold text-slate-800">{mod.label}</p>
+                      <p className="text-sm font-bold text-slate-800">{docLabel.title}</p>
                     </div>
                     <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
                       <Check className="h-3 w-3" />
@@ -790,22 +972,22 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
                     </div>
                   </div>
 
-                  {/* AI output */}
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-5">
-                    <FounderOutput content={mws.output!} />
-                  </div>
-
-                  {/* Retention note */}
-                  {mws.retention?.trim() ? (
-                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
-                      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
-                        Ce que j'ai retenu
+                  {/* Main content — retention (project) or AI output (coaching fallback) */}
+                  {hasRetention ? (
+                    <div className="rounded-xl border border-violet-200 bg-violet-50/30 p-5">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-violet-600">
+                        Formulation finale
                       </p>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-emerald-900">
-                        {mws.retention}
-                      </p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-violet-900">{mws.retention}</p>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-5">
+                      <p className="mb-2 text-[10px] font-medium text-slate-400">
+                        Réponse de coaching (formulation finale non renseignée)
+                      </p>
+                      <FounderOutput content={mws.output!} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -818,7 +1000,7 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
               className="flex items-center gap-2 rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 active:scale-[0.98]"
             >
               <Download className="h-4 w-4" />
-              Télécharger le document HTML · Imprimer en PDF
+              Télécharger le dossier HTML · Imprimer en PDF
             </button>
           </div>
 
@@ -837,11 +1019,7 @@ interface FounderWorkspaceProps {
   onExit: () => void;
 }
 
-export default function FounderWorkspace({
-  conversationId,
-  firstName,
-  onExit,
-}: FounderWorkspaceProps) {
+export default function FounderWorkspace({ conversationId, firstName, onExit }: FounderWorkspaceProps) {
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
   const [generating, setGenerating] = useState<string | null>(null);
@@ -855,29 +1033,16 @@ export default function FounderWorkspace({
     if (!conversationId) return;
     const stored = loadWs(conversationId);
     setWs(stored);
-    const firstIncomplete = MODULES.find((m) => {
-      const s = stored[m.id];
-      return !s || s.status !== "completed";
-    });
+    const firstIncomplete = MODULES.find((m) => { const s = stored[m.id]; return !s || s.status !== "completed"; });
     setActiveId(firstIncomplete?.id ?? MODULES[0].id);
   }, [conversationId]);
 
-  useEffect(() => {
-    if (!conversationId) return;
-    saveWs(conversationId, ws);
-  }, [conversationId, ws]);
-
-  useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [activeId]);
-
+  useEffect(() => { if (!conversationId) return; saveWs(conversationId, ws); }, [conversationId, ws]);
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [activeId]);
   useEffect(() => () => { streamAbortRef.current?.abort(); }, []);
 
   const updateMs = useCallback((id: string, patch: Partial<ModuleState>) => {
-    setWs((prev) => {
-      const cur = prev[id] ?? defaultMs();
-      return { ...prev, [id]: { ...cur, ...patch } };
-    });
+    setWs((prev) => { const cur = prev[id] ?? defaultMs(); return { ...prev, [id]: { ...cur, ...patch } }; });
   }, []);
 
   function updateInput(moduleId: string, fieldId: string, value: string) {
@@ -885,17 +1050,13 @@ export default function FounderWorkspace({
       const cur = prev[moduleId] ?? defaultMs();
       const inputs = { ...cur.inputs, [fieldId]: value };
       const hasAnyInput = Object.values(inputs).some(Boolean);
-      const status: ModuleStatus =
-        cur.status === "completed" ? "completed" : hasAnyInput ? "in_progress" : "empty";
+      const status: ModuleStatus = cur.status === "completed" ? "completed" : hasAnyInput ? "in_progress" : "empty";
       return { ...prev, [moduleId]: { ...cur, inputs, status } };
     });
   }
 
   function updateRetention(moduleId: string, value: string) {
-    setWs((prev) => {
-      const cur = prev[moduleId] ?? defaultMs();
-      return { ...prev, [moduleId]: { ...cur, retention: value } };
-    });
+    setWs((prev) => { const cur = prev[moduleId] ?? defaultMs(); return { ...prev, [moduleId]: { ...cur, retention: value } }; });
   }
 
   async function generate(moduleId: string) {
@@ -906,7 +1067,8 @@ export default function FounderWorkspace({
 
     setError(null);
     setGenerating(moduleId);
-    updateMs(moduleId, { output: null });
+    // Preserve previous output for the revision UX
+    updateMs(moduleId, { previousOutput: current.output ?? null, output: null });
 
     streamAbortRef.current?.abort();
     const ctrl = new AbortController();
@@ -925,9 +1087,8 @@ export default function FounderWorkspace({
         const text = await res.text().catch(() => "");
         throw new Error(text || "Erreur de génération.");
       }
-      if (!(res.headers.get("content-type") || "").includes("text/event-stream")) {
+      if (!(res.headers.get("content-type") || "").includes("text/event-stream"))
         throw new Error("Format de réponse inattendu.");
-      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -938,13 +1099,11 @@ export default function FounderWorkspace({
         const { value, done } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-
         let boundary: number;
         while ((boundary = buffer.indexOf("\n\n")) !== -1) {
           const packet = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
           if (!packet.trim()) continue;
-
           let event = "message";
           const dataLines: string[] = [];
           for (const line of packet.split("\n")) {
@@ -952,19 +1111,13 @@ export default function FounderWorkspace({
             if (line.startsWith("data:")) dataLines.push(line.slice(5));
           }
           const data = dataLines.join("\n");
-
-          if (event === "token") {
-            output += data;
-            updateMs(moduleId, { output });
-          } else if (event === "done") {
+          if (event === "token") { output += data; updateMs(moduleId, { output }); }
+          else if (event === "done") {
             updateMs(moduleId, { output, status: output ? "in_progress" : getMs(ws, moduleId).status });
             return;
-          } else if (event === "error") {
-            throw new Error(data || "Erreur de streaming.");
-          }
+          } else if (event === "error") throw new Error(data || "Erreur de streaming.");
         }
       }
-
       if (output) updateMs(moduleId, { output, status: "in_progress" });
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -987,12 +1140,8 @@ export default function FounderWorkspace({
   }
 
   function copyOutput(moduleId: string, content: string) {
-    const plain = content
-      .replace(/\*\*([^*\n]+)\*\*/g, "$1")
-      .replace(/\*([^*\n]+)\*/g, "$1")
-      .replace(/`([^`\n]+)`/g, "$1")
-      .replace(/^#{1,3}\s+/gm, "")
-      .trim();
+    const plain = content.replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/\*([^*\n]+)\*/g, "$1")
+      .replace(/`([^`\n]+)`/g, "$1").replace(/^#{1,3}\s+/gm, "").trim();
     navigator.clipboard.writeText(plain).then(() => {
       setCopiedOutput(moduleId);
       setTimeout(() => setCopiedOutput((c) => (c === moduleId ? null : c)), 2000);
@@ -1004,12 +1153,11 @@ export default function FounderWorkspace({
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const w = window.open(url, "_blank");
-    if (w) {
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } else {
+    if (w) { setTimeout(() => URL.revokeObjectURL(url), 10000); }
+    else {
       const a = document.createElement("a");
       a.href = url;
-      a.download = `founder-koryxa-${new Date().toISOString().slice(0, 10)}.html`;
+      a.download = `dossier-founder-koryxa-${new Date().toISOString().slice(0, 10)}.html`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 3000);
     }
@@ -1018,6 +1166,7 @@ export default function FounderWorkspace({
   const activeModule = MODULES.find((m) => m.id === activeId) ?? MODULES[0];
   const activeMs = getMs(ws, activeId);
   const isGenerating = generating === activeId;
+  const isRevision = activeMs.status === "in_progress" && !!activeMs.previousOutput;
 
   const completedCount = REQUIRED_MODULES.filter((m) => getMs(ws, m.id).status === "completed").length;
   const allDone = completedCount === REQUIRED_MODULES.length;
@@ -1026,17 +1175,11 @@ export default function FounderWorkspace({
   const prevModule = activeIdx > 0 ? MODULES[activeIdx - 1] : null;
   const nextModule = activeIdx < MODULES.length - 1 ? MODULES[activeIdx + 1] : null;
 
-  // ── Synthesis view (full-width, replaces grid) ───────────────────────────
+  // ── Synthesis view ──
   if (showSynthesis) {
     return (
       <main className="h-full min-h-0 overflow-hidden">
-        <SynthesisView
-          ws={ws}
-          modules={MODULES}
-          firstName={firstName}
-          onBack={() => setShowSynthesis(false)}
-          onExport={exportToHtml}
-        />
+        <SynthesisView ws={ws} modules={MODULES} firstName={firstName} onBack={() => setShowSynthesis(false)} onExport={exportToHtml} />
       </main>
     );
   }
@@ -1044,9 +1187,8 @@ export default function FounderWorkspace({
   return (
     <main className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
 
-      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
+      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
       <aside className="hidden min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] lg:flex">
-
         <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -1055,30 +1197,19 @@ export default function FounderWorkspace({
                 {firstName ? `Bonjour, ${firstName}` : "Votre workspace"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onExit}
-              title="Retour au mode général"
-              className="mt-0.5 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-            >
+            <button type="button" onClick={onExit} title="Retour au mode général"
+              className="mt-0.5 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-
           <div className="mt-3">
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-[10px] font-medium text-slate-400">
-                {completedCount}/{REQUIRED_MODULES.length} étapes validées
-              </span>
-              <span className="text-[10px] font-semibold text-sky-600">
-                {Math.round((completedCount / REQUIRED_MODULES.length) * 100)}%
-              </span>
+              <span className="text-[10px] font-medium text-slate-400">{completedCount}/{REQUIRED_MODULES.length} étapes validées</span>
+              <span className="text-[10px] font-semibold text-sky-600">{Math.round((completedCount / REQUIRED_MODULES.length) * 100)}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500 transition-all duration-500"
-                style={{ width: `${Math.max(3, Math.round((completedCount / REQUIRED_MODULES.length) * 100))}%` }}
-              />
+              <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500 transition-all duration-500"
+                style={{ width: `${Math.max(3, Math.round((completedCount / REQUIRED_MODULES.length) * 100))}%` }} />
             </div>
           </div>
         </div>
@@ -1089,51 +1220,29 @@ export default function FounderWorkspace({
             const isActive = mod.id === activeId;
             const isCompleted = mws.status === "completed";
             const hasOutput = !!mws.output;
+            const hasRetention = !!mws.retention?.trim();
             const Icon = mod.icon;
-
             return (
-              <button
-                key={mod.id}
-                type="button"
-                onClick={() => setActiveId(mod.id)}
-                className={`mb-0.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                  isActive ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "hover:bg-slate-50"
-                }`}
-              >
-                <div
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
-                    isCompleted
-                      ? "bg-emerald-500 text-white"
-                      : isActive
-                        ? "bg-sky-600 text-white"
-                        : hasOutput
-                          ? "bg-sky-100 text-sky-600"
-                          : "bg-slate-100 text-slate-400"
-                  }`}
-                >
+              <button key={mod.id} type="button" onClick={() => setActiveId(mod.id)}
+                className={`mb-0.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${isActive ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "hover:bg-slate-50"}`}>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
+                  isCompleted ? "bg-emerald-500 text-white" : isActive ? "bg-sky-600 text-white" : hasOutput ? "bg-sky-100 text-sky-600" : "bg-slate-100 text-slate-400"
+                }`}>
                   {isCompleted ? <Check className="h-3 w-3" /> : mod.step}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
-                    <p
-                      className={`truncate text-xs font-semibold leading-snug ${
-                        isCompleted ? "text-emerald-700" : isActive ? "text-sky-700" : "text-slate-700"
-                      }`}
-                    >
+                    <p className={`truncate text-xs font-semibold leading-snug ${isCompleted ? "text-emerald-700" : isActive ? "text-sky-700" : "text-slate-700"}`}>
                       {mod.label}
                     </p>
-                    {mod.optional ? (
-                      <span className="shrink-0 text-[9px] font-normal text-slate-400">(opt.)</span>
-                    ) : null}
+                    {mod.optional ? <span className="shrink-0 text-[9px] font-normal text-slate-400">(opt.)</span> : null}
                   </div>
                   <p className="mt-0.5 text-[10px] text-slate-400">
                     {isCompleted
-                      ? "✓ Validée"
-                      : hasOutput
-                        ? "Réponse générée"
-                        : mws.inputs && Object.values(mws.inputs).some(Boolean)
-                          ? "En cours"
-                          : "Non démarrée"}
+                      ? hasRetention ? "✓ Validée · formulation rédigée" : "✓ Validée"
+                      : hasOutput ? "Réponse générée"
+                      : mws.inputs && Object.values(mws.inputs).some(Boolean) ? "En cours"
+                      : "Non démarrée"}
                   </p>
                 </div>
               </button>
@@ -1143,66 +1252,47 @@ export default function FounderWorkspace({
 
         <div className="shrink-0 space-y-2 border-t border-slate-100 px-3 py-3">
           {allDone ? (
-            <button
-              type="button"
-              onClick={() => setShowSynthesis(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-violet-600 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:opacity-90"
-            >
+            <button type="button" onClick={() => setShowSynthesis(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-violet-600 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:opacity-90">
               <BookOpen className="h-3.5 w-3.5" />
-              Voir la synthèse finale
+              Voir le dossier final
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onExit}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
-          >
+          <button type="button" onClick={onExit}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700">
             ← Mode général
           </button>
         </div>
       </aside>
 
-      {/* ── Main content ──────────────────────────────────────────────────── */}
+      {/* ── Main content ─────────────────────────────────────────────────── */}
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
 
         {error ? (
-          <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">
-            {error}
-          </div>
+          <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">{error}</div>
         ) : null}
 
         {/* Module header */}
         <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => { if (prevModule) setActiveId(prevModule.id); }}
-              disabled={!prevModule}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden"
-            >
+            <button type="button" onClick={() => { if (prevModule) setActiveId(prevModule.id); }} disabled={!prevModule}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
               <ChevronLeft className="h-4 w-4" />
             </button>
-
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-sky-600"}`}>
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
             </div>
-
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
                 Étape {activeModule.step}{activeModule.optional ? " · Optionnelle" : ""}
+                {isRevision ? " · Révision" : ""}
               </p>
               <p className="text-sm font-bold text-slate-800">{activeModule.label}</p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => { if (nextModule) setActiveId(nextModule.id); }}
-              disabled={!nextModule}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden"
-            >
+            <button type="button" onClick={() => { if (nextModule) setActiveId(nextModule.id); }} disabled={!nextModule}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
               <ChevronRight className="h-4 w-4" />
             </button>
-
             {activeMs.status === "completed" ? (
               <div className="ml-auto hidden shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:flex">
                 <Check className="h-3 w-3" />
@@ -1211,24 +1301,12 @@ export default function FounderWorkspace({
             ) : null}
           </div>
           <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{activeModule.description}</p>
-
           <div className="mt-2 flex justify-center gap-1 lg:hidden">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);
               return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setActiveId(m.id)}
-                  className={`rounded-full transition-all duration-200 ${
-                    m.id === activeId
-                      ? "h-1.5 w-4 bg-sky-500"
-                      : mws.status === "completed"
-                        ? "h-1.5 w-1.5 bg-emerald-400"
-                        : mws.output
-                          ? "h-1.5 w-1.5 bg-sky-200"
-                          : "h-1.5 w-1.5 bg-slate-200"
-                  }`}
+                <button key={m.id} type="button" onClick={() => setActiveId(m.id)}
+                  className={`rounded-full transition-all duration-200 ${m.id === activeId ? "h-1.5 w-4 bg-sky-500" : mws.status === "completed" ? "h-1.5 w-1.5 bg-emerald-400" : mws.output ? "h-1.5 w-1.5 bg-sky-200" : "h-1.5 w-1.5 bg-slate-200"}`}
                 />
               );
             })}
@@ -1236,10 +1314,8 @@ export default function FounderWorkspace({
         </div>
 
         {/* Scrollable content */}
-        <div
-          ref={contentRef}
-          className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]"
-        >
+        <div ref={contentRef}
+          className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]">
           <div className="mx-auto max-w-2xl space-y-5">
 
             {/* Completion banner */}
@@ -1250,22 +1326,28 @@ export default function FounderWorkspace({
                     <Check className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-800">
-                      {firstName ? `Bravo ${firstName} !` : "Félicitations !"}
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      Les 6 étapes clés sont validées.
-                    </p>
+                    <p className="text-sm font-bold text-slate-800">{firstName ? `Bravo ${firstName} !` : "Félicitations !"}</p>
+                    <p className="text-xs text-slate-600">Les 6 étapes sont validées. Votre dossier est prêt.</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSynthesis(true)}
-                    className="flex shrink-0 items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700"
-                  >
+                  <button type="button" onClick={() => setShowSynthesis(true)}
+                    className="flex shrink-0 items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700">
                     <BookOpen className="h-3.5 w-3.5" />
-                    Synthèse finale
+                    Dossier final
                   </button>
                 </div>
+              </div>
+            ) : null}
+
+            {/* Revision banner (AXE 1) */}
+            {isRevision && !isGenerating ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  <p className="text-xs font-semibold text-amber-800">Mode révision</p>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
+                  Modifiez vos réponses ci-dessous et régénérez pour affiner, ou revalidez directement la version existante.
+                </p>
               </div>
             ) : null}
 
@@ -1275,26 +1357,16 @@ export default function FounderWorkspace({
                 <div key={field.id}>
                   <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                     {field.label}
-                    {field.optional ? (
-                      <span className="ml-1.5 font-normal text-slate-400">(optionnel)</span>
-                    ) : null}
+                    {field.optional ? <span className="ml-1.5 font-normal text-slate-400">(optionnel)</span> : null}
                   </label>
                   {field.type === "textarea" ? (
-                    <textarea
-                      value={activeMs.inputs[field.id] ?? ""}
-                      onChange={(e) => updateInput(activeId, field.id, e.target.value)}
-                      placeholder={field.placeholder}
-                      rows={field.rows ?? 3}
-                      disabled={isGenerating}
+                    <textarea value={activeMs.inputs[field.id] ?? ""} onChange={(e) => updateInput(activeId, field.id, e.target.value)}
+                      placeholder={field.placeholder} rows={field.rows ?? 3} disabled={isGenerating}
                       className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(14,165,233,0.07)] disabled:opacity-60"
                     />
                   ) : (
-                    <input
-                      type="text"
-                      value={activeMs.inputs[field.id] ?? ""}
-                      onChange={(e) => updateInput(activeId, field.id, e.target.value)}
-                      placeholder={field.placeholder}
-                      disabled={isGenerating}
+                    <input type="text" value={activeMs.inputs[field.id] ?? ""} onChange={(e) => updateInput(activeId, field.id, e.target.value)}
+                      placeholder={field.placeholder} disabled={isGenerating}
                       className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(14,165,233,0.07)] disabled:opacity-60"
                     />
                   )}
@@ -1304,66 +1376,53 @@ export default function FounderWorkspace({
 
             {/* Generate button */}
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => void generate(activeId)}
+              <button type="button" onClick={() => void generate(activeId)}
                 disabled={!!generating || !conversationId}
-                className="flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
+                className="flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" />
-                {isGenerating
-                  ? "Génération en cours…"
-                  : activeMs.output
-                    ? "Régénérer"
-                    : "Générer avec ChatLAYA"}
+                {isGenerating ? "Génération en cours…" : activeMs.output ? "Régénérer" : "Générer avec ChatLAYA"}
               </button>
-
               {isGenerating ? (
-                <button
-                  type="button"
-                  onClick={() => streamAbortRef.current?.abort()}
-                  className="text-xs text-slate-400 transition hover:text-slate-600"
-                >
+                <button type="button" onClick={() => streamAbortRef.current?.abort()}
+                  className="text-xs text-slate-400 transition hover:text-slate-600">
                   Annuler
                 </button>
               ) : null}
-
               {!isGenerating && generating && generating !== activeId ? (
-                <span className="text-[11px] text-slate-400">
-                  Génération en cours sur une autre étape…
-                </span>
+                <span className="text-[11px] text-slate-400">Génération en cours sur une autre étape…</span>
               ) : null}
             </div>
 
-            {/* Generating animation */}
-            {isGenerating && !activeMs.output ? (
-              <GeneratingCard firstName={firstName} />
+            {/* Previous output (revision mode, while generating) */}
+            {isGenerating && !activeMs.output && activeMs.previousOutput ? (
+              <details className="rounded-xl border border-slate-200">
+                <summary className="cursor-pointer rounded-xl px-4 py-2.5 text-xs font-medium text-slate-500 hover:bg-slate-50">
+                  Voir la version précédente
+                </summary>
+                <div className="px-4 pb-4 pt-2 opacity-60">
+                  <FounderOutput content={activeMs.previousOutput} />
+                </div>
+              </details>
             ) : null}
 
-            {/* AI output */}
+            {/* Generating animation */}
+            {isGenerating && !activeMs.output ? <GeneratingCard firstName={firstName} /> : null}
+
+            {/* AI output (coaching layer) */}
             {activeMs.output ? (
               <div className="group relative rounded-2xl border border-sky-100 bg-white p-5 shadow-[0_4px_24px_rgba(14,165,233,0.07)]">
                 <div className="mb-3 flex items-center gap-2">
                   <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-600">
                     <span className="text-[8px] font-bold text-white">L</span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">
-                    Réponse ChatLAYA
-                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">Analyse ChatLAYA</span>
                   {isGenerating ? (
                     <span className="ml-auto animate-pulse text-[10px] text-slate-400">En cours…</span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => copyOutput(activeId, activeMs.output!)}
+                    <button type="button" onClick={() => copyOutput(activeId, activeMs.output!)}
                       className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-slate-400 opacity-0 transition-all hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
-                      title="Copier"
-                    >
-                      {copiedOutput === activeId ? (
-                        <Check className="h-3 w-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="h-3 w-3" />
-                      )}
+                      title="Copier">
+                      {copiedOutput === activeId ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
                       {copiedOutput === activeId ? "Copié !" : "Copier"}
                     </button>
                   )}
@@ -1376,13 +1435,10 @@ export default function FounderWorkspace({
             {activeMs.output && !isGenerating ? (
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 {activeMs.status !== "completed" ? (
-                  <button
-                    type="button"
-                    onClick={() => validate(activeId)}
-                    className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
-                  >
+                  <button type="button" onClick={() => validate(activeId)}
+                    className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]">
                     <Check className="h-3.5 w-3.5" />
-                    Valider cette étape
+                    {isRevision ? "Revalider cette version" : "Valider cette étape"}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
@@ -1390,27 +1446,16 @@ export default function FounderWorkspace({
                     Étape validée
                   </div>
                 )}
-
                 {activeMs.status === "completed" ? (
-                  <button
-                    type="button"
-                    onClick={() => reopen(activeId)}
-                    className="flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
-                  >
+                  <button type="button" onClick={() => reopen(activeId)}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700">
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Réviser
+                    Modifier cette étape
                   </button>
                 ) : null}
-
                 {nextModule ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeMs.status !== "completed") validate(activeId);
-                      else setActiveId(nextModule.id);
-                    }}
-                    className="ml-auto flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 active:scale-[0.98]"
-                  >
+                  <button type="button" onClick={() => { if (activeMs.status !== "completed") validate(activeId); else setActiveId(nextModule.id); }}
+                    className="ml-auto flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 active:scale-[0.98]">
                     {nextModule.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
@@ -1418,12 +1463,9 @@ export default function FounderWorkspace({
               </div>
             ) : null}
 
-            {/* Retention block — shown only after validation */}
+            {/* Retention block — livrable final (AXE 2) */}
             {activeMs.status === "completed" && activeMs.output && !isGenerating ? (
-              <RetentionBlock
-                value={activeMs.retention ?? ""}
-                onChange={(v) => updateRetention(activeId, v)}
-              />
+              <RetentionBlock value={activeMs.retention ?? ""} onChange={(v) => updateRetention(activeId, v)} />
             ) : null}
 
             {/* Empty state */}

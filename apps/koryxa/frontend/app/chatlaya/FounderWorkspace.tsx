@@ -519,14 +519,13 @@ function mdToHtmlString(content: string): string {
   }).join("\n");
 }
 
-function getProjectContent(mws: ModuleState): string {
-  // Priority: user's formulation > AI coaching output
-  if (mws.retention?.trim()) return mws.retention.trim();
-  return mws.output?.trim() ?? "";
+// Strict: final document uses ONLY user's own formulation — never AI coaching output
+function getDocContent(mws: ModuleState): string | null {
+  return mws.retention?.trim() || null;
 }
 
-function extractShortSummary(mws: ModuleState, max = 110): string {
-  const content = getProjectContent(mws);
+function extractCardSummary(mws: ModuleState, max = 110): string {
+  const content = mws.retention?.trim();
   if (!content) return "";
   const clean = content.replace(/^#{1,3}\s+/gm, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/`/g, "").trim();
   const sentence = clean.split(/\.\s/)[0].replace(/\n/g, " ");
@@ -536,41 +535,53 @@ function extractShortSummary(mws: ModuleState, max = 110): string {
 function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?: string): string {
   const date = new Date().toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" });
   const completed = modules.filter((m) => getMs(ws, m.id).status === "completed");
-  const requiredDone = modules.filter((m) => !m.optional && getMs(ws, m.id).status === "completed").length;
   const requiredTotal = modules.filter((m) => !m.optional).length;
 
-  // Summary cards — client, offre, prix (top 3 if completed)
+  // Strict counts: only user-formulated sections count as truly ready for the document
+  const requiredWithFormulation = modules.filter((m) => !m.optional && !!getMs(ws, m.id).retention?.trim()).length;
+  const missingFormulation = completed.filter((m) => !m.optional && !getMs(ws, m.id).retention?.trim());
+  const isDossierComplete = requiredWithFormulation === requiredTotal;
+
+  // Summary cards — ONLY if user formulation exists (never coaching fallback)
   const summaryIds = ["client", "offre", "prix"];
   const summaryCards = summaryIds.map((id) => {
     const mws = getMs(ws, id);
     if (mws.status !== "completed") return "";
-    const label = DOC_LABELS[id];
-    const summary = extractShortSummary(mws);
+    const summary = extractCardSummary(mws);
     if (!summary) return "";
+    const label = DOC_LABELS[id];
     return `<div class="card">
       <div class="card-label">${label.title}</div>
       <div class="card-value">${inlineToHtml(summary)}</div>
     </div>`;
   }).filter(Boolean).join("");
 
-  // Section bodies
+  // Incomplete document banner — shown when required sections lack user formulation
+  const incompleteHtml = missingFormulation.length > 0 ? `
+  <div class="incomplet-banner">
+    <strong>Dossier incomplet</strong>
+    <p>${missingFormulation.length} section${missingFormulation.length > 1 ? "s" : ""} sans formulation rédigée : <strong>${missingFormulation.map((m) => DOC_LABELS[m.id]?.title ?? m.label).join(", ")}</strong>. Ces sections apparaissent comme non finalisées ci-dessous. Retournez dans l'espace de travail pour rédiger vos formulations dossier.</p>
+  </div>` : "";
+
+  // Section bodies — STRICT: only user formulation, never AI coaching output
   const sections = completed.map((mod, idx) => {
     const mws = getMs(ws, mod.id);
     const docLabel = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
-    const projectContent = getProjectContent(mws);
-    const hasRetention = !!mws.retention?.trim();
+    const retention = getDocContent(mws);
 
-    // If using retention note: render as clean text; if AI output: render as markdown
-    const contentHtml = hasRetention
-      ? `<div class="prose-text">${mws.retention!.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>")}</div>`
-      : mdToHtmlString(projectContent);
+    const contentHtml = retention
+      ? `<div class="prose-text">${retention.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>")}</div>`
+      : `<div class="section-incomplete">
+          <span class="section-incomplete-label">Formulation non rédigée</span>
+          <p class="section-incomplete-hint">Cette section a été analysée en mode coaching mais la formulation finale n'a pas encore été rédigée. Le contenu coaching n'est pas inclus dans ce dossier.</p>
+        </div>`;
 
     return `
     <div class="section">
       <div class="section-head">
         <div class="section-num">0${mod.step}</div>
         <div class="section-info">
-          <div class="section-bar"></div>
+          <div class="section-bar${retention ? "" : " section-bar-missing"}"></div>
           <div class="section-title">${docLabel.title}</div>
           <div class="section-tagline">${docLabel.tagline}</div>
         </div>
@@ -803,6 +814,18 @@ function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?:
   /* User-written formulation (retention) — rendered as plain text */
   .prose-text p { font-size: 13.5px; line-height: 1.8; color: #374151; margin: 6px 0; }
 
+  /* Incomplete section placeholder (no user formulation — coaching not included) */
+  .section-incomplete { border: 1px dashed var(--border); border-radius: 8px; padding: 20px 24px; background: var(--surface); }
+  .section-incomplete-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-faint); display: block; margin-bottom: 8px; }
+  .section-incomplete-hint { font-size: 12px; color: var(--ink-faint); line-height: 1.7; font-style: italic; margin: 0; }
+  .section-bar-missing { background: var(--border) !important; }
+
+  /* Incomplete document warning banner */
+  .incomplet-banner { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px 22px; margin-bottom: 40px; }
+  .incomplet-banner strong { color: #92400e; font-weight: 700; }
+  .incomplet-banner p { color: #78350f; font-size: 12px; margin-top: 6px; line-height: 1.75; }
+  .cover-badge-incomplete { background: #fffbeb !important; color: #92400e !important; border-color: #fde68a !important; }
+
   /* ─ Divider ─ */
   .rule { border: none; border-top: 1px solid var(--border-lite); margin: 48px 0; }
 
@@ -845,13 +868,15 @@ function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?:
       <div class="cover-right">
         <div class="cover-meta">
           <div><strong>Date</strong> · ${date}</div>
-          <div><strong>Sections</strong> · ${requiredDone} / ${requiredTotal} validées</div>
+          <div><strong>Sections rédigées</strong> · ${requiredWithFormulation} / ${requiredTotal}</div>
           <div><strong>Outil</strong> · ChatLAYA Founder</div>
         </div>
-        <div class="cover-badge">${requiredDone === requiredTotal ? "Parcours complet" : "En cours"}</div>
+        <div class="cover-badge${isDossierComplete ? "" : " cover-badge-incomplete"}">${isDossierComplete ? "Dossier complet" : requiredWithFormulation === 0 ? "Brouillon" : "Dossier incomplet"}</div>
       </div>
     </div>
   </div>
+
+  ${incompleteHtml}
 
   ${summaryCards ? `<!-- Summary cards -->\n  <div class="cards">${summaryCards}</div>` : ""}
 
@@ -880,8 +905,11 @@ interface SynthesisViewProps {
 }
 
 function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisViewProps) {
+  const [exportConfirm, setExportConfirm] = useState(false);
   const completed = modules.filter((m) => getMs(ws, m.id).status === "completed");
-  const withoutFormulation = completed.filter((m) => !getMs(ws, m.id).retention?.trim());
+  // Only required sections matter for export readiness
+  const withoutFormulation = completed.filter((m) => !m.optional && !getMs(ws, m.id).retention?.trim());
+  const isExportReady = withoutFormulation.length === 0;
 
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
@@ -904,14 +932,41 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
           </div>
           <button
             type="button"
-            onClick={onExport}
-            className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98]"
+            onClick={isExportReady ? onExport : () => setExportConfirm((v) => !v)}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] ${isExportReady ? "bg-sky-600 hover:bg-sky-700" : "bg-amber-500 hover:bg-amber-600"}`}
           >
             <Download className="h-3.5 w-3.5" />
-            Exporter PDF
+            {isExportReady ? "Exporter PDF" : `Exporter (${withoutFormulation.length} section${withoutFormulation.length > 1 ? "s" : ""} incomplète${withoutFormulation.length > 1 ? "s" : ""})`}
           </button>
         </div>
       </div>
+
+      {/* Export confirmation — shown when required sections have no user formulation */}
+      {exportConfirm ? (
+        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-5 py-3">
+          <div className="flex flex-wrap items-start gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-amber-800">
+                {withoutFormulation.length} section{withoutFormulation.length > 1 ? "s" : ""} sans formulation — le document exporté affichera des espaces vides à ces endroits.
+              </p>
+              <p className="mt-0.5 text-[11px] text-amber-700">
+                Sections : {withoutFormulation.map((m) => DOC_LABELS[m.id]?.title ?? m.label).join(", ")}. Le contenu coaching ne sera pas inclus.
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" onClick={() => setExportConfirm(false)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100">
+                Annuler
+              </button>
+              <button type="button" onClick={() => { setExportConfirm(false); onExport(); }}
+                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700">
+                Exporter quand même
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
@@ -928,7 +983,7 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
                   </p>
                   <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
                     <span className="font-medium">{withoutFormulation.map((m) => m.label).join(", ")}</span>
-                    {" "}— le dossier utilisera les réponses de coaching par défaut pour ces sections.
+                    {" "}— ces sections apparaîtront comme non finalisées dans le document exporté. Le contenu coaching n'y sera pas inclus.
                     Retournez dans chaque étape pour rédiger votre formulation propre.
                   </p>
                 </div>
@@ -996,11 +1051,11 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
           <div className="mt-10 flex justify-center">
             <button
               type="button"
-              onClick={onExport}
-              className="flex items-center gap-2 rounded-full bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700 active:scale-[0.98]"
+              onClick={isExportReady ? onExport : () => setExportConfirm((v) => !v)}
+              className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition active:scale-[0.98] ${isExportReady ? "bg-sky-600 hover:bg-sky-700" : "bg-amber-500 hover:bg-amber-600"}`}
             >
               <Download className="h-4 w-4" />
-              Télécharger le dossier HTML · Imprimer en PDF
+              {isExportReady ? "Télécharger le dossier HTML · Imprimer en PDF" : "Exporter le dossier incomplet"}
             </button>
           </div>
 

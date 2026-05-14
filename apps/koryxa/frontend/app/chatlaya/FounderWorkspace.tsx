@@ -1373,6 +1373,16 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
           className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]">
           <div className="mx-auto max-w-2xl space-y-5">
 
+            {/* Product intro — visible only on a fresh workspace */}
+            {completedCount === 0 && !activeMs.output && !isGenerating ? (
+              <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-4">
+                <p className="text-xs font-semibold text-slate-600">Espace de cadrage business guidé</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  En 6 étapes, Founder vous aide à clarifier votre client cible, votre problème, votre offre, votre prix, votre modèle de revenus et votre message de vente — et à rédiger un dossier projet structuré, exportable à la fin du parcours.
+                </p>
+              </div>
+            ) : null}
+
             {/* Completion banner */}
             {allDone ? (
               <div className="rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-violet-50 px-5 py-4">

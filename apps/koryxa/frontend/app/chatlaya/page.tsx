@@ -51,25 +51,6 @@ const GENERAL_STARTER_PROMPTS = [
   },
 ] as const;
 
-const SPECIALIST_STARTER_PROMPTS = [
-  {
-    label: "Lancer mon projet",
-    prompt: "Aide-moi a lancer mon projet en identifiant les etapes essentielles pour passer de l'idee a une offre claire.",
-  },
-  {
-    label: "Structurer mon offre",
-    prompt: "Aide-moi a structurer mon offre pour qu'elle soit lisible, utile et vendable.",
-  },
-  {
-    label: "Construire un business plan",
-    prompt: "Aide-moi a construire un business plan simple et exploitable pour mon activite.",
-  },
-  {
-    label: "Mieux vendre",
-    prompt: "Aide-moi a mieux vendre mon offre en clarifiant proposition de valeur, cible et argumentaire commercial.",
-  },
-] as const;
-
 const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint: string }> = [
   {
     value: "general",
@@ -283,7 +264,7 @@ function AssistantContent({ content }: { content: string }) {
   );
 }
 
-const THINKING_MSGS_GENERAL = (name?: string) => [
+const THINKING_MSGS = (name?: string) => [
   name ? `Je lis attentivement votre message, ${name}…` : "Je lis attentivement votre message…",
   "J'analyse chaque dimension de votre demande…",
   name ? `Je construis une réponse sur mesure pour vous, ${name}…` : "Je construis une réponse structurée pour vous…",
@@ -292,20 +273,9 @@ const THINKING_MSGS_GENERAL = (name?: string) => [
   "Presque terminé — je finalise ma réponse…",
 ];
 
-const THINKING_MSGS_FOUNDER = (name?: string) => [
-  name ? `Je lis votre projet avec attention, ${name}…` : "Je lis votre projet avec attention…",
-  "J'analyse votre situation sous tous les angles…",
-  "Je consulte le corpus Fondateur pour vous…",
-  name ? `Je structure une stratégie adaptée pour vous, ${name}…` : "Je structure une stratégie adaptée à votre situation…",
-  "Je peaufine les recommandations pour que vous puissiez agir…",
-  "Presque là — je finalise pour vous…",
-];
-
-function ThinkingIndicator({ firstName, mode }: { firstName?: string; mode: AssistantMode }) {
+function ThinkingIndicator({ firstName }: { firstName?: string }) {
   const [phase, setPhase] = useState(0);
-  const messages = mode === "launch_structure_sell"
-    ? THINKING_MSGS_FOUNDER(firstName)
-    : THINKING_MSGS_GENERAL(firstName);
+  const messages = THINKING_MSGS(firstName);
 
   useEffect(() => {
     setPhase(0);
@@ -501,11 +471,7 @@ function ChatlayaContent() {
   }
 
   async function createConversation() {
-    if (activeAssistantMode === "launch_structure_sell") {
-      await switchToFounderMode();
-    } else {
-      await switchToGeneralMode();
-    }
+    await switchToGeneralMode();
   }
 
   async function loadConversations(force = false) {
@@ -581,6 +547,9 @@ function ChatlayaContent() {
       resetTypewriterQueue();
       setFounderAuthRequired(false);
       setMessages(Array.isArray(data?.items) ? data.items : []);
+      // Auto-redirect: founder conversations always open as workspace, not chat
+      const conv = conversations.find((c) => c.conversation_id === conversationId);
+      setFounderWorkspaceVisible(conv?.assistant_mode === "launch_structure_sell" && !!user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
       setMessages([]);
@@ -659,52 +628,6 @@ function ChatlayaContent() {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inattendue.");
-    }
-  }
-
-  async function updateConversationMode(nextMode: AssistantMode) {
-    if (!selectedConversationId || assistantModeSaving || streaming) return;
-    const previous = conversations.find((item) => item.conversation_id === selectedConversationId);
-    if (!previous) return;
-    const normalizedNextMode = normalizeAssistantMode(nextMode);
-    if (previous.assistant_mode === normalizedNextMode) return;
-
-    setAssistantModeSaving(true);
-    setError(null);
-    setConversations((current) =>
-      current.map((item) =>
-        item.conversation_id === selectedConversationId
-          ? { ...item, assistant_mode: normalizedNextMode }
-          : item,
-      ),
-    );
-
-    try {
-      const response = await fetch(`${API_BASE}/chatlaya/conversations/${selectedConversationId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ assistant_mode: normalizedNextMode }),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.detail || "Impossible de changer le mode assistant.");
-      }
-      const updated = normalizeConversation((await response.json()) as Conversation);
-      setConversations((current) =>
-        current.map((item) => (item.conversation_id === updated.conversation_id ? updated : item)),
-      );
-    } catch (err) {
-      setConversations((current) =>
-        current.map((item) =>
-          item.conversation_id === previous.conversation_id
-            ? { ...item, assistant_mode: previous.assistant_mode }
-            : item,
-        ),
-      );
-      setError(err instanceof Error ? err.message : "Erreur inattendue.");
-    } finally {
-      setAssistantModeSaving(false);
     }
   }
 
@@ -947,8 +870,7 @@ function ChatlayaContent() {
     [conversations, selectedConversationId],
   );
   const activeAssistantMode = activeConversation?.assistant_mode ?? "general";
-  const starterPrompts =
-    activeAssistantMode === "launch_structure_sell" ? SPECIALIST_STARTER_PROMPTS : GENERAL_STARTER_PROMPTS;
+  const starterPrompts = GENERAL_STARTER_PROMPTS;
 
   if (!isProblemCollector && founderWorkspaceVisible && user && !founderAuthRequired) {
     return (
@@ -1013,11 +935,6 @@ function ChatlayaContent() {
         <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-slate-900">Conversations</h2>
-            {activeConversation ? (
-              <span className="rounded-full border border-sky-100 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
-                {activeAssistantMode === "launch_structure_sell" ? "Fondateur" : "Général"}
-              </span>
-            ) : null}
           </div>
           {accessMode ? (
             <p className="mt-1 text-[10px] font-medium text-slate-400">
@@ -1208,21 +1125,10 @@ function ChatlayaContent() {
                 <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-600 shadow-sm">
                   <span className="text-sm font-bold text-white">L</span>
                 </div>
-                {activeAssistantMode === "launch_structure_sell" ? (
-                  <>
-                    <p className="text-base font-semibold text-slate-800">Lancez. Structurez. Vendez.</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                      Mode Fondateur est votre espace dédié aux porteurs de projet. Posez vos questions sur votre offre, votre marché ou votre stratégie commerciale — ChatLAYA répond avec son corpus spécialisé.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-base font-semibold text-slate-800">Partez d'une question simple.</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                      ChatLAYA vous aide à clarifier, cadrer et décider avant d'ouvrir la bonne suite dans KORYXA.
-                    </p>
-                  </>
-                )}
+                <p className="text-base font-semibold text-slate-800">Partez d'une question simple.</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  ChatLAYA vous aide à clarifier, cadrer et décider avant d'ouvrir la bonne suite dans KORYXA.
+                </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {starterPrompts.map((item) => (
                     <button
@@ -1251,7 +1157,7 @@ function ChatlayaContent() {
                     ) : null}
                     <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
                       {message.pending && !message.content ? (
-                        <ThinkingIndicator firstName={firstName} mode={activeAssistantMode} />
+                        <ThinkingIndicator firstName={firstName} />
                       ) : (
                         <div
                           className={`rounded-2xl px-4 py-3 ${

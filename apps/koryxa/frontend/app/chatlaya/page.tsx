@@ -654,7 +654,7 @@ function ChatlayaContent() {
 
   async function switchToFounderMode() {
     if (assistantModeSaving || streaming) return;
-    if (accessMode === "guest") {
+    if (accessMode === "guest" || !user) {
       setFounderAuthRequired(true);
       return;
     }

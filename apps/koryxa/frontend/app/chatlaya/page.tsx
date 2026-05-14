@@ -53,6 +53,17 @@ const GENERAL_STARTER_PROMPTS = [
 
 const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
 
+function detectAutonomousChatlayaHost() {
+  if (typeof document !== "undefined") {
+    const attr = document.documentElement.dataset.appHost;
+    if (attr) return attr === CHATLAYA_AUTONOMOUS_HOST;
+  }
+  if (typeof window !== "undefined") {
+    return window.location.hostname === CHATLAYA_AUTONOMOUS_HOST;
+  }
+  return false;
+}
+
 const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint: string }> = [
   {
     value: "general",
@@ -337,7 +348,7 @@ function ChatlayaContent() {
   const [founderWorkspaceVisible, setFounderWorkspaceVisible] = useState(false);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isAutonomousHost, setIsAutonomousHost] = useState(false);
+  const [isAutonomousHost, setIsAutonomousHost] = useState(detectAutonomousChatlayaHost);
 
   const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -575,8 +586,7 @@ function ChatlayaContent() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setIsAutonomousHost(window.location.hostname === CHATLAYA_AUTONOMOUS_HOST);
+    setIsAutonomousHost(detectAutonomousChatlayaHost());
   }, []);
 
   useEffect(() => {

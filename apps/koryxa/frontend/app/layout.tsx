@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import RouteShell from "@/components/layout/RouteShell";
@@ -48,9 +49,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout(props: { children: ReactNode }) {
   const { children } = props;
+  const requestHeaders = headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "";
+  const normalizedHost = host.split(":")[0];
+  const autonomousChatlayaHost = normalizedHost === "chatlaya.innovaplus.africa";
 
   return (
-    <html lang="fr">
+    <html lang="fr" data-app-host={normalizedHost}>
       <head>
         <meta charSet="utf-8" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
@@ -66,7 +71,7 @@ export default function RootLayout(props: { children: ReactNode }) {
         <ThemeProvider>
           <AuthProvider>
             <PWARegister />
-            <RouteShell>{children}</RouteShell>
+            <RouteShell autonomousChatlayaHost={autonomousChatlayaHost}>{children}</RouteShell>
           </AuthProvider>
         </ThemeProvider>
       </body>

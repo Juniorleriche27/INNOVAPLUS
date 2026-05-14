@@ -50,7 +50,11 @@ export const metadata: Metadata = {
 export default async function RootLayout(props: { children: ReactNode }) {
   const { children } = props;
   const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "";
+  const host =
+    requestHeaders.get("x-koryxa-host") ||
+    requestHeaders.get("x-forwarded-host") ||
+    requestHeaders.get("host") ||
+    "";
   const normalizedHost = host.split(":")[0];
   const autonomousChatlayaHost = normalizedHost === "chatlaya.innovaplus.africa";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { CLIENT_INNOVA_API_BASE } from "@/lib/env";
+import { CLIENT_INNOVA_API_BASE, INNOVA_API_BASE } from "@/lib/env";
 import { FORCED_PLAN, PlanTier } from "@/config/planFeatures";
 
 type WorkspaceRole = "demandeur" | "prestataire";
@@ -27,6 +27,7 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const pendingRefresh = new WeakMap<Window | Document, Promise<void>>();
+const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
 
 function withForcedPlan(user: User): User {
   if (!user || !FORCED_PLAN) return user;
@@ -51,7 +52,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }, 8000);
     try {
-      const res = await fetch(`${CLIENT_INNOVA_API_BASE}/auth/me`, {
+      const authBase =
+        typeof window !== "undefined" && window.location.hostname === CHATLAYA_AUTONOMOUS_HOST
+          ? INNOVA_API_BASE
+          : CLIENT_INNOVA_API_BASE;
+      const res = await fetch(`${authBase}/auth/me`, {
         cache: "no-store",
         credentials: "include",
         signal: controller.signal,

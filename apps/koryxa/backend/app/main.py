@@ -22,13 +22,13 @@ import cohere
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.core.config import get_allowed_hosts, is_production_env, settings
+from app.prompts import render_prompt
 from app.services.postgres_bootstrap import (
     _pg_relation_exists,
     close_pg_pool,
     db_fetchall,
     db_fetchone,
     ensure_auth_tables,
-    ensure_chatlaya_tables,
     ensure_enterprise_leads_table,
     init_pg_pool,
 )
@@ -407,17 +407,7 @@ def cohere_generate_report(prompt: str) -> str:
 
 def build_project_prompt(project: dict[str, Any]) -> str:
     payload = json.dumps(project, ensure_ascii=False, sort_keys=True, default=str)
-    return f"""
-Tu es un assistant de reporting pour un logiciel de gestion de projet.
-RÃ¨gles STRICTES:
-- Utilise uniquement les donnÃ©es JSON fournies. N'invente rien.
-- Si une information manque, dis "non disponible".
-- Rends un rapport court, clair, actionnable, en franÃ§ais.
-- Inclure: (1) RÃ©sumÃ©, (2) Indicateurs clÃ©s, (3) Alertes (si applicable), (4) Prochaines actions (3 bullets max).
-
-DonnÃ©es JSON:
-{payload}
-""".strip()
+    return render_prompt("reporting/project_report.txt", payload=payload)
 
 
 def build_portfolio_prompt(overview: dict[str, Any], top_risks: list[dict[str, Any]]) -> str:
@@ -427,16 +417,7 @@ def build_portfolio_prompt(overview: dict[str, Any], top_risks: list[dict[str, A
         sort_keys=True,
         default=str,
     )
-    return f"""
-Tu es un assistant de reporting pour un SaaS de productivitÃ©.
-RÃ¨gles STRICTES:
-- Utilise uniquement les donnÃ©es JSON fournies. N'invente rien.
-- Rends un rapport en franÃ§ais structurÃ©: (1) Vue d'ensemble, (2) Points d'attention, (3) Recommandations (5 bullets max).
-- Ne cite pas de sources externes.
-
-DonnÃ©es JSON:
-{payload}
-""".strip()
+    return render_prompt("reporting/portfolio_report.txt", payload=payload)
 
 raw_origins = [o.strip() for o in (settings.ALLOWED_ORIGINS or "").split(",") if o.strip()]
 cors_origins = {origin.rstrip("/") for origin in raw_origins}
@@ -449,9 +430,15 @@ if frontend_url:
     scheme = parsed.scheme or "https"
     if host and not host.startswith("www."):
         cors_origins.add(f"{scheme}://www.{host}".rstrip("/"))
+    if host == "innovaplus.africa":
+        cors_origins.add("https://chatlaya.innovaplus.africa")
 
 if not cors_origins:
-    cors_origins = {"https://innovaplus.africa", "https://www.innovaplus.africa"}
+    cors_origins = {
+        "https://innovaplus.africa",
+        "https://www.innovaplus.africa",
+        "https://chatlaya.innovaplus.africa",
+    }
 
 if (settings.ENV or "").lower() in {"development", "dev", "local"}:
     cors_origins.update({
@@ -502,10 +489,6 @@ async def on_startup():
         ensure_auth_tables()
     except Exception:
         logger.exception("Failed to ensure auth postgres tables")
-    try:
-        ensure_chatlaya_tables()
-    except Exception:
-        logger.exception("Failed to ensure ChatLAYA postgres tables")
     try:
         ensure_enterprise_leads_table()
     except Exception:

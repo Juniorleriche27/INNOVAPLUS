@@ -506,6 +506,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       const items: Conversation[] = Array.isArray(data?.items) ? data.items.map(normalizeConversation) : [];
 
       if (!items.length && session.conversationId) {
+        setError(null);
         setSelectedConversationId(session.conversationId);
         setMessages([]);
         return;
@@ -518,12 +519,14 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
 
       if (!items.length && force) {
         const created = await createConversationRequest();
+        setError(null);
         setConversations([created]);
         setSelectedConversationId(created.conversation_id);
         setMessages([]);
         return;
       }
 
+      setError(null);
       setConversations(items);
       setSelectedConversationId((current) => {
         if (isAutonomousHost) {
@@ -567,6 +570,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       const data = await response.json().catch(() => ({}));
       resetTypewriterQueue();
       setFounderAuthRequired(false);
+      setError(null);
       setMessages(Array.isArray(data?.items) ? data.items : []);
       // Auto-redirect: founder conversations always open as workspace, not chat
       const conv = conversations.find((c) => c.conversation_id === conversationId);
@@ -961,7 +965,9 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     isAutonomousHost &&
     user &&
     !founderAuthRequired &&
-    !!selectedConversationId;
+    !!selectedConversationId &&
+    activeAssistantMode === "launch_structure_sell" &&
+    founderWorkspaceVisible;
 
   const autonomousFounderBootPending =
     isAutonomousHost &&

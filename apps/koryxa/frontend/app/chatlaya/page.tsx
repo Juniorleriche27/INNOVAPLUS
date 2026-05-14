@@ -347,6 +347,7 @@ function ChatlayaContent() {
   const typewriterQueueRef = useRef("");
   const typewriterTimerRef = useRef<number | null>(null);
   const typewriterDrainWaitersRef = useRef<Array<() => void>>([]);
+  const autonomousFounderBootRef = useRef(false);
 
   function focusComposer(preventScroll = false) {
     const composer = composerRef.current;
@@ -514,6 +515,12 @@ function ChatlayaContent() {
 
       setConversations(items);
       setSelectedConversationId((current) => {
+        if (isAutonomousHost) {
+          const founderConversation = items.find((item) => item.assistant_mode === "launch_structure_sell");
+          if (founderConversation) {
+            return founderConversation.conversation_id;
+          }
+        }
         if (current && items.some((item) => item.conversation_id === current)) return current;
         if (session.conversationId && items.some((item) => item.conversation_id === session.conversationId)) {
           return session.conversationId;
@@ -881,7 +888,15 @@ function ChatlayaContent() {
   const starterPrompts = GENERAL_STARTER_PROMPTS;
 
   useEffect(() => {
-    if (!isAutonomousHost || !user || founderAuthRequired || conversationsLoading || assistantModeSaving || streaming) {
+    if (
+      !isAutonomousHost ||
+      !user ||
+      founderAuthRequired ||
+      conversationsLoading ||
+      assistantModeSaving ||
+      streaming ||
+      accessMode !== "user"
+    ) {
       return;
     }
 
@@ -898,12 +913,19 @@ function ChatlayaContent() {
       if (!founderWorkspaceVisible) {
         setFounderWorkspaceVisible(true);
       }
+      autonomousFounderBootRef.current = false;
       return;
     }
 
+    if (autonomousFounderBootRef.current) {
+      return;
+    }
+
+    autonomousFounderBootRef.current = true;
     void switchToFounderMode();
   }, [
     activeConversation,
+    accessMode,
     assistantModeSaving,
     conversations,
     conversationsLoading,

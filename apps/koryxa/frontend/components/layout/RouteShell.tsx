@@ -1,12 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Footer from "@/components/layout/footer";
 import PublicHeader from "@/components/layout/PublicHeader";
 import ConnectedHeader from "@/components/layout/ConnectedHeader";
 import FloatingNav from "@/components/layout/FloatingNav";
 import SignalementButton from "@/components/layout/SignalementButton";
+
+const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
 
 function PublicShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -84,8 +87,18 @@ function ConnectedShell({ children }: { children: ReactNode }) {
 
 export default function RouteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const [isAutonomousChatlayaHost, setIsAutonomousChatlayaHost] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsAutonomousChatlayaHost(window.location.hostname === CHATLAYA_AUTONOMOUS_HOST);
+  }, []);
 
   if (pathname.startsWith("/entreprise/setup")) {
+    return <>{children}</>;
+  }
+
+  if (isAutonomousChatlayaHost && pathname.startsWith("/chatlaya")) {
     return <>{children}</>;
   }
 

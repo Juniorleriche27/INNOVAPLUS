@@ -51,6 +51,8 @@ const GENERAL_STARTER_PROMPTS = [
   },
 ] as const;
 
+const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
+
 const ASSISTANT_MODE_OPTIONS: Array<{ value: AssistantMode; label: string; hint: string }> = [
   {
     value: "general",
@@ -335,6 +337,7 @@ function ChatlayaContent() {
   const [founderWorkspaceVisible, setFounderWorkspaceVisible] = useState(false);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isAutonomousHost, setIsAutonomousHost] = useState(false);
 
   const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -562,6 +565,11 @@ function ChatlayaContent() {
     if (bootstrappedRef.current) return;
     bootstrappedRef.current = true;
     void loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsAutonomousHost(window.location.hostname === CHATLAYA_AUTONOMOUS_HOST);
   }, []);
 
   useEffect(() => {
@@ -872,6 +880,45 @@ function ChatlayaContent() {
   const activeAssistantMode = activeConversation?.assistant_mode ?? "general";
   const starterPrompts = GENERAL_STARTER_PROMPTS;
 
+  useEffect(() => {
+    if (!isAutonomousHost || !user || founderAuthRequired || conversationsLoading || assistantModeSaving || streaming) {
+      return;
+    }
+
+    const founderConversation =
+      activeConversation?.assistant_mode === "launch_structure_sell"
+        ? activeConversation
+        : conversations.find((item) => item.assistant_mode === "launch_structure_sell");
+
+    if (founderConversation) {
+      if (selectedConversationId !== founderConversation.conversation_id) {
+        setSelectedConversationId(founderConversation.conversation_id);
+        return;
+      }
+      if (!founderWorkspaceVisible) {
+        setFounderWorkspaceVisible(true);
+      }
+      return;
+    }
+
+    if (!selectedConversationId && !conversations.length) {
+      return;
+    }
+
+    void switchToFounderMode();
+  }, [
+    activeConversation,
+    assistantModeSaving,
+    conversations,
+    conversationsLoading,
+    founderAuthRequired,
+    founderWorkspaceVisible,
+    isAutonomousHost,
+    selectedConversationId,
+    streaming,
+    user,
+  ]);
+
   if (!isProblemCollector && founderWorkspaceVisible && user && !founderAuthRequired) {
     return (
       <FounderWorkspace
@@ -879,6 +926,16 @@ function ChatlayaContent() {
         firstName={firstName}
         onExit={() => void switchToGeneralMode()}
       />
+    );
+  }
+
+  if (isAutonomousHost && user && !founderAuthRequired) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(186,230,253,0.35),transparent_52%),linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] px-6 py-10 text-slate-700">
+        <div className="rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-5 text-sm shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+          Ouverture de l'espace Founder…
+        </div>
+      </main>
     );
   }
 

@@ -901,10 +901,6 @@ function ChatlayaContent() {
       return;
     }
 
-    if (!selectedConversationId && !conversations.length) {
-      return;
-    }
-
     void switchToFounderMode();
   }, [
     activeConversation,
@@ -919,7 +915,13 @@ function ChatlayaContent() {
     user,
   ]);
 
-  if (!isProblemCollector && founderWorkspaceVisible && user && !founderAuthRequired) {
+  const autonomousFounderReady =
+    isAutonomousHost &&
+    user &&
+    !founderAuthRequired &&
+    (founderWorkspaceVisible || activeConversation?.assistant_mode === "launch_structure_sell");
+
+  if (!isProblemCollector && autonomousFounderReady) {
     return (
       <FounderWorkspace
         conversationId={selectedConversationId}

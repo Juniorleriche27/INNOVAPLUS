@@ -98,7 +98,7 @@ export default function RouteShell({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  if (isAutonomousChatlayaHost && pathname.startsWith("/chatlaya")) {
+  if (isAutonomousChatlayaHost) {
     return <>{children}</>;
   }
 

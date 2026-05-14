@@ -332,7 +332,7 @@ function ThinkingIndicator({ firstName }: { firstName?: string }) {
 function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousHost?: boolean }) {
   const searchParams = useSearchParams();
   const isProblemCollector = searchParams.get("intent") === "problem_collector";
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const firstName = user?.first_name || undefined;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -900,13 +900,22 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   useEffect(() => {
     if (
       !isAutonomousHost ||
-      !user ||
       founderAuthRequired ||
+      authLoading ||
       conversationsLoading ||
       assistantModeSaving ||
-      streaming ||
-      accessMode !== "user"
+      streaming
     ) {
+      return;
+    }
+
+    if (!user || accessMode === "guest") {
+      setFounderAuthRequired(true);
+      autonomousFounderBootRef.current = false;
+      return;
+    }
+
+    if (accessMode !== "user") {
       return;
     }
 
@@ -939,6 +948,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     assistantModeSaving,
     conversations,
     conversationsLoading,
+    authLoading,
     founderAuthRequired,
     founderWorkspaceVisible,
     isAutonomousHost,
@@ -956,8 +966,14 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   const autonomousFounderBootPending =
     isAutonomousHost &&
     !isProblemCollector &&
+    !error &&
     !founderAuthRequired &&
-    !autonomousFounderReady;
+    (
+      authLoading ||
+      conversationsLoading ||
+      accessMode === null ||
+      (user && accessMode === "user" && !autonomousFounderReady)
+    );
 
   if (!isProblemCollector && autonomousFounderReady) {
     return (

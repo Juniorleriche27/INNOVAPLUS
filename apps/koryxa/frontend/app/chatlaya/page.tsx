@@ -8,6 +8,7 @@ import { CHATLAYA_API_BASE } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 import FounderWorkspace from "./FounderWorkspace";
+import FounderWelcome from "./FounderWelcome";
 
 type AssistantMode = "general" | "launch_structure_sell";
 
@@ -333,6 +334,7 @@ function ChatlayaContent() {
   const [accessMode, setAccessMode] = useState<"guest" | "user" | null>(null);
   const [founderAuthRequired, setFounderAuthRequired] = useState(false);
   const [founderWorkspaceVisible, setFounderWorkspaceVisible] = useState(false);
+  const [founderLanding, setFounderLanding] = useState(false);
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -635,6 +637,7 @@ function ChatlayaContent() {
     if (assistantModeSaving || streaming) return;
     setFounderAuthRequired(false);
     setFounderWorkspaceVisible(false);
+    setFounderLanding(false);
     setError(null);
     setAssistantModeSaving(true);
     try {
@@ -652,12 +655,21 @@ function ChatlayaContent() {
     }
   }
 
+  function openFounderEntry() {
+    if (accessMode === "guest") {
+      setFounderAuthRequired(true);
+      return;
+    }
+    setFounderLanding(true);
+  }
+
   async function switchToFounderMode() {
     if (assistantModeSaving || streaming) return;
     if (accessMode === "guest") {
       setFounderAuthRequired(true);
       return;
     }
+    setFounderLanding(false);
     setFounderAuthRequired(false);
     setError(null);
     setAssistantModeSaving(true);
@@ -872,6 +884,17 @@ function ChatlayaContent() {
   const activeAssistantMode = activeConversation?.assistant_mode ?? "general";
   const starterPrompts = GENERAL_STARTER_PROMPTS;
 
+  if (!isProblemCollector && founderLanding && !founderWorkspaceVisible && !founderAuthRequired) {
+    return (
+      <FounderWelcome
+        firstName={firstName}
+        onStart={() => void switchToFounderMode()}
+        onBack={() => setFounderLanding(false)}
+        starting={assistantModeSaving}
+      />
+    );
+  }
+
   if (!isProblemCollector && founderWorkspaceVisible && user && !founderAuthRequired) {
     return (
       <FounderWorkspace
@@ -1056,7 +1079,7 @@ function ChatlayaContent() {
                     key={option.value}
                     type="button"
                     disabled={assistantModeSaving || streaming || (option.value === "general" && !selectedConversationId)}
-                    onClick={() => void (option.value === "launch_structure_sell" ? switchToFounderMode() : switchToGeneralMode())}
+                    onClick={() => { if (option.value === "launch_structure_sell") openFounderEntry(); else void switchToGeneralMode(); }}
                     title={isFounderLocked ? "Connexion requise pour accéder au Mode Fondateur" : option.hint}
                     className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${
                       active

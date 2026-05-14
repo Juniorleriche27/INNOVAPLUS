@@ -919,7 +919,7 @@ function ChatlayaContent() {
     isAutonomousHost &&
     user &&
     !founderAuthRequired &&
-    (founderWorkspaceVisible || activeConversation?.assistant_mode === "launch_structure_sell");
+    !!selectedConversationId;
 
   if (!isProblemCollector && autonomousFounderReady) {
     return (
@@ -928,16 +928,6 @@ function ChatlayaContent() {
         firstName={firstName}
         onExit={() => void switchToGeneralMode()}
       />
-    );
-  }
-
-  if (isAutonomousHost && user && !founderAuthRequired) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(186,230,253,0.35),transparent_52%),linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] px-6 py-10 text-slate-700">
-        <div className="rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-5 text-sm shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-          Ouverture de l'espace Founder…
-        </div>
-      </main>
     );
   }
 

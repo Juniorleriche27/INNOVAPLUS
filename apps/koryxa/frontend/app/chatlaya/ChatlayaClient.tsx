@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useE
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
-import { CHATLAYA_API_BASE } from "@/lib/env";
+import { getChatlayaApiBase } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 import FounderWorkspace from "./FounderWorkspace";
@@ -28,7 +28,9 @@ type Conversation = {
   assistant_mode: AssistantMode;
 };
 
-const API_BASE = CHATLAYA_API_BASE;
+function apiUrl(path: string): string {
+  return `${getChatlayaApiBase()}${path}`;
+}
 const STREAM_TIMEOUT_MS = 130_000;
 const TYPEWRITER_BASE_DELAY_MS = 12;
 const TYPEWRITER_PAUSE_DELAY_MS = 26;
@@ -455,7 +457,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   }
 
   async function createConversationRequest() {
-    const response = await fetch(`${API_BASE}/chatlaya/conversations`, {
+    const response = await fetch(apiUrl("/chatlaya/conversations"), {
       method: "POST",
       credentials: "include",
     });
@@ -467,7 +469,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   }
 
   async function ensureSession() {
-    const response = await fetch(`${API_BASE}/chatlaya/session`, {
+    const response = await fetch(apiUrl("/chatlaya/session"), {
       method: "POST",
       credentials: "include",
     });
@@ -493,7 +495,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     setConversationsLoading(true);
     try {
       const session = await ensureSession();
-      const response = await fetch(`${API_BASE}/chatlaya/conversations`, {
+      const response = await fetch(apiUrl("/chatlaya/conversations"), {
         cache: "no-store",
         credentials: "include",
       });
@@ -552,7 +554,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     setMessagesLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE}/chatlaya/messages?conversation_id=${encodeURIComponent(conversationId)}`,
+        apiUrl(`/chatlaya/messages?conversation_id=${encodeURIComponent(conversationId)}`),
         { cache: "no-store", credentials: "include" },
       );
       if (!response.ok) {
@@ -641,7 +643,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   async function archiveConversation(conversationId: string) {
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/chatlaya/conversations/${conversationId}/archive`, {
+      const response = await fetch(apiUrl(`/chatlaya/conversations/${conversationId}/archive`), {
         method: "POST",
         credentials: "include",
       });
@@ -697,7 +699,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       resetTypewriterQueue();
       setStreaming(false);
       const created = await createConversationRequest();
-      const response = await fetch(`${API_BASE}/chatlaya/conversations/${created.conversation_id}`, {
+      const response = await fetch(apiUrl(`/chatlaya/conversations/${created.conversation_id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -756,7 +758,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
           }, STREAM_TIMEOUT_MS)
         : null;
 
-    const response = await fetch(`${API_BASE}/chatlaya/message`, {
+    const response = await fetch(apiUrl("/chatlaya/message"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -975,11 +977,11 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   const autonomousFounderBootPending =
     isAutonomousHost &&
     !isProblemCollector &&
-    !error &&
     !founderAuthRequired &&
     (
       authLoading ||
       conversationsLoading ||
+      assistantModeSaving ||
       accessMode === null ||
       (user && accessMode === "user" && !autonomousFounderReady)
     );

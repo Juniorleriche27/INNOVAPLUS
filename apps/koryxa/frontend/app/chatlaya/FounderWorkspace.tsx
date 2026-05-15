@@ -6,9 +6,11 @@ import {
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
   Copy, Download, BookOpen, PenLine, AlertCircle,
 } from "lucide-react";
-import { CHATLAYA_API_BASE } from "@/lib/env";
+import { getChatlayaApiBase } from "@/lib/env";
 
-const API_BASE = CHATLAYA_API_BASE;
+function apiUrl(path: string): string {
+  return `${getChatlayaApiBase().replace(/\/$/, "")}${path}`;
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1130,7 +1132,7 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
     streamAbortRef.current = ctrl;
 
     try {
-      const res = await fetch(`${API_BASE}/chatlaya/message`, {
+      const res = await fetch(apiUrl("/chatlaya/message"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

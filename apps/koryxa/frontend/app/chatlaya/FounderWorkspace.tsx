@@ -1068,19 +1068,7 @@ interface FounderWorkspaceProps {
 }
 
 function FounderAccountButton({ firstName }: { firstName?: string }) {
-  if (firstName) {
-    return (
-      <span
-        aria-label="Connecté à KORYXA"
-        title="Connecté à KORYXA"
-        className="inline-flex h-10 w-10 shrink-0 cursor-default items-center justify-center rounded-full bg-sky-700 text-white shadow-[0_12px_28px_rgba(2,132,199,0.24)] ring-1 ring-sky-900/10"
-      >
-        <UserRound className="h-4 w-4" />
-      </span>
-    );
-  }
-
-  const label = "Se connecter a KORYXA";
+  const label = firstName ? "Ouvrir l'accès KORYXA" : "Se connecter a KORYXA";
 
   return (
     <Link

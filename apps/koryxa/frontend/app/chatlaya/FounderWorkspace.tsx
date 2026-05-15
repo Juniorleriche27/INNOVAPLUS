@@ -1079,6 +1079,8 @@ interface FounderWorkspaceProps {
 export default function FounderWorkspace({ conversationId, firstName, onExit }: FounderWorkspaceProps) {
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
+  const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
+  const [starterProject, setStarterProject] = useState("");
   const [generating, setGenerating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedOutput, setCopiedOutput] = useState<string | null>(null);
@@ -1087,14 +1089,24 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!conversationId) return;
+    setWorkspaceLoaded(false);
+    if (!conversationId) {
+      setWs({});
+      setWorkspaceLoaded(true);
+      return;
+    }
     const stored = loadWs(conversationId);
     setWs(stored);
+    setStarterProject((stored.client?.inputs?.activite ?? "").trim());
     const firstIncomplete = MODULES.find((m) => { const s = stored[m.id]; return !s || s.status !== "completed"; });
     setActiveId(firstIncomplete?.id ?? MODULES[0].id);
+    setWorkspaceLoaded(true);
   }, [conversationId]);
 
-  useEffect(() => { if (!conversationId) return; saveWs(conversationId, ws); }, [conversationId, ws]);
+  useEffect(() => {
+    if (!conversationId || !workspaceLoaded) return;
+    saveWs(conversationId, ws);
+  }, [conversationId, workspaceLoaded, ws]);
   useEffect(() => { contentRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [activeId]);
   useEffect(() => () => { streamAbortRef.current?.abort(); }, []);
 
@@ -1114,6 +1126,14 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
 
   function updateRetention(moduleId: string, value: string) {
     setWs((prev) => { const cur = prev[moduleId] ?? defaultMs(); return { ...prev, [moduleId]: { ...cur, retention: value } }; });
+  }
+
+  function startFounderFromBrief() {
+    const brief = starterProject.trim();
+    if (!brief) return;
+    setActiveId("client");
+    updateInput("client", "activite", brief);
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function generate(moduleId: string) {
@@ -1224,6 +1244,14 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
   const activeMs = getMs(ws, activeId);
   const isGenerating = generating === activeId;
   const isRevision = activeMs.status === "in_progress" && !!activeMs.previousOutput;
+  const hasWorkspaceContent = Object.values(ws).some((state) =>
+    state.status !== "empty" ||
+    !!state.output ||
+    !!state.previousOutput ||
+    !!state.retention?.trim() ||
+    Object.values(state.inputs).some((value) => !!value.trim()),
+  );
+  const showStarterPanel = workspaceLoaded && !hasWorkspaceContent && !generating;
 
   const completedCount = REQUIRED_MODULES.filter((m) => getMs(ws, m.id).status === "completed").length;
   const allDone = completedCount === REQUIRED_MODULES.length;
@@ -1231,6 +1259,16 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
   const activeIdx = MODULES.findIndex((m) => m.id === activeId);
   const prevModule = activeIdx > 0 ? MODULES[activeIdx - 1] : null;
   const nextModule = activeIdx < MODULES.length - 1 ? MODULES[activeIdx + 1] : null;
+
+  if (!workspaceLoaded) {
+    return (
+      <main className="flex h-full min-h-0 items-center justify-center overflow-hidden">
+        <div className="rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-4 text-sm font-medium text-slate-600 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+          Préparation de l&apos;espace Founder...
+        </div>
+      </main>
+    );
+  }
 
   // ── Synthesis view ──
   if (showSynthesis) {
@@ -1373,10 +1411,104 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
         {/* Scrollable content */}
         <div ref={contentRef}
           className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]">
-          <div className="mx-auto max-w-2xl space-y-5">
+          <div className={showStarterPanel ? "mx-auto flex min-h-full w-full max-w-5xl items-center py-2" : "mx-auto max-w-2xl space-y-5"}>
+            {showStarterPanel ? (
+              <div className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_410px]">
+                <div className="overflow-hidden rounded-[28px] border border-sky-100 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.16),transparent_34%),linear-gradient(135deg,#f8fbff_0%,#ffffff_48%,#f5f3ff_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-7">
+                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      ChatLAYA Founder
+                    </div>
+                    <div className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                      {firstName ? `Connecté : ${firstName}` : "Compte KORYXA"}
+                    </div>
+                  </div>
+
+                  <div className="max-w-2xl">
+                    <h2 className="text-[30px] font-black leading-[1.05] tracking-tight text-slate-950 sm:text-[38px]">
+                      Cadrez votre projet.
+                      <span className="block bg-gradient-to-r from-sky-600 via-blue-600 to-violet-600 bg-clip-text text-transparent">
+                        Repartez avec un dossier exploitable.
+                      </span>
+                    </h2>
+                    <p className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600">
+                      Un coach IA vous accompagne étape par étape pour clarifier votre client, votre problème, votre offre, votre prix, votre modèle économique et votre message de vente.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+                    {REQUIRED_MODULES.map((mod) => {
+                      const Icon = mod.icon;
+                      return (
+                        <div key={mod.id} className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-800">{mod.label}</p>
+                            <p className="truncate text-xs text-slate-500">{mod.tagline}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-violet-100 bg-white/70 px-4 py-3 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-white">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">Le livrable vendu</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          Un dossier projet rédigé dans les mots de l'utilisateur, exportable et présentable à un partenaire, une équipe ou un investisseur.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-between rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.10)] sm:p-6">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Point de départ</p>
+                    <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+                      Décrivez votre projet en quelques phrases.
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Donnez l'idée, le client visé, ce que vous vendez ou ce que vous voulez lancer. Founder transformera ça en parcours de cadrage.
+                    </p>
+
+                    <textarea
+                      value={starterProject}
+                      onChange={(event) => setStarterProject(event.target.value)}
+                      rows={7}
+                      placeholder="Ex : Je veux vendre des PC portables performants aux étudiants et jeunes professionnels avec paiement échelonné..."
+                      className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4 text-base leading-7 text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(14,165,233,0.08)]"
+                    />
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={startFounderFromBrief}
+                      disabled={!starterProject.trim()}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:bg-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      Commencer le cadrage
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                    <p className="text-center text-xs leading-5 text-slate-400">
+                      Ensuite, cette intro disparaît et vous travaillez étape par étape avec le coach.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
 
             {/* Product intro — visible only on a fresh workspace */}
-            {completedCount === 0 && !activeMs.output && !isGenerating ? (
+            {completedCount === 0 && !hasWorkspaceContent && !activeMs.output && !isGenerating ? (
               <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-4">
                 <p className="text-xs font-semibold text-slate-600">Espace de cadrage business guidé</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
@@ -1547,6 +1679,8 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
             ) : null}
 
             <div className="h-6" />
+              </>
+            )}
           </div>
         </div>
       </section>

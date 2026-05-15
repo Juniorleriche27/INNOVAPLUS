@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Users, Target, Package, DollarSign, BarChart2, MessageCircle, FileText,
-  Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
-  Copy, Download, BookOpen, PenLine, AlertCircle, UserRound,
+  Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft,
+  Copy, Download, BookOpen, PenLine, AlertCircle, UserRound, Menu, Archive,
+  MessageSquarePlus,
 } from "lucide-react";
 import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
@@ -48,6 +49,15 @@ type ModuleState = {
 };
 
 type WorkspaceData = Record<string, ModuleState>;
+
+type FounderConversation = {
+  conversation_id: string;
+  title: string;
+  created_at?: string;
+  updated_at?: string;
+  archived?: boolean;
+  assistant_mode?: "general" | "launch_structure_sell";
+};
 
 // ─── Module definitions ─────────────────────────────────────────────────────
 
@@ -462,6 +472,20 @@ function saveWs(cid: string, data: WorkspaceData) {
 }
 function defaultMs(): ModuleState { return { inputs: {}, output: null, status: "empty" }; }
 function getMs(ws: WorkspaceData, id: string): ModuleState { return ws[id] ?? defaultMs(); }
+function normalizeTitle(value?: string | null) { return value?.trim() || "Nouvelle conversation"; }
+function formatConversationDate(value?: string | null) {
+  if (!value) return "";
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+  } catch {
+    return "";
+  }
+}
 
 // ─── GeneratingCard ───────────────────────────────────────────────────────────
 
@@ -1064,6 +1088,14 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
 interface FounderWorkspaceProps {
   conversationId: string | null;
   firstName?: string;
+  loginHref?: string;
+  authRequired?: boolean;
+  conversations?: FounderConversation[];
+  selectedConversationId?: string | null;
+  historyLoading?: boolean;
+  onSelectConversation?: (conversationId: string) => void;
+  onCreateConversation?: () => void;
+  onArchiveConversation?: (conversationId: string) => void;
   onExit: () => void;
 }
 
@@ -1082,7 +1114,19 @@ function FounderAccountButton({ firstName }: { firstName?: string }) {
   );
 }
 
-export default function FounderWorkspace({ conversationId, firstName, onExit }: FounderWorkspaceProps) {
+export default function FounderWorkspace({
+  conversationId,
+  firstName,
+  loginHref,
+  authRequired = false,
+  conversations = [],
+  selectedConversationId,
+  historyLoading = false,
+  onSelectConversation,
+  onCreateConversation,
+  onArchiveConversation,
+  onExit,
+}: FounderWorkspaceProps) {
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
   const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
@@ -1091,6 +1135,7 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
   const [error, setError] = useState<string | null>(null);
   const [copiedOutput, setCopiedOutput] = useState<string | null>(null);
   const [showSynthesis, setShowSynthesis] = useState(false);
+  const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -1263,14 +1308,60 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
   const allDone = completedCount === REQUIRED_MODULES.length;
 
   const activeIdx = MODULES.findIndex((m) => m.id === activeId);
-  const prevModule = activeIdx > 0 ? MODULES[activeIdx - 1] : null;
   const nextModule = activeIdx < MODULES.length - 1 ? MODULES[activeIdx + 1] : null;
+  const historyItems = conversations.filter((item) => item.assistant_mode === "launch_structure_sell");
+  const visibleHistory = historyItems.length ? historyItems : conversations;
+
+  function selectHistoryConversation(nextConversationId: string) {
+    setMobileHistoryOpen(false);
+    onSelectConversation?.(nextConversationId);
+  }
+
+  function archiveHistoryConversation(nextConversationId: string) {
+    onArchiveConversation?.(nextConversationId);
+    if (selectedConversationId === nextConversationId) {
+      setMobileHistoryOpen(false);
+    }
+  }
 
   if (!workspaceLoaded) {
     return (
       <main className="flex h-full min-h-0 items-center justify-center overflow-hidden">
         <div className="rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-4 text-sm font-medium text-slate-600 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
           Préparation de l&apos;espace Founder...
+        </div>
+      </main>
+    );
+  }
+
+  if (authRequired) {
+    return (
+      <main className="flex h-full min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/92 px-7 py-6 text-center shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100">
+            <UserRound className="h-5 w-5 text-amber-500" />
+          </div>
+          <p className="text-base font-semibold text-slate-800">Connexion requise pour Founder</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
+            Connectez-vous pour retrouver vos dossiers Founder, continuer votre cadrage guidé et exporter votre document final.
+          </p>
+          <div className="mt-5 flex flex-col items-center gap-3">
+            {loginHref ? (
+              <Link
+                href={loginHref}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+              >
+                Se connecter
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={onExit}
+              className="text-xs text-slate-400 transition hover:text-slate-600"
+            >
+              Revenir au mode général
+            </button>
+          </div>
         </div>
       </main>
     );
@@ -1285,85 +1376,96 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
     );
   }
 
-  return (
-    <main className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
-
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-      <aside className="hidden min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] lg:flex">
-        <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Mode Fondateur</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-800">
-                {firstName ? `Bonjour, ${firstName}` : "Votre workspace"}
-              </p>
-            </div>
-            <button type="button" onClick={onExit} title="Retour au mode général"
-              className="mt-0.5 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600">
-              <X className="h-3.5 w-3.5" />
-            </button>
+  const historyPanel = (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
+      <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Historique Founder</p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-800">
+              {firstName ? `Dossiers de ${firstName}` : "Vos conversations"}
+            </p>
           </div>
-          <div className="mt-3">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[10px] font-medium text-slate-400">{completedCount}/{REQUIRED_MODULES.length} étapes validées</span>
-              <span className="text-[10px] font-semibold text-sky-600">{Math.round((completedCount / REQUIRED_MODULES.length) * 100)}%</span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500 transition-all duration-500"
-                style={{ width: `${Math.max(3, Math.round((completedCount / REQUIRED_MODULES.length) * 100))}%` }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-          {MODULES.map((mod) => {
-            const mws = getMs(ws, mod.id);
-            const isActive = mod.id === activeId;
-            const isCompleted = mws.status === "completed";
-            const hasOutput = !!mws.output;
-            const hasRetention = !!mws.retention?.trim();
-            return (
-              <button key={mod.id} type="button" onClick={() => setActiveId(mod.id)}
-                className={`mb-0.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${isActive ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "hover:bg-slate-50"}`}>
-                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
-                  isCompleted ? "bg-emerald-500 text-white" : isActive ? "bg-sky-600 text-white" : hasOutput ? "bg-sky-100 text-sky-600" : "bg-slate-100 text-slate-400"
-                }`}>
-                  {isCompleted ? <Check className="h-3 w-3" /> : mod.step}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className={`truncate text-xs font-semibold leading-snug ${isCompleted ? "text-emerald-700" : isActive ? "text-sky-700" : "text-slate-700"}`}>
-                      {mod.label}
-                    </p>
-                    {mod.optional ? <span className="shrink-0 text-[9px] font-normal text-slate-400">(opt.)</span> : null}
-                  </div>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    {isCompleted
-                      ? hasRetention ? "✓ Validée · formulation rédigée" : "✓ Validée"
-                      : hasOutput ? "Réponse générée"
-                      : mws.inputs && Object.values(mws.inputs).some(Boolean) ? "En cours"
-                      : "Non démarrée"}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="shrink-0 space-y-2 border-t border-slate-100 px-3 py-3">
-          {allDone ? (
-            <button type="button" onClick={() => setShowSynthesis(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-violet-600 px-3 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:opacity-90">
-              <BookOpen className="h-3.5 w-3.5" />
-              Voir le dossier final
-            </button>
-          ) : null}
-          <button type="button" onClick={onExit}
-            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700">
-            ← Mode général
+          <button
+            type="button"
+            onClick={() => {
+              setMobileHistoryOpen(false);
+              onCreateConversation?.();
+            }}
+            disabled={!onCreateConversation}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+            title="Nouveau dossier Founder"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
           </button>
         </div>
-      </aside>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        {historyLoading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="mb-1.5 h-[68px] animate-pulse rounded-xl bg-slate-100" />
+          ))
+        ) : visibleHistory.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-xs text-slate-400">
+            Aucun dossier Founder pour le moment.
+          </div>
+        ) : (
+          visibleHistory.map((conversation) => {
+            const active = conversation.conversation_id === selectedConversationId;
+            return (
+              <div
+                key={conversation.conversation_id}
+                className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition ${
+                  active ? "border-sky-200 bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => selectHistoryConversation(conversation.conversation_id)}
+                  className="block w-full text-left"
+                >
+                  <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-sky-700" : "text-slate-800"}`}>
+                    {normalizeTitle(conversation.title)}
+                  </p>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    {formatConversationDate(conversation.updated_at || conversation.created_at) || "Nouveau dossier"}
+                  </p>
+                </button>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+                    {active ? "Dossier actif" : "Dossier Founder"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => archiveHistoryConversation(conversation.conversation_id)}
+                    disabled={!onArchiveConversation}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Archive className="h-3 w-3" />
+                    Archiver
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="shrink-0 border-t border-slate-100 px-3 py-3">
+        <button
+          type="button"
+          onClick={onExit}
+          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+        >
+          ← Mode général
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <main className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
@@ -1375,9 +1477,13 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
         {/* Module header */}
         <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => { if (prevModule) setActiveId(prevModule.id); }} disabled={!prevModule}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
-              <ChevronLeft className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={() => setMobileHistoryOpen(true)}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 lg:hidden"
+              title="Historique Founder"
+            >
+              <Menu className="h-4 w-4" />
             </button>
             <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-sky-600"}`}>
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
@@ -1389,10 +1495,6 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
               </p>
               <p className="text-sm font-bold text-slate-800">{activeModule.label}</p>
             </div>
-            <button type="button" onClick={() => { if (nextModule) setActiveId(nextModule.id); }} disabled={!nextModule}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
-              <ChevronRight className="h-4 w-4" />
-            </button>
             <div className="ml-auto flex shrink-0 items-center gap-2">
               {activeMs.status === "completed" ? (
                 <div className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:inline-flex">
@@ -1404,13 +1506,31 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
             </div>
           </div>
           <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{activeModule.description}</p>
-          <div className="mt-2 flex justify-center gap-1 lg:hidden">
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);
+              const isCurrent = m.id === activeId;
+              const isDone = mws.status === "completed";
               return (
-                <button key={m.id} type="button" onClick={() => setActiveId(m.id)}
-                  className={`rounded-full transition-all duration-200 ${m.id === activeId ? "h-1.5 w-4 bg-sky-500" : mws.status === "completed" ? "h-1.5 w-1.5 bg-emerald-400" : mws.output ? "h-1.5 w-1.5 bg-sky-200" : "h-1.5 w-1.5 bg-slate-200"}`}
-                />
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setActiveId(m.id)}
+                  className={`group flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left transition ${
+                    isCurrent
+                      ? "border-sky-200 bg-sky-50 text-sky-700"
+                      : isDone
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  }`}
+                >
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                    isDone ? "bg-emerald-500 text-white" : isCurrent ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-500"
+                  }`}>
+                    {isDone ? <Check className="h-3 w-3" /> : m.step}
+                  </span>
+                  <span className="hidden text-[11px] font-semibold sm:inline">{m.label}</span>
+                </button>
               );
             })}
           </div>
@@ -1690,6 +1810,34 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
           </div>
         </div>
       </section>
+
+      <aside className="hidden min-h-0 lg:block">
+        {historyPanel}
+      </aside>
+
+      {mobileHistoryOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button
+            type="button"
+            aria-label="Fermer l'historique Founder"
+            onClick={() => setMobileHistoryOpen(false)}
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px]"
+          />
+          <div className="absolute inset-y-0 left-0 w-[86vw] max-w-sm p-3">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-white/90">Historique Founder</p>
+              <button
+                type="button"
+                onClick={() => setMobileHistoryOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/15"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {historyPanel}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

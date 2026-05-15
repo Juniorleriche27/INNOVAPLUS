@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useE
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
-import { getChatlayaApiBase } from "@/lib/env";
+import { CHATLAYA_AUTONOMOUS_HOST, SITE_BASE_URL, getChatlayaApiBase } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 import FounderWorkspace from "./FounderWorkspace";
@@ -53,7 +53,13 @@ const GENERAL_STARTER_PROMPTS = [
   },
 ] as const;
 
-const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
+const CHATLAYA_AUTONOMOUS_URL = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
+
+function buildLoginHref(isAutonomousHost: boolean) {
+  const redirectTarget = isAutonomousHost ? CHATLAYA_AUTONOMOUS_URL : "/chatlaya";
+  const loginBase = isAutonomousHost ? `${SITE_BASE_URL}/login` : "/login";
+  return `${loginBase}?redirect=${encodeURIComponent(redirectTarget)}`;
+}
 
 function detectAutonomousChatlayaHost() {
   if (typeof document !== "undefined") {
@@ -351,6 +357,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   const [assistantModeSaving, setAssistantModeSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAutonomousHost, setIsAutonomousHost] = useState(initialAutonomousHost || detectAutonomousChatlayaHost);
+  const loginHref = buildLoginHref(isAutonomousHost);
 
   const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -589,9 +596,16 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
 
   useEffect(() => {
     if (bootstrappedRef.current) return;
+    if (isAutonomousHost && authLoading) return;
+    if (isAutonomousHost && !user) {
+      setError(null);
+      setConversationsLoading(false);
+      setMessagesLoading(false);
+      return;
+    }
     bootstrappedRef.current = true;
     void loadConversations();
-  }, []);
+  }, [authLoading, isAutonomousHost, user]);
 
   useEffect(() => {
     setIsAutonomousHost((current) => current || detectAutonomousChatlayaHost());
@@ -919,7 +933,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
 
     if (!user || accessMode === "guest") {
       setError(null);
-      setFounderAuthRequired(true);
+      setFounderAuthRequired(false);
       autonomousFounderBootRef.current = false;
       return;
     }
@@ -992,11 +1006,37 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     !authLoading &&
     (founderAuthRequired || accessMode === "guest" || (!user && accessMode === "user"));
 
+  if (isAutonomousHost && !isProblemCollector && !authLoading && !user) {
+    return (
+      <FounderWorkspace
+        conversationId={null}
+        loginHref={loginHref}
+        authRequired
+        onExit={() => void switchToGeneralMode()}
+      />
+    );
+  }
+
   if (!isProblemCollector && autonomousFounderReady) {
     return (
       <FounderWorkspace
         conversationId={selectedConversationId}
         firstName={firstName}
+        loginHref={loginHref}
+        conversations={conversations}
+        selectedConversationId={selectedConversationId}
+        historyLoading={conversationsLoading}
+        onSelectConversation={(conversationId) => {
+          streamAbortRef.current?.abort();
+          resetTypewriterQueue();
+          setStreaming(false);
+          setError(null);
+          setMessages([]);
+          setFounderWorkspaceVisible(true);
+          setSelectedConversationId(conversationId);
+        }}
+        onCreateConversation={() => void switchToFounderMode()}
+        onArchiveConversation={(conversationId) => void archiveConversation(conversationId)}
         onExit={() => void switchToGeneralMode()}
       />
     );
@@ -1025,7 +1065,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
             <Link
-              href="/login?redirect=/chatlaya"
+              href={loginHref}
               className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
             >
               Se connecter
@@ -1249,7 +1289,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
                 </p>
                 <div className="mt-5 flex flex-col items-center gap-3">
                   <Link
-                    href="/login?redirect=/chatlaya"
+                    href={loginHref}
                     className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
                   >
                     Se connecter

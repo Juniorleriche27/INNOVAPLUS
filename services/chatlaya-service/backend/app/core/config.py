@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     CORE_INTERNAL_API_BASE_URL: str | None = None
     CORE_INTERNAL_API_TIMEOUT_S: float = 5.0
     INTERNAL_API_TOKEN: str | None = None
+    CORE_AUTH_API_BASE_URL: str | None = None
+    SESSION_COOKIE_NAME: str = "innova_session"
     CHAT_PROVIDER: str | None = None
     CHAT_MODEL: str | None = None
     LLM_PROVIDER: str | None = None

@@ -34,13 +34,6 @@ function resolveFounderLoginHref(fallback?: string): string {
   return fallback || `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
 }
 
-function openFounderLogin(href: string): void {
-  if (typeof window !== "undefined") {
-    window.location.assign(href);
-    return;
-  }
-}
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type ModuleStatus = "empty" | "in_progress" | "completed";
@@ -1129,15 +1122,14 @@ function FounderAccountButton({ firstName }: { firstName?: string }) {
   const href = resolveFounderLoginHref();
 
   return (
-    <button
-      type="button"
-      onClick={() => openFounderLogin(href)}
+    <a
+      href={href}
       aria-label={label}
       title={label}
       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10 transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_16px_34px_rgba(2,132,199,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
     >
       <UserRound className="h-4 w-4" />
-    </button>
+    </a>
   );
 }
 
@@ -1375,13 +1367,12 @@ export default function FounderWorkspace({
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
             {effectiveLoginHref ? (
-              <button
-                type="button"
-                onClick={() => openFounderLogin(effectiveLoginHref)}
+              <a
+                href={effectiveLoginHref}
                 className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
               >
                 Se connecter
-              </button>
+              </a>
             ) : null}
             <button
               type="button"

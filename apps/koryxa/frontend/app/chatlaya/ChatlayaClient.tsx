@@ -73,12 +73,6 @@ function buildLoginHref(isAutonomousHost: boolean) {
   return `${loginBase}?redirect=${encodeURIComponent(redirectTarget)}`;
 }
 
-function openLoginHref(href: string): void {
-  if (typeof window !== "undefined") {
-    window.location.assign(href);
-  }
-}
-
 function detectAutonomousChatlayaHost() {
   if (typeof document !== "undefined") {
     const attr = document.documentElement.dataset.appHost;
@@ -1082,13 +1076,12 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
             ChatLAYA Founder utilise l&apos;authentification KORYXA. Connectez-vous pour ouvrir votre espace Founder.
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
-            <button
-              type="button"
-              onClick={() => openLoginHref(loginHref)}
+            <a
+              href={loginHref}
               className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
             >
               Se connecter
-            </button>
+            </a>
           </div>
         </div>
       </main>
@@ -1307,13 +1300,12 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
                   Le Mode Fondateur est réservé aux utilisateurs connectés. Connectez-vous pour accéder au corpus spécialisé&nbsp;: lancer, structurer, vendre.
                 </p>
                 <div className="mt-5 flex flex-col items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openLoginHref(loginHref)}
+                  <a
+                    href={loginHref}
                     className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
                   >
                     Se connecter
-                  </button>
+                  </a>
                   <button
                     type="button"
                     onClick={() => { setFounderAuthRequired(false); void switchToGeneralMode(); }}

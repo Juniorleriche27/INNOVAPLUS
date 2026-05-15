@@ -7,7 +7,7 @@ import {
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
   Copy, Download, BookOpen, PenLine, AlertCircle, UserRound,
 } from "lucide-react";
-import { getChatlayaApiBase } from "@/lib/env";
+import { getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
 function apiUrl(path: string): string {
   return `${getChatlayaApiBase().replace(/\/$/, "")}${path}`;
@@ -1078,26 +1078,19 @@ interface FounderWorkspaceProps {
 }
 
 function FounderAccountButton({ firstName }: { firstName?: string }) {
-  if (firstName) {
-    return (
-      <Link
-        href="/compte"
-        className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-100 hover:text-sky-800"
-        title="Ouvrir mon compte KORYXA"
-      >
-        <UserRound className="h-3.5 w-3.5" />
-        Compte · {firstName}
-      </Link>
-    );
-  }
+  const href = firstName
+    ? `${SITE_BASE_URL}/account/role`
+    : `${SITE_BASE_URL}/login?redirect=${encodeURIComponent("/account/role")}`;
+  const label = firstName ? "Ouvrir mon compte KORYXA" : "Se connecter a KORYXA";
 
   return (
     <Link
-      href="/login?redirect=/chatlaya"
-      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+      href={href}
+      aria-label={label}
+      title={label}
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10 transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_16px_34px_rgba(2,132,199,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
     >
-      <UserRound className="h-3.5 w-3.5" />
-      Se connecter
+      <UserRound className="h-4 w-4" />
     </Link>
   );
 }
@@ -1414,9 +1407,9 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
               <ChevronRight className="h-4 w-4" />
             </button>
-            <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               {activeMs.status === "completed" ? (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                <div className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:inline-flex">
                   <Check className="h-3 w-3" />
                   Validée
                 </div>

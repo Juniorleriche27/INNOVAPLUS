@@ -569,7 +569,9 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       }
       const data = await response.json().catch(() => ({}));
       resetTypewriterQueue();
-      setFounderAuthRequired(false);
+      if (!(isAutonomousHost && (!user || accessMode === "guest"))) {
+        setFounderAuthRequired(false);
+      }
       setError(null);
       setMessages(Array.isArray(data?.items) ? data.items : []);
       // Auto-redirect: founder conversations always open as workspace, not chat
@@ -914,6 +916,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
     }
 
     if (!user || accessMode === "guest") {
+      setError(null);
       setFounderAuthRequired(true);
       autonomousFounderBootRef.current = false;
       return;
@@ -981,6 +984,12 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       (user && accessMode === "user" && !autonomousFounderReady)
     );
 
+  const autonomousFounderAuthRequired =
+    isAutonomousHost &&
+    !isProblemCollector &&
+    !authLoading &&
+    (founderAuthRequired || accessMode === "guest" || (!user && accessMode === "user"));
+
   if (!isProblemCollector && autonomousFounderReady) {
     return (
       <FounderWorkspace
@@ -996,6 +1005,30 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       <main className="flex h-full min-h-[60vh] items-center justify-center">
         <div className="rounded-3xl border border-slate-200/80 bg-white/92 px-6 py-4 text-sm font-medium text-slate-600 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
           Ouverture de l&apos;espace Founder...
+        </div>
+      </main>
+    );
+  }
+
+  if (autonomousFounderAuthRequired) {
+    return (
+      <main className="flex h-full min-h-[60vh] items-center justify-center">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/92 px-7 py-6 text-center shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100">
+            <Lock className="h-5 w-5 text-amber-500" />
+          </div>
+          <p className="text-base font-semibold text-slate-800">Connexion requise pour Founder</p>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
+            ChatLAYA Founder utilise l&apos;authentification KORYXA. Connectez-vous pour ouvrir votre espace Founder.
+          </p>
+          <div className="mt-5 flex flex-col items-center gap-3">
+            <Link
+              href="/login?redirect=/chatlaya"
+              className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            >
+              Se connecter
+            </Link>
+          </div>
         </div>
       </main>
     );

@@ -458,27 +458,37 @@ function FounderOutput({ content }: { content: string }) {
 
 // ─── RetentionBlock (AXE 2 — livrable final) ─────────────────────────────────
 
-function RetentionBlock({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function RetentionBlock({
+  value,
+  onChange,
+  validated,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  validated: boolean;
+}) {
+  const isFilled = Boolean(value.trim());
+
   return (
     <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <PenLine className="h-3.5 w-3.5 text-violet-600" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700">
-            Ma formulation pour le dossier
+            Version dossier
           </span>
         </div>
-        <span className="text-[9px] font-medium text-violet-400 italic">
-          apparaît dans le livrable final
+        <span className="rounded-full bg-white/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-violet-500 ring-1 ring-violet-100">
+          {validated ? "validée" : isFilled ? "à valider" : "à compléter"}
         </span>
       </div>
       <p className="mb-2.5 text-[11px] leading-relaxed text-violet-500">
-        Rédigez ici comme si vous présentiez ce point à un partenaire ou investisseur — sans jargon de coaching.
+        L'analyse ChatLAYA vous aide à cadrer. Cette zone est votre version finale modifiable, celle qui apparaîtra dans le dossier exporté.
       </p>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Ex : Ma cible principale sont les femmes entrepreneures de 28-42 ans qui veulent lancer une activité en ligne sans avoir de compétences techniques…"
+        placeholder="Rédigez ici la version finale à garder dans le dossier, avec vos mots et les précisions que vous validez."
         rows={4}
         className="w-full resize-none bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
       />
@@ -498,6 +508,20 @@ function saveWs(cid: string, data: WorkspaceData) {
 }
 function defaultMs(): ModuleState { return { inputs: {}, output: null, status: "empty" }; }
 function getMs(ws: WorkspaceData, id: string): ModuleState { return ws[id] ?? defaultMs(); }
+function buildRetentionDraft(moduleId: string, state: ModuleState): string {
+  const mod = MODULES.find((item) => item.id === moduleId);
+  if (!mod) return "";
+  const filledInputs = mod.inputs
+    .map((field) => ({
+      label: field.label.replace(/\s*\([^)]*\)\s*$/g, ""),
+      value: (state.inputs[field.id] ?? "").trim(),
+    }))
+    .filter((item) => item.value);
+
+  if (filledInputs.length === 0) return "";
+  if (filledInputs.length === 1) return filledInputs[0].value;
+  return filledInputs.map((item) => `${item.label} : ${item.value}`).join("\n");
+}
 function normalizeTitle(value?: string | null) { return value?.trim() || "Nouvelle conversation"; }
 function formatConversationDate(value?: string | null) {
   if (!value) return "";
@@ -1293,7 +1317,12 @@ export default function FounderWorkspace({
   }
 
   function validate(moduleId: string) {
-    updateMs(moduleId, { status: "completed" });
+    const current = getMs(ws, moduleId);
+    const retention = current.retention?.trim() || buildRetentionDraft(moduleId, current);
+    updateMs(moduleId, {
+      status: "completed",
+      ...(retention ? { retention } : {}),
+    });
     const idx = MODULES.findIndex((m) => m.id === moduleId);
     const next = MODULES[idx + 1];
     if (next) setActiveId(next.id);
@@ -1837,7 +1866,7 @@ export default function FounderWorkspace({
                 disabled={!!generating || !conversationId}
                 className="flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" />
-                {isGenerating ? "Génération en cours…" : activeMs.output ? "Régénérer" : "Générer avec ChatLAYA"}
+                {isGenerating ? "Génération en cours…" : activeMs.output ? "Peaufiner avec ChatLAYA" : "Générer avec ChatLAYA"}
               </button>
               {isGenerating ? (
                 <button type="button" onClick={() => streamAbortRef.current?.abort()}
@@ -1888,6 +1917,15 @@ export default function FounderWorkspace({
               </div>
             ) : null}
 
+            {/* Retention block — livrable final (AXE 2) */}
+            {activeMs.output && !isGenerating ? (
+              <RetentionBlock
+                value={activeMs.retention ?? ""}
+                onChange={(v) => updateRetention(activeId, v)}
+                validated={activeMs.status === "completed"}
+              />
+            ) : null}
+
             {/* Actions bar */}
             {activeMs.output && !isGenerating ? (
               <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -1895,12 +1933,12 @@ export default function FounderWorkspace({
                   <button type="button" onClick={() => validate(activeId)}
                     className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]">
                     <Check className="h-3.5 w-3.5" />
-                    {isRevision ? "Revalider cette version" : "Valider cette étape"}
+                    {isRevision ? "Revalider pour le dossier" : "Valider pour le dossier"}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
                     <Check className="h-3.5 w-3.5" />
-                    Étape validée
+                    Version dossier validée
                   </div>
                 )}
                 {activeMs.status === "completed" ? (
@@ -1918,11 +1956,6 @@ export default function FounderWorkspace({
                   </button>
                 ) : null}
               </div>
-            ) : null}
-
-            {/* Retention block — livrable final (AXE 2) */}
-            {activeMs.status === "completed" && activeMs.output && !isGenerating ? (
-              <RetentionBlock value={activeMs.retention ?? ""} onChange={(v) => updateRetention(activeId, v)} />
             ) : null}
 
             {/* Empty state */}

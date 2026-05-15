@@ -5,7 +5,7 @@ import {
   Users, Target, Package, DollarSign, BarChart2, MessageCircle, FileText,
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft,
   Copy, Download, BookOpen, PenLine, AlertCircle, UserRound, Menu, Archive,
-  MessageSquarePlus,
+  MessageSquarePlus, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
@@ -1167,6 +1167,7 @@ export default function FounderWorkspace({
   const [copiedOutput, setCopiedOutput] = useState<string | null>(null);
   const [showSynthesis, setShowSynthesis] = useState(false);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -1421,96 +1422,164 @@ export default function FounderWorkspace({
     );
   }
 
-  const historyPanel = (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
-      <div className="shrink-0 border-b border-slate-100 px-4 pb-3 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Historique Founder</p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-800">
-              {firstName ? `Dossiers de ${firstName}` : "Vos conversations"}
-            </p>
-          </div>
+  function renderHistoryPanel(collapsed = false) {
+    return (
+      <div className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] ${collapsed ? "items-center" : ""}`}>
+        <div className={`shrink-0 border-b border-slate-100 ${collapsed ? "w-full px-2 py-3" : "px-4 pb-3 pt-4"}`}>
+          {collapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setHistoryCollapsed(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                title="Agrandir l'historique"
+                aria-label="Agrandir l'historique"
+              >
+                <PanelLeftOpen className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onCreateConversation?.()}
+                disabled={!onCreateConversation}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Nouveau dossier Founder"
+                aria-label="Nouveau dossier Founder"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Historique Founder</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-slate-800">
+                  {firstName ? `Dossiers de ${firstName}` : "Vos conversations"}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileHistoryOpen(false);
+                    onCreateConversation?.();
+                  }}
+                  disabled={!onCreateConversation}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Nouveau dossier Founder"
+                  aria-label="Nouveau dossier Founder"
+                >
+                  <MessageSquarePlus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHistoryCollapsed(true)}
+                  className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 lg:inline-flex"
+                  title="Réduire l'historique"
+                  aria-label="Réduire l'historique"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={`min-h-0 flex-1 overflow-y-auto ${collapsed ? "w-full px-2 py-2" : "px-2 py-2"}`}>
+          {historyLoading ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className={`mb-1.5 animate-pulse rounded-xl bg-slate-100 ${collapsed ? "mx-auto h-10 w-10" : "h-[68px]"}`} />
+            ))
+          ) : visibleHistory.length === 0 ? (
+            collapsed ? (
+              <div className="mx-auto mt-2 h-10 w-10 rounded-xl border border-dashed border-slate-200" title="Aucun dossier Founder" />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-xs text-slate-400">
+                Aucun dossier Founder pour le moment.
+              </div>
+            )
+          ) : (
+            visibleHistory.map((conversation) => {
+              const active = conversation.conversation_id === selectedConversationId;
+              const title = normalizeTitle(conversation.title);
+              if (collapsed) {
+                return (
+                  <button
+                    key={conversation.conversation_id}
+                    type="button"
+                    onClick={() => selectHistoryConversation(conversation.conversation_id)}
+                    title={title}
+                    aria-label={title}
+                    className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border text-slate-500 transition ${
+                      active ? "border-sky-200 bg-sky-50 text-sky-700 shadow-sm" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </button>
+                );
+              }
+              return (
+                <div
+                  key={conversation.conversation_id}
+                  className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition ${
+                    active ? "border-sky-200 bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => selectHistoryConversation(conversation.conversation_id)}
+                    className="block w-full text-left"
+                  >
+                    <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-sky-700" : "text-slate-800"}`}>
+                      {title}
+                    </p>
+                    <p className="mt-1 text-[10px] text-slate-400">
+                      {formatConversationDate(conversation.updated_at || conversation.created_at) || "Nouveau dossier"}
+                    </p>
+                  </button>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+                      {active ? "Dossier actif" : "Dossier Founder"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => archiveHistoryConversation(conversation.conversation_id)}
+                      disabled={!onArchiveConversation}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Archive className="h-3 w-3" />
+                      Archiver
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className={`shrink-0 border-t border-slate-100 ${collapsed ? "w-full px-2 py-3" : "px-3 py-3"}`}>
           <button
             type="button"
-            onClick={() => {
-              setMobileHistoryOpen(false);
-              onCreateConversation?.();
-            }}
-            disabled={!onCreateConversation}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Nouveau dossier Founder"
+            onClick={onExit}
+            className={collapsed
+              ? "mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+              : "w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+            }
+            title="Mode général"
+            aria-label="Mode général"
           >
-            <MessageSquarePlus className="h-4 w-4" />
+            {collapsed ? <ChevronLeft className="h-4 w-4" /> : "← Mode général"}
           </button>
         </div>
       </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {historyLoading ? (
-          Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="mb-1.5 h-[68px] animate-pulse rounded-xl bg-slate-100" />
-          ))
-        ) : visibleHistory.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-xs text-slate-400">
-            Aucun dossier Founder pour le moment.
-          </div>
-        ) : (
-          visibleHistory.map((conversation) => {
-            const active = conversation.conversation_id === selectedConversationId;
-            return (
-              <div
-                key={conversation.conversation_id}
-                className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition ${
-                  active ? "border-sky-200 bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => selectHistoryConversation(conversation.conversation_id)}
-                  className="block w-full text-left"
-                >
-                  <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-sky-700" : "text-slate-800"}`}>
-                    {normalizeTitle(conversation.title)}
-                  </p>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    {formatConversationDate(conversation.updated_at || conversation.created_at) || "Nouveau dossier"}
-                  </p>
-                </button>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
-                    {active ? "Dossier actif" : "Dossier Founder"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => archiveHistoryConversation(conversation.conversation_id)}
-                    disabled={!onArchiveConversation}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Archive className="h-3 w-3" />
-                    Archiver
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      <div className="shrink-0 border-t border-slate-100 px-3 py-3">
-        <button
-          type="button"
-          onClick={onExit}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
-        >
-          ← Mode général
-        </button>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <main className="grid h-full min-h-0 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+    <main className={`grid h-full min-h-0 gap-3 overflow-hidden ${historyCollapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]"}`}>
+
+      <aside className="hidden min-h-0 lg:block">
+        {renderHistoryPanel(historyCollapsed)}
+      </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
@@ -1874,10 +1943,6 @@ export default function FounderWorkspace({
         </div>
       </section>
 
-      <aside className="hidden min-h-0 lg:block">
-        {historyPanel}
-      </aside>
-
       {mobileHistoryOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
           <button
@@ -1897,7 +1962,7 @@ export default function FounderWorkspace({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {historyPanel}
+            {renderHistoryPanel(false)}
           </div>
         </div>
       ) : null}

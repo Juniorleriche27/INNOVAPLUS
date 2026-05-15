@@ -1367,12 +1367,22 @@ export default function FounderWorkspace({
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
             {effectiveLoginHref ? (
-              <a
-                href={effectiveLoginHref}
-                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-              >
-                Se connecter
-              </a>
+              <div className="flex flex-col items-center gap-2">
+                <a
+                  href={effectiveLoginHref}
+                  className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+                >
+                  Se connecter
+                </a>
+                <a
+                  href={effectiveLoginHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
+                >
+                  Ouvrir la connexion KORYXA dans un nouvel onglet
+                </a>
+              </div>
             ) : null}
             <button
               type="button"

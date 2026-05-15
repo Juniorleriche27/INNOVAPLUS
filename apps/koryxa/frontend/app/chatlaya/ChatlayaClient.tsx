@@ -1078,9 +1078,17 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
           <div className="mt-5 flex flex-col items-center gap-3">
             <a
               href={loginHref}
-              className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+              className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
             >
               Se connecter
+            </a>
+            <a
+              href={loginHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
+            >
+              Ouvrir la connexion KORYXA dans un nouvel onglet
             </a>
           </div>
         </div>
@@ -1302,9 +1310,17 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
                 <div className="mt-5 flex flex-col items-center gap-3">
                   <a
                     href={loginHref}
-                    className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+                    className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
                   >
                     Se connecter
+                  </a>
+                  <a
+                    href={loginHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
+                  >
+                    Ouvrir la connexion KORYXA dans un nouvel onglet
                   </a>
                   <button
                     type="button"

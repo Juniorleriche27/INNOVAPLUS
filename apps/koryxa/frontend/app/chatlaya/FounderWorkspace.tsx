@@ -7,11 +7,13 @@ import {
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
   Copy, Download, BookOpen, PenLine, AlertCircle, UserRound,
 } from "lucide-react";
-import { getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
+import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
 function apiUrl(path: string): string {
   return `${getChatlayaApiBase().replace(/\/$/, "")}${path}`;
 }
+
+const FOUNDER_AUTH_REDIRECT = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1066,14 +1068,23 @@ interface FounderWorkspaceProps {
 }
 
 function FounderAccountButton({ firstName }: { firstName?: string }) {
-  const href = firstName
-    ? `${SITE_BASE_URL}/account/role`
-    : `${SITE_BASE_URL}/login?redirect=${encodeURIComponent("/account/role")}`;
-  const label = firstName ? "Ouvrir mon compte KORYXA" : "Se connecter a KORYXA";
+  if (firstName) {
+    return (
+      <span
+        aria-label="Connecté à KORYXA"
+        title="Connecté à KORYXA"
+        className="inline-flex h-10 w-10 shrink-0 cursor-default items-center justify-center rounded-full bg-sky-700 text-white shadow-[0_12px_28px_rgba(2,132,199,0.24)] ring-1 ring-sky-900/10"
+      >
+        <UserRound className="h-4 w-4" />
+      </span>
+    );
+  }
+
+  const label = "Se connecter a KORYXA";
 
   return (
     <Link
-      href={href}
+      href={`${SITE_BASE_URL}/login?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`}
       aria-label={label}
       title={label}
       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10 transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_16px_34px_rgba(2,132,199,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"

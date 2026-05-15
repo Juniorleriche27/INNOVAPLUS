@@ -15,7 +15,7 @@ function apiUrl(path: string): string {
 
 const FOUNDER_AUTH_REDIRECT = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
 
-function resolveFounderLoginHref(fallback?: string): string {
+function resolveFounderAuthHref(path: "/login" | "/signup", fallback?: string): string {
   if (typeof window !== "undefined") {
     try {
       const currentUrl = new URL(window.location.href);
@@ -23,15 +23,23 @@ function resolveFounderLoginHref(fallback?: string): string {
       const redirectTarget =
         currentUrl.hostname === CHATLAYA_AUTONOMOUS_HOST
           ? currentUrl.toString()
-          : currentUrl.pathname.startsWith("/chatlaya")
-            ? `${currentUrl.pathname}${currentUrl.search}`
-            : FOUNDER_AUTH_REDIRECT;
-      return `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(redirectTarget)}`;
+            : currentUrl.pathname.startsWith("/chatlaya")
+              ? `${currentUrl.pathname}${currentUrl.search}`
+              : FOUNDER_AUTH_REDIRECT;
+      return `${SITE_BASE_URL}${path}?redirect=${encodeURIComponent(redirectTarget)}`;
     } catch {
       // Fall through to the server-safe fallback below.
     }
   }
-  return fallback || `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
+  return fallback || `${SITE_BASE_URL}${path}?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
+}
+
+function resolveFounderLoginHref(fallback?: string): string {
+  return resolveFounderAuthHref("/login", fallback);
+}
+
+function resolveFounderSignupHref(fallback?: string): string {
+  return resolveFounderAuthHref("/signup", fallback);
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -1107,6 +1115,7 @@ interface FounderWorkspaceProps {
   conversationId: string | null;
   firstName?: string;
   loginHref?: string;
+  signupHref?: string;
   authRequired?: boolean;
   conversations?: FounderConversation[];
   selectedConversationId?: string | null;
@@ -1137,6 +1146,7 @@ export default function FounderWorkspace({
   conversationId,
   firstName,
   loginHref,
+  signupHref,
   authRequired = false,
   conversations = [],
   selectedConversationId,
@@ -1147,6 +1157,7 @@ export default function FounderWorkspace({
   onExit,
 }: FounderWorkspaceProps) {
   const effectiveLoginHref = resolveFounderLoginHref(loginHref);
+  const effectiveSignupHref = resolveFounderSignupHref(signupHref);
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
   const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
@@ -1200,6 +1211,10 @@ export default function FounderWorkspace({
   }
 
   function startFounderFromBrief() {
+    if (!conversationId) {
+      window.location.assign(effectiveLoginHref);
+      return;
+    }
     const brief = starterProject.trim();
     if (!brief) return;
     setActiveId("client");
@@ -1651,11 +1666,29 @@ export default function FounderWorkspace({
                       disabled={!starterProject.trim()}
                       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:bg-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
                     >
-                      Commencer le cadrage
+                      {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
                       <ArrowRight className="h-4 w-4" />
                     </button>
+                    {!conversationId ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <a
+                          href={effectiveLoginHref}
+                          className="inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                        >
+                          Se connecter
+                        </a>
+                        <a
+                          href={effectiveSignupHref}
+                          className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                        >
+                          Créer un compte
+                        </a>
+                      </div>
+                    ) : null}
                     <p className="text-center text-xs leading-5 text-slate-400">
-                      Ensuite, cette intro disparaît et vous travaillez étape par étape avec le coach.
+                      {conversationId
+                        ? "Ensuite, cette intro disparaît et vous travaillez étape par étape avec le coach."
+                        : "L'authentification se fait sur KORYXA, puis vous revenez directement sur ChatLAYA Founder."}
                     </p>
                   </div>
                 </div>

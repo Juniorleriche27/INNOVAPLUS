@@ -54,7 +54,7 @@ const GENERAL_STARTER_PROMPTS = [
 
 const CHATLAYA_AUTONOMOUS_URL = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
 
-function buildLoginHref(isAutonomousHost: boolean) {
+function buildAuthHref(isAutonomousHost: boolean, path: "/login" | "/signup") {
   let redirectTarget = isAutonomousHost ? CHATLAYA_AUTONOMOUS_URL : "/chatlaya";
   if (typeof window !== "undefined") {
     try {
@@ -69,8 +69,16 @@ function buildLoginHref(isAutonomousHost: boolean) {
       // Keep the safe fallback computed above.
     }
   }
-  const loginBase = isAutonomousHost ? `${SITE_BASE_URL}/login` : "/login";
-  return `${loginBase}?redirect=${encodeURIComponent(redirectTarget)}`;
+  const authBase = isAutonomousHost ? `${SITE_BASE_URL}${path}` : path;
+  return `${authBase}?redirect=${encodeURIComponent(redirectTarget)}`;
+}
+
+function buildLoginHref(isAutonomousHost: boolean) {
+  return buildAuthHref(isAutonomousHost, "/login");
+}
+
+function buildSignupHref(isAutonomousHost: boolean) {
+  return buildAuthHref(isAutonomousHost, "/signup");
 }
 
 function detectAutonomousChatlayaHost() {
@@ -370,6 +378,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAutonomousHost, setIsAutonomousHost] = useState(initialAutonomousHost || detectAutonomousChatlayaHost);
   const loginHref = buildLoginHref(isAutonomousHost);
+  const signupHref = buildSignupHref(isAutonomousHost);
 
   const bootstrappedRef = useRef(false);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1023,7 +1032,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
       <FounderWorkspace
         conversationId={null}
         loginHref={loginHref}
-        authRequired
+        signupHref={signupHref}
         onExit={() => void switchToGeneralMode()}
       />
     );
@@ -1035,6 +1044,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
         conversationId={selectedConversationId}
         firstName={firstName}
         loginHref={loginHref}
+        signupHref={signupHref}
         conversations={conversations}
         selectedConversationId={selectedConversationId}
         historyLoading={conversationsLoading}
@@ -1089,6 +1099,12 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
               className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
             >
               Ouvrir la connexion KORYXA dans un nouvel onglet
+            </a>
+            <a
+              href={signupHref}
+              className="text-xs font-semibold text-slate-500 underline underline-offset-4 transition hover:text-slate-800"
+            >
+              Créer un compte KORYXA
             </a>
           </div>
         </div>

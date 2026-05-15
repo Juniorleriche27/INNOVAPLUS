@@ -2,7 +2,6 @@
 
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
 import { CHATLAYA_AUTONOMOUS_HOST, SITE_BASE_URL, getChatlayaApiBase } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -72,6 +71,12 @@ function buildLoginHref(isAutonomousHost: boolean) {
   }
   const loginBase = isAutonomousHost ? `${SITE_BASE_URL}/login` : "/login";
   return `${loginBase}?redirect=${encodeURIComponent(redirectTarget)}`;
+}
+
+function openLoginHref(href: string): void {
+  if (typeof window !== "undefined") {
+    window.location.assign(href);
+  }
 }
 
 function detectAutonomousChatlayaHost() {
@@ -1077,12 +1082,13 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
             ChatLAYA Founder utilise l&apos;authentification KORYXA. Connectez-vous pour ouvrir votre espace Founder.
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
-            <Link
-              href={loginHref}
+            <button
+              type="button"
+              onClick={() => openLoginHref(loginHref)}
               className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
             >
               Se connecter
-            </Link>
+            </button>
           </div>
         </div>
       </main>
@@ -1301,12 +1307,13 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
                   Le Mode Fondateur est réservé aux utilisateurs connectés. Connectez-vous pour accéder au corpus spécialisé&nbsp;: lancer, structurer, vendre.
                 </p>
                 <div className="mt-5 flex flex-col items-center gap-3">
-                  <Link
-                    href={loginHref}
+                  <button
+                    type="button"
+                    onClick={() => openLoginHref(loginHref)}
                     className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
                   >
                     Se connecter
-                  </Link>
+                  </button>
                   <button
                     type="button"
                     onClick={() => { setFounderAuthRequired(false); void switchToGeneralMode(); }}

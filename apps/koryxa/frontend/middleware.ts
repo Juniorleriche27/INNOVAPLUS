@@ -12,9 +12,9 @@ function isProtectedPath(pathname: string) {
 
 const SESSION_COOKIE = "innova_session";
 const SITE_BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://innovaplus.africa").replace(/\/+$/, "");
+const CHATLAYA_AUTONOMOUS_HOST = "chatlaya.innovaplus.africa";
 const LEGACY_API_HOST = "https://api.innovaplus.africa";
 const DEFAULT_API_BASE = "https://innovaplus.africa";
-const CONNECTED_HOME = "/";
 
 function normalizeApiBase(base: string): string {
   const raw = base.replace(/\/+$/, "");
@@ -117,6 +117,29 @@ function appendSessionClearHeaders(response: NextResponse) {
   }
 }
 
+function requestHost(request: NextRequest): string {
+  const rawHost =
+    request.headers.get("x-koryxa-host") ||
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    "";
+  return rawHost.split(":")[0].trim().toLowerCase();
+}
+
+function isChatlayaAutonomousEntry(request: NextRequest, pathname: string) {
+  const host = requestHost(request);
+  return (
+    host === CHATLAYA_AUTONOMOUS_HOST &&
+    (pathname === "/" || pathname === "/chatlaya" || pathname === "/chatlaya/")
+  );
+}
+
+function buildChatlayaFounderLoginUrl() {
+  const loginUrl = new URL("/login", SITE_BASE_URL);
+  loginUrl.searchParams.set("redirect", `https://${CHATLAYA_AUTONOMOUS_HOST}/`);
+  return loginUrl;
+}
+
 const CONNECTED_AUTH_REQUIRED_PREFIXES = [
   "/account",
   "/onboarding",
@@ -216,6 +239,19 @@ export async function middleware(request: NextRequest) {
     }
     return sessionValid;
   };
+
+  if (isChatlayaAutonomousEntry(request, pathname)) {
+    const loginUrl = buildChatlayaFounderLoginUrl();
+    if (!hasSession) {
+      return NextResponse.redirect(loginUrl);
+    }
+    const ok = await ensureSessionValid();
+    if (!ok) {
+      const res = NextResponse.redirect(loginUrl);
+      appendSessionClearHeaders(res);
+      return res;
+    }
+  }
 
   if (V1_SIMPLE) {
     const isPublic = V1_PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import {
   Users, Target, Package, DollarSign, BarChart2, MessageCircle, FileText,
   Check, RotateCcw, ArrowRight, X, Sparkles, ChevronLeft, ChevronRight,
-  Copy, Download, BookOpen, PenLine, AlertCircle,
+  Copy, Download, BookOpen, PenLine, AlertCircle, UserRound,
 } from "lucide-react";
 import { getChatlayaApiBase } from "@/lib/env";
 
@@ -1076,6 +1077,27 @@ interface FounderWorkspaceProps {
   onExit: () => void;
 }
 
+function FounderAccountButton({ firstName }: { firstName?: string }) {
+  if (firstName) {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">
+        <UserRound className="h-3.5 w-3.5" />
+        Compte · {firstName}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href="/login?redirect=/chatlaya"
+      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+    >
+      <UserRound className="h-3.5 w-3.5" />
+      Se connecter
+    </Link>
+  );
+}
+
 export default function FounderWorkspace({ conversationId, firstName, onExit }: FounderWorkspaceProps) {
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
@@ -1388,12 +1410,15 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 disabled:opacity-0 lg:hidden">
               <ChevronRight className="h-4 w-4" />
             </button>
-            {activeMs.status === "completed" ? (
-              <div className="ml-auto hidden shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:flex">
-                <Check className="h-3 w-3" />
-                Validée
-              </div>
-            ) : null}
+            <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex">
+              {activeMs.status === "completed" ? (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                  <Check className="h-3 w-3" />
+                  Validée
+                </div>
+              ) : null}
+              <FounderAccountButton firstName={firstName} />
+            </div>
           </div>
           <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{activeModule.description}</p>
           <div className="mt-2 flex justify-center gap-1 lg:hidden">
@@ -1420,9 +1445,7 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
                       <Sparkles className="h-3.5 w-3.5" />
                       ChatLAYA Founder
                     </div>
-                    <div className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                      {firstName ? `Connecté : ${firstName}` : "Compte KORYXA"}
-                    </div>
+                    <FounderAccountButton firstName={firstName} />
                   </div>
 
                   <div className="max-w-2xl">

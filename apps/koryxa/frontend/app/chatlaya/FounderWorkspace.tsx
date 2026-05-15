@@ -510,18 +510,6 @@ function inlineToHtml(text: string): string {
     .replace(/`([^`\n]+)`/g, "<code>$1</code>");
 }
 
-function mdToHtmlString(content: string): string {
-  return parseMd(content).map((block) => {
-    switch (block.type) {
-      case "heading":    return `<h${block.level}>${inlineToHtml(block.text)}</h${block.level}>`;
-      case "paragraph":  return `<p>${inlineToHtml(block.text)}</p>`;
-      case "ordered-list":   return `<ol>${block.items.map((i) => `<li>${inlineToHtml(i)}</li>`).join("")}</ol>`;
-      case "unordered-list": return `<ul>${block.items.map((i) => `<li>${inlineToHtml(i)}</li>`).join("")}</ul>`;
-      default: return "";
-    }
-  }).join("\n");
-}
-
 // Strict: final document uses ONLY user's own formulation — never AI coaching output
 function getDocContent(mws: ModuleState): string | null {
   return mws.retention?.trim() || null;
@@ -1335,7 +1323,6 @@ export default function FounderWorkspace({ conversationId, firstName, onExit }: 
             const isCompleted = mws.status === "completed";
             const hasOutput = !!mws.output;
             const hasRetention = !!mws.retention?.trim();
-            const Icon = mod.icon;
             return (
               <button key={mod.id} type="button" onClick={() => setActiveId(mod.id)}
                 className={`mb-0.5 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${isActive ? "bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "hover:bg-slate-50"}`}>

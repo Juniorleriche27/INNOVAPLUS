@@ -56,7 +56,20 @@ const GENERAL_STARTER_PROMPTS = [
 const CHATLAYA_AUTONOMOUS_URL = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
 
 function buildLoginHref(isAutonomousHost: boolean) {
-  const redirectTarget = isAutonomousHost ? CHATLAYA_AUTONOMOUS_URL : "/chatlaya";
+  let redirectTarget = isAutonomousHost ? CHATLAYA_AUTONOMOUS_URL : "/chatlaya";
+  if (typeof window !== "undefined") {
+    try {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.hash = "";
+      if (currentUrl.hostname === CHATLAYA_AUTONOMOUS_HOST) {
+        redirectTarget = currentUrl.toString();
+      } else if (currentUrl.pathname.startsWith("/chatlaya")) {
+        redirectTarget = `${currentUrl.pathname}${currentUrl.search}`;
+      }
+    } catch {
+      // Keep the safe fallback computed above.
+    }
+  }
   const loginBase = isAutonomousHost ? `${SITE_BASE_URL}/login` : "/login";
   return `${loginBase}?redirect=${encodeURIComponent(redirectTarget)}`;
 }

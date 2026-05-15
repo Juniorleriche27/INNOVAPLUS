@@ -16,6 +16,25 @@ function apiUrl(path: string): string {
 
 const FOUNDER_AUTH_REDIRECT = `https://${CHATLAYA_AUTONOMOUS_HOST}/`;
 
+function resolveFounderLoginHref(fallback?: string): string {
+  if (typeof window !== "undefined") {
+    try {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.hash = "";
+      const redirectTarget =
+        currentUrl.hostname === CHATLAYA_AUTONOMOUS_HOST
+          ? currentUrl.toString()
+          : currentUrl.pathname.startsWith("/chatlaya")
+            ? `${currentUrl.pathname}${currentUrl.search}`
+            : FOUNDER_AUTH_REDIRECT;
+      return `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(redirectTarget)}`;
+    } catch {
+      // Fall through to the server-safe fallback below.
+    }
+  }
+  return fallback || `${SITE_BASE_URL}/login?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type ModuleStatus = "empty" | "in_progress" | "completed";
@@ -1101,10 +1120,11 @@ interface FounderWorkspaceProps {
 
 function FounderAccountButton({ firstName }: { firstName?: string }) {
   const label = firstName ? "Ouvrir l'accès KORYXA" : "Se connecter a KORYXA";
+  const href = resolveFounderLoginHref();
 
   return (
     <Link
-      href={`${SITE_BASE_URL}/login?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`}
+      href={href}
       aria-label={label}
       title={label}
       className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10 transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_16px_34px_rgba(2,132,199,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
@@ -1127,6 +1147,7 @@ export default function FounderWorkspace({
   onArchiveConversation,
   onExit,
 }: FounderWorkspaceProps) {
+  const effectiveLoginHref = resolveFounderLoginHref(loginHref);
   const [activeId, setActiveId] = useState(MODULES[0].id);
   const [ws, setWs] = useState<WorkspaceData>({});
   const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
@@ -1346,9 +1367,9 @@ export default function FounderWorkspace({
             Connectez-vous pour retrouver vos dossiers Founder, continuer votre cadrage guidé et exporter votre document final.
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
-            {loginHref ? (
+            {effectiveLoginHref ? (
               <Link
-                href={loginHref}
+                href={effectiveLoginHref}
                 className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
               >
                 Se connecter

@@ -19,7 +19,15 @@ type LoginClientProps = {
   requestedRedirect?: string;
   heading?: string;
   subtitle?: string;
-  supportHref?: string;
+  helperTitle?: string;
+  helperBody?: string;
+  helperPoints?: string[];
+  formEyebrow?: string;
+  formTitle?: string;
+  credentialsDescription?: string;
+  verifyDescription?: string;
+  googleLabel?: string;
+  supportHref?: string | null;
   supportLabel?: string;
   signupHref?: string;
   signupLabel?: string;
@@ -48,6 +56,18 @@ export default function LoginClient({
   requestedRedirect,
   heading = "Connexion a double validation",
   subtitle = "Entrez votre email et votre mot de passe, puis confirmez la connexion avec le code OTP envoye par KORYXA depuis votre serveur Hetzner.",
+  helperTitle = "Un acces simple, mais verrouille",
+  helperBody = "Le mot de passe valide votre identite, puis l'OTP confirme que c'est bien vous. Le code part du backend KORYXA deploye sur Hetzner.",
+  helperPoints = [
+    "Connexion par mot de passe puis confirmation OTP.",
+    "Session securisee par cookie HTTP-only cote serveur.",
+    "Possibilite de tester localement sans OTP en mode developpement.",
+  ],
+  formEyebrow = "Espace membre",
+  formTitle = "Connexion KORYXA",
+  credentialsDescription = "Commencez par vos identifiants, puis confirmez avec le code OTP envoye par email.",
+  verifyDescription = "Le code OTP finalise la connexion a votre espace.",
+  googleLabel = "Continuer avec Google",
   supportHref = "/account/recover",
   supportLabel = "Mot de passe oublie",
   signupHref = "/signup",
@@ -201,25 +221,19 @@ export default function LoginClient({
       eyebrow="Connexion"
       title={heading}
       subtitle={subtitle}
-      helperTitle="Un acces simple, mais verrouille"
-      helperBody="Le mot de passe valide votre identite, puis l'OTP confirme que c'est bien vous. Le code part du backend KORYXA deploye sur Hetzner."
-      helperPoints={[
-        "Connexion par mot de passe puis confirmation OTP.",
-        "Session securisee par cookie HTTP-only cote serveur.",
-        "Possibilite de tester localement sans OTP en mode developpement.",
-      ]}
+      helperTitle={helperTitle}
+      helperBody={helperBody}
+      helperPoints={helperPoints}
       footerText="Pas encore de compte ?"
       footerHref={signupHref}
       footerLabel={signupLabel}
     >
       <div className="min-w-0 space-y-6">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Espace membre</div>
-          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">Connexion KORYXA</h2>
+          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">{formEyebrow}</div>
+          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">{formTitle}</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            {step === "credentials"
-              ? "Commencez par vos identifiants, puis confirmez avec le code OTP envoye par email."
-              : "Le code OTP finalise la connexion a votre espace."}
+            {step === "credentials" ? credentialsDescription : verifyDescription}
           </p>
         </div>
 
@@ -236,7 +250,7 @@ export default function LoginClient({
         ) : null}
 
         <div className="space-y-3">
-          <GoogleAuthButton redirectTo={redirect} label="Continuer avec Google" />
+          <GoogleAuthButton redirectTo={redirect} label={googleLabel} />
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
             <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">ou</span>
@@ -305,12 +319,14 @@ export default function LoginClient({
                 <KeyRound className="mr-2 h-4 w-4" />
                 {loading ? "Verification..." : "Envoyer le code OTP"}
               </button>
-              <Link
-                href={supportHref}
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                {supportLabel}
-              </Link>
+              {supportHref ? (
+                <Link
+                  href={supportHref}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  {supportLabel}
+                </Link>
+              ) : null}
             </div>
           </form>
         ) : (

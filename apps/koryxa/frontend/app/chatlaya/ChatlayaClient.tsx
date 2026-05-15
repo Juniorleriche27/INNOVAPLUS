@@ -69,7 +69,7 @@ function buildAuthHref(isAutonomousHost: boolean, path: "/login" | "/signup") {
       // Keep the safe fallback computed above.
     }
   }
-  const authBase = isAutonomousHost ? `${SITE_BASE_URL}${path}` : path;
+  const authBase = isAutonomousHost ? `${SITE_BASE_URL}/chatlaya/auth${path}` : `/chatlaya/auth${path}`;
   return `${authBase}?redirect=${encodeURIComponent(redirectTarget)}`;
 }
 
@@ -1083,7 +1083,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
           </div>
           <p className="text-base font-semibold text-slate-800">Connexion requise pour Founder</p>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            ChatLAYA Founder utilise l&apos;authentification KORYXA. Connectez-vous pour ouvrir votre espace Founder.
+            Connectez-vous pour ouvrir votre espace Founder et retrouver vos dossiers de cadrage.
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
             <a
@@ -1098,13 +1098,13 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
               rel="noopener noreferrer"
               className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
             >
-              Ouvrir la connexion KORYXA dans un nouvel onglet
+              Ouvrir la connexion Founder dans un nouvel onglet
             </a>
             <a
               href={signupHref}
               className="text-xs font-semibold text-slate-500 underline underline-offset-4 transition hover:text-slate-800"
             >
-              Créer un compte KORYXA
+              Créer un compte Founder
             </a>
           </div>
         </div>
@@ -1336,7 +1336,7 @@ function ChatlayaContent({ initialAutonomousHost = false }: { initialAutonomousH
                     rel="noopener noreferrer"
                     className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
                   >
-                    Ouvrir la connexion KORYXA dans un nouvel onglet
+                    Ouvrir la connexion Founder dans un nouvel onglet
                   </a>
                   <button
                     type="button"

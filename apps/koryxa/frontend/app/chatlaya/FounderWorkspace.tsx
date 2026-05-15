@@ -26,12 +26,12 @@ function resolveFounderAuthHref(path: "/login" | "/signup", fallback?: string): 
             : currentUrl.pathname.startsWith("/chatlaya")
               ? `${currentUrl.pathname}${currentUrl.search}`
               : FOUNDER_AUTH_REDIRECT;
-      return `${SITE_BASE_URL}${path}?redirect=${encodeURIComponent(redirectTarget)}`;
+      return `${SITE_BASE_URL}/chatlaya/auth${path}?redirect=${encodeURIComponent(redirectTarget)}`;
     } catch {
       // Fall through to the server-safe fallback below.
     }
   }
-  return fallback || `${SITE_BASE_URL}${path}?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
+  return fallback || `${SITE_BASE_URL}/chatlaya/auth${path}?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
 }
 
 function resolveFounderLoginHref(fallback?: string): string {
@@ -1127,7 +1127,7 @@ interface FounderWorkspaceProps {
 }
 
 function FounderAccountButton({ firstName }: { firstName?: string }) {
-  const label = firstName ? "Ouvrir l'accès KORYXA" : "Se connecter a KORYXA";
+  const label = firstName ? "Ouvrir l'espace Founder" : "Se connecter a Founder";
   const href = resolveFounderLoginHref();
 
   return (
@@ -1395,7 +1395,7 @@ export default function FounderWorkspace({
                   rel="noopener noreferrer"
                   className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
                 >
-                  Ouvrir la connexion KORYXA dans un nouvel onglet
+                  Ouvrir la connexion Founder dans un nouvel onglet
                 </a>
               </div>
             ) : null}
@@ -1688,7 +1688,7 @@ export default function FounderWorkspace({
                     <p className="text-center text-xs leading-5 text-slate-400">
                       {conversationId
                         ? "Ensuite, cette intro disparaît et vous travaillez étape par étape avec le coach."
-                        : "L'authentification se fait sur KORYXA, puis vous revenez directement sur ChatLAYA Founder."}
+                        : "Connexion securisee, puis retour direct sur ChatLAYA Founder."}
                     </p>
                   </div>
                 </div>

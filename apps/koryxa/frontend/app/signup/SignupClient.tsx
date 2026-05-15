@@ -16,6 +16,14 @@ type SignupClientProps = {
   successRedirect?: string;
   heading?: string;
   subtitle?: string;
+  helperTitle?: string;
+  helperBody?: string;
+  helperPoints?: string[];
+  formEyebrow?: string;
+  formTitle?: string;
+  formDescription?: string;
+  verifyDescription?: string;
+  googleLabel?: string;
   loginHref?: string;
   loginLabel?: string;
   initialError?: string | null;
@@ -42,6 +50,18 @@ export default function SignupClient({
   successRedirect = "/onboarding",
   heading = "Inscription KORYXA",
   subtitle = "Creez votre compte, confirmez votre mot de passe, puis validez l'inscription avec un OTP envoye par KORYXA.",
+  helperTitle = "Creez un acces fiable des le depart",
+  helperBody = "Le compte est prepare avec votre mot de passe, puis active seulement apres validation OTP. Cela evite les inscriptions douteuses et confirme l'email utilise.",
+  helperPoints = [
+    "Confirmation du mot de passe avant envoi du code.",
+    "Validation OTP avant creation definitive du compte.",
+    "Session ouverte automatiquement apres verification.",
+  ],
+  formEyebrow = "Nouveau compte",
+  formTitle = "Acces plateforme KORYXA",
+  formDescription = "Remplissez vos informations, choisissez un mot de passe, puis confirmez l'inscription avec le code OTP.",
+  verifyDescription = "Le code OTP valide l'adresse email et finalise la creation du compte.",
+  googleLabel = "Continuer avec Google",
   loginHref = "/login",
   loginLabel = "Se connecter",
   initialError = null,
@@ -164,30 +184,24 @@ export default function SignupClient({
       eyebrow="Inscription"
       title={heading}
       subtitle={subtitle}
-      helperTitle="Creez un acces fiable des le depart"
-      helperBody="Le compte est prepare avec votre mot de passe, puis active seulement apres validation OTP. Cela evite les inscriptions douteuses et confirme l'email utilise."
-      helperPoints={[
-        "Confirmation du mot de passe avant envoi du code.",
-        "Validation OTP avant creation definitive du compte.",
-        "Session ouverte automatiquement apres verification.",
-      ]}
+      helperTitle={helperTitle}
+      helperBody={helperBody}
+      helperPoints={helperPoints}
       footerText="Vous avez deja un compte ?"
       footerHref={loginHref}
       footerLabel={loginLabel}
     >
       <div className="min-w-0 space-y-6">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Nouveau compte</div>
-          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">Acces plateforme KORYXA</h2>
+          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">{formEyebrow}</div>
+          <h2 className="mt-3 break-words text-2xl font-semibold text-slate-950 sm:text-3xl">{formTitle}</h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            {step === "form"
-              ? "Remplissez vos informations, choisissez un mot de passe, puis confirmez l'inscription avec le code OTP."
-              : "Le code OTP valide l'adresse email et finalise la creation du compte."}
+            {step === "form" ? formDescription : verifyDescription}
           </p>
         </div>
 
         <div className="space-y-3">
-          <GoogleAuthButton redirectTo={redirectTarget} label="Continuer avec Google" />
+          <GoogleAuthButton redirectTo={redirectTarget} label={googleLabel} />
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
             <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">ou</span>

@@ -95,6 +95,10 @@ export default function RouteShell({
     return <>{children}</>;
   }
 
+  if (pathname.startsWith("/chatlaya/auth")) {
+    return <>{children}</>;
+  }
+
   if (autonomousChatlayaHost) {
     return <>{children}</>;
   }

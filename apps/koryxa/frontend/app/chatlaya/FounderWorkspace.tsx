@@ -1080,10 +1080,14 @@ interface FounderWorkspaceProps {
 function FounderAccountButton({ firstName }: { firstName?: string }) {
   if (firstName) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700">
+      <Link
+        href="/compte"
+        className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-200 hover:bg-sky-100 hover:text-sky-800"
+        title="Ouvrir mon compte KORYXA"
+      >
         <UserRound className="h-3.5 w-3.5" />
         Compte · {firstName}
-      </div>
+      </Link>
     );
   }
 

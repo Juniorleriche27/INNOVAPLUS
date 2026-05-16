@@ -344,9 +344,95 @@ function formatInputsForPrompt(mod: ModuleDef, inputs: Record<string, string>): 
   return lines.length ? lines.join("\n") : "- Aucune réponse utilisateur exploitable pour cette étape.";
 }
 
+function finalDraftStructure(moduleId: string, docTitle: string): string {
+  const structures: Record<string, string> = {
+    client:
+      `Structure attendue, en reprenant le niveau de profondeur de l'exemple validé :\n` +
+      `${docTitle} : [segment précis]\n\n` +
+      `Profil et Caractéristiques du Client Cible\n` +
+      `Motivation d'Achat et Pain Points Fondamentaux\n` +
+      `Positionnement de l'Offre et Valeur Perçue\n` +
+      `Stratégie de Découverte et Canaux d'Acquisition\n` +
+      `Critères de Qualification du Lead\n` +
+      `Nuances et Pièges à Éviter\n` +
+      `Synthèse de la Proposition de Valeur`,
+    probleme:
+      `Structure attendue, avec le même niveau de profondeur qu'une section premium :\n` +
+      `${docTitle} : [douleur centrale]\n\n` +
+      `Nature du Problème Client\n` +
+      `Conséquences Opérationnelles et Économiques\n` +
+      `Urgence et Coût de l'Inaction\n` +
+      `Segments les Plus Exposés à cette Douleur\n` +
+      `Signaux de Validation Terrain\n` +
+      `Risques de Mauvaise Formulation\n` +
+      `Synthèse de la Douleur à Résoudre`,
+    offre:
+      `Structure attendue, avec une vraie logique de dossier :\n` +
+      `${docTitle} : [promesse principale]\n\n` +
+      `Définition de l'Offre\n` +
+      `Bénéfices Concrets pour le Client\n` +
+      `Différenciation et Valeur Perçue\n` +
+      `Composantes de l'Offre\n` +
+      `Preuves, Garanties ou Éléments de Réassurance\n` +
+      `Conditions de Clarté Commerciale\n` +
+      `Synthèse de la Proposition de Valeur`,
+    prix:
+      `Structure attendue, orientée décision business :\n` +
+      `${docTitle} : [logique tarifaire]\n\n` +
+      `Logique de Prix Recommandée\n` +
+      `Lien entre Prix et Valeur Perçue\n` +
+      `Hypothèses de Coûts et de Marge\n` +
+      `Options de Facturation Possibles\n` +
+      `Méthode de Test du Prix\n` +
+      `Risques Tarifaires à Éviter\n` +
+      `Synthèse de la Stratégie de Prix`,
+    business_model:
+      `Structure attendue, comme une section investisseur lisible :\n` +
+      `${docTitle} : [modèle retenu]\n\n` +
+      `Logique Générale du Modèle Économique\n` +
+      `Sources de Revenus Prioritaires\n` +
+      `Coûts Clés et Ressources Nécessaires\n` +
+      `Mécanique de Création et Capture de Valeur\n` +
+      `Scalabilité et Effets de Levier\n` +
+      `Hypothèses à Valider\n` +
+      `Synthèse du Modèle Économique`,
+    vente:
+      `Structure attendue, prête à être utilisée commercialement :\n` +
+      `${docTitle} : [angle de vente]\n\n` +
+      `Angle Commercial Principal\n` +
+      `Promesse à Communiquer\n` +
+      `Message Central de Vente\n` +
+      `Arguments de Conviction\n` +
+      `Canaux et Situations d'Utilisation\n` +
+      `Objections Probables et Réponses\n` +
+      `Synthèse du Discours Commercial`,
+    business_plan:
+      `Structure attendue, synthétique mais substantielle :\n` +
+      `${docTitle} : [horizon et priorité]\n\n` +
+      `Vision et Objectif du Projet\n` +
+      `Marché Cible et Problème Résolu\n` +
+      `Offre, Valeur et Positionnement\n` +
+      `Modèle Économique et Hypothèses de Revenus\n` +
+      `Plan d'Action Prioritaire\n` +
+      `Indicateurs de Suivi\n` +
+      `Synthèse Exécutive du Plan`,
+  };
+
+  return structures[moduleId] ?? (
+    `Structure attendue :\n` +
+    `${docTitle}\n\n` +
+    `Contexte\n` +
+    `Analyse\n` +
+    `Implications Business\n` +
+    `Critères de Validation\n` +
+    `Synthèse`
+  );
+}
+
 function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: WorkspaceData): string {
   const mod = MODULES.find((item) => item.id === moduleId);
   const docLabel = DOC_LABELS[moduleId] ?? { title: mod?.label ?? "Section dossier", tagline: "" };
+  const expectedStructure = finalDraftStructure(moduleId, docLabel.title);
   const priorContext = MODULES
     .filter((item) => item.id !== moduleId)
     .map((item) => {
@@ -367,11 +453,13 @@ function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: Workspa
     `Diagnostic / cadrage ChatLAYA à prendre en compte :\n${state.output?.trim() || "(aucun diagnostic disponible)"}\n\n` +
     `Avis, corrections ou ajouts de l'utilisateur :\n${state.finalFeedback?.trim() || "(aucun ajout : l'utilisateur valide le cadrage proposé)"}\n\n` +
     `${priorContext ? `Contexte déjà cadré dans les autres étapes :\n${priorContext}\n\n` : ""}` +
+    `${expectedStructure}\n\n` +
     `Consigne de rédaction : produis uniquement la version finale à mettre dans le dossier. ` +
     `Ne fais pas de coaching, ne pose pas de question, ne dis pas "voici". ` +
     `Cette version doit pouvoir être vendue comme partie d'un vrai dossier projet premium : elle doit être dense, claire et exploitable. ` +
     `Ne produis pas un résumé. Rédige une section complète avec au moins 5 à 8 paragraphes ou blocs structurés selon la matière disponible. ` +
     `Développe la logique business, les critères, les implications, les nuances et les points de validation utiles. ` +
+    `Respecte la structure attendue fournie ci-dessus, avec des titres propres sur lignes séparées. ` +
     `Si le sujet est la cible client, détaille les segments prioritaires, les caractéristiques, les motivations d'achat, les signaux de besoin, les canaux pour les trouver et les hypothèses à valider. ` +
     `Si le sujet est un autre module, applique le même niveau de profondeur au problème, à l'offre, au prix, au modèle économique, au message de vente ou au plan d'action. ` +
     `Reformule proprement, avec substance, précision et cohérence business. ` +

@@ -27,6 +27,7 @@ CHATLAYA_TIMEOUT_REPLY = (
     "ou reformulez votre demande plus brièvement si besoin."
 )
 FOUNDER_FINAL_DRAFT_MAX_NEW_TOKENS = 1800
+FOUNDER_FINAL_DRAFT_TIMEOUT_SECONDS = 240
 
 GREETING_PHRASES = {
     # Français
@@ -1253,6 +1254,8 @@ async def generate_chat_reply(
         )
     else:
         primary_timeout_s = generation_timeout_s
+    if is_founder_final_draft:
+        primary_timeout_s = max(primary_timeout_s, FOUNDER_FINAL_DRAFT_TIMEOUT_SECONDS)
 
     async def _generate_once(provider: str, model: str | None, timeout_s: int | None = None) -> str:
         effective_timeout_s = timeout_s or generation_timeout_s
@@ -1275,8 +1278,10 @@ async def generate_chat_reply(
 
     try:
         response_text = await _generate_once(primary_provider, primary_model, primary_timeout_s)
-    except asyncio.TimeoutError:
+    except asyncio.TimeoutError as exc:
         logger.warning("ChatLAYA primary generation timed out after %ss", primary_timeout_s)
+        if is_founder_final_draft:
+            raise RuntimeError("Founder final draft generation timed out") from exc
         if is_strict_assistant_mode(assistant_mode) and rag_results:
             final_reply = _build_strict_action_fallback(message, rag_results)
             return final_reply, rag_results
@@ -1284,12 +1289,22 @@ async def generate_chat_reply(
 
     except Exception as exc:  # noqa: BLE001
         logger.warning("ChatLAYA generation failed: %s", exc)
+        if is_founder_final_draft:
+            raise
         if is_strict_assistant_mode(assistant_mode) and rag_results:
             final_reply = _build_strict_action_fallback(message, rag_results)
             return final_reply, rag_results
         return FALLBACK_REPLY, []
 
-    if is_strict_assistant_mode(assistant_mode) and not (response_text or "").strip() and rag_results:
+    if is_founder_final_draft and not (response_text or "").strip():
+        raise RuntimeError("Founder final draft generation returned an empty response")
+
+    if (
+        is_strict_assistant_mode(assistant_mode)
+        and not is_founder_final_draft
+        and not (response_text or "").strip()
+        and rag_results
+    ):
         compact_prompt = _build_compact_strict_prompt_from_rag(message, rag_results)
         try:
             response_text = await asyncio.wait_for(

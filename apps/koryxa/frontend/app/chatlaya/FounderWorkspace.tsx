@@ -2353,14 +2353,11 @@ export default function FounderWorkspace({
             <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-[#101015]"}`}>
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6F6A60]">
-                Étape {activeModule.step}{activeModule.optional ? " · Optionnelle" : ""}
-                {isRevision ? " · Révision" : ""}
-              </p>
-              <p className="text-sm font-bold text-[#101015]">{activeModule.label}</p>
-            </div>
-            <div className="ml-auto flex shrink-0 items-center gap-2">
+            <p className="hidden flex-1 text-center font-serif text-[13px] italic leading-snug tracking-wide text-[#6F6A60] lg:block">
+              {activeModule.description}
+            </p>
+            <div className="flex-1 lg:hidden" />
+            <div className="flex shrink-0 items-center gap-2">
               {activeMs.status === "completed" ? (
                 <div className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:inline-flex">
                   <Check className="h-3 w-3" />
@@ -2370,7 +2367,6 @@ export default function FounderWorkspace({
               <FounderAccountButton firstName={firstName} />
             </div>
           </div>
-          <p className="mt-1.5 hidden text-xs text-[#6F6A60] lg:block">{activeModule.description}</p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);

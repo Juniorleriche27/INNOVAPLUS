@@ -2586,25 +2586,25 @@ export default function FounderWorkspace({
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={() => void generate(activeId)}
                 disabled={!!generating || !!finalizing || !conversationId}
-                className="flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
-                <Sparkles className="h-3.5 w-3.5" />
+                className="flex items-center gap-2 rounded-full bg-[#101015] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
+                <Sparkles className="h-3.5 w-3.5 text-[#B8963E]" />
                 {isGenerating ? "Génération en cours…" : activeMs.output ? "Peaufiner avec ChatLAYA" : "Générer avec ChatLAYA"}
               </button>
               {isGenerating ? (
                 <button type="button" onClick={() => streamAbortRef.current?.abort()}
-                  className="text-xs text-slate-400 transition hover:text-slate-600">
+                  className="text-xs text-[#6F6A60] transition hover:text-[#101015]">
                   Annuler
                 </button>
               ) : null}
               {!isGenerating && generating && generating !== activeId ? (
-                <span className="text-[11px] text-slate-400">Génération en cours sur une autre étape…</span>
+                <span className="text-[11px] text-[#6F6A60]">Génération en cours sur une autre étape…</span>
               ) : null}
             </div>
 
             {/* Previous output (revision mode, while generating) */}
             {isGenerating && !activeMs.output && activeMs.previousOutput ? (
-              <details className="rounded-xl border border-slate-200">
-                <summary className="cursor-pointer rounded-xl px-4 py-2.5 text-xs font-medium text-slate-500 hover:bg-slate-50">
+              <details className="rounded-xl border border-[#E7DED0]">
+                <summary className="cursor-pointer rounded-xl px-4 py-2.5 text-xs font-medium text-[#6F6A60] hover:bg-[#F7F4EE]">
                   Voir la version précédente
                 </summary>
                 <div className="px-4 pb-4 pt-2 opacity-60">
@@ -2618,17 +2618,17 @@ export default function FounderWorkspace({
 
             {/* AI output (coaching layer) */}
             {activeMs.output ? (
-              <div className="group relative rounded-2xl border border-sky-100 bg-white p-5 shadow-[0_4px_24px_rgba(14,165,233,0.07)]">
+              <div className="group relative rounded-2xl border border-[#E7DED0] bg-white p-5 shadow-[0_4px_24px_rgba(184,150,62,0.08)]">
                 <div className="mb-3 flex items-center gap-2">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-600">
-                    <span className="text-[8px] font-bold text-white">L</span>
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#101015]">
+                    <span className="text-[8px] font-bold text-[#B8963E]">L</span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">Analyse ChatLAYA</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#B8963E]">Analyse ChatLAYA</span>
                   {isGenerating ? (
-                    <span className="ml-auto animate-pulse text-[10px] text-slate-400">En cours…</span>
+                    <span className="ml-auto animate-pulse text-[10px] text-[#6F6A60]">En cours…</span>
                   ) : (
                     <button type="button" onClick={() => copyOutput(activeId, activeMs.output!)}
-                      className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-slate-400 opacity-0 transition-all hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
+                      className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-[#6F6A60] opacity-0 transition-all hover:bg-[#F7F4EE] hover:text-[#101015] group-hover:opacity-100"
                       title="Copier">
                       {copiedOutput === activeId ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
                       {copiedOutput === activeId ? "Copié !" : "Copier"}
@@ -2670,7 +2670,7 @@ export default function FounderWorkspace({
                 )}
                 {activeMs.status === "completed" ? (
                   <button type="button" onClick={() => reopen(activeId)}
-                    className="flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700">
+                    className="flex items-center gap-1.5 rounded-full border border-[#E7DED0] px-4 py-2 text-sm font-medium text-[#6F6A60] transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700">
                     <RotateCcw className="h-3.5 w-3.5" />
                     Modifier cette étape
                   </button>
@@ -2678,7 +2678,7 @@ export default function FounderWorkspace({
                 {nextModule ? (
                   <button type="button" onClick={() => { if (activeMs.status !== "completed") validate(activeId); else setActiveId(nextModule.id); }}
                     disabled={activeMs.status !== "completed" && !canValidateActive}
-                    className="ml-auto flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
+                    className="ml-auto flex items-center gap-2 rounded-full border border-[#B8963E]/40 bg-[#F0E6CC]/40 px-5 py-2 text-sm font-semibold text-[#8A6A20] transition hover:bg-[#F0E6CC] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
                     {nextModule.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
@@ -2688,11 +2688,11 @@ export default function FounderWorkspace({
 
             {/* Empty state */}
             {!activeMs.output && !isGenerating && !Object.values(activeMs.inputs).some(Boolean) ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 px-5 py-6 text-center">
-                <p className="text-sm font-semibold text-slate-600">{activeModule.tagline}</p>
-                <p className="mt-1 text-xs leading-6 text-slate-400">
+              <div className="rounded-2xl border border-dashed border-[#E7DED0] px-5 py-6 text-center">
+                <p className="text-sm font-semibold text-[#3A3530]">{activeModule.tagline}</p>
+                <p className="mt-1 text-xs leading-6 text-[#6F6A60]">
                   Renseignez les champs ci-dessus puis cliquez sur{" "}
-                  <span className="font-semibold text-sky-600">Générer avec ChatLAYA</span>.
+                  <span className="font-semibold text-[#B8963E]">Générer avec ChatLAYA</span>.
                 </p>
               </div>
             ) : null}

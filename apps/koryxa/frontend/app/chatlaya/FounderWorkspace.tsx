@@ -576,11 +576,11 @@ function renderInline(text: string): React.ReactNode {
     <>
       {parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**"))
-          return <strong key={i} className="font-semibold text-slate-900">{part.slice(2, -2)}</strong>;
+          return <strong key={i} className="font-semibold text-[#101015]">{part.slice(2, -2)}</strong>;
         if (part.startsWith("*") && part.endsWith("*"))
-          return <em key={i} className="italic text-slate-700">{part.slice(1, -1)}</em>;
+          return <em key={i} className="italic text-[#4A4540]">{part.slice(1, -1)}</em>;
         if (part.startsWith("`") && part.endsWith("`"))
-          return <code key={i} className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-sky-700">{part.slice(1, -1)}</code>;
+          return <code key={i} className="rounded bg-[#F0E6CC] px-1 py-0.5 font-mono text-[12px] text-[#8A6A20]">{part.slice(1, -1)}</code>;
         return <span key={i}>{part}</span>;
       })}
     </>
@@ -596,23 +596,23 @@ function FounderOutput({ content }: { content: string }) {
       {blocks.map((block, idx) => {
         if (block.type === "heading") {
           if (block.level === 1)
-            return <h1 key={idx} className="text-base font-bold text-slate-900 pt-1">{renderInline(block.text)}</h1>;
+            return <h1 key={idx} className="text-base font-bold text-[#101015] pt-1">{renderInline(block.text)}</h1>;
           if (block.level === 2)
             return (
-              <h2 key={idx} className="flex items-center gap-2.5 text-sm font-bold text-slate-800 pt-2">
-                <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-sky-400" />
+              <h2 key={idx} className="flex items-center gap-2.5 text-sm font-bold text-[#101015] pt-2">
+                <span className="h-3.5 w-0.5 shrink-0 rounded-full bg-[#B8963E]" />
                 {renderInline(block.text)}
               </h2>
             );
-          return <h3 key={idx} className="text-sm font-semibold text-slate-700 pt-1">{renderInline(block.text)}</h3>;
+          return <h3 key={idx} className="text-sm font-semibold text-[#3A3530] pt-1">{renderInline(block.text)}</h3>;
         }
         if (block.type === "ordered-list")
           return (
             <ol key={idx} className="space-y-2">
               {block.items.map((item, li) => (
                 <li key={li} className="flex gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-50 text-[10px] font-bold text-sky-600 ring-1 ring-sky-100">{li + 1}</span>
-                  <span className="flex-1 text-sm leading-6 text-slate-700">{renderInline(item)}</span>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#F0E6CC] text-[10px] font-bold text-[#8A6A20] ring-1 ring-[#E7DED0]">{li + 1}</span>
+                  <span className="flex-1 text-sm leading-6 text-[#3A3530]">{renderInline(item)}</span>
                 </li>
               ))}
             </ol>
@@ -622,13 +622,13 @@ function FounderOutput({ content }: { content: string }) {
             <ul key={idx} className="space-y-2">
               {block.items.map((item, li) => (
                 <li key={li} className="flex gap-2.5">
-                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
-                  <span className="flex-1 text-sm leading-6 text-slate-700">{renderInline(item)}</span>
+                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#B8963E]" />
+                  <span className="flex-1 text-sm leading-6 text-[#3A3530]">{renderInline(item)}</span>
                 </li>
               ))}
             </ul>
           );
-        return <p key={idx} className="text-sm leading-7 text-slate-700">{renderInline(block.text)}</p>;
+        return <p key={idx} className="text-sm leading-7 text-[#3A3530]">{renderInline(block.text)}</p>;
       })}
     </div>
   );
@@ -687,20 +687,20 @@ function RetentionBlock({
   const progressPercent = Math.min(92, Math.max(12, Math.round((elapsedSeconds / 180) * 100)));
 
   return (
-    <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+    <div className="space-y-4 rounded-xl border border-[#E7DED0] bg-[#FFFCF7] p-4">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <PenLine className="h-3.5 w-3.5 text-violet-600" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700">
+          <PenLine className="h-3.5 w-3.5 text-[#B8963E]" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#8A6A20]">
             Finalisation du cadrage
           </span>
         </div>
-        <span className="rounded-full bg-white/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-violet-500 ring-1 ring-violet-100">
+        <span className="rounded-full bg-white/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-[#B8963E] ring-1 ring-[#E7DED0]">
           {validated ? "validée" : isFilled ? "version prête" : "à rédiger"}
         </span>
       </div>
       <div>
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-violet-500">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#B8963E]">
           Votre avis ou vos ajouts (optionnel)
         </p>
         <textarea
@@ -708,9 +708,9 @@ function RetentionBlock({
           onChange={(e) => onFeedbackChange(e.target.value)}
           placeholder="Ex : garde cette idée, mais précise que je cible surtout les PME de services ; ajoute aussi l'angle gain de temps et réduction des coûts."
           rows={3}
-          className="w-full resize-none rounded-xl border border-violet-100 bg-white/70 px-3.5 py-3 text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:border-violet-200 focus:outline-none"
+          className="w-full resize-none rounded-xl border border-[#E7DED0] bg-white/70 px-3.5 py-3 text-sm leading-relaxed text-[#101015] placeholder:text-[#C8B88A]/80 focus:border-[#B8963E] focus:outline-none"
         />
-        <p className="mt-2 text-[11px] leading-relaxed text-violet-500">
+        <p className="mt-2 text-[11px] leading-relaxed text-[#6F6A60]">
           Si vous n'ajoutez rien, Founder considère que vous validez le cadrage et rédige directement la version finale.
         </p>
       </div>
@@ -718,27 +718,27 @@ function RetentionBlock({
         type="button"
         onClick={onGenerateFinal}
         disabled={generatingFinal}
-        className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center gap-2 rounded-full bg-[#101015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Sparkles className="h-3.5 w-3.5" />
         {generatingFinal ? "Founder prépare le document…" : isFilled ? "Re-rédiger la version finale complète" : "Rédiger la version finale complète"}
       </button>
       {generatingFinal ? (
-        <div className="rounded-2xl border border-violet-200 bg-white/80 p-4 shadow-[0_12px_35px_rgba(124,58,237,0.08)]">
+        <div className="rounded-2xl border border-[#E7DED0] bg-white/80 p-4 shadow-[0_12px_35px_rgba(184,150,62,0.08)]">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-bold text-violet-950">Préparation d'un document complet</p>
-              <p className="mt-1 text-xs leading-relaxed text-violet-600">
+              <p className="text-sm font-bold text-[#101015]">Préparation d'un document complet</p>
+              <p className="mt-1 text-xs leading-relaxed text-[#6F6A60]">
                 Pour un meilleur rendu, Founder peut prendre 2 à 3 minutes afin de bien analyser, structurer et peaufiner la version dossier.
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+            <span className="shrink-0 rounded-full bg-[#F0E6CC] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#8A6A20]">
               {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, "0")}
             </span>
           </div>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100">
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#F0E6CC]">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 transition-all duration-700"
+              className="h-full rounded-full bg-gradient-to-r from-[#B8963E] via-[#D4AE5C] to-[#B8963E] transition-all duration-700"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -751,14 +751,14 @@ function RetentionBlock({
                   key={step}
                   className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${
                     isActive
-                      ? "border-violet-200 bg-violet-50 text-violet-900"
+                      ? "border-[#E7DED0] bg-[#FFFCF7] text-[#101015]"
                       : isDone
                         ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                        : "border-slate-100 bg-slate-50 text-slate-400"
+                        : "border-[#E7DED0] bg-[#F7F4EE] text-[#6F6A60]"
                   }`}
                 >
                   <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                    isDone ? "bg-emerald-500 text-white" : isActive ? "bg-violet-600 text-white" : "bg-white text-slate-400"
+                    isDone ? "bg-emerald-500 text-white" : isActive ? "bg-[#B8963E] text-white" : "bg-white text-[#6F6A60]"
                   }`}>
                     {isDone ? <Check className="h-3 w-3" /> : index + 1}
                   </span>
@@ -767,20 +767,20 @@ function RetentionBlock({
               );
             })}
           </div>
-          <p className="mt-3 animate-pulse text-xs font-medium text-violet-700">{progressMessage}</p>
+          <p className="mt-3 animate-pulse text-xs font-medium text-[#8A6A20]">{progressMessage}</p>
         </div>
       ) : null}
-      <div className="rounded-xl border border-violet-100 bg-white/70 p-3.5">
+      <div className="rounded-xl border border-[#E7DED0] bg-white/70 p-3.5">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-violet-700">Version dossier</p>
-          <span className="text-[9px] font-medium text-violet-400 italic">sera utilisée dans l'export final</span>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#8A6A20]">Version dossier</p>
+          <span className="text-[9px] font-medium italic text-[#B8963E]/70">sera utilisée dans l'export final</span>
         </div>
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="La version finale rédigée par Founder apparaîtra ici. Vous pourrez encore la modifier avant validation."
           rows={12}
-          className="min-h-[320px] w-full resize-y bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
+          className="min-h-[320px] w-full resize-y bg-transparent text-sm leading-relaxed text-[#101015] placeholder:text-[#C8B88A]/80 focus:outline-none"
         />
       </div>
     </div>
@@ -832,22 +832,22 @@ function GeneratingCard({ firstName }: { firstName?: string }) {
     return () => clearInterval(id);
   }, []);
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-sky-100 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(14,165,233,0.08)]">
+    <div className="flex flex-col gap-3 rounded-2xl border border-[#E7DED0] bg-white px-5 py-4 shadow-[0_4px_24px_rgba(184,150,62,0.08)]">
       <div className="flex items-center gap-2.5">
         <div className="flex items-end gap-[5px]">
           {[0, 1, 2, 3].map((i) => (
-            <span key={i} className="kx-thinking-dot inline-block rounded-full bg-sky-500"
+            <span key={i} className="kx-thinking-dot inline-block rounded-full bg-[#B8963E]"
               style={{ width: i === 1 || i === 2 ? "7px" : "5px", height: i === 1 || i === 2 ? "7px" : "5px", animationDelay: `${i * 0.13}s` }}
             />
           ))}
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-sky-500">ChatLAYA réfléchit</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[#B8963E]">ChatLAYA réfléchit</span>
       </div>
-      <p key={phase} className="kx-thinking-msg text-sm leading-relaxed text-slate-600">
+      <p key={phase} className="kx-thinking-msg text-sm leading-relaxed text-[#3A3530]">
         {firstName ? GENERATING_MSGS[phase] : GENERATING_MSGS[phase]}
       </p>
-      <div className="h-[3px] w-full overflow-hidden rounded-full bg-slate-100">
-        <div className="kx-thinking-scan h-full w-1/3 rounded-full bg-gradient-to-r from-sky-400 via-violet-400 to-sky-400" />
+      <div className="h-[3px] w-full overflow-hidden rounded-full bg-[#F0E6CC]">
+        <div className="kx-thinking-scan h-full w-1/3 rounded-full bg-gradient-to-r from-[#B8963E] via-[#D4AE5C] to-[#B8963E]" />
       </div>
     </div>
   );
@@ -1611,28 +1611,28 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
   const isExportReady = withoutFormulation.length === 0;
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E7DED0] bg-[#FFFCF7] shadow-[0_2px_16px_rgba(16,16,21,0.06)]">
       {/* Header */}
-      <div className="shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50/60 to-violet-50/60 px-5 py-4">
+      <div className="shrink-0 border-b border-[#E7DED0] bg-gradient-to-r from-[#FFFCF7] to-[#F7F4EE] px-5 py-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-white/80 hover:text-slate-700"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[#6F6A60] transition hover:bg-white/80 hover:text-[#101015]"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Retour
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Dossier projet final</p>
-            <p className="text-sm font-bold text-slate-800">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#6F6A60]">Dossier projet final</p>
+            <p className="text-sm font-bold text-[#101015]">
               {firstName ? `Projet de ${firstName}` : "Votre dossier consolidé"}
             </p>
           </div>
           <button
             type="button"
             onClick={isExportReady ? onExport : () => setExportConfirm((v) => !v)}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] ${isExportReady ? "bg-sky-600 hover:bg-sky-700" : "bg-amber-500 hover:bg-amber-600"}`}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98] ${isExportReady ? "bg-[#101015] ring-1 ring-[#B8963E]/30 hover:bg-[#1A1A20]" : "bg-amber-500 hover:bg-amber-600"}`}
           >
             <Download className="h-3.5 w-3.5" />
             {isExportReady ? "Exporter PDF" : `Exporter (${withoutFormulation.length} section${withoutFormulation.length > 1 ? "s" : ""} incomplète${withoutFormulation.length > 1 ? "s" : ""})`}
@@ -1691,11 +1691,11 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
           ) : null}
 
           {/* Intro */}
-          <div className="mb-8 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-violet-50 px-5 py-5">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-sky-600">Dossier Projet — Synthèse complète</p>
-            <p className="text-sm leading-relaxed text-slate-600">
+          <div className="mb-8 rounded-2xl border border-[#E7DED0] bg-gradient-to-br from-[#FFFCF7] to-[#F7F4EE] px-5 py-5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[#B8963E]">Dossier Projet — Synthèse complète</p>
+            <p className="text-sm leading-relaxed text-[#6F6A60]">
               {completed.length} section{completed.length > 1 ? "s" : ""} validée{completed.length > 1 ? "s" : ""}.{" "}
-              Ce document présente votre projet cadré. Cliquez <strong className="font-semibold text-sky-700">Exporter PDF</strong> pour générer le dossier premium.
+              Ce document présente votre projet cadré. Cliquez <strong className="font-semibold text-[#8A6A20]">Exporter PDF</strong> pour générer le dossier premium.
             </p>
           </div>
 
@@ -1711,14 +1711,14 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
                   {modIdx > 0 && <div className="mb-8 border-t border-slate-100" />}
 
                   <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-white">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#101015] text-white">
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6F6A60]">
                         Étape {mod.step}{mod.optional ? " · Optionnelle" : ""}
                       </p>
-                      <p className="text-sm font-bold text-slate-800">{docLabel.title}</p>
+                      <p className="text-sm font-bold text-[#101015]">{docLabel.title}</p>
                     </div>
                     <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
                       <Check className="h-3 w-3" />
@@ -1728,15 +1728,15 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
 
                   {/* Main content — retention (project) or AI output (coaching fallback) */}
                   {hasRetention ? (
-                    <div className="rounded-xl border border-violet-200 bg-violet-50/30 p-5">
-                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-violet-600">
+                    <div className="rounded-xl border border-[#E7DED0] bg-[#FFFCF7]/60 p-5">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#B8963E]">
                         Formulation finale
                       </p>
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-violet-900">{mws.retention}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#101015]">{mws.retention}</p>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-5">
-                      <p className="mb-2 text-[10px] font-medium text-slate-400">
+                    <div className="rounded-xl border border-[#E7DED0] bg-[#F7F4EE]/40 p-5">
+                      <p className="mb-2 text-[10px] font-medium text-[#6F6A60]">
                         Réponse de coaching (formulation finale non renseignée)
                       </p>
                       <FounderOutput content={mws.output!} />

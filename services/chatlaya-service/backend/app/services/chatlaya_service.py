@@ -916,6 +916,15 @@ def _clean_founder_final_draft_reply(text: str) -> str:
     forbidden_closing_patterns = (
         "la prochaine étape",
         "la prochaine etape",
+        "pour affiner",
+        "afin d'affiner",
+        "afin d affiner",
+        "souhaitez-vous",
+        "souhaitez vous",
+        "pouvez-vous préciser",
+        "pouvez vous preciser",
+        "sur quels types",
+        "sur quel type",
         "pour passer à l'étape suivante",
         "pour passer a l'etape suivante",
         "je peux aller plus loin",
@@ -923,7 +932,10 @@ def _clean_founder_final_draft_reply(text: str) -> str:
         "si vous precisez",
     )
     paragraphs = [part.strip() for part in re.split(r"\n\s*\n", cleaned) if part.strip()]
-    while paragraphs and any(pattern in _normalize_text(paragraphs[-1]) for pattern in forbidden_closing_patterns):
+    while paragraphs and (
+        "?" in paragraphs[-1]
+        or any(pattern in _normalize_text(paragraphs[-1]) for pattern in forbidden_closing_patterns)
+    ):
         paragraphs.pop()
 
     return "\n\n".join(paragraphs).strip() or cleaned

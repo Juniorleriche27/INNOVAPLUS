@@ -473,6 +473,15 @@ function cleanDossierText(value: string): string {
   const forbiddenClosings = [
     "la prochaine étape",
     "la prochaine etape",
+    "pour affiner",
+    "afin d'affiner",
+    "afin d affiner",
+    "souhaitez-vous",
+    "souhaitez vous",
+    "pouvez-vous préciser",
+    "pouvez vous preciser",
+    "sur quels types",
+    "sur quel type",
     "pour passer à l'étape suivante",
     "pour passer a l'etape suivante",
     "je peux aller plus loin",
@@ -492,7 +501,7 @@ function cleanDossierText(value: string): string {
   const paragraphs = cleaned.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
   while (paragraphs.length) {
     const last = paragraphs[paragraphs.length - 1].toLowerCase();
-    if (!forbiddenClosings.some((pattern) => last.includes(pattern))) break;
+    if (!last.includes("?") && !forbiddenClosings.some((pattern) => last.includes(pattern))) break;
     paragraphs.pop();
   }
   return paragraphs.join("\n\n").trim() || cleaned;

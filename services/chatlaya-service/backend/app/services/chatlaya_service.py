@@ -1050,7 +1050,8 @@ def _build_generation_prompt(
         sections = [
             "Tu es ChatLAYA en mode Lancer, Structurer, Vendre.",
             "Ton role est d'aider a lancer une activite, structurer une offre, construire un business model, fixer un prix, vendre et ameliorer la relation client.",
-            "Tu dois utiliser les extraits fournis comme contexte metier prioritaire.",
+            "Tu dois utiliser les extraits fournis comme contexte metier prioritaire lorsqu'ils sont disponibles.",
+            "Si les extraits ne sont pas disponibles, continue avec les informations donnees par l'utilisateur et ton raisonnement business, sans afficher de fallback technique.",
             "Ne dis jamais qu'aucun contexte n'est fourni lorsque des extraits sont presents.",
             "INTERDIT ABSOLU : ne commence JAMAIS la reponse par une phrase mentionnant les limites ou lacunes du contexte ('Le contexte fourni ne...', 'Je ne dispose pas...', 'Aucun prix specifique...', 'Aucune donnee...', 'Les informations fournies ne...'). Commence DIRECTEMENT par la reponse utile.",
             "Regle absolue : donne TOUJOURS une reponse utile et directe en premier, meme si les informations sont incompletes ou generales. Ne commence jamais par demander des precisions. Si une clarification est vraiment necessaire, pose une seule question courte APRES avoir repondu, jamais avant.",
@@ -1196,7 +1197,7 @@ async def generate_chat_reply(
         )
         rag_context, rag_results = _build_rag_context(rag_results, settings.RAG_MAX_CONTEXT_TOKENS)
         if not rag_results:
-            return CHATLAYA_SPECIALIST_EMPTY_REPLY, []
+            logger.warning("ChatLAYA specialist RAG unavailable or empty; continuing without specialist chunks")
     elif settings.RAG_API_URL:
         try:
             raw_chunks = await retrieve_rag_results(message, top_k=settings.RAG_TOP_K_DEFAULT)
@@ -1205,9 +1206,14 @@ async def generate_chat_reply(
             logger.warning("ChatLAYA RAG retrieval failed: %s", exc)
 
     web_context = ""
-    if assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL and len(retrieval_message.strip()) > 15:
+    if (
+        assistant_mode == CHATLAYA_MODE_LAUNCH_STRUCTURE_SELL
+        and not is_founder_final_draft
+        and len(retrieval_message.strip()) > 15
+    ):
         try:
-            web_results = await search_web(retrieval_message)
+            web_query = retrieval_message[:700]
+            web_results = await search_web(web_query)
             web_context = format_web_context(web_results)
         except Exception as exc:  # noqa: BLE001
             logger.warning("ChatLAYA web search failed: %s", exc)

@@ -2181,7 +2181,7 @@ export default function FounderWorkspace({
 
   function renderHistoryPanel(collapsed = false) {
     return (
-      <div className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E7DED0] bg-[#FFFCF7] shadow-[0_2px_16px_rgba(16,16,21,0.06)] ${collapsed ? "items-center" : ""}`}>
+      <div className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E8E0CC] bg-white/70 shadow-[0_2px_16px_rgba(26,24,20,0.06)] backdrop-blur-xl ${collapsed ? "items-center" : ""}`}>
         <div className={`shrink-0 border-b border-[#E7DED0] ${collapsed ? "w-full px-2 py-3" : "px-4 pb-3 pt-4"}`}>
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
@@ -2286,8 +2286,8 @@ export default function FounderWorkspace({
               return (
                 <div
                   key={conversation.conversation_id}
-                  className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition ${
-                    active ? "border-[#B8963E]/30 bg-[#F0E6CC]/40 shadow-[0_1px_4px_rgba(184,150,62,0.12)]" : "border-transparent bg-white hover:border-[#E7DED0] hover:bg-[#F7F4EE]"
+                  className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition-all duration-200 ${
+                    active ? "border-[#B8924A] bg-gradient-to-br from-[#FAF6EE] to-[#F5EFE0] shadow-[0_8px_32px_rgba(184,146,74,0.25)]" : "border-transparent bg-white/80 hover:-translate-y-0.5 hover:border-[#E8E0CC] hover:bg-white hover:shadow-[0_8px_24px_rgba(26,24,20,0.08)]"
                   }`}
                 >
                   <button
@@ -2341,7 +2341,7 @@ export default function FounderWorkspace({
   }
 
   return (
-    <main className={`relative grid h-full min-h-0 gap-3 overflow-hidden ${historyCollapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]"}`}>
+    <main className={`kx-founder-root relative grid h-full min-h-0 gap-3 overflow-hidden ${historyCollapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]"}`}>
       {briefStarting && (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-50 h-[3px] overflow-hidden rounded-full">
           <div className="h-full kx-founder-ytbar bg-gradient-to-r from-[#D4B26A] via-[#B8963E] to-[#8A6A20]" />
@@ -2353,7 +2353,7 @@ export default function FounderWorkspace({
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E7DED0] bg-[#FFFCF7] shadow-[0_2px_16px_rgba(16,16,21,0.06)]">
+      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E8E0CC] bg-white/70 shadow-[var(--shadow-sm)] backdrop-blur-xl">
 
         {error ? (
           <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">{error}</div>
@@ -2370,7 +2370,7 @@ export default function FounderWorkspace({
             >
               <Menu className="h-4 w-4" />
             </button>
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-[#101015]"}`}>
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-[#B8924A]" : "bg-[#101015]"}`}>
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
             </div>
             <p className="hidden flex-1 text-center font-serif text-[13px] italic leading-snug tracking-wide text-[#6F6A60] lg:block">
@@ -2387,7 +2387,8 @@ export default function FounderWorkspace({
               <FounderAccountButton firstName={firstName} />
             </div>
           </div>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mt-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="inline-flex items-center gap-1 rounded-full border border-[#E8E0CC] bg-white/60 p-1.5 shadow-[0_2px_8px_rgba(26,24,20,0.06)] backdrop-blur-sm">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);
               const isCurrent = m.id === activeId;
@@ -2397,16 +2398,16 @@ export default function FounderWorkspace({
                   key={m.id}
                   type="button"
                   onClick={() => setActiveId(m.id)}
-                  className={`group flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left transition ${
+                  className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-left transition-all duration-200 active:scale-[0.96] ${
                     isCurrent
-                      ? "border-[#B8963E]/40 bg-[#F0E6CC] text-[#8A6A20]"
+                      ? "bg-gradient-to-r from-[#D4B26A] via-[#B8924A] to-[#8B6F35] text-white shadow-[0_4px_12px_rgba(184,146,74,0.35)]"
                       : isDone
-                        ? "border-[#E7DED0] bg-[#F0E6CC]/50 text-[#8A6A20]"
-                        : "border-[#E7DED0] bg-white text-[#6F6A60] hover:border-[#B8963E]/30 hover:text-[#8A6A20]"
+                        ? "bg-[#F0E6CC]/60 text-[#8A6A20] hover:bg-[#F0E6CC]"
+                        : "text-[#6B6557] hover:bg-[#F5EFE0] hover:text-[#1A1814]"
                   }`}
                 >
                   <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    isDone ? "bg-[#B8963E] text-white" : isCurrent ? "bg-[#101015] text-white" : "bg-[#F7F4EE] text-[#6F6A60]"
+                    isDone ? "bg-[#B8924A] text-white" : isCurrent ? "bg-white/20 text-white" : "bg-[#F5EFE0] text-[#6B6557]"
                   }`}>
                     {isDone ? <Check className="h-3 w-3" /> : m.step}
                   </span>
@@ -2414,6 +2415,7 @@ export default function FounderWorkspace({
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
 
@@ -2428,7 +2430,7 @@ export default function FounderWorkspace({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="overflow-hidden rounded-[28px] border border-[#E7DED0] bg-[radial-gradient(circle_at_20%_20%,rgba(184,150,62,0.10),transparent_34%),linear-gradient(135deg,#F7F4EE_0%,#FFFCF7_48%,#F7F4EE_100%)] p-6 shadow-[0_18px_60px_rgba(16,16,21,0.07)] sm:p-7">
+                <div className="kx-grain overflow-hidden rounded-[28px] border border-[#E8E0CC] bg-[radial-gradient(circle_at_20%_20%,rgba(184,150,62,0.10),transparent_34%),linear-gradient(135deg,#F7F4EE_0%,#FFFCF7_48%,#F7F4EE_100%)] p-6 shadow-[var(--shadow-md)] sm:p-7">
                   <div className="mb-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-[#E7DED0] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A6A20] shadow-sm">
                       <Sparkles className="kx-founder-sparkle h-3.5 w-3.5 text-[#B8963E]" />
@@ -2453,8 +2455,8 @@ export default function FounderWorkspace({
                       const Icon = mod.icon;
                       const delayClass = i === 0 ? "kx-founder-in-delay-1" : i === 1 ? "kx-founder-in-delay-2" : i === 2 ? "kx-founder-in-delay-3" : "kx-founder-in-delay-4";
                       return (
-                        <div key={mod.id} className={`kx-founder-in ${delayClass} flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-[#E7DED0] hover:shadow-[0_8px_24px_rgba(16,16,21,0.08)]`}>
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0E6CC] text-[#8A6A20] ring-1 ring-[#E7DED0]">
+                        <div key={mod.id} className={`kx-founder-in ${delayClass} group flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#B8924A]/40 hover:shadow-[0_8px_24px_rgba(26,24,20,0.10)]`}>
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0E6CC] text-[#8A6A20] ring-1 ring-[#E7DED0] transition-transform duration-300 group-hover:rotate-[5deg]">
                             <Icon className="h-4 w-4" />
                           </div>
                           <div className="min-w-0">
@@ -2481,7 +2483,7 @@ export default function FounderWorkspace({
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between rounded-[28px] border border-[#E7DED0] bg-[#FFFCF7] p-5 shadow-[0_18px_60px_rgba(16,16,21,0.08)] sm:p-6">
+                <div className="kx-grain flex flex-col justify-between rounded-[28px] border border-[#E8E0CC] bg-[#FFFCF7] p-5 shadow-[var(--shadow-md)] sm:p-6">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6F6A60]">Point de départ</p>
                     <h3 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[#1A1814] [font-family:var(--font-fraunces,Georgia,serif)]">
@@ -2497,7 +2499,7 @@ export default function FounderWorkspace({
                       rows={7}
                       disabled={briefStarting}
                       placeholder="Ex : Je veux vendre des PC portables performants aux étudiants et jeunes professionnels avec paiement échelonné..."
-                      className={`mt-5 w-full resize-none rounded-2xl border border-[#E7DED0] bg-[#F7F4EE]/70 px-4 py-4 text-base leading-7 text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(184,150,62,0.08)] ${briefStarting ? "opacity-40 cursor-not-allowed" : ""}`}
+                      className={`mt-5 w-full resize-y rounded-2xl border-2 border-[#E8E0CC] bg-white/80 px-5 py-5 text-base italic leading-7 text-[#1A1814] placeholder:not-italic placeholder:text-[#9A9484] transition-all duration-200 focus:border-[#B8924A] focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(184,146,74,0.12)] min-h-[200px] ${briefStarting ? "opacity-40 cursor-not-allowed" : ""}`}
                     />
                   </div>
 
@@ -2506,7 +2508,7 @@ export default function FounderWorkspace({
                       type="button"
                       onClick={startFounderFromBrief}
                       disabled={!starterProject.trim() || briefStarting}
-                      className="kx-founder-shine flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101015] px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] hover:shadow-[0_16px_36px_rgba(16,16,21,0.28)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="group kx-founder-shine flex w-full items-center justify-center gap-2 rounded-[14px] bg-gradient-to-br from-[#1A1814] to-[#252118] px-5 py-[18px] text-base font-semibold text-[#FAF6EE] shadow-[0_12px_30px_rgba(26,24,20,0.28)] transition-all duration-200 hover:shadow-[0_12px_32px_rgba(26,24,20,0.38),0_0_0_1px_rgba(212,178,106,0.3)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {briefStarting ? (
                         <>
@@ -2518,7 +2520,7 @@ export default function FounderWorkspace({
                       ) : (
                         <>
                           {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
-                          <ArrowRight className="h-4 w-4" />
+                          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                         </>
                       )}
                     </button>

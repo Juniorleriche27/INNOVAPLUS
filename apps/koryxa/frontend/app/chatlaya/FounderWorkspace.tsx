@@ -1751,7 +1751,7 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
             <button
               type="button"
               onClick={isExportReady ? onExport : () => setExportConfirm((v) => !v)}
-              className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition active:scale-[0.98] ${isExportReady ? "bg-sky-600 hover:bg-sky-700" : "bg-amber-500 hover:bg-amber-600"}`}
+              className={`flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white shadow-md transition active:scale-[0.98] ${isExportReady ? "bg-[#101015] ring-1 ring-[#B8963E]/30 hover:bg-[#1A1A20]" : "bg-amber-500 hover:bg-amber-600"}`}
             >
               <Download className="h-4 w-4" />
               {isExportReady ? "Télécharger le dossier HTML · Imprimer en PDF" : "Exporter le dossier incomplet"}
@@ -1791,7 +1791,7 @@ function FounderAccountButton({ firstName }: { firstName?: string }) {
       href={href}
       aria-label={label}
       title={label}
-      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-[0_12px_28px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/10 transition hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_16px_34px_rgba(2,132,199,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2"
+      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#101015] text-white shadow-[0_12px_28px_rgba(16,16,21,0.22)] ring-1 ring-[#B8963E]/20 transition hover:-translate-y-0.5 hover:bg-[#B8963E] hover:shadow-[0_16px_34px_rgba(184,150,62,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B8963E] focus-visible:ring-offset-2"
     >
       <UserRound className="h-4 w-4" />
     </a>
@@ -2114,7 +2114,7 @@ export default function FounderWorkspace({
   if (!workspaceLoaded) {
     return (
       <main className="flex h-full min-h-0 items-center justify-center overflow-hidden">
-        <div className="rounded-3xl border border-slate-200/80 bg-white/90 px-6 py-4 text-sm font-medium text-slate-600 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+        <div className="rounded-3xl border border-[#E7DED0] bg-[#FFFCF7]/90 px-6 py-4 text-sm font-medium text-[#6F6A60] shadow-[0_18px_48px_rgba(16,16,21,0.08)]">
           Préparation de l&apos;espace Founder...
         </div>
       </main>
@@ -2124,12 +2124,12 @@ export default function FounderWorkspace({
   if (authRequired) {
     return (
       <main className="flex h-full min-h-[60vh] items-center justify-center">
-        <div className="w-full max-w-md rounded-3xl border border-slate-200/80 bg-white/92 px-7 py-6 text-center shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-amber-100">
-            <UserRound className="h-5 w-5 text-amber-500" />
+        <div className="w-full max-w-md rounded-3xl border border-[#E7DED0] bg-[#FFFCF7]/92 px-7 py-6 text-center shadow-[0_18px_48px_rgba(16,16,21,0.08)]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0E6CC] ring-1 ring-[#E7DED0]">
+            <UserRound className="h-5 w-5 text-[#B8963E]" />
           </div>
-          <p className="text-base font-semibold text-slate-800">Connexion requise pour Founder</p>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          <p className="text-base font-semibold text-[#101015]">Connexion requise pour Founder</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#6F6A60]">
             Connectez-vous pour retrouver vos dossiers Founder, continuer votre cadrage guidé et exporter votre document final.
           </p>
           <div className="mt-5 flex flex-col items-center gap-3">
@@ -2137,7 +2137,7 @@ export default function FounderWorkspace({
               <div className="flex flex-col items-center gap-2">
                 <a
                   href={effectiveLoginHref}
-                  className="inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+                  className="inline-flex items-center justify-center rounded-full bg-[#101015] px-5 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20]"
                 >
                   Se connecter
                 </a>
@@ -2145,7 +2145,7 @@ export default function FounderWorkspace({
                   href={effectiveLoginHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs font-medium text-sky-700 underline underline-offset-4 transition hover:text-sky-900"
+                  className="text-xs font-medium text-[#8A6A20] underline underline-offset-4 transition hover:text-[#101015]"
                 >
                   Ouvrir la connexion Founder dans un nouvel onglet
                 </a>

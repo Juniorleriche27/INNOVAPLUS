@@ -198,9 +198,9 @@ const MODULES: ModuleDef[] = [
   {
     id: "vente",
     step: 6,
-    label: "Message de vente",
+    label: "Pitch & Message de vente",
     tagline: "Comment convaincre et déclencher l'achat ?",
-    description: "Rédigez des messages de vente courts, directs et adaptés à vos canaux.",
+    description: "Transformez votre cadrage en pitch clair, discours commercial et messages adaptés à vos canaux.",
     icon: MessageCircle,
     inputs: [
       {
@@ -248,7 +248,7 @@ const DOC_LABELS: Record<string, { title: string; tagline: string }> = {
   offre:          { title: "Offre & proposition de valeur",   tagline: "Ce que nous apportons" },
   prix:           { title: "Stratégie de prix",               tagline: "Notre modèle tarifaire" },
   business_model: { title: "Modèle économique",               tagline: "Comment nous générons de la valeur" },
-  vente:          { title: "Message de vente",                tagline: "Notre discours commercial" },
+  vente:          { title: "Pitch & Message de vente",        tagline: "Notre discours commercial" },
   business_plan:  { title: "Plan d'action",                   tagline: "Feuille de route et priorités" },
 };
 
@@ -312,8 +312,8 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `${client ? `Mon client : ${short(client, 100)}. ` : ""}` +
         `${probleme ? `Son problème : ${short(probleme, 100)}. ` : ""}` +
         `Je vends via : ${inputs.canal || "mes canaux habituels"}. ` +
-        `Rédige un message de vente court, direct et convaincant adapté à ${inputs.canal || "ce canal"}. ` +
-        `Il doit capter l'attention, montrer la valeur et appeler à l'action. Donne 2 à 3 variantes courtes.`
+        `Aide-moi à transformer ce cadrage en pitch et message de vente convaincant adapté à ${inputs.canal || "ce canal"}. ` +
+        `Il doit clarifier la promesse, capter l'attention, montrer la valeur, lever les objections et appeler à l'action. Donne une base de pitch et 2 à 3 variantes courtes.`
       );
     case "business_plan":
       return (
@@ -461,7 +461,7 @@ function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: Workspa
     `Développe la logique business, les critères, les implications, les nuances et les points de validation utiles. ` +
     `Respecte la structure attendue fournie ci-dessus, avec des titres propres sur lignes séparées. ` +
     `Si le sujet est la cible client, détaille les segments prioritaires, les caractéristiques, les motivations d'achat, les signaux de besoin, les canaux pour les trouver et les hypothèses à valider. ` +
-    `Si le sujet est un autre module, applique le même niveau de profondeur au problème, à l'offre, au prix, au modèle économique, au message de vente ou au plan d'action. ` +
+    `Si le sujet est un autre module, applique le même niveau de profondeur au problème, à l'offre, au prix, au modèle économique, au pitch commercial ou au plan d'action. ` +
     `Reformule proprement, avec substance, précision et cohérence business. ` +
     `N'utilise aucun Markdown visible : pas d'astérisques, pas de #, pas de balises. ` +
     `Ne termine jamais par une phrase de transition du type "la prochaine étape consiste à..." ou une question. ` +
@@ -1981,7 +1981,7 @@ export default function FounderWorkspace({
                       </span>
                     </h2>
                     <p className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600">
-                      Un coach IA vous accompagne étape par étape pour clarifier votre client, votre problème, votre offre, votre prix, votre modèle économique et votre message de vente.
+                      Un coach IA vous accompagne étape par étape pour clarifier votre client, votre problème, votre offre, votre prix, votre modèle économique et votre pitch commercial.
                     </p>
                   </div>
 
@@ -2078,7 +2078,7 @@ export default function FounderWorkspace({
               <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-4">
                 <p className="text-xs font-semibold text-slate-600">Espace de cadrage business guidé</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  En 6 étapes, Founder vous aide à clarifier votre client cible, votre problème, votre offre, votre prix, votre modèle de revenus et votre message de vente — et à rédiger un dossier projet structuré, exportable à la fin du parcours.
+                  En 6 étapes, Founder vous aide à clarifier votre client cible, votre problème, votre offre, votre prix, votre modèle de revenus et votre pitch commercial — et à rédiger un dossier projet structuré, exportable à la fin du parcours.
                 </p>
               </div>
             ) : null}

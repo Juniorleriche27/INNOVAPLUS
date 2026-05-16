@@ -70,8 +70,10 @@ type ModuleState = {
   inputs: Record<string, string>;
   output: string | null;
   previousOutput?: string | null;
+  previousRetention?: string | null;
   status: ModuleStatus;
   retention?: string;
+  finalFeedback?: string;
 };
 
 type WorkspaceData = Record<string, ModuleState>;
@@ -330,6 +332,49 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
   }
 }
 
+function formatInputsForPrompt(mod: ModuleDef, inputs: Record<string, string>): string {
+  const lines = mod.inputs
+    .map((field) => {
+      const value = inputs[field.id]?.trim();
+      if (!value) return "";
+      return `- ${field.label.replace(/\s*\([^)]*\)\s*$/g, "")} : ${value}`;
+    })
+    .filter(Boolean);
+
+  return lines.length ? lines.join("\n") : "- Aucune réponse utilisateur exploitable pour cette étape.";
+}
+
+function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: WorkspaceData): string {
+  const mod = MODULES.find((item) => item.id === moduleId);
+  const docLabel = DOC_LABELS[moduleId] ?? { title: mod?.label ?? "Section dossier", tagline: "" };
+  const priorContext = MODULES
+    .filter((item) => item.id !== moduleId)
+    .map((item) => {
+      const itemState = ws[item.id];
+      const content = itemState?.retention?.trim() || itemState?.output?.trim();
+      if (!content) return "";
+      const label = DOC_LABELS[item.id]?.title ?? item.label;
+      const shortContent = content.length > 900 ? `${content.slice(0, 900)}…` : content;
+      return `## ${label}\n${shortContent}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+
+  return (
+    `Tu es ChatLAYA Founder. Tu dois rédiger la VERSION FINALE DU DOSSIER pour cette étape : "${docLabel.title}".\n\n` +
+    `Rôle du texte final : ${docLabel.tagline || "section utilisable dans un dossier projet"}.\n\n` +
+    `Réponses initiales de l'utilisateur :\n${mod ? formatInputsForPrompt(mod, state.inputs) : "(module introuvable)"}\n\n` +
+    `Diagnostic / cadrage ChatLAYA à prendre en compte :\n${state.output?.trim() || "(aucun diagnostic disponible)"}\n\n` +
+    `Avis, corrections ou ajouts de l'utilisateur :\n${state.finalFeedback?.trim() || "(aucun ajout : l'utilisateur valide le cadrage proposé)"}\n\n` +
+    `${priorContext ? `Contexte déjà cadré dans les autres étapes :\n${priorContext}\n\n` : ""}` +
+    `Consigne de rédaction : produis uniquement la version finale à mettre dans le dossier. ` +
+    `Ne fais pas de coaching, ne pose pas de question, ne dis pas "voici". ` +
+    `Reformule proprement, avec substance, précision et cohérence business. ` +
+    `Structure en paragraphes et/ou points si cela améliore la lisibilité. ` +
+    `Ne réduis pas artificiellement la réponse : elle doit être suffisamment complète pour être utile dans un vrai dossier projet.`
+  );
+}
+
 // ─── Markdown parser ─────────────────────────────────────────────────────────
 
 type MdBlock =
@@ -461,37 +506,72 @@ function FounderOutput({ content }: { content: string }) {
 function RetentionBlock({
   value,
   onChange,
+  feedback,
+  onFeedbackChange,
+  onGenerateFinal,
+  generatingFinal,
   validated,
 }: {
   value: string;
   onChange: (v: string) => void;
+  feedback: string;
+  onFeedbackChange: (v: string) => void;
+  onGenerateFinal: () => void;
+  generatingFinal: boolean;
   validated: boolean;
 }) {
   const isFilled = Boolean(value.trim());
 
   return (
-    <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+    <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <PenLine className="h-3.5 w-3.5 text-violet-600" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-violet-700">
-            Version dossier
+            Finalisation du cadrage
           </span>
         </div>
         <span className="rounded-full bg-white/70 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-violet-500 ring-1 ring-violet-100">
-          {validated ? "validée" : isFilled ? "à valider" : "à compléter"}
+          {validated ? "validée" : isFilled ? "version prête" : "à rédiger"}
         </span>
       </div>
-      <p className="mb-2.5 text-[11px] leading-relaxed text-violet-500">
-        L'analyse ChatLAYA vous aide à cadrer. Cette zone est votre version finale modifiable, celle qui apparaîtra dans le dossier exporté.
-      </p>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Rédigez ici la version finale à garder dans le dossier, avec vos mots et les précisions que vous validez."
-        rows={4}
-        className="w-full resize-none bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
-      />
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-violet-500">
+          Votre avis ou vos ajouts (optionnel)
+        </p>
+        <textarea
+          value={feedback}
+          onChange={(e) => onFeedbackChange(e.target.value)}
+          placeholder="Ex : garde cette idée, mais précise que je cible surtout les PME de services ; ajoute aussi l'angle gain de temps et réduction des coûts."
+          rows={3}
+          className="w-full resize-none rounded-xl border border-violet-100 bg-white/70 px-3.5 py-3 text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:border-violet-200 focus:outline-none"
+        />
+        <p className="mt-2 text-[11px] leading-relaxed text-violet-500">
+          Si vous n'ajoutez rien, Founder considère que vous validez le cadrage et rédige directement la version finale.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onGenerateFinal}
+        disabled={generatingFinal}
+        className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        {generatingFinal ? "Rédaction en cours…" : isFilled ? "Re-rédiger la version finale" : "Rédiger la version finale"}
+      </button>
+      <div className="rounded-xl border border-violet-100 bg-white/70 p-3.5">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-violet-700">Version dossier</p>
+          <span className="text-[9px] font-medium text-violet-400 italic">sera utilisée dans l'export final</span>
+        </div>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="La version finale rédigée par Founder apparaîtra ici. Vous pourrez encore la modifier avant validation."
+          rows={5}
+          className="w-full resize-none bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
+        />
+      </div>
     </div>
   );
 }
@@ -508,20 +588,6 @@ function saveWs(cid: string, data: WorkspaceData) {
 }
 function defaultMs(): ModuleState { return { inputs: {}, output: null, status: "empty" }; }
 function getMs(ws: WorkspaceData, id: string): ModuleState { return ws[id] ?? defaultMs(); }
-function buildRetentionDraft(moduleId: string, state: ModuleState): string {
-  const mod = MODULES.find((item) => item.id === moduleId);
-  if (!mod) return "";
-  const filledInputs = mod.inputs
-    .map((field) => ({
-      label: field.label.replace(/\s*\([^)]*\)\s*$/g, ""),
-      value: (state.inputs[field.id] ?? "").trim(),
-    }))
-    .filter((item) => item.value);
-
-  if (filledInputs.length === 0) return "";
-  if (filledInputs.length === 1) return filledInputs[0].value;
-  return filledInputs.map((item) => `${item.label} : ${item.value}`).join("\n");
-}
 function normalizeTitle(value?: string | null) { return value?.trim() || "Nouvelle conversation"; }
 function formatConversationDate(value?: string | null) {
   if (!value) return "";
@@ -1187,6 +1253,7 @@ export default function FounderWorkspace({
   const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
   const [starterProject, setStarterProject] = useState("");
   const [generating, setGenerating] = useState<string | null>(null);
+  const [finalizing, setFinalizing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedOutput, setCopiedOutput] = useState<string | null>(null);
   const [showSynthesis, setShowSynthesis] = useState(false);
@@ -1232,7 +1299,19 @@ export default function FounderWorkspace({
   }
 
   function updateRetention(moduleId: string, value: string) {
-    setWs((prev) => { const cur = prev[moduleId] ?? defaultMs(); return { ...prev, [moduleId]: { ...cur, retention: value } }; });
+    setWs((prev) => {
+      const cur = prev[moduleId] ?? defaultMs();
+      const status: ModuleStatus = cur.status === "completed" ? "in_progress" : cur.status;
+      return { ...prev, [moduleId]: { ...cur, retention: value, status } };
+    });
+  }
+
+  function updateFinalFeedback(moduleId: string, value: string) {
+    setWs((prev) => {
+      const cur = prev[moduleId] ?? defaultMs();
+      const status: ModuleStatus = cur.status === "completed" ? "in_progress" : cur.status;
+      return { ...prev, [moduleId]: { ...cur, finalFeedback: value, status } };
+    });
   }
 
   function startFounderFromBrief() {
@@ -1248,7 +1327,7 @@ export default function FounderWorkspace({
   }
 
   async function generate(moduleId: string) {
-    if (!conversationId || generating) return;
+    if (!conversationId || generating || finalizing) return;
 
     const current = getMs(ws, moduleId);
     const prompt = buildPrompt(moduleId, current.inputs, ws);
@@ -1316,13 +1395,86 @@ export default function FounderWorkspace({
     }
   }
 
+  async function draftFinal(moduleId: string) {
+    if (!conversationId || generating || finalizing) return;
+
+    const current = getMs(ws, moduleId);
+    if (!current.output?.trim()) return;
+    const prompt = buildFinalDraftPrompt(moduleId, current, ws);
+
+    setError(null);
+    setFinalizing(moduleId);
+    updateMs(moduleId, {
+      previousRetention: current.retention ?? null,
+      retention: "",
+      status: current.status === "completed" ? "in_progress" : current.status,
+    });
+
+    streamAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    streamAbortRef.current = ctrl;
+
+    try {
+      const res = await fetch(apiUrl("/chatlaya/message"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ conversation_id: conversationId, message: prompt }),
+        signal: ctrl.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Erreur de rédaction finale.");
+      }
+      if (!(res.headers.get("content-type") || "").includes("text/event-stream"))
+        throw new Error("Format de réponse inattendu.");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let output = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+        let boundary: number;
+        while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+          const packet = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          if (!packet.trim()) continue;
+          let event = "message";
+          const dataLines: string[] = [];
+          for (const line of packet.split("\n")) {
+            if (line.startsWith("event:")) event = line.slice(6).trim();
+            if (line.startsWith("data:")) dataLines.push(line.slice(5));
+          }
+          const data = dataLines.join("\n");
+          if (event === "token") {
+            output += data;
+            updateMs(moduleId, { retention: output });
+          } else if (event === "done") {
+            updateMs(moduleId, { retention: output, status: "in_progress" });
+            return;
+          } else if (event === "error") throw new Error(data || "Erreur de streaming.");
+        }
+      }
+      if (output) updateMs(moduleId, { retention: output, status: "in_progress" });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setError(err instanceof Error ? err.message : "Erreur inattendue.");
+      updateMs(moduleId, { retention: current.retention ?? "" });
+    } finally {
+      setFinalizing(null);
+    }
+  }
+
   function validate(moduleId: string) {
     const current = getMs(ws, moduleId);
-    const retention = current.retention?.trim() || buildRetentionDraft(moduleId, current);
-    updateMs(moduleId, {
-      status: "completed",
-      ...(retention ? { retention } : {}),
-    });
+    const retention = current.retention?.trim();
+    if (!retention) return;
+    updateMs(moduleId, { status: "completed", retention });
     const idx = MODULES.findIndex((m) => m.id === moduleId);
     const next = MODULES[idx + 1];
     if (next) setActiveId(next.id);
@@ -1359,15 +1511,19 @@ export default function FounderWorkspace({
   const activeModule = MODULES.find((m) => m.id === activeId) ?? MODULES[0];
   const activeMs = getMs(ws, activeId);
   const isGenerating = generating === activeId;
+  const isFinalizing = finalizing === activeId;
+  const canValidateActive = Boolean(activeMs.retention?.trim()) && !isFinalizing;
   const isRevision = activeMs.status === "in_progress" && !!activeMs.previousOutput;
   const hasWorkspaceContent = Object.values(ws).some((state) =>
     state.status !== "empty" ||
     !!state.output ||
     !!state.previousOutput ||
+    !!state.previousRetention ||
     !!state.retention?.trim() ||
+    !!state.finalFeedback?.trim() ||
     Object.values(state.inputs).some((value) => !!value.trim()),
   );
-  const showStarterPanel = workspaceLoaded && !hasWorkspaceContent && !generating;
+  const showStarterPanel = workspaceLoaded && !hasWorkspaceContent && !generating && !finalizing;
 
   const completedCount = REQUIRED_MODULES.filter((m) => getMs(ws, m.id).status === "completed").length;
   const allDone = completedCount === REQUIRED_MODULES.length;
@@ -1863,7 +2019,7 @@ export default function FounderWorkspace({
             {/* Generate button */}
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={() => void generate(activeId)}
-                disabled={!!generating || !conversationId}
+                disabled={!!generating || !!finalizing || !conversationId}
                 className="flex items-center gap-2 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" />
                 {isGenerating ? "Génération en cours…" : activeMs.output ? "Peaufiner avec ChatLAYA" : "Générer avec ChatLAYA"}
@@ -1922,6 +2078,10 @@ export default function FounderWorkspace({
               <RetentionBlock
                 value={activeMs.retention ?? ""}
                 onChange={(v) => updateRetention(activeId, v)}
+                feedback={activeMs.finalFeedback ?? ""}
+                onFeedbackChange={(v) => updateFinalFeedback(activeId, v)}
+                onGenerateFinal={() => void draftFinal(activeId)}
+                generatingFinal={isFinalizing}
                 validated={activeMs.status === "completed"}
               />
             ) : null}
@@ -1931,7 +2091,8 @@ export default function FounderWorkspace({
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 {activeMs.status !== "completed" ? (
                   <button type="button" onClick={() => validate(activeId)}
-                    className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]">
+                    disabled={!canValidateActive}
+                    className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
                     <Check className="h-3.5 w-3.5" />
                     {isRevision ? "Revalider pour le dossier" : "Valider pour le dossier"}
                   </button>
@@ -1950,7 +2111,8 @@ export default function FounderWorkspace({
                 ) : null}
                 {nextModule ? (
                   <button type="button" onClick={() => { if (activeMs.status !== "completed") validate(activeId); else setActiveId(nextModule.id); }}
-                    className="ml-auto flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 active:scale-[0.98]">
+                    disabled={activeMs.status !== "completed" && !canValidateActive}
+                    className="ml-auto flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-5 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
                     {nextModule.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>

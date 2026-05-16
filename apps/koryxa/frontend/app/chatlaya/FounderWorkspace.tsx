@@ -268,22 +268,23 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
   const bizModel = get("business_model");
 
   const short = (s: string, n = 200) => (s.length > n ? s.slice(0, n) + "…" : s);
+  const founderDiagnosticMarker = `CHATLAYA_FOUNDER_GUIDED_DIAGNOSTIC\nÉtape Founder : ${DOC_LABELS[moduleId]?.title ?? moduleId}\n\n`;
 
   switch (moduleId) {
     case "client":
-      return (
+      return founderDiagnosticMarker + (
         `Je travaille sur : ${inputs.activite || "(non précisé)"}. ` +
         `Mon client cible selon moi est : ${inputs.client_idee || "(non précisé)"}. ` +
         `Aide-moi à définir clairement mon client cible : qui il est vraiment, ses caractéristiques principales, ce qui le motive à acheter, et comment le trouver concrètement. Sois précis et actionnable.`
       );
     case "probleme":
-      return (
+      return founderDiagnosticMarker + (
         `Mon client cible est : ${client || "(non défini)"}. ` +
         `Je pense résoudre ce problème : ${inputs.probleme_idee || "(non précisé)"}. ` +
         `Aide-moi à formuler clairement ce problème : en quoi c'est douloureux pour le client, ce qu'il perd ou rate sans solution, et pourquoi ce problème vaut la peine d'être résolu. Sois concret.`
       );
     case "offre":
-      return (
+      return founderDiagnosticMarker + (
         `Mon client ${client ? `est : ${short(client)}` : "(défini à l'étape précédente)"}. ` +
         `${probleme ? `Le problème qu'il rencontre : ${short(probleme)}. ` : ""}` +
         `Mon offre est : ${inputs.offre_detail || "(non précisée)"}. ` +
@@ -291,7 +292,7 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Aide-moi à structurer une proposition de valeur claire et percutante : ce que je propose, pour qui, pourquoi c'est différent, et le bénéfice concret. En 3 à 5 points actionnables.`
       );
     case "prix":
-      return (
+      return founderDiagnosticMarker + (
         `${offre ? `Mon offre : ${short(offre)}. ` : ""}` +
         `Mon client : ${short(client || "(défini précédemment)")}. ` +
         `Je pense facturer : ${inputs.modele_prix || "(non précisé)"}` +
@@ -299,7 +300,7 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Aide-moi à valider ma stratégie de prix : est-ce cohérent avec la valeur apportée, quelles questions je dois me poser, et comment tester mon prix rapidement.`
       );
     case "business_model":
-      return (
+      return founderDiagnosticMarker + (
         `${offre ? `Mon offre : ${short(offre)}. ` : ""}` +
         `${client ? `Mon client : ${short(client)}. ` : ""}` +
         `${prix ? `Mon prix : ${short(prix)}. ` : ""}` +
@@ -307,7 +308,7 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Aide-moi à structurer mon business model : flux de revenus principaux, coûts clés à anticiper, et comment le rendre plus solide ou scalable.`
       );
     case "vente":
-      return (
+      return founderDiagnosticMarker + (
         `${offre ? `Mon offre : ${short(offre, 120)}. ` : ""}` +
         `${client ? `Mon client : ${short(client, 100)}. ` : ""}` +
         `${probleme ? `Son problème : ${short(probleme, 100)}. ` : ""}` +
@@ -316,7 +317,7 @@ function buildPrompt(moduleId: string, inputs: Record<string, string>, ws: Works
         `Il doit clarifier la promesse, capter l'attention, montrer la valeur, lever les objections et appeler à l'action. Donne une base de pitch et 2 à 3 variantes courtes.`
       );
     case "business_plan":
-      return (
+      return founderDiagnosticMarker + (
         `Voici le résumé de mon projet :\n` +
         `- Client cible : ${client || "(à compléter)"}\n` +
         `- Problème résolu : ${short(probleme || "(à définir)")}\n` +

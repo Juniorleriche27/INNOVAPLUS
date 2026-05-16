@@ -28,6 +28,7 @@ CHATLAYA_TIMEOUT_REPLY = (
 )
 FOUNDER_FINAL_DRAFT_MAX_NEW_TOKENS = 1800
 FOUNDER_FINAL_DRAFT_TIMEOUT_SECONDS = 240
+FOUNDER_GUIDED_DIAGNOSTIC_TIMEOUT_SECONDS = 180
 
 GREETING_PHRASES = {
     # Français
@@ -197,6 +198,9 @@ _STRICT_BANNED_LINE_PATTERNS = (
 _ORPHAN_TRANSITION_RE = re.compile(
     r"^(cependant|toutefois|neanmoins|néanmoins|malgre cela|malgré cela|en revanche|par contre)[,.]?\s+",
     re.IGNORECASE,
+)
+_FOUNDER_INTERNAL_MARKER_RE = re.compile(
+    r"(?im)^CHATLAYA_FOUNDER_GUIDED_DIAGNOSTIC\s*\n(?:Étape Founder\s*:[^\n]*\n)?\n?"
 )
 _DEFINITION_PATTERNS = (
     "c est quoi",
@@ -905,6 +909,34 @@ def _is_founder_final_draft_request(message: str) -> bool:
     )
 
 
+def _is_founder_guided_diagnostic_request(message: str) -> bool:
+    normalized = _normalize_text(message)
+    if "chatlaya_founder_guided_diagnostic" in normalized:
+        return True
+
+    founder_patterns = (
+        "aide-moi a definir clairement mon client cible",
+        "aide moi a definir clairement mon client cible",
+        "aide-moi a formuler clairement ce probleme",
+        "aide moi a formuler clairement ce probleme",
+        "aide-moi a structurer une proposition de valeur",
+        "aide moi a structurer une proposition de valeur",
+        "aide-moi a valider ma strategie de prix",
+        "aide moi a valider ma strategie de prix",
+        "aide-moi a structurer mon business model",
+        "aide moi a structurer mon business model",
+        "aide-moi a transformer ce cadrage en pitch",
+        "aide moi a transformer ce cadrage en pitch",
+        "aide-moi a rediger un business plan simple et exploitable",
+        "aide moi a rediger un business plan simple et exploitable",
+    )
+    return any(pattern in normalized for pattern in founder_patterns)
+
+
+def _strip_founder_internal_markers(message: str) -> str:
+    return _FOUNDER_INTERNAL_MARKER_RE.sub("", str(message or "")).strip()
+
+
 def _clean_founder_final_draft_reply(text: str) -> str:
     cleaned = _sanitize_strict_visible_reply(text or "", "", [])
     cleaned = re.sub(r"\*\*([^*\n]+)\*\*", r"\1", cleaned)
@@ -1054,6 +1086,7 @@ def _build_generation_prompt(
     assistant_mode: str = CHATLAYA_MODE_GENERAL,
     web_context: str = "",
 ) -> str:
+    visible_message = _strip_founder_internal_markers(message)
     trimmed_history = _trim_history(message, history)
     if is_strict_assistant_mode(assistant_mode):
         trimmed_history = [item for item in trimmed_history if item.get("role") == "user"]
@@ -1124,6 +1157,17 @@ def _build_generation_prompt(
             "- reste fonde sur les extraits disponibles et ne cite jamais les sources"
         )
 
+    if is_strict_assistant_mode(assistant_mode) and _is_founder_guided_diagnostic_request(message):
+        sections.append(
+            "Instruction speciale Founder diagnostic guide :\n"
+            "- reponds comme un coach de cadrage, pas comme un fallback technique\n"
+            "- produis une analyse utile meme si le contexte documentaire est incomplet\n"
+            "- ne dis jamais 'voici une reponse directement exploitable a partir des elements disponibles'\n"
+            "- ne donne pas une liste generique d'etapes recommandees\n"
+            "- cadre l'idee de l'utilisateur avec des observations, des risques, des pistes de validation et une recommandation claire\n"
+            "- tu peux poser une seule question intelligente a la fin si elle aide vraiment l'utilisateur a clarifier"
+        )
+
     if is_strict_assistant_mode(assistant_mode) and is_founder_final_draft:
         sections.append(
             "Format de reponse attendu pour VERSION FINALE DU DOSSIER :\n"
@@ -1165,7 +1209,7 @@ def _build_generation_prompt(
             "- si utile, explique clairement quel module ou quelle page du site correspond le mieux au besoin\n"
             "- puis 2 a 4 prochaines actions ou points concrets si cela aide vraiment"
         )
-    sections.append(f"Message utilisateur :\n{message}")
+    sections.append(f"Message utilisateur :\n{visible_message}")
     return "\n\n".join(section for section in sections if section.strip())
 
 
@@ -1188,11 +1232,13 @@ async def generate_chat_reply(
 
     message_kind = _classify_message_kind(message)
     is_founder_final_draft = _is_founder_final_draft_request(message)
+    is_founder_guided_diagnostic = _is_founder_guided_diagnostic_request(message)
     direct_reply = _build_direct_reply(message_kind, assistant_mode=assistant_mode)
     if direct_reply:
         return direct_reply, []
 
-    retrieval_message = _clean_message_for_retrieval(message)
+    visible_message = _strip_founder_internal_markers(message)
+    retrieval_message = _clean_message_for_retrieval(visible_message)
     if is_strict_assistant_mode(assistant_mode) and _is_deep_explanation_request(message):
         previous_message = _previous_user_message(history, message)
         if previous_message:
@@ -1256,6 +1302,8 @@ async def generate_chat_reply(
         primary_timeout_s = generation_timeout_s
     if is_founder_final_draft:
         primary_timeout_s = max(primary_timeout_s, FOUNDER_FINAL_DRAFT_TIMEOUT_SECONDS)
+    elif is_founder_guided_diagnostic:
+        primary_timeout_s = max(primary_timeout_s, FOUNDER_GUIDED_DIAGNOSTIC_TIMEOUT_SECONDS)
 
     async def _generate_once(provider: str, model: str | None, timeout_s: int | None = None) -> str:
         effective_timeout_s = timeout_s or generation_timeout_s
@@ -1282,6 +1330,8 @@ async def generate_chat_reply(
         logger.warning("ChatLAYA primary generation timed out after %ss", primary_timeout_s)
         if is_founder_final_draft:
             raise RuntimeError("Founder final draft generation timed out") from exc
+        if is_founder_guided_diagnostic:
+            raise RuntimeError("Founder guided diagnostic generation timed out") from exc
         if is_strict_assistant_mode(assistant_mode) and rag_results:
             final_reply = _build_strict_action_fallback(message, rag_results)
             return final_reply, rag_results
@@ -1291,6 +1341,8 @@ async def generate_chat_reply(
         logger.warning("ChatLAYA generation failed: %s", exc)
         if is_founder_final_draft:
             raise
+        if is_founder_guided_diagnostic:
+            raise
         if is_strict_assistant_mode(assistant_mode) and rag_results:
             final_reply = _build_strict_action_fallback(message, rag_results)
             return final_reply, rag_results
@@ -1298,6 +1350,8 @@ async def generate_chat_reply(
 
     if is_founder_final_draft and not (response_text or "").strip():
         raise RuntimeError("Founder final draft generation returned an empty response")
+    if is_founder_guided_diagnostic and not (response_text or "").strip():
+        raise RuntimeError("Founder guided diagnostic generation returned an empty response")
 
     if (
         is_strict_assistant_mode(assistant_mode)
@@ -1331,6 +1385,8 @@ async def generate_chat_reply(
         else:
             final_reply = _sanitize_strict_visible_reply(response_text or "", message, rag_results)
             final_reply = _ensure_strict_answer_frame(final_reply, message)
+            if is_founder_guided_diagnostic and final_reply == _build_strict_action_fallback(message, rag_results):
+                raise RuntimeError("Founder guided diagnostic resolved to strict fallback")
     else:
         final_reply = (response_text or "").strip() or FALLBACK_REPLY
         final_reply = _strip_dummy_sources(final_reply)

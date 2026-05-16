@@ -653,6 +653,37 @@ function RetentionBlock({
   validated: boolean;
 }) {
   const isFilled = Boolean(value.trim());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!generatingFinal) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setElapsedSeconds((current) => current + 1);
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [generatingFinal]);
+
+  const progressSteps = [
+    "J'analyse le diagnostic et vos ajouts",
+    "Je structure les idées en version dossier",
+    "Je peaufine le fond, la clarté et les nuances",
+    "Je nettoie la formulation finale",
+  ];
+  const activeProgressStep = elapsedSeconds < 25 ? 0 : elapsedSeconds < 80 ? 1 : elapsedSeconds < 140 ? 2 : 3;
+  const progressMessage =
+    elapsedSeconds < 25
+      ? "Je suis en train d'identifier les points les plus importants à conserver."
+      : elapsedSeconds < 80
+        ? "Je transforme le cadrage en document structuré, lisible et exploitable."
+        : elapsedSeconds < 140
+          ? "Je peaufine les formulations pour obtenir un rendu plus professionnel."
+          : "Patientez encore un instant, la version finale est presque prête.";
+  const progressPercent = Math.min(92, Math.max(12, Math.round((elapsedSeconds / 180) * 100)));
 
   return (
     <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
@@ -689,8 +720,55 @@ function RetentionBlock({
         className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Sparkles className="h-3.5 w-3.5" />
-        {generatingFinal ? "Rédaction en cours…" : isFilled ? "Re-rédiger la version finale complète" : "Rédiger la version finale complète"}
+        {generatingFinal ? "Founder prépare le document…" : isFilled ? "Re-rédiger la version finale complète" : "Rédiger la version finale complète"}
       </button>
+      {generatingFinal ? (
+        <div className="rounded-2xl border border-violet-200 bg-white/80 p-4 shadow-[0_12px_35px_rgba(124,58,237,0.08)]">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-bold text-violet-950">Préparation d'un document complet</p>
+              <p className="mt-1 text-xs leading-relaxed text-violet-600">
+                Pour un meilleur rendu, Founder peut prendre 2 à 3 minutes afin de bien analyser, structurer et peaufiner la version dossier.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+              {Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, "0")}
+            </span>
+          </div>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 transition-all duration-700"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {progressSteps.map((step, index) => {
+              const isActive = index === activeProgressStep;
+              const isDone = index < activeProgressStep;
+              return (
+                <div
+                  key={step}
+                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${
+                    isActive
+                      ? "border-violet-200 bg-violet-50 text-violet-900"
+                      : isDone
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : "border-slate-100 bg-slate-50 text-slate-400"
+                  }`}
+                >
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                    isDone ? "bg-emerald-500 text-white" : isActive ? "bg-violet-600 text-white" : "bg-white text-slate-400"
+                  }`}>
+                    {isDone ? <Check className="h-3 w-3" /> : index + 1}
+                  </span>
+                  <span>{step}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 animate-pulse text-xs font-medium text-violet-700">{progressMessage}</p>
+        </div>
+      ) : null}
       <div className="rounded-xl border border-violet-100 bg-white/70 p-3.5">
         <div className="mb-2 flex items-center justify-between gap-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-violet-700">Version dossier</p>

@@ -1,6 +1,15 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Fraunces } from "next/font/google";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
 import { headers } from "next/headers";
 
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -59,7 +68,7 @@ export default async function RootLayout(props: { children: ReactNode }) {
   const autonomousChatlayaHost = normalizedHost === "chatlaya.innovaplus.africa";
 
   return (
-    <html lang="fr" data-app-host={normalizedHost}>
+    <html lang="fr" data-app-host={normalizedHost} className={fraunces.variable}>
       <head>
         <meta charSet="utf-8" />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />

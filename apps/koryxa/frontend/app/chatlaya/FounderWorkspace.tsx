@@ -7,6 +7,7 @@ import {
   Copy, Download, BookOpen, PenLine, AlertCircle, UserRound, Menu, Archive,
   MessageSquarePlus, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
 function apiUrl(path: string): string {
@@ -753,12 +754,12 @@ function RetentionBlock({
                     isActive
                       ? "border-[#E7DED0] bg-[#FFFCF7] text-[#101015]"
                       : isDone
-                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        ? "border-[#E7DED0] bg-[#F0E6CC]/50 text-[#8A6A20]"
                         : "border-[#E7DED0] bg-[#F7F4EE] text-[#6F6A60]"
                   }`}
                 >
                   <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                    isDone ? "bg-emerald-500 text-white" : isActive ? "bg-[#B8963E] text-white" : "bg-white text-[#6F6A60]"
+                    isDone ? "bg-[#B8963E] text-white" : isActive ? "bg-[#B8963E] text-white" : "bg-white text-[#6F6A60]"
                   }`}>
                     {isDone ? <Check className="h-3 w-3" /> : index + 1}
                   </span>
@@ -1642,24 +1643,24 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
 
       {/* Export confirmation — shown when required sections have no user formulation */}
       {exportConfirm ? (
-        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-5 py-3">
+        <div className="shrink-0 border-b border-[#E7DED0] bg-[#F0E6CC]/50 px-5 py-3">
           <div className="flex flex-wrap items-start gap-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#B8963E]" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-amber-800">
+              <p className="text-xs font-semibold text-[#3A3020]">
                 {withoutFormulation.length} section{withoutFormulation.length > 1 ? "s" : ""} sans formulation — le document exporté affichera des espaces vides à ces endroits.
               </p>
-              <p className="mt-0.5 text-[11px] text-amber-700">
+              <p className="mt-0.5 text-[11px] text-[#6F4E20]">
                 Sections : {withoutFormulation.map((m) => DOC_LABELS[m.id]?.title ?? m.label).join(", ")}. Le contenu coaching ne sera pas inclus.
               </p>
             </div>
             <div className="flex shrink-0 gap-2">
               <button type="button" onClick={() => setExportConfirm(false)}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100">
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-[#8A6A20] transition hover:bg-[#F0E6CC]">
                 Annuler
               </button>
               <button type="button" onClick={() => { setExportConfirm(false); onExport(); }}
-                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700">
+                className="rounded-lg bg-[#101015] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1A1A20]">
                 Exporter quand même
               </button>
             </div>
@@ -1673,14 +1674,14 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
 
           {/* Missing formulation hint */}
           {withoutFormulation.length > 0 ? (
-            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="mb-6 rounded-xl border border-[#E7DED0] bg-[#F0E6CC]/50 px-4 py-3">
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#B8963E]" />
                 <div>
-                  <p className="text-xs font-semibold text-amber-800">
+                  <p className="text-xs font-semibold text-[#3A3020]">
                     {withoutFormulation.length} section{withoutFormulation.length > 1 ? "s" : ""} sans formulation finale
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-[#6F4E20]">
                     <span className="font-medium">{withoutFormulation.map((m) => m.label).join(", ")}</span>
                     {" "}— ces sections apparaîtront comme non finalisées dans le document exporté. Le contenu coaching n'y sera pas inclus.
                     Retournez dans chaque étape pour rédiger votre formulation propre.
@@ -1720,7 +1721,7 @@ function SynthesisView({ ws, modules, firstName, onBack, onExport }: SynthesisVi
                       </p>
                       <p className="text-sm font-bold text-[#101015]">{docLabel.title}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    <div className="kx-founder-validated flex items-center gap-1.5 rounded-full bg-[#F0E6CC]/70 px-3 py-1 text-[11px] font-semibold text-[#8A6A20] ring-1 ring-[#E7DED0]">
                       <Check className="h-3 w-3" />
                       Validée
                     </div>
@@ -2368,7 +2369,7 @@ export default function FounderWorkspace({
             <div className="flex-1 lg:hidden" />
             <div className="flex shrink-0 items-center gap-2">
               {activeMs.status === "completed" ? (
-                <div className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200 lg:inline-flex">
+                <div className="kx-founder-validated hidden items-center gap-1.5 rounded-full bg-[#F0E6CC]/70 px-3 py-1 text-[11px] font-semibold text-[#8A6A20] ring-1 ring-[#E7DED0] lg:inline-flex">
                   <Check className="h-3 w-3" />
                   Validée
                 </div>
@@ -2390,12 +2391,12 @@ export default function FounderWorkspace({
                     isCurrent
                       ? "border-[#B8963E]/40 bg-[#F0E6CC] text-[#8A6A20]"
                       : isDone
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "border-[#E7DED0] bg-[#F0E6CC]/50 text-[#8A6A20]"
                         : "border-[#E7DED0] bg-white text-[#6F6A60] hover:border-[#B8963E]/30 hover:text-[#8A6A20]"
                   }`}
                 >
                   <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    isDone ? "bg-emerald-500 text-white" : isCurrent ? "bg-[#101015] text-white" : "bg-[#F7F4EE] text-[#6F6A60]"
+                    isDone ? "bg-[#B8963E] text-white" : isCurrent ? "bg-[#101015] text-white" : "bg-[#F7F4EE] text-[#6F6A60]"
                   }`}>
                     {isDone ? <Check className="h-3 w-3" /> : m.step}
                   </span>
@@ -2408,22 +2409,27 @@ export default function FounderWorkspace({
 
         {/* Scrollable content */}
         <div ref={contentRef}
-          className="sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]">
+          className="founder-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-6 touch-pan-y [-webkit-overflow-scrolling:touch]">
           <div className={showStarterPanel ? "mx-auto flex min-h-full w-full max-w-5xl items-center py-2" : "mx-auto max-w-2xl space-y-5"}>
             {showStarterPanel ? (
-              <div className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_410px]">
+              <motion.div
+                className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_410px]"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <div className="overflow-hidden rounded-[28px] border border-[#E7DED0] bg-[radial-gradient(circle_at_20%_20%,rgba(184,150,62,0.10),transparent_34%),linear-gradient(135deg,#F7F4EE_0%,#FFFCF7_48%,#F7F4EE_100%)] p-6 shadow-[0_18px_60px_rgba(16,16,21,0.07)] sm:p-7">
                   <div className="mb-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-[#E7DED0] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A6A20] shadow-sm">
-                      <Sparkles className="h-3.5 w-3.5 text-[#B8963E]" />
+                      <Sparkles className="kx-founder-sparkle h-3.5 w-3.5 text-[#B8963E]" />
                       ChatLAYA Founder
                     </div>
                   </div>
 
                   <div className="max-w-2xl">
-                    <h2 className="text-[30px] font-black leading-[1.05] tracking-tight text-[#101015] sm:text-[38px]">
+                    <h2 className="text-[30px] font-semibold leading-[1.05] tracking-[-0.02em] text-[#1A1814] [font-family:var(--font-fraunces,Georgia,serif)] sm:text-[38px]">
                       Cadrez votre projet.
-                      <span className="block bg-gradient-to-r from-[#B8963E] via-[#8A6A20] to-[#101015] bg-clip-text text-transparent">
+                      <span className="block bg-gradient-to-r from-[#D4B26A] via-[#B8963E] to-[#8A6A20] bg-clip-text text-transparent">
                         Repartez avec un dossier exploitable.
                       </span>
                     </h2>
@@ -2433,10 +2439,11 @@ export default function FounderWorkspace({
                   </div>
 
                   <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
-                    {REQUIRED_MODULES.map((mod) => {
+                    {REQUIRED_MODULES.map((mod, i) => {
                       const Icon = mod.icon;
+                      const delayClass = i === 0 ? "kx-founder-in-delay-1" : i === 1 ? "kx-founder-in-delay-2" : i === 2 ? "kx-founder-in-delay-3" : "kx-founder-in-delay-4";
                       return (
-                        <div key={mod.id} className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur">
+                        <div key={mod.id} className={`kx-founder-in ${delayClass} flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-[#E7DED0] hover:shadow-[0_8px_24px_rgba(16,16,21,0.08)]`}>
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0E6CC] text-[#8A6A20] ring-1 ring-[#E7DED0]">
                             <Icon className="h-4 w-4" />
                           </div>
@@ -2467,7 +2474,7 @@ export default function FounderWorkspace({
                 <div className="flex flex-col justify-between rounded-[28px] border border-[#E7DED0] bg-[#FFFCF7] p-5 shadow-[0_18px_60px_rgba(16,16,21,0.08)] sm:p-6">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6F6A60]">Point de départ</p>
-                    <h3 className="mt-2 text-xl font-black tracking-tight text-[#101015]">
+                    <h3 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[#1A1814] [font-family:var(--font-fraunces,Georgia,serif)]">
                       Décrivez votre projet en quelques phrases.
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-[#6F6A60]">
@@ -2488,7 +2495,7 @@ export default function FounderWorkspace({
                       type="button"
                       onClick={startFounderFromBrief}
                       disabled={!starterProject.trim()}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101015] px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="kx-founder-shine flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101015] px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] hover:shadow-[0_16px_36px_rgba(16,16,21,0.28)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
                       <ArrowRight className="h-4 w-4" />
@@ -2516,7 +2523,7 @@ export default function FounderWorkspace({
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ) : (
               <>
 
@@ -2534,7 +2541,7 @@ export default function FounderWorkspace({
             {allDone ? (
               <div className="rounded-2xl border border-[#B8963E]/30 bg-gradient-to-r from-[#F0E6CC]/40 to-[#FFFCF7] px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#B8963E] text-white">
                     <Check className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -2552,12 +2559,12 @@ export default function FounderWorkspace({
 
             {/* Revision banner (AXE 1) */}
             {isRevision && !isGenerating ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3">
+              <div className="rounded-xl border border-[#E7DED0] bg-[#F0E6CC]/40 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <p className="text-xs font-semibold text-amber-800">Mode révision</p>
+                  <RotateCcw className="h-3.5 w-3.5 shrink-0 text-[#B8963E]" />
+                  <p className="text-xs font-semibold text-[#3A3020]">Mode révision</p>
                 </div>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-amber-700">
+                <p className="mt-0.5 text-[11px] leading-relaxed text-[#6F4E20]">
                   Modifiez vos réponses ci-dessous et régénérez pour affiner, ou revalidez directement la version existante.
                 </p>
               </div>
@@ -2662,19 +2669,19 @@ export default function FounderWorkspace({
                 {activeMs.status !== "completed" ? (
                   <button type="button" onClick={() => validate(activeId)}
                     disabled={!canValidateActive}
-                    className="flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
+                    className="flex items-center gap-2 rounded-full bg-[#101015] px-5 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45">
                     <Check className="h-3.5 w-3.5" />
                     {isRevision ? "Revalider pour le dossier" : "Valider pour le dossier"}
                   </button>
                 ) : (
-                  <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                  <div className="kx-founder-validated flex items-center gap-2 rounded-full bg-[#F0E6CC]/60 px-4 py-2 text-sm font-semibold text-[#8A6A20] ring-1 ring-[#E7DED0]">
                     <Check className="h-3.5 w-3.5" />
                     Version dossier validée
                   </div>
                 )}
                 {activeMs.status === "completed" ? (
                   <button type="button" onClick={() => reopen(activeId)}
-                    className="flex items-center gap-1.5 rounded-full border border-[#E7DED0] px-4 py-2 text-sm font-medium text-[#6F6A60] transition hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700">
+                    className="flex items-center gap-1.5 rounded-full border border-[#E7DED0] px-4 py-2 text-sm font-medium text-[#6F6A60] transition hover:border-[#B8963E]/40 hover:bg-[#F0E6CC]/40 hover:text-[#8A6A20]">
                     <RotateCcw className="h-3.5 w-3.5" />
                     Modifier cette étape
                   </button>

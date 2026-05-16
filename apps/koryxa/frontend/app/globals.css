@@ -615,6 +615,80 @@ main#content > footer {
   }
 }
 
+/* ── Founder Design System ──────────────────────────────────────────────── */
+@theme {
+  --font-fraunces: var(--font-fraunces, 'Fraunces', Georgia, 'Times New Roman', serif);
+}
+
+/* Founder CTA button shine sweep */
+@keyframes kx-founder-shine {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(320%) skewX(-20deg); }
+}
+
+.kx-founder-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.kx-founder-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(110deg, transparent, rgba(212, 178, 106, 0.2), transparent);
+  animation: kx-founder-shine 2.8s ease-in-out infinite;
+}
+
+/* Sparkle icon pulse on badge */
+@keyframes kx-founder-sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  50% { transform: scale(1.2) rotate(15deg); opacity: 1; }
+}
+
+.kx-founder-sparkle {
+  animation: kx-founder-sparkle 2.2s ease-in-out infinite;
+}
+
+/* Validated state glow */
+@keyframes kx-founder-validated {
+  0%, 100% { box-shadow: 0 0 0 rgba(184, 150, 62, 0); }
+  50% { box-shadow: 0 0 10px rgba(184, 150, 62, 0.3); }
+}
+
+.kx-founder-validated {
+  animation: kx-founder-validated 2.4s ease-in-out infinite;
+}
+
+/* Entrance animations for Founder starter panel */
+@keyframes kx-founder-fade-up {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.kx-founder-in {
+  animation: kx-founder-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.kx-founder-in-delay-1 { animation-delay: 0.08s; }
+.kx-founder-in-delay-2 { animation-delay: 0.16s; }
+.kx-founder-in-delay-3 { animation-delay: 0.24s; }
+.kx-founder-in-delay-4 { animation-delay: 0.32s; }
+
+/* Fine gold scrollbar for founder panels */
+.founder-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 150, 62, 0.3) transparent;
+}
+
+.founder-scroll::-webkit-scrollbar { width: 4px; }
+.founder-scroll::-webkit-scrollbar-track { background: transparent; }
+.founder-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(184, 150, 62, 0.3);
+  border-radius: 9999px;
+}
+
 /* ── ThinkingIndicator (ChatLAYA réfléchit) ─────────────────────────── */
 .kx-thinking-dot {
   animation: kx-wave 1.1s ease-in-out infinite;

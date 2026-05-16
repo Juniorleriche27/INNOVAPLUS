@@ -2686,7 +2686,13 @@ export default function FounderWorkspace({
                     {nextModule.label}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
-                ) : null}
+                ) : (
+                  <button type="button" onClick={exportToHtml}
+                    className="ml-auto flex items-center gap-2 rounded-full bg-[#101015] px-5 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.98]">
+                    <Download className="h-3.5 w-3.5 text-[#B8963E]" />
+                    Exporter le dossier
+                  </button>
+                )}
               </div>
             ) : null}
 

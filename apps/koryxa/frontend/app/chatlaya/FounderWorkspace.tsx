@@ -868,12 +868,100 @@ function getDocContent(mws: ModuleState): string | null {
   return mws.retention?.trim() || null;
 }
 
-function extractCardSummary(mws: ModuleState, max = 110): string {
-  const content = mws.retention?.trim();
-  if (!content) return "";
-  const clean = content.replace(/^#{1,3}\s+/gm, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/`/g, "").trim();
-  const sentence = clean.split(/\.\s/)[0].replace(/\n/g, " ");
-  return sentence.length > max ? sentence.slice(0, max) + "…" : sentence;
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function cleanExportText(value: string): string {
+  return value
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+    .replace(/\*([^*\n]+)\*/g, "$1")
+    .replace(/`([^`\n]+)`/g, "$1")
+    .trim();
+}
+
+function splitExportParagraphs(value: string): string[] {
+  return cleanExportText(value)
+    .split(/\n\s*\n/g)
+    .map((item) => item.replace(/\n/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function buildSectionHeadline(label: string): string {
+  const words = label.split(/\s+/);
+  if (words.length <= 3) return escapeHtml(label);
+  const mid = Math.ceil(words.length / 2);
+  return `${escapeHtml(words.slice(0, mid).join(" "))}<br>${escapeHtml(words.slice(mid).join(" "))}`;
+}
+
+function buildEditorialContentHtml(retention: string, docLabel: { title: string; tagline: string }, index: number): string {
+  const paragraphs = splitExportParagraphs(retention);
+  if (!paragraphs.length) return "";
+
+  const intro = paragraphs[0];
+  const rest = paragraphs.slice(1);
+  const leadIndex = Math.min(1, rest.length - 1);
+  const lead = leadIndex >= 0 ? rest[leadIndex] : intro;
+  const normalBlocks = rest.filter((_, idx) => idx !== leadIndex);
+  const firstBlocks = normalBlocks.slice(0, 2);
+  const remainingBlocks = normalBlocks.slice(2);
+  const sectionTone = index % 3;
+
+  const firstHtml = firstBlocks.length
+    ? `<div class="block">
+        <div class="block-title">${escapeHtml(docLabel.title)}</div>
+        ${firstBlocks.map((item) => `<p>${inlineToHtml(item)}</p>`).join("")}
+      </div>`
+    : "";
+
+  const calloutHtml = lead
+    ? `<div class="callout">
+        <div class="callout-label">Synthèse stratégique</div>
+        <p>${inlineToHtml(lead)}</p>
+      </div>`
+    : "";
+
+  const grouped = remainingBlocks.reduce<string[][]>((acc, item, idx) => {
+    const groupIndex = Math.floor(idx / 2);
+    if (!acc[groupIndex]) acc[groupIndex] = [];
+    acc[groupIndex].push(item);
+    return acc;
+  }, []);
+
+  const detailHtml = grouped.map((group, groupIndex) => {
+    if (group.length === 2 && groupIndex === 0) {
+      return `<div class="two-col">
+        ${group.map((item, cardIndex) => `<div class="card">
+          <div class="card-title">${cardIndex === 0 ? "Point d'appui" : "Angle de validation"}</div>
+          <p>${inlineToHtml(item)}</p>
+        </div>`).join("")}
+      </div>`;
+    }
+    if (group.length >= 2 && sectionTone === 1) {
+      return `<div class="criteria">
+        ${group.map((item, itemIndex) => `<div class="criteria-item">
+          <div class="criteria-num">${groupIndex * 2 + itemIndex + 1}</div>
+          <div class="criteria-text">${inlineToHtml(item)}</div>
+        </div>`).join("")}
+      </div>`;
+    }
+    if (group.length >= 2 && sectionTone === 2) {
+      return `<div class="pillars">
+        ${group.slice(0, 3).map((item, itemIndex) => `<div class="pillar">
+          <div class="pillar-num">${itemIndex + 1}</div>
+          <div class="pillar-title">Pilier ${itemIndex + 1}</div>
+          <p>${inlineToHtml(item)}</p>
+        </div>`).join("")}
+      </div>`;
+    }
+    return `<div class="block">
+      <div class="block-title">${groupIndex === 0 ? "Développement" : "Précision complémentaire"}</div>
+      ${group.map((item) => `<p>${inlineToHtml(item)}</p>`).join("")}
+    </div>`;
+  }).join("");
+
+  return `${firstHtml}${calloutHtml}${detailHtml}`;
 }
 
 function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?: string): string {
@@ -886,353 +974,620 @@ function generateHtmlExport(ws: WorkspaceData, modules: ModuleDef[], firstName?:
   const missingFormulation = completed.filter((m) => !m.optional && !getMs(ws, m.id).retention?.trim());
   const isDossierComplete = requiredWithFormulation === requiredTotal;
 
-  // Summary cards — ONLY if user formulation exists (never coaching fallback)
-  const summaryIds = ["client", "offre", "prix"];
-  const summaryCards = summaryIds.map((id) => {
-    const mws = getMs(ws, id);
-    if (mws.status !== "completed") return "";
-    const summary = extractCardSummary(mws);
-    if (!summary) return "";
-    const label = DOC_LABELS[id];
-    return `<div class="card">
-      <div class="card-label">${label.title}</div>
-      <div class="card-value">${inlineToHtml(summary)}</div>
-    </div>`;
-  }).filter(Boolean).join("");
+  const displayName = firstName?.trim() || "Projet Founder";
+  const exportSections = completed.length ? completed : modules.filter((m) => getMs(ws, m.id).retention?.trim());
+  const coverPills = exportSections.slice(0, 6).map((mod) => {
+    const label = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
+    return `<span class="section-pill">${escapeHtml(label.title)}</span>`;
+  }).join("");
 
   // Incomplete document banner — shown when required sections lack user formulation
   const incompleteHtml = missingFormulation.length > 0 ? `
-  <div class="incomplet-banner">
-    <strong>Dossier incomplet</strong>
-    <p>${missingFormulation.length} section${missingFormulation.length > 1 ? "s" : ""} sans formulation rédigée : <strong>${missingFormulation.map((m) => DOC_LABELS[m.id]?.title ?? m.label).join(", ")}</strong>. Ces sections apparaissent comme non finalisées ci-dessous. Retournez dans l'espace de travail pour rédiger vos formulations dossier.</p>
+  <div class="alert-box export-alert">
+    <div class="alert-title">Dossier incomplet</div>
+    <p>${missingFormulation.length} section${missingFormulation.length > 1 ? "s" : ""} sans formulation rédigée : <strong>${missingFormulation.map((m) => escapeHtml(DOC_LABELS[m.id]?.title ?? m.label)).join(", ")}</strong>. Ces sections apparaissent comme non finalisées ci-dessous.</p>
   </div>` : "";
 
   // Section bodies — STRICT: only user formulation, never AI coaching output
-  const sections = completed.map((mod, idx) => {
+  const sections = exportSections.map((mod, idx) => {
     const mws = getMs(ws, mod.id);
     const docLabel = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
     const retention = getDocContent(mws);
+    const sectionNumber = String(idx + 1).padStart(2, "0");
 
-    const contentHtml = retention
-      ? `<div class="prose-text">${retention.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>").replace(/^/, "<p>").replace(/$/, "</p>")}</div>`
-      : `<div class="section-incomplete">
-          <span class="section-incomplete-label">Formulation non rédigée</span>
-          <p class="section-incomplete-hint">Cette section a été analysée en mode coaching mais la formulation finale n'a pas encore été rédigée. Le contenu coaching n'est pas inclus dans ce dossier.</p>
+    const contentHtml = retention ? buildEditorialContentHtml(retention, docLabel, idx) : `
+        <div class="alert-box">
+          <div class="alert-title">Formulation non rédigée</div>
+          <p>Cette section a été analysée en mode coaching, mais sa version dossier finale n'a pas encore été rédigée. Le contenu coaching n'est pas inclus dans ce document.</p>
         </div>`;
 
     return `
-    <div class="section">
-      <div class="section-head">
-        <div class="section-num">0${mod.step}</div>
-        <div class="section-info">
-          <div class="section-bar${retention ? "" : " section-bar-missing"}"></div>
-          <div class="section-title">${docLabel.title}</div>
-          <div class="section-tagline">${docLabel.tagline}</div>
-        </div>
-      </div>
-      <div class="section-body">
-        <div class="content">${contentHtml}</div>
-      </div>
+  <section class="section" id="s${sectionNumber}">
+    <div class="section-sidebar">
+      <span class="section-num">${sectionNumber}</span>
+      <span class="section-label">${escapeHtml(docLabel.title)}</span>
+      <span class="section-title-side">${escapeHtml(docLabel.tagline)}</span>
     </div>
-    ${idx < completed.length - 1 ? '<hr class="rule">' : ""}`;
+    <div class="section-content">
+      <h2 class="section-headline">${buildSectionHeadline(docLabel.title)}</h2>
+      <p class="section-subtitle">${escapeHtml(docLabel.tagline)}</p>
+      ${contentHtml}
+    </div>
+  </section>`;
+  }).join("\n");
+
+  const toc = exportSections.map((mod, idx) => {
+    const docLabel = DOC_LABELS[mod.id] ?? { title: mod.label, tagline: mod.tagline };
+    const sectionNumber = String(idx + 1).padStart(2, "0");
+    return `<a href="#s${sectionNumber}" class="toc-item">
+        <div class="toc-item-num">${sectionNumber}</div>
+        <div class="toc-item-content">
+          <div class="toc-item-title">${escapeHtml(docLabel.title)}</div>
+          <div class="toc-item-desc">${escapeHtml(docLabel.tagline)}</div>
+        </div>
+      </a>`;
   }).join("\n");
 
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dossier Projet${firstName ? ` · ${firstName}` : ""} — KORYXA Founder</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --blue:        #0ea5e9;
-    --blue-dk:     #0284c7;
-    --violet:      #7c3aed;
-    --ink:         #0f172a;
-    --ink-mid:     #334155;
-    --ink-light:   #64748b;
-    --ink-faint:   #94a3b8;
-    --surface:     #f8fafc;
-    --border:      #e2e8f0;
-    --border-lite: #f1f5f9;
-    --green:       #16a34a;
-    --green-bg:    #f0fdf4;
-    --green-bd:    #bbf7d0;
+    --ink: #0D0D0F;
+    --paper: #F5F2EC;
+    --gold: #B8963E;
+    --gold-light: #D4AE5C;
+    --gold-pale: #F0E6CC;
+    --smoke: #E8E4DC;
+    --mist: #C8C3B8;
+    --charcoal: #2C2C30;
+    --accent-red: #8B2020;
   }
 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
-    background: #fff;
+    background: var(--paper);
     color: var(--ink);
-    line-height: 1.65;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* ─ Sticky print bar ─ */
-  .print-bar {
+  .print-action {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 20;
     background: var(--ink);
     color: #fff;
-    padding: 11px 24px;
+    border: 1px solid rgba(184,150,62,0.45);
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.22);
+  }
+
+  .cover {
+    min-height: 100vh;
+    background: var(--ink);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 56px 72px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle at top right, rgba(184,150,62,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 320px; height: 2px;
+    background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+  }
+  .cover-header, .cover-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+  }
+  .brand-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .cover-meta {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--mist);
+    letter-spacing: 0.05em;
+    line-height: 2;
+  }
+  .cover-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0 40px;
+    position: relative;
+    z-index: 1;
+  }
+  .cover-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    font-size: 12px;
+    gap: 16px;
   }
-  .print-bar-label {
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    font-size: 11px;
-    text-transform: uppercase;
-    opacity: 0.55;
+  .cover-tag::before {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--gold);
   }
-  .print-btn {
-    background: var(--blue);
+  .cover-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(52px, 6vw, 88px);
+    line-height: 1.0;
     color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    letter-spacing: 0.01em;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
   }
-  .print-btn:hover { background: var(--blue-dk); }
+  .cover-title em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+  .cover-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--mist);
+    margin-top: 24px;
+    font-style: italic;
+  }
+  .cover-divider {
+    width: 80px; height: 1px;
+    background: var(--gold);
+    margin: 40px 0;
+  }
+  .cover-desc {
+    font-size: 13px;
+    color: #888;
+    max-width: 520px;
+    line-height: 1.9;
+    letter-spacing: 0.02em;
+  }
+  .cover-footer {
+    align-items: flex-end;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 32px;
+  }
+  .cover-footer-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.1em;
+  }
+  .sections-list {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 720px;
+  }
+  .section-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(184,150,62,0.3);
+    padding: 6px 14px;
+    border-radius: 2px;
+  }
 
-  /* ─ Document wrapper ─ */
-  .doc { max-width: 820px; margin: 0 auto; padding: 64px 56px 80px; }
+  .toc-page {
+    background: var(--smoke);
+    padding: 96px 72px;
+    border-bottom: 1px solid var(--mist);
+  }
+  .toc-inner { max-width: 1100px; margin: 0 auto; }
+  .toc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #8f887c;
+    margin-bottom: 56px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    padding: 28px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+  }
+  .toc-item:hover { color: var(--gold); }
+  .toc-item-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--mist);
+    line-height: 1;
+    width: 72px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .toc-item:hover .toc-item-num { color: var(--gold); }
+  .toc-item-content { flex: 1; padding-right: 32px; }
+  .toc-item-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .toc-item-desc {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 0.03em;
+  }
 
-  /* ─ Cover ─ */
-  .cover { margin-bottom: 56px; padding-bottom: 48px; border-bottom: 1px solid var(--border); }
-  .cover-eyebrow {
+  .document-shell { background: #fff; padding: 40px 0; }
+  .document-body {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 72px;
+  }
+  .section {
+    padding: 96px 0;
+    border-bottom: 1px solid var(--smoke);
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 64px;
+    align-items: start;
+  }
+  .section:last-child { border-bottom: none; }
+  .section-sidebar {
+    position: sticky;
+    top: 40px;
+  }
+  .section-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 80px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--smoke);
+    display: block;
+    margin-bottom: 16px;
+    letter-spacing: -0.04em;
+  }
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .section-title-side {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--charcoal);
+    line-height: 1.4;
+  }
+  .section-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 38px;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .section-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--gold);
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--smoke);
+  }
+  .block { margin-bottom: 40px; }
+  .block-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    margin-bottom: 14px;
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--blue);
-    margin-bottom: 28px;
   }
-  .cover-eyebrow::after {
+  .block-title::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
-    max-width: 300px;
+    background: var(--smoke);
   }
-  .cover-main { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
-  .cover-left {}
-  .cover-title {
-    font-size: 38px;
-    font-weight: 800;
-    color: var(--ink);
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin-bottom: 10px;
+  .block p {
+    font-size: 14px;
+    line-height: 1.85;
+    color: #3A3A3E;
+    margin-bottom: 12px;
   }
-  .cover-subtitle { font-size: 15px; color: var(--ink-light); }
-  .cover-right { text-align: right; }
-  .cover-meta { font-size: 12px; color: var(--ink-faint); line-height: 2; }
-  .cover-meta strong { color: var(--ink-mid); font-weight: 600; }
-  .cover-badge {
-    display: inline-block;
-    margin-top: 6px;
-    background: var(--green-bg);
-    color: var(--green);
-    border: 1px solid var(--green-bd);
-    border-radius: 20px;
-    padding: 3px 12px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+  .callout {
+    background: var(--ink);
+    color: #fff;
+    padding: 36px 40px;
+    margin: 40px 0;
+    position: relative;
+    overflow: hidden;
   }
-
-  /* ─ Summary cards ─ */
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 60px; }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-  }
-  .card-label {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: var(--ink-faint);
-    margin-bottom: 8px;
-  }
-  .card-value { font-size: 13px; font-weight: 500; color: var(--ink-mid); line-height: 1.55; }
-
-  /* ─ Sections ─ */
-  .section { margin-bottom: 48px; }
-  .section-head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
-  .section-num {
-    font-size: 28px;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--border);
-    line-height: 1;
-    padding-top: 2px;
-    min-width: 36px;
-    font-variant-numeric: tabular-nums;
-  }
-  .section-info { flex: 1; }
-  .section-bar {
-    width: 32px;
-    height: 2px;
-    background: linear-gradient(90deg, var(--blue) 0%, var(--violet) 100%);
-    border-radius: 1px;
-    margin-bottom: 10px;
-  }
-  .section-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--ink);
-    letter-spacing: -0.02em;
-    margin-bottom: 4px;
-    line-height: 1.2;
-  }
-  .section-tagline { font-size: 12px; color: var(--ink-faint); letter-spacing: 0.01em; }
-
-  /* ─ Content ─ */
-  .section-body { padding-left: 56px; }
-  .content h1 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 18px 0 8px; }
-  .content h2 {
-    font-size: 13px; font-weight: 700; color: var(--ink-mid);
-    margin: 16px 0 8px;
-    display: flex; align-items: center; gap: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--border-lite);
-  }
-  .content h2::before {
+  .callout::before {
     content: '';
-    width: 3px; height: 13px;
-    background: var(--blue);
-    border-radius: 2px;
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--gold);
+  }
+  .callout-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .callout p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    line-height: 1.6;
+    font-weight: 300;
+    color: #eee;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 32px 0;
+  }
+  .card {
+    padding: 28px 32px;
+    border: 1px solid var(--smoke);
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+    background: linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+  .card p {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--charcoal);
+  }
+  .criteria { display: grid; gap: 12px; margin: 24px 0 40px; }
+  .criteria-item {
+    display: flex;
+    gap: 20px;
+    padding: 20px 24px;
+    background: var(--smoke);
+    align-items: flex-start;
+  }
+  .criteria-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    width: 32px;
     flex-shrink: 0;
   }
-  .content h3 { font-size: 12.5px; font-weight: 600; color: var(--ink-mid); margin: 12px 0 5px; }
-  .content p  { font-size: 13.5px; line-height: 1.8; color: #374151; margin: 8px 0; }
-  .content ul { margin: 10px 0; padding: 0; list-style: none; }
-  .content ul li {
-    position: relative; padding: 5px 0 5px 18px;
-    font-size: 13.5px; color: #374151; line-height: 1.72;
+  .criteria-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--charcoal);
+    padding-top: 4px;
   }
-  .content ul li + li { border-top: 1px solid var(--border-lite); }
-  .content ul li::before {
-    content: ''; position: absolute; left: 0; top: 13px;
-    width: 6px; height: 6px;
-    background: var(--blue); border-radius: 50%;
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin: 32px 0 40px;
   }
-  .content ol { margin: 10px 0; padding: 0; list-style: none; counter-reset: li; }
-  .content ol li {
-    position: relative; padding: 6px 0 6px 36px;
-    font-size: 13.5px; color: #374151; line-height: 1.72;
-    counter-increment: li;
+  .pillar {
+    background: var(--smoke);
+    padding: 32px 28px;
+    position: relative;
   }
-  .content ol li + li { border-top: 1px solid var(--border-lite); }
-  .content ol li::before {
-    content: counter(li);
-    position: absolute; left: 0; top: 7px;
-    width: 22px; height: 22px;
-    background: #e0f2fe; color: var(--blue);
-    font-size: 10px; font-weight: 700;
-    border-radius: 50%; text-align: center; line-height: 22px;
+  .pillar-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--gold-pale);
+    line-height: 1;
+    margin-bottom: 16px;
   }
-  .content strong { font-weight: 600; color: var(--ink); }
-  .content em     { font-style: italic; color: var(--ink-mid); }
-  .content code   { background: #f1f5f9; color: var(--blue-dk); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-
-  /* User-written formulation (retention) — rendered as plain text */
-  .prose-text p { font-size: 13.5px; line-height: 1.8; color: #374151; margin: 6px 0; }
-
-  /* Incomplete section placeholder (no user formulation — coaching not included) */
-  .section-incomplete { border: 1px dashed var(--border); border-radius: 8px; padding: 20px 24px; background: var(--surface); }
-  .section-incomplete-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-faint); display: block; margin-bottom: 8px; }
-  .section-incomplete-hint { font-size: 12px; color: var(--ink-faint); line-height: 1.7; font-style: italic; margin: 0; }
-  .section-bar-missing { background: var(--border) !important; }
-
-  /* Incomplete document warning banner */
-  .incomplet-banner { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px 22px; margin-bottom: 40px; }
-  .incomplet-banner strong { color: #92400e; font-weight: 700; }
-  .incomplet-banner p { color: #78350f; font-size: 12px; margin-top: 6px; line-height: 1.75; }
-  .cover-badge-incomplete { background: #fffbeb !important; color: #92400e !important; border-color: #fde68a !important; }
-
-  /* ─ Divider ─ */
-  .rule { border: none; border-top: 1px solid var(--border-lite); margin: 48px 0; }
-
-  /* ─ Footer ─ */
-  .footer {
-    margin-top: 72px; padding-top: 24px;
-    border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-    font-size: 11px; color: var(--ink-faint);
+  .pillar-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    margin-bottom: 12px;
   }
-  .footer-brand { font-weight: 700; color: var(--ink-mid); letter-spacing: 0.04em; }
-
-  /* ─ Print ─ */
+  .pillar p {
+    font-size: 13px;
+    line-height: 1.75;
+    color: #555;
+  }
+  .alert-box {
+    background: rgba(139,32,32,0.06);
+    border-left: 3px solid var(--accent-red);
+    padding: 24px 28px;
+    margin: 28px 0 40px;
+  }
+  .export-alert {
+    max-width: 1100px;
+    margin: 56px auto 0;
+  }
+  .alert-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-red);
+    margin-bottom: 10px;
+  }
+  .alert-box p {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--charcoal);
+  }
+  strong { font-weight: 600; color: var(--ink); }
+  em { font-style: italic; }
+  code { font-family: 'DM Mono', monospace; background: var(--smoke); padding: 1px 5px; border-radius: 3px; }
+  .doc-footer {
+    background: var(--ink);
+    padding: 56px 72px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .footer-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .footer-info {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #555;
+    line-height: 2;
+    letter-spacing: 0.05em;
+  }
   @media print {
-    .print-bar { display: none !important; }
-    .doc { padding: 28px 32px 40px; }
-    .cover-title { font-size: 28px; }
-    body { font-size: 12px; }
-    .content p, .content li { font-size: 12px; }
+    .print-action { display: none !important; }
+    .cover { page-break-after: always; min-height: auto; }
+    .toc-page { page-break-after: always; }
     .section { page-break-inside: avoid; }
-    .cards { page-break-inside: avoid; }
+  }
+  @media (max-width: 900px) {
+    .cover, .toc-page, .document-body, .doc-footer { padding-left: 28px; padding-right: 28px; }
+    .section { grid-template-columns: 1fr; gap: 24px; }
+    .section-sidebar { position: static; }
+    .section-num { font-size: 48px; }
+    .toc-grid, .two-col, .pillars { grid-template-columns: 1fr; }
+    .sections-list { display: none; }
+    .print-action { right: 16px; bottom: 16px; }
   }
 </style>
 </head>
 <body>
-<div class="print-bar">
-  <span class="print-bar-label">KORYXA · Dossier Fondateur</span>
-  <button class="print-btn" onclick="window.print()">Imprimer · Sauvegarder en PDF</button>
-</div>
-<div class="doc">
+<button class="print-action" onclick="window.print()">IMPRIMER · PDF</button>
 
-  <!-- Cover -->
-  <div class="cover">
-    <div class="cover-eyebrow">KORYXA · Mode Fondateur</div>
-    <div class="cover-main">
-      <div class="cover-left">
-        <div class="cover-title">Dossier Projet${firstName ? `<br><span style="color:#0ea5e9">${firstName}</span>` : ""}</div>
-        <div class="cover-subtitle">Synthèse de cadrage business · ChatLAYA Founder</div>
-      </div>
-      <div class="cover-right">
-        <div class="cover-meta">
-          <div><strong>Date</strong> · ${date}</div>
-          <div><strong>Sections rédigées</strong> · ${requiredWithFormulation} / ${requiredTotal}</div>
-          <div><strong>Outil</strong> · ChatLAYA Founder</div>
-        </div>
-        <div class="cover-badge${isDossierComplete ? "" : " cover-badge-incomplete"}">${isDossierComplete ? "Dossier complet" : requiredWithFormulation === 0 ? "Brouillon" : "Dossier incomplet"}</div>
-      </div>
+<div class="cover">
+  <div class="cover-header">
+    <div class="brand-mark">KORYXA · MODE FONDATEUR</div>
+    <div class="cover-meta">
+      <div>Outil · ChatLAYA Founder</div>
+      <div>Date · ${date}</div>
+      <div>Sections · ${requiredWithFormulation} / ${requiredTotal} rédigées</div>
     </div>
   </div>
 
-  ${incompleteHtml}
-
-  ${summaryCards ? `<!-- Summary cards -->\n  <div class="cards">${summaryCards}</div>` : ""}
-
-  <!-- Sections -->
-  ${sections}
-
-  <!-- Footer -->
-  <div class="footer">
-    <div><span class="footer-brand">KORYXA</span> &mdash; Document confidentiel &mdash; ChatLAYA Founder</div>
-    <div>${date}</div>
+  <div class="cover-center">
+    <div class="cover-tag">Dossier Projet Confidentiel</div>
+    <div class="cover-title"><em>${escapeHtml(displayName.split(/\s+/)[0] || "Projet")}</em>${displayName.split(/\s+/).length > 1 ? `<br>${escapeHtml(displayName.split(/\s+/).slice(1).join(" "))}` : ""}</div>
+    <div class="cover-subtitle">Synthèse de cadrage business · ChatLAYA Founder</div>
+    <div class="cover-divider"></div>
+    <p class="cover-desc">
+      Ce dossier présente le cadrage stratégique généré avec ChatLAYA Founder : client idéal, problème central, offre, prix, modèle économique, pitch commercial et plan d'action.
+    </p>
   </div>
 
+  <div class="cover-footer">
+    <div class="cover-footer-left">${isDossierComplete ? "DOCUMENT CONFIDENTIEL" : "BROUILLON DE TRAVAIL"}</div>
+    <div class="sections-list">${coverPills}</div>
+  </div>
+</div>
+
+<div class="toc-page">
+  <div class="toc-inner">
+    <div class="toc-label">Sommaire du Dossier</div>
+    <div class="toc-grid">${toc}</div>
+  </div>
+</div>
+
+${incompleteHtml}
+
+<div class="document-shell">
+  <div class="document-body">
+    ${sections}
+  </div>
+</div>
+
+<div class="doc-footer">
+  <div>
+    <div class="footer-brand">KORYXA</div>
+    <div style="font-family:'DM Mono',monospace; font-size:11px; color:#444; letter-spacing:0.05em; margin-top:8px;">MODE FONDATEUR · ChatLAYA Founder</div>
+  </div>
+  <div class="footer-info">
+    <div>Document Confidentiel</div>
+    <div>${escapeHtml(displayName)} · Dossier Projet</div>
+    <div>${date}</div>
+  </div>
 </div>
 </body>
 </html>`;

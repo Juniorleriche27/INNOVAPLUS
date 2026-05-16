@@ -2175,14 +2175,14 @@ export default function FounderWorkspace({
 
   function renderHistoryPanel(collapsed = false) {
     return (
-      <div className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)] ${collapsed ? "items-center" : ""}`}>
-        <div className={`shrink-0 border-b border-slate-100 ${collapsed ? "w-full px-2 py-3" : "px-4 pb-3 pt-4"}`}>
+      <div className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E7DED0] bg-[#FFFCF7] shadow-[0_2px_16px_rgba(16,16,21,0.06)] ${collapsed ? "items-center" : ""}`}>
+        <div className={`shrink-0 border-b border-[#E7DED0] ${collapsed ? "w-full px-2 py-3" : "px-4 pb-3 pt-4"}`}>
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={() => setHistoryCollapsed(false)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7DED0] bg-white text-[#6F6A60] transition hover:border-[#B8963E]/40 hover:bg-[#F0E6CC] hover:text-[#8A6A20]"
                 title="Agrandir l'historique"
                 aria-label="Agrandir l'historique"
               >
@@ -2192,7 +2192,7 @@ export default function FounderWorkspace({
                 type="button"
                 onClick={() => onCreateConversation?.()}
                 disabled={!onCreateConversation}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#101015] text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] disabled:cursor-not-allowed disabled:opacity-50"
                 title="Nouveau dossier Founder"
                 aria-label="Nouveau dossier Founder"
               >
@@ -2202,8 +2202,8 @@ export default function FounderWorkspace({
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Historique Founder</p>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-800">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#6F6A60]">Historique Founder</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-[#101015]">
                   {firstName ? `Dossiers de ${firstName}` : "Vos conversations"}
                 </p>
               </div>
@@ -2215,7 +2215,7 @@ export default function FounderWorkspace({
                     onCreateConversation?.();
                   }}
                   disabled={!onCreateConversation}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#101015] text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] disabled:cursor-not-allowed disabled:opacity-50"
                   title="Nouveau dossier Founder"
                   aria-label="Nouveau dossier Founder"
                 >
@@ -2224,7 +2224,7 @@ export default function FounderWorkspace({
                 <button
                   type="button"
                   onClick={() => setHistoryCollapsed(true)}
-                  className="hidden h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 lg:inline-flex"
+                  className="hidden h-9 w-9 items-center justify-center rounded-xl border border-[#E7DED0] bg-white text-[#6F6A60] transition hover:border-[#B8963E]/40 hover:bg-[#F0E6CC] hover:text-[#8A6A20] lg:inline-flex"
                   title="Réduire l'historique"
                   aria-label="Réduire l'historique"
                 >
@@ -2238,13 +2238,13 @@ export default function FounderWorkspace({
         <div className={`min-h-0 flex-1 overflow-y-auto ${collapsed ? "w-full px-2 py-2" : "px-2 py-2"}`}>
           {historyLoading ? (
             Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className={`mb-1.5 animate-pulse rounded-xl bg-slate-100 ${collapsed ? "mx-auto h-10 w-10" : "h-[68px]"}`} />
+              <div key={index} className={`mb-1.5 animate-pulse rounded-xl bg-[#F0E6CC]/60 ${collapsed ? "mx-auto h-10 w-10" : "h-[68px]"}`} />
             ))
           ) : visibleHistory.length === 0 ? (
             collapsed ? (
-              <div className="mx-auto mt-2 h-10 w-10 rounded-xl border border-dashed border-slate-200" title="Aucun dossier Founder" />
+              <div className="mx-auto mt-2 h-10 w-10 rounded-xl border border-dashed border-[#E7DED0]" title="Aucun dossier Founder" />
             ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-xs text-slate-400">
+              <div className="rounded-xl border border-dashed border-[#E7DED0] px-3 py-4 text-xs text-[#6F6A60]">
                 Aucun dossier Founder pour le moment.
               </div>
             )
@@ -2260,8 +2260,8 @@ export default function FounderWorkspace({
                     onClick={() => selectHistoryConversation(conversation.conversation_id)}
                     title={title}
                     aria-label={title}
-                    className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border text-slate-500 transition ${
-                      active ? "border-sky-200 bg-sky-50 text-sky-700 shadow-sm" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                    className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border text-[#6F6A60] transition ${
+                      active ? "border-[#B8963E]/30 bg-[#F0E6CC]/60 text-[#8A6A20] shadow-sm" : "border-transparent bg-white hover:border-[#E7DED0] hover:bg-[#F7F4EE]"
                     }`}
                   >
                     <MessageCircle className="h-4 w-4" />
@@ -2272,7 +2272,7 @@ export default function FounderWorkspace({
                 <div
                   key={conversation.conversation_id}
                   className={`mb-1.5 rounded-xl border px-3 py-3 text-left transition ${
-                    active ? "border-sky-200 bg-sky-50 shadow-[0_1px_4px_rgba(14,165,233,0.10)]" : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                    active ? "border-[#B8963E]/30 bg-[#F0E6CC]/40 shadow-[0_1px_4px_rgba(184,150,62,0.12)]" : "border-transparent bg-white hover:border-[#E7DED0] hover:bg-[#F7F4EE]"
                   }`}
                 >
                   <button
@@ -2280,22 +2280,22 @@ export default function FounderWorkspace({
                     onClick={() => selectHistoryConversation(conversation.conversation_id)}
                     className="block w-full text-left"
                   >
-                    <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-sky-700" : "text-slate-800"}`}>
+                    <p className={`truncate text-xs font-semibold leading-snug ${active ? "text-[#8A6A20]" : "text-[#101015]"}`}>
                       {title}
                     </p>
-                    <p className="mt-1 text-[10px] text-slate-400">
+                    <p className="mt-1 text-[10px] text-[#6F6A60]">
                       {formatConversationDate(conversation.updated_at || conversation.created_at) || "Nouveau dossier"}
                     </p>
                   </button>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+                    <span className="rounded-full bg-[#F7F4EE] px-2 py-1 text-[10px] font-medium text-[#6F6A60] ring-1 ring-[#E7DED0]">
                       {active ? "Dossier actif" : "Dossier Founder"}
                     </span>
                     <button
                       type="button"
                       onClick={() => archiveHistoryConversation(conversation.conversation_id)}
                       disabled={!onArchiveConversation}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium text-[#6F6A60] transition hover:bg-[#F7F4EE] hover:text-[#101015] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Archive className="h-3 w-3" />
                       Archiver
@@ -2307,13 +2307,13 @@ export default function FounderWorkspace({
           )}
         </div>
 
-        <div className={`shrink-0 border-t border-slate-100 ${collapsed ? "w-full px-2 py-3" : "px-3 py-3"}`}>
+        <div className={`shrink-0 border-t border-[#E7DED0] ${collapsed ? "w-full px-2 py-3" : "px-3 py-3"}`}>
           <button
             type="button"
             onClick={onExit}
             className={collapsed
-              ? "mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
-              : "w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+              ? "mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7DED0] text-[#6F6A60] transition hover:border-[#B8963E]/30 hover:bg-[#F0E6CC] hover:text-[#8A6A20]"
+              : "w-full rounded-xl border border-[#E7DED0] px-3 py-2 text-[11px] font-medium text-[#6F6A60] transition hover:border-[#B8963E]/30 hover:bg-[#F0E6CC] hover:text-[#8A6A20]"
             }
             title="Mode général"
             aria-label="Mode général"
@@ -2333,32 +2333,32 @@ export default function FounderWorkspace({
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_16px_rgba(15,23,42,0.06)]">
+      <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#E7DED0] bg-[#FFFCF7] shadow-[0_2px_16px_rgba(16,16,21,0.06)]">
 
         {error ? (
           <div className="shrink-0 border-b border-rose-100 bg-rose-50 px-4 py-2.5 text-xs font-medium text-rose-600">{error}</div>
         ) : null}
 
         {/* Module header */}
-        <div className="shrink-0 border-b border-slate-100 bg-slate-50/60 px-5 py-3">
+        <div className="shrink-0 border-b border-[#E7DED0] bg-[#F7F4EE]/80 px-5 py-3">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileHistoryOpen(true)}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700 lg:hidden"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#E7DED0] bg-white text-[#6F6A60] transition hover:border-[#B8963E]/30 hover:bg-[#F0E6CC] hover:text-[#8A6A20] lg:hidden"
               title="Historique Founder"
             >
               <Menu className="h-4 w-4" />
             </button>
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-sky-600"}`}>
+            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white ${isRevision ? "bg-amber-500" : "bg-[#101015]"}`}>
               {(() => { const Icon = activeModule.icon; return <Icon className="h-4 w-4" />; })()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6F6A60]">
                 Étape {activeModule.step}{activeModule.optional ? " · Optionnelle" : ""}
                 {isRevision ? " · Révision" : ""}
               </p>
-              <p className="text-sm font-bold text-slate-800">{activeModule.label}</p>
+              <p className="text-sm font-bold text-[#101015]">{activeModule.label}</p>
             </div>
             <div className="ml-auto flex shrink-0 items-center gap-2">
               {activeMs.status === "completed" ? (
@@ -2370,7 +2370,7 @@ export default function FounderWorkspace({
               <FounderAccountButton firstName={firstName} />
             </div>
           </div>
-          <p className="mt-1.5 hidden text-xs text-slate-500 lg:block">{activeModule.description}</p>
+          <p className="mt-1.5 hidden text-xs text-[#6F6A60] lg:block">{activeModule.description}</p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {MODULES.map((m) => {
               const mws = getMs(ws, m.id);
@@ -2383,14 +2383,14 @@ export default function FounderWorkspace({
                   onClick={() => setActiveId(m.id)}
                   className={`group flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left transition ${
                     isCurrent
-                      ? "border-sky-200 bg-sky-50 text-sky-700"
+                      ? "border-[#B8963E]/40 bg-[#F0E6CC] text-[#8A6A20]"
                       : isDone
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                        : "border-[#E7DED0] bg-white text-[#6F6A60] hover:border-[#B8963E]/30 hover:text-[#8A6A20]"
                   }`}
                 >
                   <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    isDone ? "bg-emerald-500 text-white" : isCurrent ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-500"
+                    isDone ? "bg-emerald-500 text-white" : isCurrent ? "bg-[#101015] text-white" : "bg-[#F7F4EE] text-[#6F6A60]"
                   }`}>
                     {isDone ? <Check className="h-3 w-3" /> : m.step}
                   </span>
@@ -2518,9 +2518,9 @@ export default function FounderWorkspace({
 
             {/* Product intro — visible only on a fresh workspace */}
             {completedCount === 0 && !hasWorkspaceContent && !activeMs.output && !isGenerating ? (
-              <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-4">
-                <p className="text-xs font-semibold text-slate-600">Espace de cadrage business guidé</p>
-                <p className="mt-1 text-xs leading-5 text-slate-400">
+              <div className="rounded-xl border border-[#E7DED0] bg-[#F7F4EE] px-4 py-4">
+                <p className="text-xs font-semibold text-[#3A3530]">Espace de cadrage business guidé</p>
+                <p className="mt-1 text-xs leading-5 text-[#6F6A60]">
                   En 6 étapes, Founder vous aide à clarifier votre client cible, votre problème, votre offre, votre prix, votre modèle de revenus et votre pitch commercial — et à rédiger un dossier projet structuré, exportable à la fin du parcours.
                 </p>
               </div>
@@ -2528,17 +2528,17 @@ export default function FounderWorkspace({
 
             {/* Completion banner */}
             {allDone ? (
-              <div className="rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 to-violet-50 px-5 py-4">
+              <div className="rounded-2xl border border-[#B8963E]/30 bg-gradient-to-r from-[#F0E6CC]/40 to-[#FFFCF7] px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
                     <Check className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-800">{firstName ? `Bravo ${firstName} !` : "Félicitations !"}</p>
-                    <p className="text-xs text-slate-600">Les 6 étapes sont validées. Votre dossier est prêt.</p>
+                    <p className="text-sm font-bold text-[#101015]">{firstName ? `Bravo ${firstName} !` : "Félicitations !"}</p>
+                    <p className="text-xs text-[#6F6A60]">Les 6 étapes sont validées. Votre dossier est prêt.</p>
                   </div>
                   <button type="button" onClick={() => setShowSynthesis(true)}
-                    className="flex shrink-0 items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-sky-700">
+                    className="flex shrink-0 items-center gap-2 rounded-full bg-[#101015] px-4 py-2 text-xs font-semibold text-white shadow-sm ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20]">
                     <BookOpen className="h-3.5 w-3.5" />
                     Dossier final
                   </button>
@@ -2563,19 +2563,19 @@ export default function FounderWorkspace({
             <div className="space-y-4">
               {activeModule.inputs.map((field) => (
                 <div key={field.id}>
-                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  <label className="mb-1.5 block text-xs font-semibold text-[#101015]">
                     {field.label}
-                    {field.optional ? <span className="ml-1.5 font-normal text-slate-400">(optionnel)</span> : null}
+                    {field.optional ? <span className="ml-1.5 font-normal text-[#6F6A60]">(optionnel)</span> : null}
                   </label>
                   {field.type === "textarea" ? (
                     <textarea value={activeMs.inputs[field.id] ?? ""} onChange={(e) => updateInput(activeId, field.id, e.target.value)}
                       placeholder={field.placeholder} rows={field.rows ?? 3} disabled={isGenerating}
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm leading-relaxed text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(14,165,233,0.07)] disabled:opacity-60"
+                      className="w-full resize-none rounded-xl border border-[#E7DED0] bg-[#F7F4EE]/60 px-4 py-3 text-sm leading-relaxed text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(184,150,62,0.08)] disabled:opacity-60"
                     />
                   ) : (
                     <input type="text" value={activeMs.inputs[field.id] ?? ""} onChange={(e) => updateInput(activeId, field.id, e.target.value)}
                       placeholder={field.placeholder} disabled={isGenerating}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(14,165,233,0.07)] disabled:opacity-60"
+                      className="w-full rounded-xl border border-[#E7DED0] bg-[#F7F4EE]/60 px-4 py-3 text-sm text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_3px_rgba(184,150,62,0.08)] disabled:opacity-60"
                     />
                   )}
                 </div>

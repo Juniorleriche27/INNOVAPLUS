@@ -2404,12 +2404,11 @@ export default function FounderWorkspace({
             {showStarterPanel ? (
               <div className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_410px]">
                 <div className="overflow-hidden rounded-[28px] border border-[#E7DED0] bg-[radial-gradient(circle_at_20%_20%,rgba(184,150,62,0.10),transparent_34%),linear-gradient(135deg,#F7F4EE_0%,#FFFCF7_48%,#F7F4EE_100%)] p-6 shadow-[0_18px_60px_rgba(16,16,21,0.07)] sm:p-7">
-                  <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="mb-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-[#E7DED0] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A6A20] shadow-sm">
                       <Sparkles className="h-3.5 w-3.5 text-[#B8963E]" />
                       ChatLAYA Founder
                     </div>
-                    <FounderAccountButton firstName={firstName} />
                   </div>
 
                   <div className="max-w-2xl">

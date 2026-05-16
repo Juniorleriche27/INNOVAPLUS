@@ -2407,23 +2407,23 @@ export default function FounderWorkspace({
           <div className={showStarterPanel ? "mx-auto flex min-h-full w-full max-w-5xl items-center py-2" : "mx-auto max-w-2xl space-y-5"}>
             {showStarterPanel ? (
               <div className="grid w-full items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_410px]">
-                <div className="overflow-hidden rounded-[28px] border border-sky-100 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.16),transparent_34%),linear-gradient(135deg,#f8fbff_0%,#ffffff_48%,#f5f3ff_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] sm:p-7">
+                <div className="overflow-hidden rounded-[28px] border border-[#E7DED0] bg-[radial-gradient(circle_at_20%_20%,rgba(184,150,62,0.10),transparent_34%),linear-gradient(135deg,#F7F4EE_0%,#FFFCF7_48%,#F7F4EE_100%)] p-6 shadow-[0_18px_60px_rgba(16,16,21,0.07)] sm:p-7">
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-700 shadow-sm">
-                      <Sparkles className="h-3.5 w-3.5" />
+                    <div className="inline-flex items-center gap-2 rounded-full border border-[#E7DED0] bg-white/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A6A20] shadow-sm">
+                      <Sparkles className="h-3.5 w-3.5 text-[#B8963E]" />
                       ChatLAYA Founder
                     </div>
                     <FounderAccountButton firstName={firstName} />
                   </div>
 
                   <div className="max-w-2xl">
-                    <h2 className="text-[30px] font-black leading-[1.05] tracking-tight text-slate-950 sm:text-[38px]">
+                    <h2 className="text-[30px] font-black leading-[1.05] tracking-tight text-[#101015] sm:text-[38px]">
                       Cadrez votre projet.
-                      <span className="block bg-gradient-to-r from-sky-600 via-blue-600 to-violet-600 bg-clip-text text-transparent">
+                      <span className="block bg-gradient-to-r from-[#B8963E] via-[#8A6A20] to-[#101015] bg-clip-text text-transparent">
                         Repartez avec un dossier exploitable.
                       </span>
                     </h2>
-                    <p className="mt-4 max-w-xl text-[15px] leading-7 text-slate-600">
+                    <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#6F6A60]">
                       Un coach IA vous accompagne étape par étape pour clarifier votre client, votre problème, votre offre, votre prix, votre modèle économique et votre pitch commercial.
                     </p>
                   </div>
@@ -2433,26 +2433,26 @@ export default function FounderWorkspace({
                       const Icon = mod.icon;
                       return (
                         <div key={mod.id} className="flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0E6CC] text-[#8A6A20] ring-1 ring-[#E7DED0]">
                             <Icon className="h-4 w-4" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-800">{mod.label}</p>
-                            <p className="truncate text-xs text-slate-500">{mod.tagline}</p>
+                            <p className="text-sm font-bold text-[#101015]">{mod.label}</p>
+                            <p className="truncate text-xs text-[#6F6A60]">{mod.tagline}</p>
                           </div>
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="mt-5 rounded-2xl border border-violet-100 bg-white/70 px-4 py-3 shadow-sm">
+                  <div className="mt-5 rounded-2xl border border-[#E7DED0] bg-white/70 px-4 py-3 shadow-sm">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-violet-500 text-white">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#101015] text-white">
                         <FileText className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-900">Le livrable vendu</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                        <p className="text-sm font-bold text-[#101015]">Le livrable vendu</p>
+                        <p className="mt-1 text-sm leading-6 text-[#6F6A60]">
                           Un dossier projet rédigé dans les mots de l'utilisateur, exportable et présentable à un partenaire, une équipe ou un investisseur.
                         </p>
                       </div>
@@ -2460,13 +2460,13 @@ export default function FounderWorkspace({
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.10)] sm:p-6">
+                <div className="flex flex-col justify-between rounded-[28px] border border-[#E7DED0] bg-[#FFFCF7] p-5 shadow-[0_18px_60px_rgba(16,16,21,0.08)] sm:p-6">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Point de départ</p>
-                    <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6F6A60]">Point de départ</p>
+                    <h3 className="mt-2 text-xl font-black tracking-tight text-[#101015]">
                       Décrivez votre projet en quelques phrases.
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                    <p className="mt-2 text-sm leading-6 text-[#6F6A60]">
                       Donnez l'idée, le client visé, ce que vous vendez ou ce que vous voulez lancer. Founder transformera ça en parcours de cadrage.
                     </p>
 
@@ -2475,7 +2475,7 @@ export default function FounderWorkspace({
                       onChange={(event) => setStarterProject(event.target.value)}
                       rows={7}
                       placeholder="Ex : Je veux vendre des PC portables performants aux étudiants et jeunes professionnels avec paiement échelonné..."
-                      className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4 text-base leading-7 text-slate-800 placeholder:text-slate-400 transition focus:border-sky-300 focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(14,165,233,0.08)]"
+                      className="mt-5 w-full resize-none rounded-2xl border border-[#E7DED0] bg-[#F7F4EE]/70 px-4 py-4 text-base leading-7 text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(184,150,62,0.08)]"
                     />
                   </div>
 
@@ -2484,7 +2484,7 @@ export default function FounderWorkspace({
                       type="button"
                       onClick={startFounderFromBrief}
                       disabled={!starterProject.trim()}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-600 px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(2,132,199,0.24)] transition hover:bg-sky-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101015] px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
                       <ArrowRight className="h-4 w-4" />
@@ -2493,19 +2493,19 @@ export default function FounderWorkspace({
                       <div className="grid gap-2 sm:grid-cols-2">
                         <a
                           href={effectiveLoginHref}
-                          className="inline-flex items-center justify-center rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
+                          className="inline-flex items-center justify-center rounded-2xl border border-[#B8963E]/40 bg-white px-4 py-3 text-sm font-bold text-[#8A6A20] transition hover:border-[#B8963E]/70 hover:bg-[#F0E6CC]"
                         >
                           Se connecter
                         </a>
                         <a
                           href={effectiveSignupHref}
-                          className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          className="inline-flex items-center justify-center rounded-2xl border border-[#E7DED0] bg-white px-4 py-3 text-sm font-bold text-[#101015] transition hover:border-[#B8963E]/30 hover:bg-[#F7F4EE]"
                         >
                           Créer un compte
                         </a>
                       </div>
                     ) : null}
-                    <p className="text-center text-xs leading-5 text-slate-400">
+                    <p className="text-center text-xs leading-5 text-[#6F6A60]">
                       {conversationId
                         ? "Ensuite, cette intro disparaît et vous travaillez étape par étape avec le coach."
                         : "Connexion securisee, puis retour direct sur ChatLAYA Founder."}

@@ -85,7 +85,7 @@ class ConversationListResponse(BaseModel):
 
 class ChatMessagePayload(BaseModel):
     conversation_id: str
-    message: str = Field(..., min_length=1, max_length=4000)
+    message: str = Field(..., min_length=1, max_length=12000)
 
 
 class ConversationUpdatePayload(BaseModel):

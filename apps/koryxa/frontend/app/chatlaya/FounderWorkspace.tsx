@@ -369,9 +369,13 @@ function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: Workspa
     `${priorContext ? `Contexte déjà cadré dans les autres étapes :\n${priorContext}\n\n` : ""}` +
     `Consigne de rédaction : produis uniquement la version finale à mettre dans le dossier. ` +
     `Ne fais pas de coaching, ne pose pas de question, ne dis pas "voici". ` +
+    `Cette version doit pouvoir être vendue comme partie d'un vrai dossier projet premium : elle doit être dense, claire et exploitable. ` +
+    `Ne produis pas un résumé. Rédige une section complète avec au moins 5 à 8 paragraphes ou blocs structurés selon la matière disponible. ` +
+    `Développe la logique business, les critères, les implications, les nuances et les points de validation utiles. ` +
+    `Si le sujet est la cible client, détaille les segments prioritaires, les caractéristiques, les motivations d'achat, les signaux de besoin, les canaux pour les trouver et les hypothèses à valider. ` +
+    `Si le sujet est un autre module, applique le même niveau de profondeur au problème, à l'offre, au prix, au modèle économique, au message de vente ou au plan d'action. ` +
     `Reformule proprement, avec substance, précision et cohérence business. ` +
-    `Structure en paragraphes et/ou points si cela améliore la lisibilité. ` +
-    `Ne réduis pas artificiellement la réponse : elle doit être suffisamment complète pour être utile dans un vrai dossier projet.`
+    `Ne réduis jamais artificiellement la réponse : une version trop courte est considérée comme un échec.`
   );
 }
 
@@ -557,7 +561,7 @@ function RetentionBlock({
         className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Sparkles className="h-3.5 w-3.5" />
-        {generatingFinal ? "Rédaction en cours…" : isFilled ? "Re-rédiger la version finale" : "Rédiger la version finale"}
+        {generatingFinal ? "Rédaction en cours…" : isFilled ? "Re-rédiger la version finale complète" : "Rédiger la version finale complète"}
       </button>
       <div className="rounded-xl border border-violet-100 bg-white/70 p-3.5">
         <div className="mb-2 flex items-center justify-between gap-2">
@@ -568,8 +572,8 @@ function RetentionBlock({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="La version finale rédigée par Founder apparaîtra ici. Vous pourrez encore la modifier avant validation."
-          rows={5}
-          className="w-full resize-none bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
+          rows={12}
+          className="min-h-[320px] w-full resize-y bg-transparent text-sm leading-relaxed text-violet-900 placeholder:text-violet-300/80 focus:outline-none"
         />
       </div>
     </div>

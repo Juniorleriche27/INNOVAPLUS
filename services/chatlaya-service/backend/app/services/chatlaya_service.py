@@ -26,6 +26,7 @@ CHATLAYA_TIMEOUT_REPLY = (
     "ChatLAYA met trop de temps à répondre pour le moment. Réessayez dans un instant "
     "ou reformulez votre demande plus brièvement si besoin."
 )
+FOUNDER_FINAL_DRAFT_MAX_NEW_TOKENS = 1800
 
 GREETING_PHRASES = {
     # Français
@@ -893,6 +894,16 @@ def _is_deep_explanation_request(message: str) -> bool:
     return any(pattern in normalized for pattern in patterns)
 
 
+def _is_founder_final_draft_request(message: str) -> bool:
+    normalized = _normalize_text(message)
+    return (
+        "version finale du dossier" in normalized
+        or "version finale a mettre dans le dossier" in normalized
+        or "version finale à mettre dans le dossier" in normalized
+        or "version dossier" in normalized
+    )
+
+
 def _clean_message_for_retrieval(message: str) -> str:
     cleaned = str(message or "").strip()
     if not cleaned:
@@ -1008,6 +1019,7 @@ def _build_generation_prompt(
     trimmed_history = _trim_history(message, history)
     if is_strict_assistant_mode(assistant_mode):
         trimmed_history = [item for item in trimmed_history if item.get("role") == "user"]
+    is_founder_final_draft = _is_founder_final_draft_request(message)
     history_block = _render_history(trimmed_history)
     if is_strict_assistant_mode(assistant_mode):
         sections = [
@@ -1073,7 +1085,20 @@ def _build_generation_prompt(
             "- reste fonde sur les extraits disponibles et ne cite jamais les sources"
         )
 
-    if is_strict_assistant_mode(assistant_mode):
+    if is_strict_assistant_mode(assistant_mode) and is_founder_final_draft:
+        sections.append(
+            "Format de reponse attendu pour VERSION FINALE DU DOSSIER :\n"
+            "- redige une vraie section de dossier projet, pas une reponse de chat\n"
+            "- ne sois pas bref : cette sortie doit etre substantielle, exploitable et vendable\n"
+            "- produis au minimum 5 a 8 paragraphes ou blocs structures selon la matiere disponible\n"
+            "- developpe la cible, le probleme ou la decision business avec precision et implications concretes\n"
+            "- ajoute des criteres de qualification, des angles de validation et des nuances utiles si pertinent\n"
+            "- utilise des titres courts si cela rend la section plus lisible\n"
+            "- ne pose pas de question finale et ne termine pas par une demande de precision\n"
+            "- ne mentionne jamais source, extrait, corpus, base documentaire, RAG ou nom de document\n"
+            "- ignore la regle de reponse courte : cette demande est un livrable premium"
+        )
+    elif is_strict_assistant_mode(assistant_mode):
         sections.append(
             "Format de reponse attendu :\n"
             "- reponds comme un assistant business, pas comme un moteur de recherche\n"
@@ -1120,6 +1145,7 @@ async def generate_chat_reply(
             return site_reply, []
 
     message_kind = _classify_message_kind(message)
+    is_founder_final_draft = _is_founder_final_draft_request(message)
     direct_reply = _build_direct_reply(message_kind, assistant_mode=assistant_mode)
     if direct_reply:
         return direct_reply, []
@@ -1184,6 +1210,7 @@ async def generate_chat_reply(
 
     async def _generate_once(provider: str, model: str | None, timeout_s: int | None = None) -> str:
         effective_timeout_s = timeout_s or generation_timeout_s
+        max_new_tokens = FOUNDER_FINAL_DRAFT_MAX_NEW_TOKENS if is_founder_final_draft else None
         return await asyncio.wait_for(
             asyncio.to_thread(
                 generate_answer,
@@ -1191,7 +1218,7 @@ async def generate_chat_reply(
                 provider,
                 model,
                 effective_timeout_s,
-                None,
+                max_new_tokens,
                 None,
                 None,
                 None,
@@ -1239,7 +1266,8 @@ async def generate_chat_reply(
 
     if is_strict_assistant_mode(assistant_mode):
         final_reply = _sanitize_strict_visible_reply(response_text or "", message, rag_results)
-        final_reply = _ensure_strict_answer_frame(final_reply, message)
+        if not is_founder_final_draft:
+            final_reply = _ensure_strict_answer_frame(final_reply, message)
     else:
         final_reply = (response_text or "").strip() or FALLBACK_REPLY
         final_reply = _strip_dummy_sources(final_reply)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import threading
 import time
 from datetime import datetime, timezone
@@ -56,6 +57,21 @@ GUEST_MESSAGE_LIMIT = 12
 GUEST_MESSAGE_WINDOW_S = 60 * 10
 _GUEST_CHAT_BUCKETS: dict[str, list[float]] = {}
 _GUEST_CHAT_LOCK = threading.Lock()
+
+
+def _stream_chunks(text: str, size: int = 24) -> list[str]:
+    chunks: list[str] = []
+    current = ""
+    for part in text.split(" "):
+        next_value = f"{current} {part}".strip()
+        if len(next_value) >= size and current:
+            chunks.append(current + " ")
+            current = part
+        else:
+            current = next_value
+    if current:
+        chunks.append(current)
+    return chunks
 
 
 def _serialize_conversation(doc: dict) -> ConversationResponse:
@@ -388,33 +404,75 @@ async def post_message(
         logger.warning("ChatLAYA product context build failed: %s", exc)
         product_context = ""
     assistant_mode = coerce_assistant_mode(conversation.get("assistant_mode"))
-    reply, rag_sources = await generate_chat_reply(
-        payload.message,
-        chat_history,
-        product_context=product_context,
-        assistant_mode=assistant_mode,
-    )
-    assistant_now = datetime.now(timezone.utc)
-    await create_message(
-        conversation_id=conv_id,
-        role="assistant",
-        content=reply,
-        user_id=owner.get("user_id"),
-        guest_id=owner.get("guest_id"),
-        meta={"rag_sources": rag_sources} if rag_sources else {},
-        created_at=assistant_now,
-    )
-    await touch_conversation(
-        conversation_id=conv_id,
-        title=title,
-        updated_at=assistant_now,
-    )
-
     async def event_generator():
-        yield {"event": "token", "data": reply}
-        yield {"event": "done", "data": "done"}
+        queue: asyncio.Queue[tuple[str, str]] = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+        streamed_any = False
 
-    sse_response = EventSourceResponse(event_generator())
+        def on_token(token: str) -> None:
+            if not token:
+                return
+            if len(token) > 160:
+                for chunk in _stream_chunks(token):
+                    loop.call_soon_threadsafe(queue.put_nowait, ("token", chunk))
+                return
+            loop.call_soon_threadsafe(queue.put_nowait, ("token", token))
+
+        async def run_generation() -> None:
+            try:
+                reply, rag_sources = await generate_chat_reply(
+                    payload.message,
+                    chat_history,
+                    product_context=product_context,
+                    assistant_mode=assistant_mode,
+                    on_token=on_token,
+                )
+                assistant_now = datetime.now(timezone.utc)
+                await create_message(
+                    conversation_id=conv_id,
+                    role="assistant",
+                    content=reply,
+                    user_id=owner.get("user_id"),
+                    guest_id=owner.get("guest_id"),
+                    meta={"rag_sources": rag_sources} if rag_sources else {},
+                    created_at=assistant_now,
+                )
+                await touch_conversation(
+                    conversation_id=conv_id,
+                    title=title,
+                    updated_at=assistant_now,
+                )
+                await queue.put(("complete", reply))
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("ChatLAYA streaming generation failed: %s", exc)
+                await queue.put(("error", "Erreur de génération. Réessayez dans un instant."))
+
+        task = asyncio.create_task(run_generation())
+        try:
+            while True:
+                event, data = await queue.get()
+                if event == "token":
+                    streamed_any = True
+                    yield {"event": "token", "data": data}
+                    continue
+                if event == "complete":
+                    if not streamed_any:
+                        for chunk in _stream_chunks(data):
+                            yield {"event": "token", "data": chunk}
+                            await asyncio.sleep(0.015)
+                    yield {"event": "done", "data": "done"}
+                    break
+                if event == "error":
+                    yield {"event": "error", "data": data}
+                    break
+        finally:
+            if not task.done():
+                task.cancel()
+
+    sse_response = EventSourceResponse(
+        event_generator(),
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+    )
     if not current and guest_id and not get_guest_id(request):
         sse_response.set_cookie(
             "koryxa_guest",

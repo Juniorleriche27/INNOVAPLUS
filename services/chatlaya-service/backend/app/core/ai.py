@@ -112,6 +112,7 @@ def _call_ollama_generate(
     model: str,
     timeout: int,
     max_new_tokens: int | None = None,
+    on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
     base_url = (settings.OLLAMA_BASE_URL or "http://127.0.0.1:11434").rstrip("/")
     url = f"{base_url}/api/generate"
@@ -120,7 +121,7 @@ def _call_ollama_generate(
         "model": model,
         "raw": True,
         "prompt": prompt,
-        "stream": False,
+        "stream": bool(on_token),
         "options": {
             "temperature": 0.4,
             "top_p": 0.9,
@@ -137,6 +138,24 @@ def _call_ollama_generate(
     )
 
     with urllib.request.urlopen(request, timeout=timeout) as response:
+        if on_token:
+            chunks: list[str] = []
+            for raw_line in response:
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line:
+                    continue
+                parsed = json.loads(line)
+                token = str(parsed.get("response") or "")
+                if token:
+                    chunks.append(token)
+                    on_token(token)
+                if parsed.get("done"):
+                    break
+            text = "".join(chunks).strip()
+            if not text:
+                raise RuntimeError("Ollama returned an empty streamed response")
+            return text
+
         body = response.read().decode("utf-8")
 
     parsed = json.loads(body)
@@ -149,6 +168,7 @@ def _call_ai_gateway_chat(
     prompt: str,
     timeout: int | None = None,
     max_new_tokens: int | None = None,
+    on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
     base_url = (settings.AI_GATEWAY_BASE_URL or "").rstrip("/")
     api_key = settings.AI_GATEWAY_API_KEY
@@ -167,6 +187,7 @@ def _call_ai_gateway_chat(
         ],
         "temperature": 0.4,
         "max_tokens": max_new_tokens or settings.LLM_MAX_NEW_TOKENS,
+        "stream": bool(on_token),
     }
 
     data = json.dumps(payload).encode("utf-8")
@@ -182,13 +203,59 @@ def _call_ai_gateway_chat(
         },
     )
 
+    def _extract_stream_token(parsed: dict[str, Any]) -> str:
+        if isinstance(parsed.get("choices"), list) and parsed["choices"]:
+            choice = parsed["choices"][0]
+            if isinstance(choice, dict):
+                delta = choice.get("delta") or {}
+                message = choice.get("message") or {}
+                return str(delta.get("content") or message.get("content") or choice.get("text") or "")
+        return str(
+            parsed.get("token")
+            or parsed.get("content")
+            or parsed.get("text")
+            or parsed.get("response")
+            or ""
+        )
+
     try:
         with urllib.request.urlopen(
             req,
             timeout=timeout or settings.AI_GATEWAY_TIMEOUT_SECONDS,
         ) as resp:
+            if on_token:
+                chunks: list[str] = []
+                for raw_line in resp:
+                    line = raw_line.decode("utf-8", errors="replace").strip()
+                    if not line:
+                        continue
+                    if line.startswith("data:"):
+                        line = line[5:].strip()
+                    if line == "[DONE]":
+                        break
+                    try:
+                        parsed_line = json.loads(line)
+                    except json.JSONDecodeError:
+                        token = line
+                    else:
+                        token = _extract_stream_token(parsed_line)
+                    if token:
+                        chunks.append(token)
+                        on_token(token)
+                streamed_text = "".join(chunks).strip()
+                if streamed_text:
+                    return streamed_text
+
             raw = resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as exc:
+        if on_token:
+            logger.warning("AI gateway streaming failed with HTTP %s, retrying without stream", exc.code)
+            return _call_ai_gateway_chat(
+                prompt=prompt,
+                timeout=timeout,
+                max_new_tokens=max_new_tokens,
+                on_token=None,
+            )
         body = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"AI gateway HTTP {exc.code}: {body[:500]}") from exc
 
@@ -243,6 +310,7 @@ def generate_answer(
             prompt=prompt,
             timeout=timeout or settings.AI_GATEWAY_TIMEOUT_SECONDS,
             max_new_tokens=max_new_tokens,
+            on_token=on_token,
         )
 
     if provider_name == "ollama":
@@ -260,8 +328,9 @@ def generate_answer(
                 model=mdl,
                 timeout=timeout or settings.LLM_TIMEOUT,
                 max_new_tokens=max_new_tokens,
+                on_token=on_token,
             )
-            if text and on_token:
+            if text and on_token and provider_name != "ollama":
                 on_token(text)
             return text
         except Exception as exc:  # noqa: BLE001

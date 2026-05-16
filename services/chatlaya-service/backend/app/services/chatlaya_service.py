@@ -1161,6 +1161,7 @@ async def generate_chat_reply(
     history: list[dict[str, Any]],
     product_context: str = "",
     assistant_mode: str = CHATLAYA_MODE_GENERAL,
+    on_token: Any | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     assistant_mode = coerce_assistant_mode(assistant_mode)
     politeness_intent = detect_politeness_intent(message)
@@ -1255,7 +1256,7 @@ async def generate_chat_reply(
                 None,
                 None,
                 None,
-                None,
+                on_token,
             ),
             timeout=effective_timeout_s,
         )

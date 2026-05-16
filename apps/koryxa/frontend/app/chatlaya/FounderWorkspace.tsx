@@ -375,8 +375,39 @@ function buildFinalDraftPrompt(moduleId: string, state: ModuleState, ws: Workspa
     `Si le sujet est la cible client, détaille les segments prioritaires, les caractéristiques, les motivations d'achat, les signaux de besoin, les canaux pour les trouver et les hypothèses à valider. ` +
     `Si le sujet est un autre module, applique le même niveau de profondeur au problème, à l'offre, au prix, au modèle économique, au message de vente ou au plan d'action. ` +
     `Reformule proprement, avec substance, précision et cohérence business. ` +
+    `N'utilise aucun Markdown visible : pas d'astérisques, pas de #, pas de balises. ` +
+    `Ne termine jamais par une phrase de transition du type "la prochaine étape consiste à..." ou une question. ` +
     `Ne réduis jamais artificiellement la réponse : une version trop courte est considérée comme un échec.`
   );
+}
+
+function cleanDossierText(value: string): string {
+  const forbiddenClosings = [
+    "la prochaine étape",
+    "la prochaine etape",
+    "pour passer à l'étape suivante",
+    "pour passer a l'etape suivante",
+    "je peux aller plus loin",
+    "si vous précisez",
+    "si vous precisez",
+  ];
+
+  const cleaned = value
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+    .replace(/\*([^*\n]+)\*/g, "$1")
+    .replace(/`([^`\n]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*]\s+/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  const paragraphs = cleaned.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+  while (paragraphs.length) {
+    const last = paragraphs[paragraphs.length - 1].toLowerCase();
+    if (!forbiddenClosings.some((pattern) => last.includes(pattern))) break;
+    paragraphs.pop();
+  }
+  return paragraphs.join("\n\n").trim() || cleaned;
 }
 
 // ─── Markdown parser ─────────────────────────────────────────────────────────
@@ -1457,14 +1488,14 @@ export default function FounderWorkspace({
           const data = dataLines.join("\n");
           if (event === "token") {
             output += data;
-            updateMs(moduleId, { retention: output });
+            updateMs(moduleId, { retention: cleanDossierText(output) });
           } else if (event === "done") {
-            updateMs(moduleId, { retention: output, status: "in_progress" });
+            updateMs(moduleId, { retention: cleanDossierText(output), status: "in_progress" });
             return;
           } else if (event === "error") throw new Error(data || "Erreur de streaming.");
         }
       }
-      if (output) updateMs(moduleId, { retention: output, status: "in_progress" });
+      if (output) updateMs(moduleId, { retention: cleanDossierText(output), status: "in_progress" });
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(err instanceof Error ? err.message : "Erreur inattendue.");

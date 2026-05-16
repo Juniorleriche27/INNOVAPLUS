@@ -809,7 +809,7 @@ def _strict_closing_for_message(message: str) -> str:
         )
 
     return (
-        "La prochaine étape consiste à appliquer ces points à un cas concret pour obtenir une décision directement exploitable."
+        "Pour affiner ce cadrage, vous pouvez préciser le segment prioritaire, le contexte d'achat ou la contrainte principale du client."
     )
 
 
@@ -902,6 +902,31 @@ def _is_founder_final_draft_request(message: str) -> bool:
         or "version finale à mettre dans le dossier" in normalized
         or "version dossier" in normalized
     )
+
+
+def _clean_founder_final_draft_reply(text: str) -> str:
+    cleaned = _sanitize_strict_visible_reply(text or "", "", [])
+    cleaned = re.sub(r"\*\*([^*\n]+)\*\*", r"\1", cleaned)
+    cleaned = re.sub(r"\*([^*\n]+)\*", r"\1", cleaned)
+    cleaned = re.sub(r"`([^`\n]+)`", r"\1", cleaned)
+    cleaned = re.sub(r"^\s*#{1,6}\s*", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"^\s*[-*]\s+", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+
+    forbidden_closing_patterns = (
+        "la prochaine étape",
+        "la prochaine etape",
+        "pour passer à l'étape suivante",
+        "pour passer a l'etape suivante",
+        "je peux aller plus loin",
+        "si vous précisez",
+        "si vous precisez",
+    )
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", cleaned) if part.strip()]
+    while paragraphs and any(pattern in _normalize_text(paragraphs[-1]) for pattern in forbidden_closing_patterns):
+        paragraphs.pop()
+
+    return "\n\n".join(paragraphs).strip() or cleaned
 
 
 def _clean_message_for_retrieval(message: str) -> str:
@@ -1094,7 +1119,9 @@ def _build_generation_prompt(
             "- developpe la cible, le probleme ou la decision business avec precision et implications concretes\n"
             "- ajoute des criteres de qualification, des angles de validation et des nuances utiles si pertinent\n"
             "- utilise des titres courts si cela rend la section plus lisible\n"
+            "- n'utilise pas de Markdown visible : pas d'asterisques, pas de #, pas de balises techniques\n"
             "- ne pose pas de question finale et ne termine pas par une demande de precision\n"
+            "- ne termine jamais par une phrase du type 'la prochaine etape consiste a...'\n"
             "- ne mentionne jamais source, extrait, corpus, base documentaire, RAG ou nom de document\n"
             "- ignore la regle de reponse courte : cette demande est un livrable premium"
         )
@@ -1265,8 +1292,10 @@ async def generate_chat_reply(
             logger.warning("ChatLAYA compact AI gateway retry failed: %s", exc)
 
     if is_strict_assistant_mode(assistant_mode):
-        final_reply = _sanitize_strict_visible_reply(response_text or "", message, rag_results)
-        if not is_founder_final_draft:
+        if is_founder_final_draft:
+            final_reply = _clean_founder_final_draft_reply(response_text or "")
+        else:
+            final_reply = _sanitize_strict_visible_reply(response_text or "", message, rag_results)
             final_reply = _ensure_strict_answer_frame(final_reply, message)
     else:
         final_reply = (response_text or "").strip() or FALLBACK_REPLY

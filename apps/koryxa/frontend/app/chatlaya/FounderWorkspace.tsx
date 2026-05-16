@@ -2230,6 +2230,15 @@ export default function FounderWorkspace({
                 >
                   <PanelLeftClose className="h-4 w-4" />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileHistoryOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E7DED0] bg-white text-[#6F6A60] transition hover:bg-[#F0E6CC] hover:text-[#8A6A20] lg:hidden"
+                  title="Fermer"
+                  aria-label="Fermer l'historique"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             </div>
           )}
@@ -2701,25 +2710,7 @@ export default function FounderWorkspace({
 
       {mobileHistoryOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Fermer l'historique Founder"
-            onClick={() => setMobileHistoryOpen(false)}
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px]"
-          />
-          <div className="absolute inset-y-0 left-0 w-[86vw] max-w-sm p-3">
-            <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-white/90">Historique Founder</p>
-              <button
-                type="button"
-                onClick={() => setMobileHistoryOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white transition hover:bg-white/15"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {renderHistoryPanel(false)}
-          </div>
+          {renderHistoryPanel(false)}
         </div>
       ) : null}
     </main>

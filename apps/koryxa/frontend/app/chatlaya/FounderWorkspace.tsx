@@ -1826,6 +1826,7 @@ export default function FounderWorkspace({
   const [showSynthesis, setShowSynthesis] = useState(false);
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [briefStarting, setBriefStarting] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -1887,10 +1888,14 @@ export default function FounderWorkspace({
       return;
     }
     const brief = starterProject.trim();
-    if (!brief) return;
-    setActiveId("client");
-    updateInput("client", "activite", brief);
-    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    if (!brief || briefStarting) return;
+    setBriefStarting(true);
+    setTimeout(() => {
+      setActiveId("client");
+      updateInput("client", "activite", brief);
+      contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      setBriefStarting(false);
+    }, 1500);
   }
 
   async function generate(moduleId: string) {
@@ -2336,7 +2341,12 @@ export default function FounderWorkspace({
   }
 
   return (
-    <main className={`grid h-full min-h-0 gap-3 overflow-hidden ${historyCollapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]"}`}>
+    <main className={`relative grid h-full min-h-0 gap-3 overflow-hidden ${historyCollapsed ? "lg:grid-cols-[72px_minmax(0,1fr)]" : "lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]"}`}>
+      {briefStarting && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-50 h-[3px] overflow-hidden rounded-full">
+          <div className="h-full kx-founder-ytbar bg-gradient-to-r from-[#D4B26A] via-[#B8963E] to-[#8A6A20]" />
+        </div>
+      )}
 
       <aside className="hidden min-h-0 lg:block">
         {renderHistoryPanel(historyCollapsed)}
@@ -2485,8 +2495,9 @@ export default function FounderWorkspace({
                       value={starterProject}
                       onChange={(event) => setStarterProject(event.target.value)}
                       rows={7}
+                      disabled={briefStarting}
                       placeholder="Ex : Je veux vendre des PC portables performants aux étudiants et jeunes professionnels avec paiement échelonné..."
-                      className="mt-5 w-full resize-none rounded-2xl border border-[#E7DED0] bg-[#F7F4EE]/70 px-4 py-4 text-base leading-7 text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(184,150,62,0.08)]"
+                      className={`mt-5 w-full resize-none rounded-2xl border border-[#E7DED0] bg-[#F7F4EE]/70 px-4 py-4 text-base leading-7 text-[#101015] placeholder:text-[#B8963E]/40 transition focus:border-[#B8963E] focus:bg-white focus:outline-none focus:shadow-[0_0_0_4px_rgba(184,150,62,0.08)] ${briefStarting ? "opacity-40 cursor-not-allowed" : ""}`}
                     />
                   </div>
 
@@ -2494,11 +2505,22 @@ export default function FounderWorkspace({
                     <button
                       type="button"
                       onClick={startFounderFromBrief}
-                      disabled={!starterProject.trim()}
+                      disabled={!starterProject.trim() || briefStarting}
                       className="kx-founder-shine flex w-full items-center justify-center gap-2 rounded-2xl bg-[#101015] px-5 py-4 text-base font-bold text-white shadow-[0_12px_30px_rgba(16,16,21,0.18)] ring-1 ring-[#B8963E]/20 transition hover:bg-[#1A1A20] hover:shadow-[0_16px_36px_rgba(16,16,21,0.28)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
                     >
-                      {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
-                      <ArrowRight className="h-4 w-4" />
+                      {briefStarting ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin text-[#B8963E]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="28.3 28.3" />
+                          </svg>
+                          Préparation de votre cadrage…
+                        </>
+                      ) : (
+                        <>
+                          {conversationId ? "Commencer le cadrage" : "Se connecter pour commencer"}
+                          <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
                     </button>
                     {!conversationId ? (
                       <div className="grid gap-2 sm:grid-cols-2">

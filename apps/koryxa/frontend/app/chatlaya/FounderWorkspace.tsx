@@ -7,7 +7,7 @@ import {
   Copy, Download, BookOpen, PenLine, AlertCircle, UserRound, Menu, Archive,
   MessageSquarePlus, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
 
 function apiUrl(path: string): string {
@@ -2453,9 +2453,15 @@ export default function FounderWorkspace({
                   <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
                     {REQUIRED_MODULES.map((mod, i) => {
                       const Icon = mod.icon;
-                      const delayClass = i === 0 ? "kx-founder-in-delay-1" : i === 1 ? "kx-founder-in-delay-2" : i === 2 ? "kx-founder-in-delay-3" : "kx-founder-in-delay-4";
                       return (
-                        <div key={mod.id} className={`kx-founder-in ${delayClass} group flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#B8924A]/40 hover:shadow-[0_8px_24px_rgba(26,24,20,0.10)]`}>
+                        <motion.div
+                          key={mod.id}
+                          className="group flex items-center gap-3 rounded-2xl border border-white/80 bg-white/70 px-3.5 py-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#B8924A]/40 hover:shadow-[0_8px_24px_rgba(26,24,20,0.10)]"
+                          initial={{ opacity: 0, y: 16 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: "-20px" }}
+                          transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                        >
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0E6CC] text-[#8A6A20] ring-1 ring-[#E7DED0] transition-transform duration-300 group-hover:rotate-[5deg]">
                             <Icon className="h-4 w-4" />
                           </div>
@@ -2463,7 +2469,7 @@ export default function FounderWorkspace({
                             <p className="text-sm font-bold text-[#101015]">{mod.label}</p>
                             <p className="truncate text-xs text-[#6F6A60]">{mod.tagline}</p>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
@@ -2745,11 +2751,37 @@ export default function FounderWorkspace({
         </div>
       </section>
 
-      {mobileHistoryOpen ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          {renderHistoryPanel(false)}
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {mobileHistoryOpen && (
+          <>
+            <motion.div
+              key="founder-drawer-backdrop"
+              className="fixed inset-0 z-40 bg-[#1A1814]/50 backdrop-blur-sm lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setMobileHistoryOpen(false)}
+            />
+            <motion.div
+              key="founder-drawer-panel"
+              className="fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] p-2 lg:hidden"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={{ left: 0.4, right: 0 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -60) setMobileHistoryOpen(false);
+              }}
+            >
+              {renderHistoryPanel(false)}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

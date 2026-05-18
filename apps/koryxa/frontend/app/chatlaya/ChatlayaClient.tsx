@@ -3,7 +3,7 @@
 import { FormEvent, KeyboardEvent, WheelEvent as ReactWheelEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowUp, Check, Copy, Lock, MapPin, MessageSquarePlus } from "lucide-react";
-import { CHATLAYA_AUTONOMOUS_HOST, SITE_BASE_URL, getChatlayaApiBase } from "@/lib/env";
+import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase } from "@/lib/env";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProblemCollectorFlow from "./ProblemCollectorFlow";
 import FounderWorkspace from "./FounderWorkspace";
@@ -69,8 +69,7 @@ function buildAuthHref(isAutonomousHost: boolean, path: "/login" | "/signup") {
       // Keep the safe fallback computed above.
     }
   }
-  const authBase = isAutonomousHost ? `${SITE_BASE_URL}/chatlaya/auth${path}` : `/chatlaya/auth${path}`;
-  return `${authBase}?redirect=${encodeURIComponent(redirectTarget)}`;
+  return `/chatlaya/auth${path}?redirect=${encodeURIComponent(redirectTarget)}`;
 }
 
 function buildLoginHref(isAutonomousHost: boolean) {

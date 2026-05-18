@@ -8,7 +8,7 @@ import {
   MessageSquarePlus, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase, SITE_BASE_URL } from "@/lib/env";
+import { CHATLAYA_AUTONOMOUS_HOST, getChatlayaApiBase } from "@/lib/env";
 
 function apiUrl(path: string): string {
   return `${getChatlayaApiBase().replace(/\/$/, "")}${path}`;
@@ -27,12 +27,12 @@ function resolveFounderAuthHref(path: "/login" | "/signup", fallback?: string): 
             : currentUrl.pathname.startsWith("/chatlaya")
               ? `${currentUrl.pathname}${currentUrl.search}`
               : FOUNDER_AUTH_REDIRECT;
-      return `${SITE_BASE_URL}/chatlaya/auth${path}?redirect=${encodeURIComponent(redirectTarget)}`;
+      return `/chatlaya/auth${path}?redirect=${encodeURIComponent(redirectTarget)}`;
     } catch {
       // Fall through to the server-safe fallback below.
     }
   }
-  return fallback || `${SITE_BASE_URL}/chatlaya/auth${path}?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
+  return fallback || `/chatlaya/auth${path}?redirect=${encodeURIComponent(FOUNDER_AUTH_REDIRECT)}`;
 }
 
 function resolveFounderLoginHref(fallback?: string): string {
